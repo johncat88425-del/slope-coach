@@ -50,7 +50,7 @@
 - [x] T48 Codex：介面中英文切換，預設英文，因為評審看英文 — commit 6790495
 - [x] T49 Codex：首頁說明「這個工具能判斷什麼、不能判斷什麼」，照 docs/research/competitors.md 的結論寫，不准說「第一個」 — commit 9bfc41f
 - [x] T50 Codex：demo 模式：讀取事先存好的稽核結果 JSON，讓 demo 不用連網或等追蹤 — commit 1abd274
-- [x] T51 Codex：手機版排版與無障礙（色盲也能分辨預測線和實測線，不能只靠顏色） — commit 待回填（本次程式提交）
+- [x] T51 Codex：手機版排版與無障礙（色盲也能分辨預測線和實測線，不能只靠顏色） — commit 77ab223
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
