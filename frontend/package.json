@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
-    "test": "tsc src/experiment.ts src/api.ts src/media.ts src/CurveChart.tsx src/Trajectory.tsx --jsx react-jsx --target ES2022 --module ESNext --moduleResolution Bundler --outDir .test-dist --skipLibCheck && node --test src/*.test.mjs"
+    "test": "tsc src/experiment.ts src/api.ts src/media.ts src/CurveChart.tsx src/Trajectory.tsx src/ModelSource.tsx --jsx react-jsx --target ES2022 --module ESNext --moduleResolution Bundler --outDir .test-dist --skipLibCheck && node --test src/*.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
