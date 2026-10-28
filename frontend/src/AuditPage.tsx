@@ -1,3 +1,4 @@
+import {GhostReview} from './GhostReview.js';
 import {auditHash} from './experiment.js';
 import { Localize } from './i18n.js';
 import { useEffect, useRef, useState } from 'react';
@@ -13,14 +14,14 @@ export function EventTimeline({events}:{events:AuditOut['events']}) {
  const labels:Record<string,string>={vanished:'Disappearance',size_jump:'Size jump',position_jump:'Position jump'};
  return <Localize><section data-testid="audit-events" aria-label="Tracking event timeline"><h3>Tracking event timeline</h3><p>Events may reflect tracking or capture problems. Review the original clip; they do not establish a cause.</p>{events.length ? <ol className="event-timeline">{[...events].sort((a,b)=>a.t_s-b.t_s).map((e,i)=><li key={i}><strong>{e.t_s} s · {labels[e.kind]??e.kind}</strong><p>{e.detail}</p><small>{e.kind}</small></li>)}</ol> : <p>No tracking events were reported.</p>}</section></Localize>;
 }
-export function AuditResult({ audit, replay = false }: {
-    audit: AuditOut; replay?: boolean;
+export function AuditResult({ audit, replay = false, videoUrl }: {
+    audit: AuditOut; replay?: boolean; videoUrl?:string;
 }) {
     return <Localize>{<article data-testid="audit-result" aria-label="稽核結果">{replay && <p role="status">Saved result replay — no new analysis or model call.</p>}<h2 data-testid="audit-verdict">{verdictText(audit.verdict,audit.assumed_model)}</h2><p>稽核 {audit.audit_id} · 假設：{audit.assumed_model} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
  {!replay && <p><a href={auditHash(audit.audit_id)}>Open result link</a></p>}<h3>原因</h3><ul>{audit.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
  <h3>後端計算數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
- <Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
+ <GhostReview audit={audit} url={replay ? undefined : videoUrl??mediaUrl(audit.video_url, import.meta.env?.VITE_API_BASE_URL)}/><Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
  {audit.assumed_model==='bounce' && <p>Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.</p>}<EventTimeline events={audit.events}/>
  {audit.verdict==='insufficient_data' && audit.numbers.size_trend!==undefined && <aside data-testid="audit-size-trend" aria-label="Size trend limitation"><h3>Size trend limitation</h3><p>size_trend: {audit.numbers.size_trend}</p><p>A changing apparent size can make the 2D motion check unreliable. The backend rejects changes beyond its quality threshold. Review the backend reasons above; this value alone does not establish a cause.</p></aside>}
  <button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}>{r}</li>)}</ul>
@@ -66,7 +67,7 @@ export function AuditPage({ api, auditId = null }: {
         setAudit(null);
         setAttempted(false);
     } }}/></label>
- {(preview || (!replay && audit?.video_url)) && <video ref={video} controls src={preview || mediaUrl(audit?.video_url, import.meta.env?.VITE_API_BASE_URL)} onError={() => setError('影片無法播放，請確認編碼或重新選擇原片。')}/>}
+ {!audit && preview && <video ref={video} controls src={preview} onError={() => setError('影片無法播放，請確認編碼或重新選擇原片。')}/>}
  <div className="fields"><label>片段開始（秒）<input type="number" min="0" step="any" value={start} onChange={e => setStart(e.target.value)}/></label><label>片段結束（秒）<input type="number" min="0" step="any" value={end} onChange={e => setEnd(e.target.value)}/></label></div>
  <button disabled={!preview} onClick={() => { if (video.current)
         setStart(String(video.current.currentTime)); }}>用播放位置設定開始</button><button disabled={!preview} onClick={() => { if (video.current)
@@ -77,6 +78,6 @@ export function AuditPage({ api, auditId = null }: {
         return; void run(() => api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent)); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input data-testid="audit-id" value={id} onChange={e => setId(e.target.value)}/></label><button data-testid="audit-load" disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
- </fieldset><div aria-live="polite">{busy && <div data-testid="audit-progress" role="status">{uploadPercent===100 ? <p>Upload complete. Waiting for backend analysis; analysis progress is unavailable.</p> : uploadPercent!==null ? <><label>Upload progress<progress max="100" value={uploadPercent}/></label><p>{uploadPercent}%</p></> : <p>Request in progress. Please wait; no automatic retry will be made.</p>}</div>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult audit={audit} replay={replay}/>}
+ </fieldset><div aria-live="polite">{busy && <div data-testid="audit-progress" role="status">{uploadPercent===100 ? <p>Upload complete. Waiting for backend analysis; analysis progress is unavailable.</p> : uploadPercent!==null ? <><label>Upload progress<progress max="100" value={uploadPercent}/></label><p>{uploadPercent}%</p></> : <p>Request in progress. Please wait; no automatic retry will be made.</p>}</div>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult key={audit.audit_id} audit={audit} replay={replay} videoUrl={preview || undefined}/>}
  </section>}</Localize>;
 }
