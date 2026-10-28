@@ -1,0 +1,100 @@
+"""Checks on anything a model writes before it reaches the user (AGENTS.md rules 1, 4, 5).
+
+- Every number in model text must match a number the deterministic tools produced.
+- Causal overclaims are rejected; the model may only say a result is consistent with a hypothesis.
+- A chosen next check must be one of the evidence candidates.
+"""
+from __future__ import annotations
+
+import math
+import re
+from dataclasses import dataclass, field
+
+BANNED_PHRASES = (
+    # Chinese
+    "證實", "證明了", "真因", "真正原因", "根本原因", "一定是", "肯定是", "確定是", "必然是", "毫無疑問",
+    # English
+    "proves", "proved", "proven", "confirms that", "confirmed that", "root cause", "definitely",
+    "certainly caused", "the cause is", "was caused by", "is caused by", "without doubt",
+)
+
+_NUMBER = re.compile(r"(?<![\w.])[-+−]?\d+(?:[.,]\d+)?(?:[eE][-+]?\d+)?\s*%?")
+# Small integers used for counting or labelling ("2 checks", "第 1 次") are not measurements.
+_IGNORED_INTEGERS = set(range(0, 11))
+
+
+@dataclass
+class CheckResult:
+    ok: bool
+    problems: list[str] = field(default_factory=list)
+
+
+def find_banned_phrases(text: str) -> list[str]:
+    low = text.lower()
+    return [p for p in BANNED_PHRASES if p.lower() in low]
+
+
+def extract_numbers(text: str) -> list[tuple[str, float, bool]]:
+    """Return (raw, value, is_percent) for each number in the text."""
+    out = []
+    for m in _NUMBER.finditer(text):
+        raw = m.group(0).strip()
+        is_pct = raw.endswith("%")
+        num = raw.rstrip("%").strip().replace("−", "-").replace(",", ".")
+        try:
+            out.append((raw, float(num), is_pct))
+        except ValueError:
+            continue
+    return out
+
+
+def _matches(value: float, allowed: float) -> bool:
+    if not math.isfinite(allowed):
+        return False
+    # accept the tool value rounded to the precision the model wrote, plus a small relative slack
+    return math.isclose(value, allowed, rel_tol=0.02, abs_tol=0.0051) or math.isclose(value, round(allowed, 1), abs_tol=0.051)
+
+
+def ungrounded_numbers(text: str, allowed: list[float]) -> list[str]:
+    bad = []
+    for raw, value, is_pct in extract_numbers(text):
+        if not is_pct and value.is_integer() and int(value) in _IGNORED_INTEGERS:
+            continue
+        candidates = [a * 100 for a in allowed] if is_pct else []
+        candidates += allowed
+        if not any(_matches(abs(value), abs(a)) for a in candidates):
+            bad.append(raw)
+    return bad
+
+
+def collect_numbers(obj) -> list[float]:
+    """All finite numbers inside a tool output (dicts, lists, scalars)."""
+    if isinstance(obj, bool):
+        return []
+    if isinstance(obj, (int, float)):
+        return [float(obj)] if math.isfinite(obj) else []
+    if isinstance(obj, dict):
+        return [n for v in obj.values() for n in collect_numbers(v)]
+    if isinstance(obj, (list, tuple)):
+        return [n for v in obj for n in collect_numbers(v)]
+    return []
+
+
+def check_model_text(text: str, tool_outputs: list) -> CheckResult:
+    problems = []
+    banned = find_banned_phrases(text)
+    if banned:
+        problems.append("causal overclaim: " + ", ".join(banned))
+    allowed = [n for o in tool_outputs for n in collect_numbers(o)]
+    bad = ungrounded_numbers(text, allowed)
+    if bad:
+        problems.append("numbers not found in tool outputs: " + ", ".join(bad))
+    return CheckResult(not problems, problems)
+
+
+def check_choice(choice: str | None, candidates: list[str]) -> CheckResult:
+    if choice is None:
+        return CheckResult(True)
+    if choice not in candidates:
+        return CheckResult(False, [f"{choice} is not among the evidence candidates {sorted(candidates) or '[]'}"])
+    return CheckResult(True)

@@ -9,6 +9,7 @@
 - **數字只來自後端的 physics 計算。** 前端只負責顯示，不自己算物理。
 - **預測一旦建立就鎖定**，沒有修改端點，送 PUT/PATCH/DELETE 會得到 405。要改尺寸，就建新的 calibration 版本，再建新的 prediction。
 - **預測必須在試驗影片上傳之前建立**，否則比較會回傳 409。
+- 模型寫給使用者的文字會經過 `backend/output_check.py`：數字必須出自工具輸出，禁止「證實」「真因」等因果誇大用語，不通過回 422。
 - 每個數字都標明來源：`source: "user" | "model" | "mock" | "sam" | "manual"`。畫面要讓人分得出哪些是使用者確認的、哪些是影像估計的。
 - `verdict: "insufficient_data"` 是正常結果，不是錯誤。畫面要顯示 `checks` 裡沒通過的項目，以及 `can_still_say` 的內容。
 

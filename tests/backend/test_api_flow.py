@@ -101,3 +101,29 @@ def test_tracking_not_connected_returns_501():
     r = client.post(f"/api/experiments/{eid}/trials", data={"kind": "test", "calibration_version": 1},
                     files={"file": ("clip.mp4", b"fake", "video/mp4")})
     assert client.post(f"/api/trials/{r.json()['trial_id']}/track").status_code == 501
+
+
+def test_model_rationale_is_checked():
+    eid, pid, a = setup_experiment()
+    tid = trial(eid, "test", dets(a, v0=0.6))
+    c = client.post(f"/api/experiments/{eid}/comparisons", json={"prediction_id": pid, "trial_id": tid}).json()
+    v0 = c["fit"]["v0_m_s"]
+    bad = client.post(f"/api/experiments/{eid}/interventions",
+                      json={"comparison_id": c["comparison_id"], "check_type": "release_check",
+                            "model_rationale": "This proves the block was pushed at 3.9 m/s."})
+    assert bad.status_code == 422
+    good = client.post(f"/api/experiments/{eid}/interventions",
+                       json={"comparison_id": c["comparison_id"], "check_type": "release_check",
+                             "model_rationale": f"The fit is consistent with a release speed of about {v0:.2f} m/s."})
+    assert good.status_code == 201, good.text
+
+
+def test_store_snapshot_roundtrip(tmp_path, monkeypatch):
+    import backend.store as st
+    eid, pid, _ = setup_experiment()
+    monkeypatch.setattr(st, "STORE_PATH", str(tmp_path / "store.pkl"))
+    store.save()
+    store.reset()
+    assert eid not in store.experiments
+    store.load()
+    assert pid in store.experiments[eid].predictions

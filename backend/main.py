@@ -21,9 +21,20 @@ from physics.tracking import Detection, to_samples, usable_fraction
 from . import report, schemas as S
 from .interventions import CATALOG
 from .model_hooks import TrackingUnavailable, get_hooks
+from .output_check import check_model_text
 from .store import UPLOAD_ROOT, ExperimentRecord, TrialRecord, new_id, now, store
 
 app = FastAPI(title="Slope Coach API", version="0.1.0")
+
+
+@app.middleware("http")
+async def persist_after_writes(request, call_next):
+    response = await call_next(request)
+    if request.method != "GET" and response.status_code < 400:
+        store.save()
+    return response
+
+
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -299,6 +310,12 @@ def create_intervention(eid: str, body: S.InterventionIn):
     allowed = {e["candidate"] for e in cmp["evidence"]}
     if body.check_type not in allowed:
         raise HTTPException(422, f"{body.check_type} is not supported by the evidence (allowed: {sorted(allowed) or 'none'})")
+    if body.model_rationale:
+        trial = store.trials[cmp["trial_id"]]
+        result = check_model_text(body.model_rationale, [cmp, exp.predictions[cmp["prediction_id"]]["params"],
+                                                         {"t0_s": trial.t0_s}])
+        if not result.ok:
+            raise HTTPException(422, {"error": "model_rationale failed output checks", "problems": result.problems})
     iid = new_id("int")
     data = dict(intervention_id=iid, comparison_id=body.comparison_id, check_type=body.check_type,
                 instructions=CATALOG[body.check_type], chosen_by=body.chosen_by,
