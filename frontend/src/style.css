@@ -3,3 +3,5 @@
 fieldset{border:1px solid #dce5df;border-radius:5px;margin:20px 0;padding:16px;min-width:0}legend{font-weight:600}select,input:not([type=checkbox]):not([type=file]){display:block;padding:10px;width:100%;margin:8px 0 16px;font:inherit;border:1px solid #a8bbb1;border-radius:4px}label.block{display:block;margin:12px 0}pre{overflow:auto;max-height:320px;font-size:12px}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}td,th{text-align:left;padding:8px;border-bottom:1px solid #ccc}figure{margin:20px 0}figure svg{width:100%}svg text{font-size:11px}button:disabled{opacity:.5}fieldset:disabled{opacity:.8}
 
 .track-overlay{display:block;width:100%;height:auto}
+
+.video-overlay{position:relative}.video-overlay video{display:block;margin:0;width:100%;height:auto}.video-overlay svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
