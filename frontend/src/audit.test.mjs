@@ -1,6 +1,6 @@
 import {LanguageProvider} from '../.test-dist/i18n.js';
 import test from 'node:test';import assert from 'node:assert/strict';import {createElement} from 'react';import {renderToStaticMarkup as rawRender} from 'react-dom/server';
-import {AuditPage,AuditResult} from '../.test-dist/AuditPage.js';import {createApi} from '../.test-dist/api.js';import {parseSavedAudit,validateAuditInput} from '../.test-dist/audit.js';
+import {AuditPage,AuditResult,EventTimeline} from '../.test-dist/AuditPage.js';import {createApi} from '../.test-dist/api.js';import {parseSavedAudit,validateAuditInput} from '../.test-dist/audit.js';
 const fixture=verdict=>({audit_id:'ui-fixture',created_at:'2026-10-27',assumed_model:'free_flight',t_start:0,t_end:1,camera_static:true,object_size_m:null,video_url:'/media/test/clip.mp4',overlay_url:null,track_source:'frame_diff',verdict,reasons:['fixture reason'],numbers:{sentinel:123.456789},points:[],events:[],limits:['fixture limitation']});
 test('all three verdicts render as model-relative outcomes with evidence and limits',()=>{
  const labels={consistent:'與自由落體模型一致',inconsistent:'與自由落體模型不一致',insufficient_data:'與自由落體模型無法判斷'};
@@ -28,4 +28,32 @@ test('saved audit validation preserves numbers and rejects malformed or unsuppor
 test('offline replay explicitly labels saved output and never requests remote media',()=>{
  const html=render(createElement(AuditResult,{audit:{...fixture('consistent'),overlay_url:'/media/test/overlay.svg'},replay:true}));
  assert.match(html,/已儲存結果重播/);assert.doesNotMatch(html,/<img|<video/);assert.match(html,/123.456789/);
+});
+
+test('bounce upload, saved replay and verdicts use the selected model with raw rebound ratios',async()=>{
+ let body;const api=createApi('',async(url,init)=>{body=init.body;return Response.json({...fixture('consistent'),assumed_model:'bounce'})});
+ await api.audit(new File(['fixture'],'bounce.mp4'),0,2,true,undefined,'bounce');assert.equal(body.get('assumed_model'),'bounce');
+ for(const v of ['consistent','inconsistent','insufficient_data']){const a={...fixture(v),assumed_model:'bounce',numbers:{rebound_ratio_1:0.7654321}};assert.deepEqual(parseSavedAudit(JSON.stringify(a)),a);const html=render(createElement(AuditResult,{audit:a,replay:true}));assert.match(html,/彈跳模型/);assert.match(html,/rebound_ratio_1/);assert.match(html,/0.7654321/);assert.doesNotMatch(html,/自由落體模型/)}
+});
+
+test('event timeline sorts exact timestamps, keeps backend details and labels all event types',()=>{
+ const events=[{kind:'position_jump',t_s:2,detail:'raw position detail'},{kind:'vanished',t_s:0.123456,detail:'raw missing detail'},{kind:'size_jump',t_s:1,detail:'raw size detail'}];
+ const html=rawRender(createElement(EventTimeline,{events}));assert.ok(html.indexOf('0.123456')<html.indexOf('2 s'));for(const label of ['Disappearance','Size jump','Position jump','raw missing detail'])assert.ok(html.includes(label));assert.equal(events[0].t_s,2);
+});
+test('size-trend refusal shows the exact backend value and retains backend reasons',()=>{
+ const html=rawRender(createElement(AuditResult,{audit:{...fixture('insufficient_data'),numbers:{size_trend:-0.456789}}}));assert.match(html,/Size trend limitation/);assert.match(html,/-0.456789/);assert.match(html,/fixture reason/);assert.match(html,/does not establish a cause/);
+});
+
+test('audit links round-trip encoded IDs, resolve audit route and use read-only GET',async()=>{
+ const {auditHash,auditIdFromHash,resolveRoute}=await import('../.test-dist/experiment.js');
+ for(const id of ['audit-123','id with space','id/slash']){assert.equal(auditIdFromHash(auditHash(id)),id);assert.equal(resolveRoute(auditHash(id)),'audit')}
+ for(const hash of ['#/audits/','#/audits/%ZZ','#setup'])assert.equal(auditIdFromHash(hash),null);
+ let path,init;await createApi('',async(p,i)=>{path=p;init=i;return Response.json(fixture('consistent'))}).getAudit('id/slash');assert.equal(path,'/api/audits/id%2Fslash');assert.equal(init.method,undefined);
+ const html=rawRender(createElement(AuditResult,{audit:fixture('consistent')}));assert.match(html,/href="#\/audits\/ui-fixture"/);
+ assert.doesNotMatch(rawRender(createElement(AuditResult,{audit:fixture('consistent'),replay:true})),/Open result link/);
+});
+
+test('stable test selectors survive language switching and identify audit controls and result blocks',()=>{
+ for(const lang of ['en','zh']){const page=rawRender(createElement(LanguageProvider,{value:lang},createElement(AuditPage,{api:createApi('',async()=>Response.json({}))})));for(const id of ['audit-submit','audit-load','audit-import-json','audit-video-input','audit-model','audit-id'])assert.match(page,new RegExp('data-testid="'+id+'"'));
+ const result=rawRender(createElement(LanguageProvider,{value:lang},createElement(AuditResult,{audit:fixture('consistent')})));for(const id of ['audit-result','audit-verdict','audit-events','audit-export-json','audit-export-markdown'])assert.match(result,new RegExp('data-testid="'+id+'"'));}
 });
