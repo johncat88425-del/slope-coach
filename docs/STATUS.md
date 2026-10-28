@@ -1,11 +1,11 @@
 # STATUS：目前進度、缺什麼、誰在做
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。最新的放最上面。
-> 最後更新：2026-10-27（建立初版，尚無程式碼）
+> 最後更新：2026-10-27（Codex 完成 T08/T09 本機 mock 前端）
 
 ## 一句話現況
 
-第 2 天（10/27）結束前：計畫書完成、比賽規則已查、Discord 回覆「要用 Muse」。**還沒有任何程式碼、影片或 API 測試結果。**
+T08/T09 前端已放入 frontend/，分支 codex/T08-frontend。可選擇實拍照片／影片、保存校準草稿並在五頁間往返；目前本機 mock，尚未接後端追蹤與物理計算。尚未提供真實實驗影片或 API 實測結果。
 
 ## 里程碑
 
@@ -31,8 +31,8 @@
 | T05 | `meta_client/`：spark 呼叫（圖片、影片）、sam 追蹤、花費計數與 120 美元上限 | Muse | 待辦 | 先用 T04 的 1 段片實測 token 與費用，填入下方成本紀錄 |
 | T06 | `physics/`：像素↔米校準、遮罩中心→s(t)、品質標記、定加速度擬合（a、v0、誤差）+ 測試 | Claude | 待辦 | 不呼叫模型 |
 | T07 | `docs/API.md` 前後端契約初版 + `backend/` 骨架（experiment / trial / prediction / intervention） | Claude | 待辦 | T08 依賴它 |
-| T08 | `frontend/` 骨架與五個畫面路由 | Codex | 待辦 | 等 T07 契約 |
-| T09 | 校準點選畫面（點尺兩端、點滑塊） | Codex | 待辦 | |
+| T08 | `frontend/` 骨架與五個畫面路由 | Codex | 完成 | React/Vite/TypeScript、五個 hash 路由、共用 Experiment；本機 mock 等 T07 |
+| T09 | 校準點選畫面（點尺兩端、點滑塊） | Codex | 完成 | 原圖三點校準、撤銷、鍵盤座標替代、L/h 驗證與來源標示 |
 | T10 | 預測鎖定 + 實測比較 + 曲線圖 | Claude（後端）/ Codex（圖） | 待辦 | |
 | T11 | 釋放方式核對：受限驗證資料庫 + Spark 工具呼叫代理 | Muse | 待辦 | 只能從兩種驗證選 |
 | T12 | 輸出檢查：schema、數字必須出自工具輸出、禁用因果字眼 | Claude | 待辦 | |
@@ -52,7 +52,9 @@
 
 ## 缺什麼（阻擋中或尚未知道）
 
-- [ ] 還沒有 repo、程式碼、影片。
+- [ ] 尚缺真實實驗影片及後端整合；GitHub repo 與 T08/T09 前端已存在。
+- [ ] docs/API.md 尚未定稿；校準版本、基準試驗、預測鎖定、上傳分析、驗證與報告等待 T07。
+- [ ] 本機草稿在重新整理後清除，媒體不送到伺服器；持久化待後端契約。
 - [ ] Meta API 金鑰與 150 美元額度是否已可用：未確認。
 - [ ] 影片送 Spark 的實際 token 數與費用：未測（目前預算用假設值）。
 - [ ] SAM 3.1 的 API 呼叫格式（影片怎麼上傳、遮罩怎麼回傳）：未讀官方範例。
@@ -62,9 +64,29 @@
 
 ## 待 john 決定
 
-- （無）
+T08/T09 後端端點需求提案（路徑僅供 T07 討論，不是已定契約）：
+
+| 建議方法／端點 | 前端需要的行為 |
+| --- | --- |
+| POST /experiments、GET /experiments/{id} | 建立／讀回同一份實驗紀錄與各步驟狀態 |
+| POST /experiments/{id}/photos | 上傳實拍照片，回傳媒體 ID、原始寬高與讀取 URL |
+| POST /experiments/{id}/calibrations | 以照片 ID、原始像素尺兩端/滑塊、尺距離/L/h（米）、使用者確認來源建立新版本；回傳品質檢查 |
+| POST /experiments/{id}/trials | 建立基準或測試試驗；測試試驗綁定既有 prediction_id |
+| POST /experiments/{id}/predictions | 依獨立基準與 calibration_version 建立不可修改的事前預測，附建立時間、假設與資料來源 |
+| POST /trials/{id}/video | 鎖定預測後才接收測試影片；回傳媒體／工作 ID |
+| POST /trials/{id}/analysis、GET /jobs/{id} | 啟動分析並輪詢處理／失敗／待確認；同一請求不可重複收費 |
+| GET /trials/{id}/comparison | 已保存預測、實測時間/位置、缺失區段、品質標記及數字來源 |
+| POST /experiments/{id}/interventions | 有據建議與使用者選擇分開，僅尺寸／釋放方式核對 |
+| GET /experiments/{id}/report?format=markdown 或 csv | 匯出完整版本、試驗、來源與限制 |
+
 
 ## 已做的決定
+
+- T08/T09：五個 hash 路由共用型別化 Experiment；路由變更與瀏覽器往返保留同一份紀錄。
+- 校準標記以原始照片像素保存，僅做畫面座標映射；像素↔米、物理擬合仍由後端 physics 負責。
+- L、h、尺距離標為「使用者量測並確認」；影像估計標為「尚無」。h ≥ L、任一尺寸 ≤ 0／空值／非有限數值、照片或標記不完整時拒絕保存。
+- 保存校準採獨立快照，修改尺寸或標記使快照失效，換照片清除舊標記與拍攝確認。後端不可修改預測屬 T07/T10，本輪不假裝已實作。
+- 不新增套件；npm test 使用既有 TypeScript 編譯和 Node 內建測試。預測／分析 mock 結果為空值，不以假數字當使用者實測；圖例為青色虛線與橘色實線。
 
 | 日期 | 決定 | 原因 |
 | --- | --- | --- |
@@ -82,5 +104,11 @@
 | | | | 0 |
 
 ## 工作日誌（最新在上）
+
+- 10/27 Codex：依 john 指定，將先前建立的前端移到 /Users/aacc/Documents/slope-coach/frontend/，以正式 repo 分支 codex/T08-frontend 工作；研究文件不納入此前端提交。
+- 10/27 T08/T09 完成：五頁共用紀錄、照片三點校準與撤銷、原圖座標、鍵盤替代、圖片／影片錯誤處理、尺寸拒絕、校準保存快照、本機真實影片預覽。未接 API 的操作明確停用。
+- 10/27 在正式 repo frontend/ 重跑 npm test：6 項通過；TypeScript/Vite production build 通過。原工作區瀏覽器已實查空白拒絕、圖片載入、三點輸入／直接點選／撤銷、h=L 拒絕、有效尺寸保存、五頁往返與報告顯示相同數值。UI 測試圖明示非實驗資料；沒有宣稱物理準確率。
+- 10/27 pytest 曾嘗試但環境未安裝；本 repo 尚無 backend/physics 測試。本輪只提交分支，不合併。後續 T10/T13/T17 與語音 T24 仍依原分工與依賴執行。
+
 
 - 10/27 建立 AGENTS.md、CLAUDE.md、STATUS.md 初版。
