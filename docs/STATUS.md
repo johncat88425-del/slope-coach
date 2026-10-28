@@ -29,7 +29,7 @@
 - [ ] T05 Muse：`meta_client/`（Spark、SAM 3.1、花費計數與 120 美元上限、mock 測試）
 - [ ] T29 Muse：後端接上 MetaHooks（沒有金鑰時退回 Mock）
 - [ ] T34 Muse：Spark 建議運動片段 `suggest_motion_segment`。只回傳建議，不回傳測量數字，要通過 schema 檢查
-- [ ] T38 Muse：在 ModelHooks 加 `track_object(video_path, text_prompt, t_start, t_end)`，由 SAM 3.1 回傳每格的中心和面積，讓 `backend/audits.py` 可以改用 SAM（`track_source: "sam"`）。沒接上時維持 frame_diff
+- [ ] T38 Muse：（後端介面已由 Claude 在 T84 做好，你只要在 MetaHooks 實作 `track_object`，呼叫 SAM 3.1，座標正規化規則見 docs/API.md v0.5）在 ModelHooks 加 `track_object(video_path, text_prompt, t_start, t_end)`，由 SAM 3.1 回傳每格的中心和面積，讓 `backend/audits.py` 可以改用 SAM（`track_source: "sam"`）。沒接上時維持 frame_diff
 - [ ] T39 Muse：Spark 檢查稽核影片的拍攝條件，包括鏡頭是否固定、是否近似側視、物體是否全程入鏡。只回傳布林值和原因，結果給使用者確認
 - [ ] T28 Muse：結果說明層。Spark 讀 `ComparisonOut` 或 `AuditOut` 寫說明，先過 `check_model_text()` 才顯示，畫面標明「由 Muse Spark 產生」。不准出現「真／假影片」「AI 生成」等字眼
 - [ ] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）
@@ -101,6 +101,8 @@
 - [x] T73 Claude：合成測試資料 `data/demo/synthetic_*.json`，用 `python -m scripts.synthetic_audits` 重新產生。這是真的 `/api/audits` 輸出，但影片是程式畫的方塊，共 6 種：正常 g、g/4、鏡頭移動、彈跳變低、彈跳變高、單擺。檔案裡有 `synthetic: true`，只能拿來開發和測試，demo 不准說成真實或生成的影片。Codex 做 T64、T65、T71，Antigravity 做 T68 時，可以先用這些檔案
 - [x] T78 Claude：Muse 偵訊的後端：`POST /api/audit-drafts`、`interview_audit` hook（含 mock）、問題檢查（不准有數字和違規字眼，最多 3 題）、`draft_id` 與 `slow_motion` 欄位（API v0.4）
 - [x] T79 Claude：`scripts/gate_prepare.py`：列出每支關卡影片的 fps、長度、尺寸（fps 超過 90 會提醒可能是慢動作），產生附時間戳的縮圖總表方便 john 看出時間窗，並在 manifest 加上標註留空的列。不呼叫模型，也不自動填標註
+- [x] T83 Claude：關卡工具用合成影片從頭到尾試跑過一次（prepare → 標註 → run → 總表）。修正一個問題：還沒標註的影片原本會被算成「拒判」，現在改成「unlabelled」，不列入任何計數，總表另外列出。門檻沒有改
+- [x] T84 Claude：稽核接上 SAM 的後端介面 `track_object`（MockHooks 會丟出 TrackingUnavailable，後端自動改用 frame differencing）。新增 `object_name` 欄位，`track_source` 會標明實際用了哪一種，API v0.5
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
 **john**
@@ -318,3 +320,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 10/28 Codex 工作總結：T74–T77 已完成並各自推送；重新 pull main 後沒有剩餘 Codex 未勾項。最終 npm 53 pass、build pass、pytest 56 pass/11 skip（環境依賴）。#demo 可離線看三種結果；Muse 偵訊用現有契約。瀏覽器端到端與 PNG 視覺驗收仍交 Antigravity，未推 main。
 - 10/28 12:40 例行巡查：審查並合併 Codex PR #27（T74 三種結果並排、T75 數字格式、T76 彈跳圖、T77 Muse 偵訊面板）。pytest 67、npm 53、build 都通過，面板有標明問題來源（Muse Spark 或固定問題），合成資料有標明 SYNTHETIC。發現尺寸只顯示 1 位小數的問題，交給 T80。新增 Codex 的 T80 到 T82。Muse、Antigravity 仍然沒有推任何東西。
+- 10/28 15:45 john 說等一下就去拍片。Claude 完成 T83（關卡工具試跑）和 T84（SAM 介面）。
