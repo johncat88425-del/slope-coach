@@ -43,7 +43,7 @@ def test_audit_refuses_moving_camera_and_bad_input(tmp_path):
     moving = post(tmp_path / "real.mp4", camera_static="false").json()
     assert moving["verdict"] == "insufficient_data" and "camera" in moving["reasons"][0]
     assert post(tmp_path / "real.mp4", t_start="1", t_end="0.5").status_code == 422
-    assert post(tmp_path / "real.mp4", assumed_model="pendulum").status_code == 422
+    assert post(tmp_path / "real.mp4", assumed_model="spring").status_code == 422
     assert client.get("/api/audits/aud_nope").status_code == 404
 
 
@@ -78,3 +78,18 @@ def test_audit_bounce_mode(tmp_path):
     gain = post(tmp_path / "gain.mp4", assumed_model="bounce", t_end="1.9").json()
     assert ok["verdict"] == "consistent", ok["reasons"]
     assert gain["verdict"] == "inconsistent", gain
+
+
+def test_audit_pendulum_period_and_length(tmp_path):
+    import math
+    fps, L = 60, 0.25
+    w = math.sqrt(9.81 / L)
+    n = int(3.5 * fps)
+    pos = [(300 + 120 * math.sin(w * i / fps), 200 + 15 * (1 - math.cos(w * i / fps))) for i in range(n)]
+    write_frames(tmp_path / "pend.mp4", pos, [20] * n, fps=fps)
+    r = post(tmp_path / "pend.mp4", assumed_model="pendulum", t_end="3.4", length_m=str(L)).json()
+    assert r["verdict"] == "consistent", r
+    assert r["numbers"]["period_s"] == pytest.approx(2 * math.pi / w, rel=0.03)
+    assert r["numbers"]["implied_length_m"] == pytest.approx(L, rel=0.06)
+    wrong = post(tmp_path / "pend.mp4", assumed_model="pendulum", t_end="3.4", length_m="1.0").json()
+    assert wrong["verdict"] == "inconsistent"

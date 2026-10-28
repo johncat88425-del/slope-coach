@@ -47,6 +47,7 @@
 - `reasons[]`：判定的原因，或拒判的原因。
 - `numbers{}`：程式算出的數字。可能有 `g_apparent_m_s2`、`implied_time_factor`、`implied_object_size_m`、`tilt_deg`、`rms_over_travel`、`tracked_fraction`、`n_points`。沒算出來的就不會出現。
 - `points[]`：`[t, x_px, y_px]`，座標以寬 480 px 的畫面為準。
+- `assumed_model=pendulum`（v0.3）：單擺。可另外送 `length_m`（使用者自己量的擺長，公尺）。`numbers` 會有 `period_s`、`period_spread`（各次擺動週期的差異比例）、`implied_length_m`（由週期推算的擺長），有給 `length_m` 時還有 `predicted_period_s`。週期只用水平位置算，不需要尺寸。
 - `ghost_points[]`（v0.3）：「鬼影軌跡」。物體從同一點、用同樣的初速度出發，但以 9.81 m/s² 往畫面正下方落下時，每個時間點應該在的位置。只有填了 `object_size_m` 才會有。前端畫成虛線，和實測點並排。
 - `nearest_body`（v0.3）：表觀重力最接近的星球（Pluto、Moon、Mars、Earth、Jupiter），搭配 `numbers.g_vs_earth`（表觀 g 是地球的幾倍）。只是幫助理解的比喻，不是判定。
 - `numbers.g_apparent_low`、`g_apparent_high`、`g_verdict_robust`（v0.3）：物體像素大小估錯 ±30% 時，表觀 g 的範圍。`g_verdict_robust` 為 1 表示判定在這個範圍內都不變，0 表示判定會因尺寸誤差翻轉，畫面要提醒使用者。
