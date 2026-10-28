@@ -6,6 +6,8 @@ differencing until SAM is wired in; all numbers come from physics/.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from physics.errors import PhysicsInputError
@@ -15,6 +17,8 @@ from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
 
 from . import schemas as S
+from .model_hooks import MOCK_QUESTIONS, get_hooks
+from .output_check import check_model_text
 from .store import UPLOAD_ROOT, new_id, now, store
 from .video import read_frames, save_overlay, track_with_sizes
 
@@ -31,9 +35,51 @@ LIMITS = [
 ]
 
 
+MAX_QUESTIONS = 3
+
+
+def _save_upload(file: UploadFile, d: Path) -> Path:
+    d.mkdir(parents=True, exist_ok=True)
+    suffix = "".join(c for c in (file.filename or "").rsplit(".", 1)[-1:] if c.isalnum())[:5] or "bin"
+    video = d / f"video.{suffix}"
+    with video.open("wb") as out:
+        out.write(file.file.read())
+    return video
+
+
+def checked_interview(iv: S.AuditInterview) -> S.AuditInterview:
+    """Model questions may not carry numbers or banned wording, at most one per field and three in all.
+    Anything else falls back to the fixed questions (AGENTS.md rule 5)."""
+    fields = [q.field for q in iv.questions]
+    problems = []
+    if not 1 <= len(iv.questions) <= MAX_QUESTIONS or len(set(fields)) != len(fields):
+        problems.append("question count or duplicate fields")
+    for q in iv.questions:
+        problems += check_model_text(q.text, []).problems
+    if problems:
+        return S.AuditInterview(source="mock", questions=MOCK_QUESTIONS,
+                                note="model questions failed checks: " + "; ".join(problems))
+    return iv
+
+
+@router.post("/api/audit-drafts", response_model=S.AuditDraftOut, status_code=201)
+def create_draft(file: UploadFile = File(...)):
+    """Step 1 of the Muse interview: store the clip and let the model ask what it needs to know."""
+    did = new_id("drf")
+    video = _save_upload(file, UPLOAD_ROOT / "audits" / did)
+    store.audit_drafts[did] = str(video)
+    try:
+        iv = checked_interview(get_hooks().interview_audit(video))
+    except Exception as e:  # a model failure must not block the audit
+        iv = S.AuditInterview(source="mock", questions=MOCK_QUESTIONS, note=f"model unavailable: {type(e).__name__}")
+    return {"draft_id": did, "video_url": f"/media/audits/{did}/{video.name}", "interview": iv}
+
+
 @router.post("/api/audits", response_model=S.AuditOut, status_code=201)
 def create_audit(
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
+    draft_id: str | None = Form(None),
+    slow_motion: bool | None = Form(None),
     t_start: float = Form(...),
     t_end: float = Form(...),
     camera_static: bool = Form(...),
@@ -50,19 +96,25 @@ def create_audit(
     if length_m is not None and length_m <= 0:
         raise HTTPException(422, "length_m must be positive")
 
+    if (file is None) == (draft_id is None):
+        raise HTTPException(422, "send either a file or a draft_id")
     aid = new_id("aud")
-    d = UPLOAD_ROOT / "audits" / aid
-    d.mkdir(parents=True, exist_ok=True)
-    suffix = "".join(c for c in (file.filename or "").rsplit(".", 1)[-1:] if c.isalnum())[:5] or "bin"
-    video = d / f"video.{suffix}"
-    with video.open("wb") as out:
-        out.write(file.file.read())
+    if draft_id is not None:
+        if draft_id not in store.audit_drafts:
+            raise HTTPException(404, f"draft {draft_id} not found")
+        video = Path(store.audit_drafts.pop(draft_id))
+        d = video.parent
+        media = f"/media/audits/{draft_id}"
+    else:
+        d = UPLOAD_ROOT / "audits" / aid
+        video = _save_upload(file, d)
+        media = f"/media/audits/{aid}"
 
     rec = {
         "audit_id": aid, "created_at": now(), "assumed_model": assumed_model,
         "t_start": t_start, "t_end": t_end, "camera_static": camera_static, "object_size_m": object_size_m,
         "length_m": length_m,
-        "video_url": f"/media/audits/{aid}/{video.name}", "overlay_url": None,
+        "slow_motion": slow_motion, "video_url": f"{media}/{video.name}", "overlay_url": None,
         "track_source": "frame_diff", "verdict": "insufficient_data", "reasons": [], "numbers": {},
         "points": [], "ghost_points": [], "nearest_body": None, "events": [], "limits": LIMITS,
     }
@@ -78,7 +130,7 @@ def create_audit(
     pts, sizes = track_with_sizes(frames, fps, t_start)
     size_px = sorted(sizes)[len(sizes) // 2] if sizes else None
     save_overlay(frames, pts, t_start, fps, str(d / "overlay.png"))
-    rec["overlay_url"] = f"/media/audits/{aid}/overlay.png"
+    rec["overlay_url"] = f"{media}/overlay.png"
     rec["points"] = [[t, x, y] for t, x, y in pts]
     by_t = {round(t, 4): (x, y) for t, x, y in pts}
     dets = [Detection(t_start + i / fps, by_t.get(round(t_start + i / fps, 4))) for i in range(len(frames))]
@@ -98,6 +150,12 @@ def create_audit(
                               "from the camera, which this 2D check cannot judge"]
             store.audits[aid] = rec
             return rec
+
+    if slow_motion and assumed_model in ("free_flight", "pendulum"):
+        rec["reasons"] = ["the user says the clip is slow motion, so its timing is not real time and "
+                          f"the {assumed_model} timing check cannot be judged"]
+        store.audits[aid] = rec
+        return rec
 
     if assumed_model == "pendulum":
         try:

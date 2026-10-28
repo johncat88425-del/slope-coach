@@ -4,6 +4,7 @@ export type Language='en'|'zh';
 const Context=createContext<Language>('en');
 export const LanguageProvider=Context.Provider;
 export const dictionary:Record<string,string>={
+'對照展示':'Compare outcomes',
 '與單擺模型一致':'Consistent with the pendulum model','與單擺模型不一致':'Inconsistent with the pendulum model','與單擺模型無法判斷':'Insufficient data for the pendulum model',
 '與彈跳模型一致':'Consistent with the bounce model','與彈跳模型不一致':'Inconsistent with the bounce model','與彈跳模型無法判斷':'Insufficient data for the bounce model',
 
@@ -32,6 +33,7 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Three outcomes, one set of rules':'同一套規則，三種結果','Compare three outcomes →':'比較三種結果 →','SYNTHETIC — development fixtures made from program-drawn moving squares. These are not real experiment footage or evidence of real-video accuracy.':'SYNTHETIC：程式繪製移動方塊的開發測試素材，並非實拍實驗或真實影片準確度的證據。','Consistent, inconsistent and insufficient-data results are shown together. Saved backend results are replayed without network calls or a new analysis.':'一致、不一致與無法判斷一起展示；離線重播後端結果，不呼叫網路或重新分析。',
 'Physics card':'物理名片','Download physics card PNG':'下載物理名片 PNG','Preparing PNG…':'正在準備 PNG…','Synthetic development fixture — not real footage.':'合成開發測試素材，並非實拍影片。','Muse Spark headline: pending — no model text supplied':'Muse Spark 標題待提供：目前沒有模型說明。','Model-relative result only. This card does not establish provenance or cause.':'結果只針對假設模型，不確定影片來源或因果。',
 
 'Pendulum':'單擺','Pendulum length (metres, optional)':'擺長（公尺，選填）','Pendulum length must be positive and finite; leave blank if unknown.':'擺長必須是大於零的有限數字；未知請留空。',
