@@ -37,7 +37,7 @@ export function TrialEditor({ trial, videoUrl, api, run, refresh }: Props) {
     }
     return <Localize>{<div className="empty"><h3>試驗 {trial.trial_id} · {trial.kind}</h3><p>校準 v{trial.calibration_version}；已確認起滑：{trial.t0_s ?? '尚無'} s；來源：<ModelSource source={trial.t0_source ?? 'unknown'}/>；手動影格：{trial.manual_frames}</p>
     {videoUrl ? <div onClick={record}><video ref={video} controls={!manual} src={videoUrl} onError={() => setSuggestion('影片無法載入。請確認後端媒體仍存在，或重新選擇原片恢復預覽。')}/></div> : <p>此紀錄沒有可讀取的影片網址，請重新選取原片恢復預覽。</p>}
-    <button onClick={() => void run(async () => { try {
+    <button data-testid="trial-track" onClick={() => void run(async () => { try {
         await api.track(trial.trial_id);
         await refresh();
     }
@@ -58,12 +58,12 @@ export function TrialEditor({ trial, videoUrl, api, run, refresh }: Props) {
         } }}>目前影格標為缺失</button>
       <button disabled={!detections.length} onClick={() => { setSaved(false); setDetections(detections.slice(0, -1)); }}>撤銷最後一筆</button>
       <p>{detections.length} 筆待保存{saved ? '（已送至後端）' : ''}</p>
-      <button disabled={!detections.length || saved} onClick={() => void run(async () => { await api.detections(trial.trial_id, detections); setSaved(true); await refresh(); })}>保存全部手動標記</button>
+      <button data-testid="detections-save" disabled={!detections.length || saved} onClick={() => void run(async () => { await api.detections(trial.trial_id, detections); setSaved(true); await refresh(); })}>保存全部手動標記</button>
       <details><summary>座標與來源</summary><pre>{JSON.stringify(detections, null, 2)}</pre></details>
     </>}
     <div className="fields"><label>使用者確認的起滑時刻（秒）<input type="number" step="any" min="0" value={t0} onChange={e => setT0(e.target.value)}/></label></div>
-    <button onClick={() => void run(async () => { const s = await api.releaseSuggestion(trial.trial_id); setSuggestion(`${sourceLabel(s.source)}：候選 ${s.candidate_t0_s ?? '尚無'} s。${s.reason}。需你確認，不會自動採用。`); })}>取得起滑建議</button>
-    <button disabled={!t0.trim() || !Number.isFinite(Number(t0)) || Number(t0) < 0} onClick={() => void run(async () => { await api.release(trial.trial_id, Number(t0)); await refresh(); })}>確認起滑時刻</button>
+    <button data-testid="release-suggest" onClick={() => void run(async () => { const s = await api.releaseSuggestion(trial.trial_id); setSuggestion(`${sourceLabel(s.source)}：候選 ${s.candidate_t0_s ?? '尚無'} s。${s.reason}。需你確認，不會自動採用。`); })}>取得起滑建議</button>
+    <button data-testid="release-confirm" disabled={!t0.trim() || !Number.isFinite(Number(t0)) || Number(t0) < 0} onClick={() => void run(async () => { await api.release(trial.trial_id, Number(t0)); await refresh(); })}>確認起滑時刻</button>
     {suggestion && <p role="status">{suggestion}</p>}
     <details><summary>後端追蹤資料（{trial.samples.length} 筆）</summary><div className="table-wrap"><table><thead><tr><th>影片時間 s</th><th>沿面位置 m</th><th>品質</th><th>來源</th></tr></thead><tbody>{trial.samples.map((s, i) => <tr key={i}><td>{s.t_s}</td><td>{s.s_m ?? '缺失'}</td><td>{s.quality}</td><td><ModelSource source={s.source} kind="tracking"/></td></tr>)}</tbody></table></div></details>
   </div>}</Localize>;

@@ -52,3 +52,8 @@ test('audit links round-trip encoded IDs, resolve audit route and use read-only 
  const html=rawRender(createElement(AuditResult,{audit:fixture('consistent')}));assert.match(html,/href="#\/audits\/ui-fixture"/);
  assert.doesNotMatch(rawRender(createElement(AuditResult,{audit:fixture('consistent'),replay:true})),/Open result link/);
 });
+
+test('stable test selectors survive language switching and identify audit controls and result blocks',()=>{
+ for(const lang of ['en','zh']){const page=rawRender(createElement(LanguageProvider,{value:lang},createElement(AuditPage,{api:createApi('',async()=>Response.json({}))})));for(const id of ['audit-submit','audit-load','audit-import-json','audit-video-input','audit-model','audit-id'])assert.match(page,new RegExp('data-testid="'+id+'"'));
+ const result=rawRender(createElement(LanguageProvider,{value:lang},createElement(AuditResult,{audit:fixture('consistent')})));for(const id of ['audit-result','audit-verdict','audit-events','audit-export-json','audit-export-markdown'])assert.match(result,new RegExp('data-testid="'+id+'"'));}
+});
