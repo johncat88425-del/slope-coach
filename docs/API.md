@@ -39,7 +39,7 @@
 
 | 步驟 | 方法與路徑 | 送出 | 回傳 |
 | --- | --- | --- | --- |
-| 建立稽核 | `POST /api/audits` | multipart：`file`（影片）、`t_start`、`t_end`（秒，由使用者確認）、`camera_static`（true/false）、`assumed_model`（目前只有 `free_flight`）、`object_size_m`（選填，使用者提供） | `AuditOut` |
+| 建立稽核 | `POST /api/audits` | multipart：`file`（影片）、`t_start`、`t_end`（秒，由使用者確認）、`camera_static`（true/false）、`assumed_model`（`free_flight` 或 `bounce`）、`object_size_m`（選填，使用者提供） | `AuditOut` |
 | 讀取稽核 | `GET /api/audits/{aid}` | | `AuditOut` |
 
 `AuditOut` 的欄位：
@@ -51,6 +51,8 @@
 - `events[]`：物體持續性事件（消失、大小跳動、位置跳動），附發生時間。
 - `track_source`：目前是 `frame_diff`。接上 SAM 後是 `sam`，畫面要標明「由 SAM 3.1 產生」。
 - `limits[]`：已知限制，畫面要顯示。
+- 物體大小沿軌跡變化超過 30%（`numbers.size_trend`），表示物體朝鏡頭或遠離鏡頭移動，結果會是 `insufficient_data`。
+- `bounce` 模式會回傳 `rebound_ratio_k`，代表第 k 次反彈高度除以前一次高度。大於 1 加上容差就判不一致。
 
 ## 欄位說明
 
