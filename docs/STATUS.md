@@ -60,7 +60,7 @@
 - [x] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS — commit 4a163b7
 - [x] T64 Codex：**鬼影對照**（特色功能，demo 主畫面）。在影片和軌跡圖上，把 `ghost_points` 畫成半透明的「鬼影球」，跟著影片時間和真的物體一起移動。真的物體用實線，鬼影用虛線，加上圖例「如果遵守 9.81 m/s² 會在這裡」。差距大的地方標出最大差距的像素數（數字由前端從兩組點相減，只做顯示，不做判定） — commit 676467f
 - [x] T71 Codex：「檢查影片」加入單擺選項：選 pendulum 時顯示「擺長（公尺，可留空）」欄位並送 `length_m`，結果顯示 `period_s`、`implied_length_m`、`predicted_period_s`；離線重播也要接受 pendulum — commit c6ce3d4
-- [x] T65 Codex：**物理名片**（特色功能）。把一次稽核結果做成一張可以下載成 PNG 的卡片，內容包括疊加圖縮圖、判定、`nearest_body` 和 `g_vs_earth`（例如「重力像在月球：地球的 0.26 倍」）、`implied_time_factor`（「影片大約是真實速度的 0.5 倍」）、`implied_object_size_m`（「如果這是真的，這顆球直徑 2.4 公尺」）、`g_verdict_robust` 為 0 時的提醒、limits，以及「由 Muse Spark 撰寫說明」的標示。標題位置先放 T67 的空位 — commit 待回填（本次程式提交）
+- [x] T65 Codex：**物理名片**（特色功能）。把一次稽核結果做成一張可以下載成 PNG 的卡片，內容包括疊加圖縮圖、判定、`nearest_body` 和 `g_vs_earth`（例如「重力像在月球：地球的 0.26 倍」）、`implied_time_factor`（「影片大約是真實速度的 0.5 倍」）、`implied_object_size_m`（「如果這是真的，這顆球直徑 2.4 公尺」）、`g_verdict_robust` 為 0 時的提醒、limits，以及「由 Muse Spark 撰寫說明」的標示。標題位置先放 T67 的空位 — commit dbf8587
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
