@@ -41,13 +41,15 @@
 | T15 | 拒判情境：遮擋、起滑不明、追蹤跳動 | Claude | 完成 | 開頭被遮住時不判斷初速度並說明原因；偏離路徑的點不納入；4 個情境測試 |
 | T16 | Spark 對 Wonder A/B（同一組開發片） | Muse | 待辦 | 10/31 |
 | T17 | 影片預測疊加（限 2 小時） | Codex | 待辦 | 核心穩定後才做 |
-| T18 | 尺寸核對（第二種驗證） | 任何人 | 待辦 | 時間不夠就砍 |
+| T18 | 尺寸核對（第二種驗證） | Muse | 待辦 | 時間不夠就砍 |
 | T19 | 拍完 24 段片 + 人工標註（8 開發 / 6 校準 / 10 保留） | john | 待辦 | 標註不可用 AI |
 | T20 | 部署、README、demo 錄影 | Antigravity / john | 待辦 | |
 | T24 | 語音口述設定：Voice Transcribe 轉文字 → Spark 抽出欄位 → 使用者確認 | Muse | 待辦 | T11 之後做；數字一律要使用者確認 |
-| T25 | 第二個實驗：單擺（沿用追蹤，換 physics/experiments/pendulum.py） | Claude | 待辦 | 10/30 循環跑通後才可開始，否則砍 |
+| T25 | 第二個實驗：單擺（沿用追蹤，換 physics/experiments/pendulum.py） | Muse（物理公式由 Claude 審查） | 待辦 | 10/30 循環跑通後才可開始，否則砍 |
 | T26 | 後端資料持久化（重啟不清空） | Claude | 完成 | 每次寫入後存 data/store.pkl；設 SLOPE_STORE_PATH="" 可關閉 |
 | T27 | 前端照 docs/API.md 接上後端（見下方「Claude 審查 Codex T08/T09」） | Codex | 待辦 | 先 merge main |
+| T28 | 結果說明層：Spark 讀 ComparisonOut，寫給使用者的中英文說明，先過 backend/output_check.check_model_text() 才顯示 | Muse | 待辦 | T11 之後；畫面標明「由 Muse Spark 產生」 |
+| T29 | 在 backend 把 MockHooks 換成 MetaHooks（check_scene、track_slider、suggest_release_time） | Muse | 待辦 | T05 完成後馬上做；介面見 backend/model_hooks.py |
 | T21 | 競品實測比較：PhET、Video2World、直接問 Muse | Manus | 待辦 | 成果放 docs/research/competitors.md |
 | T22 | 使用者測試計畫：招募訊息、任務腳本、記錄表 | Manus | 待辦 | 11/02 要用，10/31 前完成 |
 | T23 | 三分鐘 demo 分鏡與英文提交文字草稿 | Manus | 待辦 | 只寫已完成的功能，11/03 依實際結果修改 |
@@ -87,6 +89,7 @@
 | 10/27 | 產品內只呼叫 Meta 模型 | 比賽規則與工具運用分數 |
 | 10/27 | 所有測量數字由 `physics/` 程式算，模型不碰數字 | 可重算、可檢查 |
 | 10/27 | 保留斜坡核心，定位改為「動手之前先預測」的實驗教練；加語音口述（T24）；單擺（T25）為延伸 | john 選定：故事更大、多用一種 Meta 模型，又不犧牲可驗證性 |
+| 10/28 | Muse 優先：產品裡的理解、判斷、說明都交給 Meta 模型，新的開發任務優先給 Muse Code；畫面與報告標明哪些由 Muse 產生 | john：要得名得主要用 Muse（評分有 Meta 工具運用一項） |
 | 10/28 | 拒判門檻（開發值，會用真實影片調整）：可用影格 ≥ 80%（不阻擋，只提示）；起滑後至少 6 個可用點；擬合殘差 RMS ≤ 10 mm；前 20% 路程至少 3 點才可判斷初速度；差異門檻為到達時間相對誤差 15% 或基準變異的兩倍，取較大者 | PLAN 第二十五節：拒判不能只看可追蹤比例 |
 | 10/28 | 下一次驗證的候選由 `physics/diagnose.py` 依數字產生（release_check / dimension_check），模型只能從中選擇與說明 | 模型不碰數字，也不能自創驗證 |
 | 10/27 | Muse Code 預設用 `muse-spark-1.3`，不用 Wonder 寫程式 | Wonder 每百萬輸出 token 20 美元，寫程式很快燒掉額度 |
