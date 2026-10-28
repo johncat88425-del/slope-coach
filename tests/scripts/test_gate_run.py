@@ -41,3 +41,30 @@ def test_gate_flags_wrong_gravity_and_passes_real_one(tmp_path):
     assert real["g_apparent"] == pytest.approx(9.81, rel=0.15)
     assert slow["result"] == "inconsistent" and slow["time_factor"] == pytest.approx(2.0, rel=0.15)
     assert run_clip(row("real.mp4", static="no"), tmp_path)["result"] == "refused"
+
+
+def _r(clip, source, result, track_ok="", g=None, tilt=0.0, rms=0.0, frac=1.0):
+    return {"clip": clip, "source": source, "result": result, "track_ok": track_ok, "g_apparent": g,
+            "tilt_deg": tilt, "rms_over_travel": rms, "tracked_fraction": frac}
+
+
+def test_gate_summary_waits_for_overlay_checks_then_passes():
+    from scripts.gate_run import gate_summary, summary_markdown
+    rows = [_r("a", "own", "consistent", g=9.7), _r("b", "own", "consistent", g=10.1),
+            _r("c", "own", "refused"), _r("d", "generated", "inconsistent", g=3.0)]
+    s = gate_summary(rows)
+    assert (s["q1"], s["q2"], s["q3"]) == ("pending", "pending", "pass")
+    for r in rows:
+        r["track_ok"] = "yes"
+    s = gate_summary(rows)
+    assert (s["q1"], s["q2"]) == ("pass", "pass")
+    assert s["counts"]["own"]["refused"] == 1 and "d" in summary_markdown(s)
+
+
+def test_gate_summary_rejects_weak_anomaly_and_too_many_refusals():
+    from scripts.gate_run import gate_summary
+    # g off by 30% would vanish with a 30% size error, so it is not a clear anomaly
+    rows = [_r("x", "generated", "inconsistent", track_ok="yes", g=12.8),
+            _r("y", "generated", "refused"), _r("z", "generated", "refused")]
+    s = gate_summary(rows)
+    assert s["q2"] == "fail" and s["q3"] == "fail" and s["q1"] == "pending"
