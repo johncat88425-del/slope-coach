@@ -33,6 +33,9 @@ class FlightFit:
     travel_px: float
     n: int
     t_span_s: float
+    t0_s: float = 0.0  # time of the first tracked point; positions below are at t0_s
+    x0_px: float = 0.0
+    y0_px: float = 0.0
 
     @property
     def a_px_s2(self) -> float:
@@ -70,6 +73,7 @@ def fit_flight(points: list[tuple[float, float, float]]) -> FlightFit:
         vx_px_s=float(coefs[0][1]), vy_px_s=float(coefs[1][1]),
         a_stderr_px_s2=a_se, rms_residual_px=float(np.sqrt(np.mean(r**2))),
         travel_px=travel, n=len(t), t_span_s=span,
+        t0_s=float(arr[0, 0]), x0_px=float(coefs[0][0]), y0_px=float(coefs[1][0]),
     )
 
 
@@ -161,3 +165,30 @@ def check_bounces(points: list[tuple[float, float, float]], *, tolerance: float 
         for k, (h0, h1) in enumerate(zip(heights, heights[1:])) if h1 > h0 * (1 + tolerance)
     )
     return BounceCheck("inconsistent" if reasons else "consistent", reasons, tuple(heights), e)
+
+
+# Surface gravity in m/s^2, used only to put an apparent g into words a viewer can picture.
+# Venus, Saturn and Neptune are left out: they sit within measurement error of Earth.
+BODIES = (("Pluto", 0.62), ("Moon", 1.62), ("Mars", 3.71), ("Earth", 9.81), ("Jupiter", 24.79))
+
+
+def nearest_body(g_m_s2: float) -> tuple[str, float]:
+    """The body whose surface gravity is closest to g on a log scale, and g as a multiple of Earth's."""
+    if g_m_s2 <= 0:
+        raise PhysicsInputError("g must be positive")
+    name = min(BODIES, key=lambda b: abs(math.log(g_m_s2 / b[1])))[0]
+    return name, g_m_s2 / G
+
+
+def ghost_track(fit: FlightFit, times: list[float], m_per_px: float) -> list[tuple[float, float, float]]:
+    """Where the object would be at each time if it left the same point with the same velocity but
+    fell at exactly G straight down the image. Drawn next to the real track it shows the gap between
+    what the clip shows and what constant-g flight predicts. Needs a user-confirmed scale."""
+    if m_per_px <= 0:
+        raise PhysicsInputError("m_per_px must be positive")
+    a = G / m_per_px
+    out = []
+    for t in times:
+        dt = t - fit.t0_s
+        out.append((t, fit.x0_px + fit.vx_px_s * dt, fit.y0_px + fit.vy_px_s * dt + 0.5 * a * dt * dt))
+    return out

@@ -38,6 +38,8 @@
 - [ ] T45 Muse：稽核代理。Spark 用工具呼叫，從固定清單（free_flight、bounce、persistence）選要跑哪些檢查，並說明理由。數字只來自工具輸出，理由先過 `check_model_text()`。這是「創意使用 Meta AI」的主要展示點
 - [ ] T46 Muse：Spark 準確度評估腳本。對 `data/gate/manifest.csv` 裡的影片，比較 Spark 建議的時間窗和物體，跟 john 的人工標註差多少，結果寫進 STATUS。只能送沒有人臉的影片
 - [ ] T47 Muse：英文版的說明文字（給評審看），同樣要過 `check_model_text()`
+- [ ] T66 Muse：**Muse 偵訊**（特色功能）。下判定之前，Spark 先看影片的幾張畫面，向使用者提出最多 3 個問題，例如「有沒有開慢動作？」「鏡頭有沒有動？」「這顆球大概多大？」。使用者的回答變成確認過的輸入（`camera_static`、`object_size_m`、時間窗），Spark 不能自己填數字。畫面像一段問答，標明「由 Muse Spark 提問」
+- [ ] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。Spark 只寫 `{g_vs_earth:2}`、`{nearest_body}` 這種欄位位置，再交給 `backend.output_check.fill_numbers()` 填入數字並檢查，不通過就不顯示。不准出現真、假、AI 生成等字眼
 
 **Codex**（PR #4 合併後才開始，照順序做）
 - [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
@@ -56,6 +58,9 @@
 - [x] T61 Codex：稽核結果的網址可以直接打開（`#/audits/:id`，用 `GET /api/audits/{id}`） — commit 977ccae
 - [x] T62 Codex：demo 品質：上傳進度、處理中狀態、422／404／網路錯誤的友善訊息（照後端的 reason 顯示，不改寫數字） — commit 3a5d622
 - [x] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS — commit 4a163b7
+- [ ] T64 Codex：**鬼影對照**（特色功能，demo 主畫面）。在影片和軌跡圖上，把 `ghost_points` 畫成半透明的「鬼影球」，跟著影片時間和真的物體一起移動。真的物體用實線，鬼影用虛線，加上圖例「如果遵守 9.81 m/s² 會在這裡」。差距大的地方標出最大差距的像素數（數字由前端從兩組點相減，只做顯示，不做判定）
+- [ ] T71 Codex：「檢查影片」加入單擺選項：選 pendulum 時顯示「擺長（公尺，可留空）」欄位並送 `length_m`，結果顯示 `period_s`、`implied_length_m`、`predicted_period_s`；離線重播也要接受 pendulum
+- [ ] T65 Codex：**物理名片**（特色功能）。把一次稽核結果做成一張可以下載成 PNG 的卡片，內容包括疊加圖縮圖、判定、`nearest_body` 和 `g_vs_earth`（例如「重力像在月球：地球的 0.26 倍」）、`implied_time_factor`（「影片大約是真實速度的 0.5 倍」）、`implied_object_size_m`（「如果這是真的，這顆球直徑 2.4 公尺」）、`g_verdict_robust` 為 0 時的提醒、limits，以及「由 Muse Spark 撰寫說明」的標示。標題位置先放 T67 的空位
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -65,6 +70,7 @@
 - [ ] T44 Antigravity：README 的安裝與使用說明（英文），只寫已經能用的功能
 - [ ] T52 Antigravity：GitHub Actions CI：每個 PR 自動跑 `pytest` 和 `npm test`（需要安裝 ffmpeg）
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
+- [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
 - [ ] T54 Antigravity：上傳安全：檔案大小上限 200 MB、只收影片格式、每個 IP 每天最多 20 次稽核。寫成提案放進「待 john 決定」，Claude 審查後實作
 
 **Manus**（不寫程式）
@@ -82,6 +88,9 @@
 - [x] T56 Claude：透視檢查：物體大小沿軌跡變化超過 30% 時拒判（`physics/persistence.size_trend`）
 - [x] T57 Claude：單擺 physics 插件 `physics/experiments/pendulum.py`（週期、等時性、由週期推算擺長），給稽核和教練兩條路共用；尚未接到 API
 - [x] T58 Claude：驗證報告產生器：`gate_run` 的輸出最後會附上「## Summary」，列出各來源的一致、不一致、資料不足、拒判支數，並逐題算出三個關卡問題是 pass、fail 還是 pending（等 john 看疊加圖）。所有影片都列入，不挑片
+- [x] T69 Claude：鬼影軌跡與星球比喻的後端（`physics/experiments/freefall.ghost_track`、`nearest_body`，API v0.3 的 `ghost_points`、`nearest_body`），以及尺寸誤差 ±30% 的穩健度（`g_apparent_low/high`、`g_verdict_robust`）
+- [x] T70 Claude：單擺接上 `/api/audits`（`assumed_model=pendulum`，可選 `length_m`），見 docs/API.md v0.3
+- [x] T72 Claude：模型文字檢查加上真偽字眼黑名單（真／假影片、AI 生成、deepfake 等一律擋下），以及 `fill_numbers()`：模型只寫欄位位置，數字由程式填入（給 T67、T28 用）
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
 **john**
@@ -279,3 +288,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - ID 不隨語言切換；其餘欄位請用可見 label／role。沒有結果或未達操作前提的元件不會出現在 DOM。
 
 - 10/27 Codex T63：主要斜坡與稽核操作、導覽、狀態與結果加入穩定 data-testid，清單見本檔；測試確認英／中文不變。npm 44 pass、build pass、pytest 53 pass/7 skip（ffmpeg 等環境依賴），尚未重做瀏覽器端到端驗收。T59–T63 均只改前端與 STATUS，沒有改後端契約或物理門檻。
+
+- 10/28 02:30 合併 Codex PR #19（T59–T63），合併後才補做審查：pytest 61、npm 44、build 都通過，沒有違規字眼，前端沒有自己算物理。john 要求增加特色。Claude 完成 T69（鬼影軌跡、星球比喻、尺寸誤差穩健度），並新增特色任務：Codex 的 T64 鬼影對照、T65 物理名片，Muse 的 T66 Muse 偵訊、T67 名片標題，Antigravity 的 T68。
+- 10/28 Claude 完成 T70：稽核支援單擺，新增 Codex T71（畫面加上單擺選項）。
+- 10/28 02:35 例行巡查：Muse、Antigravity 仍沒有推任何分支；Codex 沒有新分支（T64、T65、T71 待做）。Claude 完成 T72。
