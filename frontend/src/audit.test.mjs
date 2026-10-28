@@ -1,4 +1,5 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {createElement} from 'react';import {renderToStaticMarkup as render} from 'react-dom/server';
+import {LanguageProvider} from '../.test-dist/i18n.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {createElement} from 'react';import {renderToStaticMarkup as rawRender} from 'react-dom/server';
 import {AuditPage,AuditResult} from '../.test-dist/AuditPage.js';import {createApi} from '../.test-dist/api.js';import {validateAuditInput} from '../.test-dist/audit.js';
 const fixture=verdict=>({audit_id:'ui-fixture',created_at:'2026-10-27',assumed_model:'free_flight',t_start:0,t_end:1,camera_static:true,object_size_m:null,video_url:'/media/test/clip.mp4',overlay_url:null,track_source:'frame_diff',verdict,reasons:['fixture reason'],numbers:{sentinel:123.456789},points:[],events:[],limits:['fixture limitation']});
 test('all three verdicts render as model-relative outcomes with evidence and limits',()=>{
@@ -16,3 +17,5 @@ test('audit upload sends explicit window/model/camera and does not invent size',
  assert.equal(path,'/api/audits');assert.equal(body.get('assumed_model'),'free_flight');assert.equal(body.get('camera_static'),'false');assert.equal(body.get('t_start'),'0');assert.equal(body.get('t_end'),'2');assert.equal(body.has('object_size_m'),false);
 });
 test('window and optional dimension validation rejects missing or non-finite inputs',()=>{assert.deepEqual(validateAuditInput('0','2',''),[]);for(const args of [['','2',''],['1','1',''],['-1','2',''],['0','Infinity',''],['0','2','0'],['0','2','NaN']])assert.ok(validateAuditInput(...args).length)});
+
+function render(node){return rawRender(createElement(LanguageProvider,{value:'zh'},node))}
