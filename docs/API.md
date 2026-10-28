@@ -70,3 +70,16 @@
 ## Meta 模型接入點（給 Muse Code）
 
 `backend/model_hooks.py` 定義了 `ModelHooks` 介面，共三個方法：`check_scene`、`track_slider`、`suggest_release_time`。預設的 `MockHooks` 不連網路。`meta_client` 寫好後，在啟動時呼叫 `set_hooks(MetaHooks())` 替換掉它。選下一次驗證的代理（T11）只能從 `ComparisonOut.evidence` 的候選中挑一個，並把理由放進 `model_rationale`。
+
+### Muse 偵訊（v0.4，T78）
+
+兩個步驟，舊的單一步驟 `POST /api/audits`（直接送 file）仍然可用。
+
+1. `POST /api/audit-drafts`（multipart：`file`）→ `201 {draft_id, video_url, interview}`
+    - `interview.source`：`model`（由 Muse Spark 提問）或 `mock`（固定問題）。模型沒接上、失敗，或問題沒通過檢查時，都會是 `mock`，原因寫在 `interview.note`。
+    - `interview.questions[]`：最多 3 題，每題是 `{field, text}`。`field` 是 `camera_static`、`slow_motion`、`object_size_m`、`time_window`、`assumed_model` 或 `length_m`，代表這題的答案要填到哪個欄位。`text` 不准含數字（10 以下的整數除外），也不准有真偽、因果字眼。
+2. 使用者回答後，呼叫 `POST /api/audits`，用 `draft_id` 取代 `file`，再加上使用者確認過的欄位。新欄位 `slow_motion`（布林）：使用者說是慢動作時，`free_flight` 和 `pendulum` 會回 `insufficient_data`，因為時間不是真實時間。
+    - 一個 `draft_id` 只能用一次，再用會回 404。`file` 和 `draft_id` 必須剛好送一個，否則回 422。
+- 前端顯示問題時要標明「由 Muse Spark 提問」（`source=model`）或「固定問題」（`source=mock`）。
+- 模型只負責提問，答案（數字、是否固定、是否慢動作）一律由使用者輸入。
+
