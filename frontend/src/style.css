@@ -6,3 +6,8 @@ fieldset{border:1px solid #dce5df;border-radius:5px;margin:20px 0;padding:16px;m
 
 .video-overlay{position:relative}.video-overlay video{display:block;margin:0;width:100%;height:auto}.video-overlay svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .language-switch{display:flex;justify-content:flex-end;padding:8px 5%;background:#fff}.language-switch label{display:flex;gap:12px;align-items:center}.language-switch select{width:auto;margin:0}
+
+/* Keep forms and evidence readable at narrow widths and with keyboard zoom. */
+main>*{min-width:0}section,article,fieldset{overflow-wrap:anywhere}input,select,button{max-width:100%}input[type=file]{width:100%;min-height:44px}button,.next,nav a,select{min-height:44px}input[type=checkbox]{width:20px;height:20px;vertical-align:middle;margin:12px 8px 12px 0}label{line-height:1.6}a{color:#214f45}select:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:3px solid #007e91;outline-offset:3px}.skip-link{position:absolute;left:12px;top:-100px;padding:12px;background:#fff;z-index:100}.skip-link:focus{top:12px}summary{min-height:44px;padding:10px;cursor:pointer}.table-wrap:focus-visible{outline:3px solid #007e91}svg{max-width:100%;height:auto}
+@media(max-width:480px){main{padding:0 12px;margin:16px auto}section{padding:16px}h2{font-size:24px}header{padding:16px}nav a{flex:1 1 45%;border:1px solid #dae2dc}.fields{display:block}.fields label{display:block;min-width:0}button,.next{margin:10px 6px 0 0}figure{margin:16px 0}.language-switch{padding:8px 16px}}
+@media(forced-colors:active){svg path,svg polyline{stroke:CanvasText}svg circle{fill:CanvasText}button,nav a{border:1px solid ButtonText}}
