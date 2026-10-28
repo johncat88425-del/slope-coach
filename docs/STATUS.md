@@ -33,7 +33,7 @@
 - [ ] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）
 
 **Codex**（PR #4 合併後才開始）
-- [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 待回填（本次程式提交）
+- [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
 - [ ] T36b Codex：軌跡疊加圖與 2D 軌跡圖元件（實測點用橘色，有缺口的地方不連線）
 - [ ] T36c Codex：所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」
 
