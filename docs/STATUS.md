@@ -324,3 +324,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T80：尺寸／長度改為三位有效數字（0.0670、2.40、0.250），只改顯示字串，原始匯出不變。補極小尺寸測試；npm 54 pass、build pass。
 - 10/28 Codex T81：Guided demo 依序導覽既有首頁→偵訊→合成結果鬼影→物理名片→三結果對照，Back／Next／Exit 可操作；英文說明不冒充模型輸出、不另造素材。testid guided-demo/guided-next。npm 55 pass、build pass；瀏覽器捲動驗收待補。
 - 10/28 Codex T82：英文判定統一 with the assumed model，PNG 判定改英文；移除自有畫面的 fixture／real 與問題欄位代碼、縮短按鈕。SYNTHETIC、mock 來源仍明示；原始後端原因／問題／使用者文字不改寫。補英文呈現檢查；npm 56 pass、build pass。
+
+- 10/28 Codex 工作總結：T80–T82 已完成並推送，PR #30 待審。再次 pull main 後沒有新增 Codex 未勾項。npm 56 pass、build pass、pytest 56 pass/13 skip（環境依賴）。導覽捲動與視覺驗收仍待 Antigravity；未推 main。
