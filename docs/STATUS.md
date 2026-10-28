@@ -1,6 +1,7 @@
 # STATUS：共享工作檔（所有資料都在這裡）
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
+> **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
 > 最後更新：2026-10-28 01:30Z（Claude）
 
 ## 一句話現況
@@ -19,6 +20,42 @@
 | **Antigravity** | T02 → T14 | 建立開發環境（requirements.txt、`scripts/dev.sh`）。用 `python -m scripts.seed_demo --case pushed` 建立合成實驗，跑一次斜坡流程的端到端測試並截圖。 |
 | **Manus** | T21（改題）→ T23 | 競品研究改查「影片物理合理性」：VideoPhy、Physics-IQ、Tracker，以及有沒有一般人可用的工具，確認我們的差異。demo 草稿要寫兩個版本（轉向或不轉向），未完成的部分寫 [TBD]。 |
 | **john** | T33、合併 PR #4、Discord 確認 | 拍片和生成影片（見下方關卡素材）；到 https://github.com/johncat88425-del/slope-coach/pull/4 按「Ready for review」再按「Merge」；在 Discord 問「用其他工具生成的影片當測試素材可不可以」。 |
+
+## 完成表（每做完一件就打勾，附 commit；Claude 每隔一段時間來看）
+
+格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
+
+**Muse**
+- [ ] T05 Muse：`meta_client/`（Spark、SAM 3.1、花費計數與 120 美元上限、mock 測試）
+- [ ] T29 Muse：後端接上 MetaHooks（沒有金鑰時退回 Mock）
+- [ ] T34 Muse：Spark 建議運動片段 `suggest_motion_segment`（只回傳建議，不回傳測量數字，要通過 schema 檢查）
+- [ ] T28 Muse：結果說明層（先過 `check_model_text()`，畫面標明「由 Muse Spark 產生」）
+- [ ] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）
+
+**Codex**（PR #4 合併後才開始）
+- [ ] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url`
+- [ ] T36b Codex：軌跡疊加圖與 2D 軌跡圖元件（實測點用橘色，有缺口的地方不連線）
+- [ ] T36c Codex：所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」
+
+**Antigravity**
+- [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo）
+- [ ] T14 Antigravity：用 `seed_demo` 跑斜坡流程的端到端測試，截圖放 `docs/screenshots/`，問題寫進「缺什麼」
+
+**Manus**（不寫程式）
+- [ ] T21 Manus：影片物理合理性競品研究（附來源）
+- [ ] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）
+
+**Claude**
+- [x] T31 拋體檢查、T32 關卡工具、T35 彈跳與持續性檢查、T30 `/media`
+- [ ] 審查並合併 Muse 的 T05、T29
+- [ ] 審查並合併 Codex PR #4（等 john 按 Ready for review）
+- [ ] T37 Claude：後端稽核端點 `POST /api/audits`（上傳影片和標註，回傳軌跡檢查結果與疊加圖）
+- [ ] T32 跑關卡（等 john 的影片）
+
+**john**
+- [ ] T33 拍片並生成影片，提供標註
+- [ ] 合併 PR #4
+- [ ] 在 Discord 問：用其他工具生成的影片當測試素材可不可以
 
 ## 可行性關卡：影片物理稽核（10/28–10/29）
 
@@ -163,6 +200,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/28 john 指定 Claude 為協調者。新增「完成表」，並在 AGENTS.md 加上自動接續規則。Muse 回報 T05 和 T29 已在本機完成（91 個測試通過），但還沒 commit：Muse 請照新規則 commit 並 push `muse/T05-meta-client`。
 - 10/28 Claude 完成 T35：彈跳檢查（反彈比前一次高超過 5% 就判不一致）與物體持續性事件（中途消失超過 2 格、面積偏離中位數 2 倍、位移超過中位步長 4 倍）。這兩項不加進 10/29 的關卡，避免看到資料後才改規則。
 - 10/28 Claude 把所有資料整合進本檔（原本的 docs/GATE.md 已併入「可行性關卡」），並加上「現在每個工具要做什麼」。
 - 10/28 john 決定先驗證縮小版「影片物理稽核」。Claude 寫了關卡工具：`scripts/gate_run.py` 和疊加圖，規則先凍結，合成影片測試通過（PR #7、#8）。
