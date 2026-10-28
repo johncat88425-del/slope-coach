@@ -116,3 +116,48 @@ def check_flight(
             reasons.append(f"apparent g {g_app:.2f} m/s^2 is outside {lo:.2f}-{hi:.2f}")
 
     return FlightCheck("inconsistent" if reasons else "consistent", tuple(reasons), g_app, implied, size, factor)
+
+
+@dataclass(frozen=True)
+class BounceCheck:
+    verdict: str  # "consistent" | "inconsistent" | "insufficient_data"
+    reasons: tuple[str, ...]
+    heights_px: tuple[float, ...]  # peak height above the lowest tracked point, per flight segment
+    restitution: tuple[float, ...]  # sqrt(h[k+1] / h[k]); must be <= 1 for a passive ball
+
+
+def check_bounces(points: list[tuple[float, float, float]], *, tolerance: float = 0.05,
+                  min_points_per_segment: int = 4) -> BounceCheck:
+    """points: (t_s, x_px, y_px), image y down, camera static. Splits the track at impacts (lowest
+    points) and checks that each rebound peaks no higher than the one before."""
+    pts = sorted(points)
+    if len(pts) < 2 * min_points_per_segment:
+        return BounceCheck("insufficient_data", ("too few tracked frames for a bounce check",), (), ())
+    ys = [p[2] for p in pts]
+    floor = max(ys)
+    span = floor - min(ys)
+    if span <= 0:
+        return BounceCheck("insufficient_data", ("object does not move vertically",), (), ())
+    # impacts: local maxima of y close to the floor
+    impacts = [i for i in range(1, len(ys) - 1)
+               if ys[i] >= ys[i - 1] and ys[i] >= ys[i + 1] and floor - ys[i] < 0.1 * span]
+    merged: list[int] = []
+    for i in impacts:
+        if merged and i - merged[-1] < min_points_per_segment:
+            if ys[i] > ys[merged[-1]]:
+                merged[-1] = i
+        else:
+            merged.append(i)
+    bounds = [0, *merged, len(ys) - 1]
+    heights = []
+    for a, b in zip(bounds, bounds[1:]):
+        if b - a + 1 >= min_points_per_segment:
+            heights.append(floor - min(ys[a:b + 1]))
+    if len(heights) < 2:
+        return BounceCheck("insufficient_data", ("fewer than two flight segments",), tuple(heights), ())
+    e = tuple(math.sqrt(h1 / h0) if h0 > 0 else math.inf for h0, h1 in zip(heights, heights[1:]))
+    reasons = tuple(
+        f"rebound {k + 1} peaks {h1 / h0:.2f}x the previous height"
+        for k, (h0, h1) in enumerate(zip(heights, heights[1:])) if h1 > h0 * (1 + tolerance)
+    )
+    return BounceCheck("inconsistent" if reasons else "consistent", reasons, tuple(heights), e)
