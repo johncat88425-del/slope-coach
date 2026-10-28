@@ -63,7 +63,7 @@
 - [x] T65 Codex：**物理名片**（特色功能）。把一次稽核結果做成一張可以下載成 PNG 的卡片，內容包括疊加圖縮圖、判定、`nearest_body` 和 `g_vs_earth`（例如「重力像在月球：地球的 0.26 倍」）、`implied_time_factor`（「影片大約是真實速度的 0.5 倍」）、`implied_object_size_m`（「如果這是真的，這顆球直徑 2.4 公尺」）、`g_verdict_robust` 為 0 時的提醒、limits，以及「由 Muse Spark 撰寫說明」的標示。標題位置先放 T67 的空位 — commit dbf8587
 - [x] T74 Codex：**對照展示頁**（demo 用）。把一致、不一致、拒判三種結果並排放在同一頁，每一張都有鬼影對照和物理名片縮圖。資料先讀 `data/demo/synthetic_*.json`（頁面上要寫明 SYNTHETIC，是程式畫的測試方塊），等 john 的真實影片跑完再換成真的結果。目的：demo 時評審一眼看到「會判一致、會判不一致、也會拒判」 — commit 81f3f65
 - [x] T75 Codex：數字顯示格式。畫面和名片上的數字只做顯示用的四捨五入（例如 g_vs_earth 顯示 0.26、尺寸顯示 2.4 m），匯出的 JSON 保留原值。不准改變數值本身 — commit 52f4c34
-- [ ] T76 Codex：彈跳結果圖。用 `rebound_ratio_k` 畫每次反彈高度比例的長條圖，加一條 1.0 的參考線（超過 1.0 代表反彈得比上一次高，與被動彈跳模型不一致）
+- [x] T76 Codex：彈跳結果圖。用 `rebound_ratio_k` 畫每次反彈高度比例的長條圖，加一條 1.0 的參考線（超過 1.0 代表反彈得比上一次高，與被動彈跳模型不一致） — commit 待回填（本次程式提交）
 - [ ] T77 Codex：「Muse 偵訊」問答面板的外觀（給 Muse T66 用）。先用固定的假問題做畫面，標示 mock；契約已在 docs/API.md v0.4：先 `POST /api/audit-drafts` 拿到問題，再用 `draft_id` 和使用者的回答呼叫 `POST /api/audits`；`slow_motion` 是新欄位。mock 問題現在後端就會回傳，可以直接接
 
 **Antigravity**（照順序做）
@@ -310,3 +310,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 06:35 例行巡查：沒有新的分支。Claude 完成 T79（關卡標註輔助）。
 - 10/28 Codex T74：#demo 同頁展示一致／不一致／拒判，直接打包 data/demo 三份後端合成結果，不改數字；顯示 SYNTHETIC 與效能非實證提示，離線無 API／媒體請求，各卡包含鬼影與名片。npm 49 pass、build pass。
 - 10/28 Codex T75：稽核數字／名片與差距顯示採文字四捨五入；極小非零值用科學記號，不顯示成零。數字原值仍存在 title 與 JSON／Markdown，資料本身不變。npm 50 pass、build pass。
+- 10/28 Codex T76：彈跳比例長條圖依 k 排序，提供 1.0 虛線與可讀資料；明示後端會套用容差，前端圖表不另下判定。testid bounce-chart；npm 51 pass、build pass。
