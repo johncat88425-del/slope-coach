@@ -93,3 +93,33 @@ def test_audit_pendulum_period_and_length(tmp_path):
     assert r["numbers"]["implied_length_m"] == pytest.approx(L, rel=0.06)
     wrong = post(tmp_path / "pend.mp4", assumed_model="pendulum", t_end="3.4", length_m="1.0").json()
     assert wrong["verdict"] == "inconsistent"
+
+
+def test_interview_draft_then_audit_and_slow_motion_refusal(tmp_path):
+    write_clip(tmp_path / "real.mp4", 9.81)
+    with open(tmp_path / "real.mp4", "rb") as f:
+        d = client.post("/api/audit-drafts", files={"file": ("clip.mp4", f, "video/mp4")}).json()
+    assert d["interview"]["source"] == "mock" and len(d["interview"]["questions"]) == 3
+    form = {"draft_id": d["draft_id"], "t_start": "0", "t_end": "0.6", "camera_static": "true", "object_size_m": "0.06"}
+    r = client.post("/api/audits", data=form).json()
+    assert r["verdict"] == "consistent" and r["video_url"] == d["video_url"]
+    assert client.post("/api/audits", data=form).status_code == 404  # a draft is used once
+    with open(tmp_path / "real.mp4", "rb") as f:
+        d2 = client.post("/api/audit-drafts", files={"file": ("clip.mp4", f, "video/mp4")}).json()
+    slow = client.post("/api/audits", data=form | {"draft_id": d2["draft_id"], "slow_motion": "true"}).json()
+    assert slow["verdict"] == "insufficient_data" and "slow motion" in slow["reasons"][0]
+    assert client.post("/api/audits", data={k: v for k, v in form.items() if k != "draft_id"}).status_code == 422
+
+
+def test_model_questions_with_numbers_fall_back_to_fixed_ones():
+    from backend import schemas as S
+    from backend.audits import checked_interview
+    bad = S.AuditInterview(source="model", questions=[
+        S.AuditQuestion(field="object_size_m", text="Is the ball 6.7 cm wide?")])
+    assert checked_interview(bad).source == "mock"
+    fake = S.AuditInterview(source="model", questions=[
+        S.AuditQuestion(field="camera_static", text="Is this a fake video?")])
+    assert checked_interview(fake).source == "mock"
+    ok = S.AuditInterview(source="model", questions=[
+        S.AuditQuestion(field="slow_motion", text="Was slow motion on when you recorded this?")])
+    assert checked_interview(ok).source == "model"
