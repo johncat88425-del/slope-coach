@@ -33,7 +33,7 @@
 - [ ] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）
 
 **Codex**（PR #4 合併後才開始）
-- [ ] T36a Codex（進行中）：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url`
+- [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 待回填（本次程式提交）
 - [ ] T36b Codex：軌跡疊加圖與 2D 軌跡圖元件（實測點用橘色，有缺口的地方不連線）
 - [ ] T36c Codex：所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」
 
@@ -200,6 +200,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | | | | 0 |
 
 ## 工作日誌（最新在上）
+
+- 10/27 Codex T36a：新增 /media proxy、讀回 photo_url 與影片 URL、跨 API origin 媒體網址解析，舊資料無 URL 時保留本機選檔替代。前端測試 17 項、build 通過；pytest 結果見本輪驗證。未改 API 或模型。
 
 - 10/27 Codex：依 john 最新「不等待、逐項完成」直接指示，T36 以 PR #4 已審查的前端為基底採堆疊分支開發；不替 john 合併 PR #4、不推 main。已在隔離 worktree pull main，避免共用 checkout 的 Muse 未提交工作受影響。
 
