@@ -21,7 +21,7 @@ export function CurveChart({ prediction, trial, comparison }: {
         path += `${gap ? 'M' : 'L'}${x(p.t)},${y(p.s)} `;
         gap = false;
     }
-    return <Localize>{<figure><figcaption>後端計算曲線 · 時間從起滑起算（s），位置相對釋放點（m）</figcaption><svg viewBox="0 0 650 270" role="img" aria-label="預測青色虛線，實測橘色實線；不可靠或缺失區段斷線">
+    return <Localize>{<figure data-testid="comparison-chart"><figcaption>後端計算曲線 · 時間從起滑起算（s），位置相對釋放點（m）</figcaption><svg viewBox="0 0 650 270" role="img" aria-label="預測青色虛線，實測橘色實線；不可靠或缺失區段斷線">
  <path d="M50 20V230H620" stroke="#777" fill="none"/>
  <polyline points={prediction.curve.map(p => `${x(p[0])},${y(p[1])}`).join(' ')} stroke="#007e91" strokeWidth="3" strokeDasharray="7 5" fill="none"/>
  <path d={path} stroke="#c26319" strokeWidth="3" fill="none"/>{pts.map((p, i) => <circle key={i} cx={x(p.t)} cy={y(p.s!)} r="2.5" fill="#c26319"/>)}
