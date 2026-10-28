@@ -46,7 +46,7 @@
 - [x] T40 Codex：新畫面「檢查影片」：上傳影片、選時間窗、勾選鏡頭固定、輸入物體尺寸，接 `POST /api/audits`（見 docs/API.md v0.2）。顯示 verdict、reasons、numbers、疊加圖、軌跡圖、limits。`insufficient_data` 是正常結果。畫面文字只准說「與自由落體模型一致／不一致／無法判斷」 — commit 4aa759f
 - [x] T41 Codex：「檢查影片」畫面的 npm 測試，包括三種 verdict 的顯示，以及確認畫面沒有「真／假／AI 生成」字眼 — commit 94a8ec0
 - [x] T13b Codex：稽核結果匯出成 Markdown（數字照後端給的，不自己算） — commit b1f833a
-- [ ] T17 Codex：影片預測疊加（限 2 小時）
+- [x] T17 Codex：影片預測疊加（限 2 小時） — commit 待回填（本次程式提交）；預設關閉，須使用者核對影像尺度/起點/時間；真片對齊仍待驗收
 - [ ] T48 Codex：介面中英文切換，預設英文，因為評審看英文
 - [ ] T49 Codex：首頁說明「這個工具能判斷什麼、不能判斷什麼」，照 docs/research/competitors.md 的結論寫，不准說「第一個」
 - [ ] T50 Codex：demo 模式：讀取事先存好的稽核結果 JSON，讓 demo 不用連網或等追蹤
@@ -227,6 +227,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | | | | 0 |
 
 ## 工作日誌（最新在上）
+
+- 10/27 Codex T17：限時內完成預測影片疊加元件與原點/時間/缺失處理測試。只做契約指定的顯示座標映射，不重擬合；到終點停止，非 ok 或時間不近的觀測隱藏。無可核對真片，預設關閉並要求使用者核對；不宣稱實際對齊精度。30 項測試與 build 通過。
 
 - 10/27 Codex T41：三種 verdict、原因/限制/原值呈現、禁止來源真假宣稱、multipart 時間窗與尺寸不臆測的測試完成；26 項 npm test 與 build 通過。
 
