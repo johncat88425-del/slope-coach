@@ -1,6 +1,6 @@
 import {LanguageProvider} from '../.test-dist/i18n.js';
 import test from 'node:test';import assert from 'node:assert/strict';import {createElement} from 'react';import {renderToStaticMarkup as rawRender} from 'react-dom/server';
-import {AuditPage,AuditResult} from '../.test-dist/AuditPage.js';import {createApi} from '../.test-dist/api.js';import {validateAuditInput} from '../.test-dist/audit.js';
+import {AuditPage,AuditResult} from '../.test-dist/AuditPage.js';import {createApi} from '../.test-dist/api.js';import {parseSavedAudit,validateAuditInput} from '../.test-dist/audit.js';
 const fixture=verdict=>({audit_id:'ui-fixture',created_at:'2026-10-27',assumed_model:'free_flight',t_start:0,t_end:1,camera_static:true,object_size_m:null,video_url:'/media/test/clip.mp4',overlay_url:null,track_source:'frame_diff',verdict,reasons:['fixture reason'],numbers:{sentinel:123.456789},points:[],events:[],limits:['fixture limitation']});
 test('all three verdicts render as model-relative outcomes with evidence and limits',()=>{
  const labels={consistent:'與自由落體模型一致',inconsistent:'與自由落體模型不一致',insufficient_data:'與自由落體模型無法判斷'};
@@ -19,3 +19,13 @@ test('audit upload sends explicit window/model/camera and does not invent size',
 test('window and optional dimension validation rejects missing or non-finite inputs',()=>{assert.deepEqual(validateAuditInput('0','2',''),[]);for(const args of [['','2',''],['1','1',''],['-1','2',''],['0','Infinity',''],['0','2','0'],['0','2','NaN']])assert.ok(validateAuditInput(...args).length)});
 
 function render(node){return rawRender(createElement(LanguageProvider,{value:'zh'},node))}
+
+test('saved audit validation preserves numbers and rejects malformed or unsupported results',()=>{
+ const a=fixture('consistent'); assert.deepEqual(parseSavedAudit(JSON.stringify(a)),a);
+ for(const bad of [{...a,assumed_model:'unknown'},{...a,verdict:'authentic'},{...a,numbers:{x:'9'}},{...a,points:[[0,1]]},{...a,events:[{kind:'x',t_s:null,detail:'x'}]}])assert.throws(()=>parseSavedAudit(JSON.stringify(bad)));
+ assert.throws(()=>parseSavedAudit('not json'));
+});
+test('offline replay explicitly labels saved output and never requests remote media',()=>{
+ const html=render(createElement(AuditResult,{audit:{...fixture('consistent'),overlay_url:'/media/test/overlay.svg'},replay:true}));
+ assert.match(html,/Saved result replay/);assert.doesNotMatch(html,/<img|<video/);assert.match(html,/123.456789/);
+});

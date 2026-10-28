@@ -4,3 +4,19 @@ export function verdictText(verdict:AuditVerdict){return {consistent:'與自由�
 export function validateAuditInput(start:string,end:string,size:string){const errors:string[]=[];
  if(!start.trim()||!end.trim()||!Number.isFinite(Number(start))||!Number.isFinite(Number(end))||Number(start)<0||Number(end)<=Number(start))errors.push('時間窗必須為有限秒數，且 0 ≤ 開始 < 結束。');
  if(size.trim()&&(!Number.isFinite(Number(size))||Number(size)<=0))errors.push('物體尺寸必須大於零，單位為米；未知時請留空。');return errors}
+
+/** Validate saved API output without inferring or recomputing measurements. */
+export function parseSavedAudit(text:string):AuditOut {
+ const a=JSON.parse(text); const finite=(v:unknown)=>typeof v==='number'&&Number.isFinite(v);
+ const strings=(v:unknown)=>Array.isArray(v)&&v.every(s=>typeof s==='string');
+ if(!a || typeof a!=='object' || typeof a.audit_id!=='string' || typeof a.created_at!=='string'
+ || a.assumed_model!=='free_flight' || !finite(a.t_start) || !finite(a.t_end) || a.t_start<0 || a.t_end<=a.t_start
+ || typeof a.camera_static!=='boolean' || !(a.object_size_m===null || finite(a.object_size_m)&&a.object_size_m>0)
+ || typeof a.video_url!=='string' || !(a.overlay_url===null || typeof a.overlay_url==='string')
+ || !['frame_diff','sam','manual'].includes(a.track_source) || !['consistent','inconsistent','insufficient_data'].includes(a.verdict)
+ || !strings(a.reasons) || !strings(a.limits) || !a.numbers || Array.isArray(a.numbers) || typeof a.numbers!=='object' || !Object.values(a.numbers).every(finite)
+ || !Array.isArray(a.points) || a.points.length>100000 || !a.points.every((p:unknown)=>Array.isArray(p)&&p.length===3&&p.every(finite))
+ || !Array.isArray(a.events) || !a.events.every((e:any)=>e&&typeof e.kind==='string'&&finite(e.t_s)&&typeof e.detail==='string'))
+ throw new Error('Invalid saved audit JSON (free_flight required).');
+ return a as AuditOut;
+}
