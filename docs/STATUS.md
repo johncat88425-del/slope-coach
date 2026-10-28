@@ -55,7 +55,7 @@
 - [x] T60 Codex：稽核結果顯示 `events`（消失、大小跳動、位置跳動）的時間軸，以及 `size_trend` 拒判的說明文字 — commit 8e3162c
 - [x] T61 Codex：稽核結果的網址可以直接打開（`#/audits/:id`，用 `GET /api/audits/{id}`） — commit 977ccae
 - [x] T62 Codex：demo 品質：上傳進度、處理中狀態、422／404／網路錯誤的友善訊息（照後端的 reason 顯示，不改寫數字） — commit 3a5d622
-- [x] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS — commit 待回填（本次程式提交）
+- [x] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS — commit 4a163b7
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
