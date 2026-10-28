@@ -106,7 +106,7 @@
 
 ## 工作日誌（最新在上）
 
-- 10/28 john 拍了第一支測試影片（IMG_8418.MOV）：斜角低機位、滑塊小又淺、0.75 秒滑完、畫面有人臉；下一支要正側視、深色大滑塊、放慢、不入鏡。john 想改更大膽的方向，Claude 提了 A（拍任何運動的教練）／B（影片物理真假檢查）／C（A＋B），待 john 選。Claude 先寫了 T31 拋體檢查（三個方向都會用到）。
+- 10/28 john 拍了第一支測試影片（IMG_8418.MOV）：斜角低機位、滑塊小又淺、0.75 秒滑完、畫面有人臉；下一支要正側視、深色大滑塊、放慢、不入鏡。john 想改更大膽的方向，Claude 提了 A（拍任何運動的教練）／B（影片物理真假檢查）／C（A＋B），待 john 選。Claude 先寫了 T31 拋體檢查（三個方向都會用到），以及 `scripts/flight_probe.py`（不用模型、用畫面差異抓移動物體，給可行性測試用）。
 - 10/28 Claude 完成 T30：後端把 `data/uploads/` 掛在 `/media`，`video_url` 現在可以直接播放；`scene-photo` 多回傳 `photo_url`。**Codex：請在 `frontend/vite.config.ts` 的 proxy 加上 `/media` → `http://localhost:8000`，校準畫面改用 `photo_url` 顯示照片。** 也審查了 Codex PR #4（T27），測試與 build 通過，已解 STATUS 衝突，等 john 按 Ready for review 後合併。
 - 10/28 Claude 完成 T15，並新增 `scripts/seed_demo.py`：後端開著時執行 `python -m scripts.seed_demo --case pushed`（或 wrong_height / ok / occluded），會建立一個用合成資料的完整實驗，前端和 Antigravity 不用真影片也能測整個流程。四種情境結果：pushed→建議釋放核對、wrong_height→建議尺寸核對、ok→一致、occluded→有差異但證據不足、不建議任何驗證。
 - 10/28 Claude 完成 T12（模型輸出檢查：數字必須出自工具輸出、中英文因果誇大用語、驗證只能從證據候選選）與 T26（後端寫入後存檔）；審查 Codex 的 codex/T08-frontend，差異列在上方「Claude 審查 Codex T08/T09」。
