@@ -1,113 +1,199 @@
-# STATUS：目前進度、缺什麼、誰在做
+# STATUS：共享工作檔（所有資料都在這裡）
 
-> 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。最新的放最上面。
-> 最後更新：2026-10-27（Toronto；Codex 完成 T27/T10 前端/T13，整合 Claude T12/T15/T26）
+> 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
+> **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
+> 最後更新：2026-10-28 01:30Z（Claude）
 
 ## 一句話現況
 
-前端已按 docs/API.md v0.1 接上真實 HTTP 呼叫，經 Vite proxy 連 localhost:8000。已串接實驗／照片／校準／試驗／起滑／基準／預測／比較／核對／報告，補上第四個路徑終點、501 手動替代、品質斷線圖及後端匯出。合成 API 閉環已通過；真實影片與 Meta 模型 hooks 尚未驗證。
+斜坡閉環已經可以用合成資料跑通（後端、physics、前端）。**10/28 john 決定先驗證縮小版的「影片物理稽核」**：檢查影片中物體的運動，是否違反這次假設的運動模型。10/29 晚上依照下方「可行性關卡」的結果，決定轉向或回到「實驗調查員」。沒有影片也能先做的工作，見下一段。
 
-## 里程碑
+## 現在每個工具要做什麼（沒有影片也能做）
 
-| 日期 | 門檻 | 狀態 |
+下面每一項，在兩條路（轉向或不轉向）上都用得到，現在就可以開工。只有「要不要轉向」這個決定需要等 john 的影片。
+
+| 誰 | 現在做 | 細節 |
 | --- | --- | --- |
-| 10/28 | 能從一段影片量出可信的 s(t) | 未開始 |
-| 10/30 | 整個循環跑通（含一種驗證） | 未開始 |
-| 11/01 | 功能凍結 | 未開始 |
-| 11/02 | 3–5 位使用者測試 | 未開始 |
-| 11/03 | 部署、三次彩排 | 未開始 |
-| 11/04 | 提交（英國 11/05 02:00 前，目標提早半天） | 未開始 |
+| **Muse** | T05 → T29 → T34 | T05：`meta_client/`，包括 Spark、SAM 3.1、花費計數與 120 美元上限。T29：把後端 MockHooks 換成 MetaHooks。T34：Spark 建議運動片段（見任務表）。測試素材可以用合成影片，或 john 的 `IMG_8418.MOV`。這支畫面有人臉，**只能送標準版 `muse-spark-1.3`，不能送 contributor 版**。 |
+| **Claude** | T32、審查 PR | 關卡工具、彈跳檢查、物體持續性檢查都已完成。等影片跑關卡；審查 Muse、Codex、Antigravity 的 PR。 |
+| **Codex** | 先等 john 合併 PR #4，再做 T36 | `vite.config.ts` 加上 `/media` 代理；做軌跡疊加圖和 2D 軌跡圖元件；所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」。 |
+| **Antigravity** | T02 → T14 | 建立開發環境（requirements.txt、`scripts/dev.sh`）。用 `python -m scripts.seed_demo --case pushed` 建立合成實驗，跑一次斜坡流程的端到端測試並截圖。 |
+| **Manus** | T21（改題）→ T23 | 競品研究改查「影片物理合理性」：VideoPhy、Physics-IQ、Tracker，以及有沒有一般人可用的工具，確認我們的差異。demo 草稿要寫兩個版本（轉向或不轉向），未完成的部分寫 [TBD]。 |
+| **john** | T33、合併 PR #4、Discord 確認 | 拍片和生成影片（見下方關卡素材）；到 https://github.com/johncat88425-del/slope-coach/pull/4 按「Ready for review」再按「Merge」；在 Discord 問「用其他工具生成的影片當測試素材可不可以」。 |
+
+## 完成表（每做完一件就打勾，附 commit；Claude 每隔一段時間來看）
+
+格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
+
+**Muse**
+- [ ] T05 Muse：`meta_client/`（Spark、SAM 3.1、花費計數與 120 美元上限、mock 測試）
+- [ ] T29 Muse：後端接上 MetaHooks（沒有金鑰時退回 Mock）
+- [ ] T34 Muse：Spark 建議運動片段 `suggest_motion_segment`（只回傳建議，不回傳測量數字，要通過 schema 檢查）
+- [ ] T28 Muse：結果說明層（先過 `check_model_text()`，畫面標明「由 Muse Spark 產生」）
+- [ ] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）
+
+**Codex**（PR #4 合併後才開始）
+- [ ] T36a Codex（進行中）：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url`
+- [ ] T36b Codex：軌跡疊加圖與 2D 軌跡圖元件（實測點用橘色，有缺口的地方不連線）
+- [ ] T36c Codex：所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」
+
+**Antigravity**
+- [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo）
+- [ ] T14 Antigravity：用 `seed_demo` 跑斜坡流程的端到端測試，截圖放 `docs/screenshots/`，問題寫進「缺什麼」
+
+**Manus**（不寫程式）
+- [x] T21 Manus：影片物理合理性競品研究（附來源），結果放在 `docs/research/competitors.md`
+- [ ] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）
+
+**Claude**
+- [x] T31 拋體檢查、T32 關卡工具、T35 彈跳與持續性檢查、T30 `/media`
+- [ ] 審查並合併 Muse 的 T05、T29
+- [ ] 審查並合併 Codex PR #4（等 john 按 Ready for review）
+- [ ] T37 Claude：後端稽核端點 `POST /api/audits`（上傳影片和標註，回傳軌跡檢查結果與疊加圖）
+- [ ] T32 跑關卡（等 john 的影片）
+
+**john**
+- [ ] T33 拍片並生成影片，提供標註
+- [ ] 合併 PR #4
+- [ ] 在 Discord 問：用其他工具生成的影片當測試素材可不可以
+
+## 可行性關卡：影片物理稽核（10/28–10/29）
+
+**主張：** 這支影片裡的物體運動，是否違反這次檢查所假設的運動模型（固定重力下的拋體或自由落體）。
+- **不准宣稱：** 任何工具都不准在畫面、文件或 demo 中說「能辨識 AI 影片真偽」或「任何影片都能檢查」。只能說「與所假設的運動模型一致」、「不一致」或「無法判斷」。
+- **影片來源只記錄，不當答案：** 不把影片分成「真實」和「AI」來打分。
+- **少量素材只回答「值不值得繼續」：** 不能用來證明產品可靠。
+
+**規則已凍結。** 門檻在看到任何關卡影片之前就寫進 `scripts/gate_run.py` 的 `GATE_RULES` 和 `physics/experiments/freefall.py` 的預設值，所有影片用同一個指令跑：
+
+```
+python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gate --out data/gate/results.md --overlays data/gate/overlays
+```
+
+### 三個問題與通過條件
+
+1. **能不能在真實影片上量到可信的軌跡？** 用 john 自己拍的影片（鏡頭固定、正側面、物體尺寸已知），3 支裡至少 2 支要同時做到三件事：沒被拒判、判定一致、量出的 g 在 9.81 ± 15% 內。john 要看過疊加圖，確認追蹤點落在物體上。john 自己拍的影片如果被判「不一致」，就算誤報，要逐一說明原因。
+2. **能不能找到有清楚證據的異常，而不是追蹤或拍攝誤差？** 至少 1 支影片（不限來源）被判「不一致」，而且要同時符合四個條件：
+    - 追蹤到的畫面比例 ≥ 80%。
+    - john 看過疊加圖，確認追蹤點落在物體上。
+    - john 標註鏡頭是固定的。
+    - 物體尺寸估錯 30% 時異常仍然成立：以 g 為根據的異常，g 要偏離 9.81 超過 50%。方向偏差超過 15°，或殘差超過移動距離 2%，則直接算數。
+3. **能不能用同一套規則處理所有案例，不為了 demo 逐片調參？** 一個指令、一個 commit 跑完；每支影片唯一的輸入是 john 的人工標註；被拒判的影片不超過一半。看過資料後如果改了規則，要記進下方「規則變更紀錄」，用新規則全部重跑，並同時報告新舊兩版的結果。
+
+### 決定規則
+
+- **三題都通過：** 轉向「影片物理稽核」，由 Claude 改寫 AGENTS.md、本檔和 demo 劇本。
+- **大部分案例都要拒判，或找不到足以支持主張的異常：** 回到「實驗調查員」，也就是把斜坡的真實實驗閉環做好。拋體檢查留下來，當第二個實驗插件。
+- 不論走哪條路，都照兩條原則做：成功和拒判放在同一段 demo 裡；只承諾已經做完的東西。
+
+### 關卡素材（john 準備，T33）
+
+影片放在 `/mnt/project-files/gate/`。影片檔不進 git。
+
+- **自己拍至少 3 支：**
+    - 丟一顆尺寸已知的球（網球、乒乓球都可以），讓它劃出弧線。
+    - 手機放在支架上，從正側面拍，整段飛行都要入鏡。
+    - 用一般 60fps 錄，**不要用慢動作**。背景要素，人不要入鏡。
+    - 可以加拍 1 支手持、鏡頭會動的影片，測試拒判。
+- **生成 5 到 10 支：** 優先用 Meta AI app。提示範例：`Static camera, side view. A tennis ball is tossed in an arc across a plain white room and lands on the floor.` 有彈跳的影片，只標第一次落地前的那段。
+- **人工標註：** 由 john 告訴 Claude，再由 Claude 寫進 `data/gate/manifest.csv`。標註不准用 AI 產生。
+
+| 欄位 | 意思 |
+| --- | --- |
+| clip | 檔名 |
+| source | own（自己拍）、generated（生成）或 other。只記錄，不當答案 |
+| assumed_model | 目前只有 `free_flight` |
+| t_start、t_end | 物體離手到落地前的時間（秒） |
+| camera_static | yes 或 no |
+| object、object_size_m | 物體名稱和直徑（公尺），由 john 填 |
+
+### 已知限制（結果裡要照實寫）
+
+- 關卡的追蹤用畫面差異法，不用模型。物體有動態模糊時，尺寸會估大，g 也會跟著偏。
+- 沒有處理透視：物體朝鏡頭或遠離鏡頭飛時，結果不可信。
+- 時間窗目前由人標註。正式版改由 Spark 建議（T34），使用者確認。
+
+### 規則變更紀錄
+
+（無）
+
+### 關卡結果
+
+（10/29 填）
 
 ## 任務表
 
-狀態：待辦 / 進行中 / 完成 / 卡住。負責：Muse、Claude、Codex、Antigravity、john、任何人。
+狀態：待辦、進行中、完成、卡住。
 
 | 編號 | 任務 | 負責 | 狀態 | 備註 |
 | --- | --- | --- | --- | --- |
-| T01 | 建公開 GitHub repo，放入本資料夾的檔案，第一個 commit | john | 待辦 | |
-| T02 | 安裝 Muse Code、Python 3.11、Node 20、ffmpeg、git | john | 待辦 | 見 README 的安裝清單 |
-| T03 | 產生 Meta API 金鑰放進 `.env`；確認 150 美元額度已入帳；確認帳單是否綁卡 | john | 待辦 | |
-| T04 | 搭器材，拍 3 段 5–15 秒測試片（固定手機、側視、尺入鏡） | john | 待辦 | |
-| T05 | `meta_client/`：spark 呼叫（圖片、影片）、sam 追蹤、花費計數與 120 美元上限 | Muse | 待辦 | 先用 T04 的 1 段片實測 token 與費用，填入下方成本紀錄 |
-| T06 | `physics/`：像素↔米校準、遮罩中心→s(t)、品質標記、定加速度擬合（a、v0、誤差）+ 測試 | Claude | 完成 | 分支 claude/T06-physics；23 個測試通過；另含 baseline、compare（拒判檢查）、diagnose（兩種驗證的證據） |
-| T07 | `docs/API.md` 前後端契約初版 + `backend/` 骨架（experiment / trial / prediction / intervention） | Claude | 完成 | 分支 claude/T07-api（建在 T06 之上）；含 5 個 API 流程測試；Codex 請照 docs/API.md 接 |
-| T08 | `frontend/` 骨架與五個畫面路由 | Codex | 完成 | 五路由共用後端紀錄；API v0.1 真實呼叫與 GET 恢復 |
-| T09 | 校準點選畫面（點尺兩端、點滑塊） | Codex | 完成 | 原圖四點（尺兩端/滑塊即路徑起點/坡底終點）、校準新版本與來源標示 |
-| T10 | 預測鎖定 + 實測比較 + 曲線圖 | Claude（後端）/ Codex（圖） | 進行中 | Codex 圖表與 API 串接完成；非 ok 區段斷線；合成閉環通過，仍待真片驗收 |
-| T11 | 釋放方式核對：受限驗證資料庫 + Spark 工具呼叫代理 | Muse | 待辦 | 只能從兩種驗證選 |
-| T12 | 輸出檢查：schema、數字必須出自工具輸出、禁用因果字眼 | Claude | 完成 | backend/output_check.py；選驗證時的 model_rationale 會自動檢查；Muse 的說明文字也請呼叫 check_model_text() |
-| T13 | 報告匯出（Markdown + CSV） | Codex | 完成 | 直接下載後端 report.md / report.csv，保留來源與版本 |
-| T14 | 端到端瀏覽器測試與截圖 | Antigravity | 待辦 | T10 之後 |
-| T15 | 拒判情境：遮擋、起滑不明、追蹤跳動 | Claude | 完成 | 開頭被遮住時不判斷初速度並說明原因；偏離路徑的點不納入；4 個情境測試 |
-| T16 | Spark 對 Wonder A/B（同一組開發片） | Muse | 待辦 | 10/31 |
-| T17 | 影片預測疊加（限 2 小時） | Codex | 待辦 | 核心穩定後才做 |
-| T18 | 尺寸核對（第二種驗證） | Muse | 待辦 | 時間不夠就砍 |
-| T19 | 拍完 24 段片 + 人工標註（8 開發 / 6 校準 / 10 保留） | john | 待辦 | 標註不可用 AI |
-| T20 | 部署、README、demo 錄影 | Antigravity / john | 待辦 | |
-| T24 | 語音口述設定：Voice Transcribe 轉文字 → Spark 抽出欄位 → 使用者確認 | Muse | 待辦 | T11 之後做；數字一律要使用者確認 |
-| T25 | 第二個實驗：單擺（沿用追蹤，換 physics/experiments/pendulum.py） | Muse（物理公式由 Claude 審查） | 待辦 | 10/30 循環跑通後才可開始，否則砍 |
-| T26 | 後端資料持久化（重啟不清空） | Claude | 完成 | 每次寫入後存 data/store.pkl；設 SLOPE_STORE_PATH="" 可關閉 |
-| T27 | 前端照 docs/API.md 接上後端（見下方「Claude 審查 Codex T08/T09」） | Codex | 完成 | 已合併最新 main；按審查採四點校準與 API v0.1 實際呼叫 |
-| T28 | 結果說明層：Spark 讀 ComparisonOut，寫給使用者的中英文說明，先過 backend/output_check.check_model_text() 才顯示 | Muse | 待辦 | T11 之後；畫面標明「由 Muse Spark 產生」 |
-| T29 | 在 backend 把 MockHooks 換成 MetaHooks（check_scene、track_slider、suggest_release_time） | Muse | 待辦 | T05 完成後馬上做；介面見 backend/model_hooks.py |
-| T21 | 競品實測比較：PhET、Video2World、直接問 Muse | Manus | 待辦 | 成果放 docs/research/competitors.md |
-| T22 | 使用者測試計畫：招募訊息、任務腳本、記錄表 | Manus | 待辦 | 11/02 要用，10/31 前完成 |
-| T23 | 三分鐘 demo 分鏡與英文提交文字草稿 | Manus | 待辦 | 只寫已完成的功能，11/03 依實際結果修改 |
+| T32 | 可行性關卡：凍結規則、`scripts/gate_run.py`、疊加圖、10/29 填結果 | Claude | 進行中 | 工具完成，等影片 |
+| T33 | 拍 3 支以上丟球影片、生成 5–10 支影片，並提供人工標註 | john | 待辦 | 見上方「關卡素材」 |
+| T34 | Spark 建議運動片段：`suggest_motion_segment(video)` 回傳 `object`、`assumed_model`（只能是 free_flight、slide 或 none）、`candidate_t_start`、`candidate_t_end`、`reason` | Muse | 待辦 | 時間只是建議，使用者確認後才用；不准回傳任何測量數字；要通過 schema 檢查 |
+| T35 | physics：彈跳檢查（每次反彈高度要變低）、物體持續性檢查（突然消失、面積跳動、分裂） | Claude | 完成 | `freefall.check_bounces`、`physics/persistence.py`；合成資料測試；尚未接進關卡（關卡規則已凍結，只用 free_flight） |
+| T36 | 前端：`/media` 代理、軌跡疊加圖、2D 軌跡圖元件、Meta 產生內容的標示 | Codex | 待辦 | PR #4 合併後再做 |
+| T05 | `meta_client/`：Spark（圖片、影片）、SAM 3.1 追蹤、花費計數與 120 美元上限 | Muse | 待辦 | 實測 token 與費用後，填入下方成本紀錄；SAM API 的實際格式寫進「已做的決定」 |
+| T29 | 後端把 MockHooks 換成 MetaHooks（check_scene、track_slider、suggest_release_time） | Muse | 待辦 | T05 之後馬上做；介面在 `backend/model_hooks.py` |
+| T02 | 開發環境：requirements.txt、`scripts/dev.sh`、檢查 Python 3.11、Node 20、ffmpeg | Antigravity | 待辦 | 不要用 sudo 自己裝，列出指令給 john |
+| T14 | 端到端瀏覽器測試與截圖（先用 seed_demo 的合成資料） | Antigravity | 待辦 | 截圖放 `docs/screenshots/` |
+| T21 | 競品研究：影片物理合理性工具（VideoPhy、Physics-IQ、Tracker）、PhET；確認我們的差異 | Manus | 待辦 | 每個結論附來源 |
+| T22 | 使用者測試計畫 | Manus | 待辦 | 10/31 前 |
+| T23 | 三分鐘 demo 分鏡與英文提交文字草稿（兩個版本） | Manus | 待辦 | 未完成的寫 [TBD] |
+| T27 | 前端照 docs/API.md 接上後端 | Codex | 完成 | PR #4 已審查通過，等 john 按 Ready for review 後合併 |
+| T11 | 下一次驗證的選擇代理（只能從 evidence 候選中選） | Muse | 待辦 | 實驗調查員路線的核心 |
+| T28 | 結果說明層：Spark 讀比較結果寫說明，先過 `check_model_text()` 才顯示 | Muse | 待辦 | 畫面標明「由 Muse Spark 產生」 |
+| T24 | 語音口述設定（Voice Transcribe → Spark 抽欄位 → 使用者確認） | Muse | 待辦 | 優先度低於 T05、T29、T34 |
+| T16 | Spark 與 Wonder 的 A/B 比較 | Muse | 待辦 | 10/31 |
+| T17 | 影片預測疊加（限 2 小時） | Codex | 待辦 | |
+| T20 | 部署、README、demo 錄影 | Antigravity、john | 待辦 | 11/03 |
+| T31 | physics：拋體與掉落軌跡檢查（`physics/experiments/freefall.py`） | Claude | 完成 | |
+| T30 | 後端 `/media` 提供上傳的影片和照片；場景照片回傳 `photo_url` | Claude | 完成 | 前端代理在 T36 |
+| T26 | 後端資料持久化 | Claude | 完成 | 存在 data/store.pkl；設 `SLOPE_STORE_PATH=""` 可關閉 |
+| T15 | 拒判情境（遮擋、起滑不明、追蹤跳動） | Claude | 完成 | |
+| T12 | 模型輸出檢查（數字必須出自工具輸出、禁止因果誇大用語） | Claude | 完成 | `backend/output_check.py` |
+| T08–T10、T13 | 前端五個畫面、校準、曲線圖、報告匯出 | Codex | 完成 | 在 PR #4 裡 |
+| T06、T07 | physics 斜坡模型、API 契約與後端 | Claude | 完成 | `docs/API.md` |
+| T01 | 建立公開 repo | john | 完成 | |
+| T03 | Meta API 金鑰放進 `.env`，確認 150 美元額度 | john | 待辦 | 金鑰不准貼給任何 AI |
+| T18、T19、T25 | 尺寸核對、24 段實驗片、單擺 | Muse、john | 暫停 | 關卡結果出來後再決定 |
 
-## 缺什麼（阻擋中或尚未知道）
+## 怎麼跑（給所有工具）
 
-- [ ] 後端傳回的 video_url 為 /media/...，但目前沒有對應檔案服務，scene-photo 也沒有可讀照片 URL。前端用本機選檔預覽；重新整理後需重選原片（不重複上傳）。請後端/部署負責工具補媒體存取。
-- [ ] API CalibrationIn 沒有 slider_px 或照片 ID／影像尺寸欄位；滑塊標記與原圖尺寸目前只保留在前端草稿，尺／路徑幾何及尺寸才存後端。T07 是否擴充由 john/Claude 決定，前端未改契約。
-- [ ] ModelHooks 仍為 mock：場景與起滑建議明列 mock，SAM 回 501；前端已有手動標記替代，不宣稱模型整合完成。
-- [ ] T17 影片預測疊加尚未開始；待真實校準影片、可回查時間原點與可靠映射後驗證，不以合成測試圖代替真片對齊。
+- 後端：`uvicorn backend.main:app --reload`，網址 http://localhost:8000，互動文件在 `/docs`。API 契約見 `docs/API.md`。
+- 合成示範資料：`python -m scripts.seed_demo --case pushed`，也可以把 case 換成 wrong_height、ok 或 occluded。
+- 測試：`pytest`（目前 51 個通過）；前端 `cd frontend && npm test`。
+- 免模型的軌跡探測：`python -m scripts.flight_probe 影片.mp4 --start 1.0 --end 2.0 --overlay out.png`。
+- 上傳的檔案由後端放在 `/media/{eid}/{檔名}`。
 
-- [ ] 還沒有真實影片；physics 門檻只用合成資料測過。
-- [ ] requirements.txt 由 Antigravity（T02）建立；physics 和 backend 需要 fastapi、uvicorn、numpy、scipy、pytest、python-multipart、httpx（測試用）。
-- [ ] Meta API 金鑰與 150 美元額度是否已可用：未確認。
-- [ ] 影片送 Spark 的實際 token 數與費用：未測（目前預算用假設值）。
-- [ ] SAM 3.1 的 API 呼叫格式（影片怎麼上傳、遮罩怎麼回傳）：未讀官方範例。
-- [ ] 評分權重：30/25/20/25 或四項等權，未確認。
-- [ ] Muse Code 用 API 金鑰時是否扣 150 美元額度：官方說計費依金鑰帳戶，應該會扣，需看帳單確認。
-- [ ] Discord「要用 Muse」的完整原文與是否允許其他 AI 寫程式：請 john 貼上原文。
+## 缺什麼
 
-## Claude 審查 Codex T08/T09（給 Codex，T27）
-
-前端做得很完整（校準驗證、來源標示、不假造數字都符合規則）。要接上 `docs/API.md` 時有這幾個差異：
-
-1. **校準要多點一個點。** 後端需要 `path_start_px` 和 `path_end_px`（滑塊路徑的起點和終點）。前端目前是三點：尺兩端 + 滑塊。請把「滑塊位置」當成 `path_start_px`，再加第四點「滑塊會滑到的終點（坡底）」當成 `path_end_px`。
-2. **上傳照片** 用 `POST /api/experiments/{eid}/scene-photo`（multipart `file`），回傳 `scene_check`；`needs_retake: true` 時顯示 `retake_reasons`。
-3. **影片** 跟著 `POST /api/experiments/{eid}/trials` 一起上傳（multipart：`kind`、`calibration_version`、`file`）。test 試驗要在預測建立之後才上傳，否則比較時會得到 409。
-4. **分析沒有 job 輪詢。** `POST /api/trials/{tid}/track` 是同步的；現在 SAM 還沒接，會回 501。收到 501 時，顯示「手動點選滑塊位置」模式，把點選結果用 `PUT /api/trials/{tid}/detections` 送出（`source: "manual"`）。
-5. **起滑時刻** 要由使用者確認：先 `GET /release-suggestion` 拿建議（可能是空的），使用者確認後 `PUT /release-time`。
-6. **比較** 是 `POST /api/experiments/{eid}/comparisons`，不是 GET。`verdict: insufficient_data` 是正常結果，要顯示沒通過的 `checks` 和 `can_still_say`。
-7. **報告** 是 `GET /report.md` 和 `GET /report.csv`。
-8. 你分支上的 STATUS.md 是根據舊版改的，merge main 時會有衝突：請保留 main 的內容，再加上你的更新。你之前在「待 john 決定」提的端點提案已經由 docs/API.md 取代，可以刪掉。
+- [ ] 還沒有可用的真實影片。第一支（IMG_8418.MOV）有四個問題：拍攝角度是斜的、滑塊太小太淡、只滑了 0.75 秒、畫面有人臉。
+- [ ] Meta API 金鑰與額度是否可用：未確認。
+- [ ] 影片送 Spark 的實際 token 數和費用：未測。
+- [ ] SAM 3.1 API 的格式：未讀官方範例（Muse 的 T05）。
+- [ ] 用其他工具生成的影片當測試素材是否可以：請 john 在 Discord 確認。
+- [ ] 是否允許用其他 AI 寫程式：Discord 原文未取得。
 
 ## 待 john 決定
 
-- 舊前端端點提案已由 docs/API.md v0.1 取代，不變更契約。後端 /media 存取仍需負責工具補齊；場景照片 URL 亦未提供。
+- （無）
 
 ## 已做的決定
 
-- 前端以 /api 相對路徑呼叫，Vite proxy 目標 http://localhost:8000，避免 127.0.0.1 與 localhost 的 CORS 差異；部署需反向代理或指定 VITE_API_BASE_URL 並由後端設定 CORS。
-- 只保存實驗 ID 於 localStorage，重新整理只 GET；寫入操作不自動重試。120 秒逾時提示先重新讀取紀錄，避免重複付費操作。
-- 比較的 insufficient_data 視為正常結果；完整顯示 checks、can_still_say、finding 與 cannot_distinguish。核對選項只來自 evidence，使用者選擇標為 user，不假裝模型代理已接好。
-- 圖表只顯示後端 physics 的曲線與實測；以已確認 t0 和 fit.s0_m 轉換繪圖座標，不自行擬合或調時間對齊。非 ok 樣本斷線，不補點。未有可靠起滑／擬合時不造實測線。
-- SAM 501 轉手動逐影格點選；缺失標為 null，來源 manual。手動保存明示取代整份偵測資料；起滑候選不自動採用，須 user 確認。
-
 | 日期 | 決定 | 原因 |
 | --- | --- | --- |
-| 10/27 | 產品內只呼叫 Meta 模型 | 比賽規則與工具運用分數 |
-| 10/27 | 所有測量數字由 `physics/` 程式算，模型不碰數字 | 可重算、可檢查 |
-| 10/27 | 保留斜坡核心，定位改為「動手之前先預測」的實驗教練；加語音口述（T24）；單擺（T25）為延伸 | john 選定：故事更大、多用一種 Meta 模型，又不犧牲可驗證性 |
-| 10/28 | Muse 優先：產品裡的理解、判斷、說明都交給 Meta 模型，新的開發任務優先給 Muse Code；畫面與報告標明哪些由 Muse 產生 | john：要得名得主要用 Muse（評分有 Meta 工具運用一項） |
-| 10/28 | 拒判門檻（開發值，會用真實影片調整）：可用影格 ≥ 80%（不阻擋，只提示）；起滑後至少 6 個可用點；擬合殘差 RMS ≤ 10 mm；前 20% 路程至少 3 點才可判斷初速度；差異門檻為到達時間相對誤差 15% 或基準變異的兩倍，取較大者 | PLAN 第二十五節：拒判不能只看可追蹤比例 |
-| 10/28 | 下一次驗證的候選由 `physics/diagnose.py` 依數字產生（release_check / dimension_check），模型只能從中選擇與說明 | 模型不碰數字，也不能自創驗證 |
-| 10/27 | Muse Code 預設用 `muse-spark-1.3`，不用 Wonder 寫程式 | Wonder 每百萬輸出 token 20 美元，寫程式很快燒掉額度 |
+| 10/28 | 競品結論（T21）：Tracker、FizziQ 已能讓一般人量影片中的 g；MotionPhys 已在研究用物理特徵偵測 AI 影片。所以我們不能說「第一個」，也不碰 AI 偵測。我們的差異要靠 Muse 自動做掉 Tracker、FizziQ 需要手動的步驟（選物體、選片段、說明結果），再加上凍結的品質門檻和拒判 | `docs/research/competitors.md` |
+| 10/28 | 先驗證縮小版「影片物理稽核」，用上方關卡決定是否轉向；採用 award-strategy.md 的證據標準與拒判原則；不宣稱能辨識 AI 真偽 | john 選定。設計代理留作長期產品方向 |
+| 10/28 | 評分權重：Impact 30%、Meta AI 工具運用 25%、技術深度 20%、Demo 25%；Indie 另看創意、技術野心、能不能運作 | 官方規則與 waiver |
+| 10/28 | Muse 優先：產品裡的理解、判斷、說明都交給 Meta 模型；新開發任務優先給 Muse；畫面標明哪些由 Muse 產生 | john：要得名，主要得用 Muse |
+| 10/28 | 拒判門檻（斜坡）：起滑後至少 6 個可用點；擬合殘差 RMS ≤ 10 mm；前 20% 路程至少 3 點才判斷初速度；差異門檻取 15% 和基準變異兩倍中較大者 | PLAN 第二十五節 |
+| 10/28 | 下一次驗證的候選由 `physics/diagnose.py` 依數字產生，模型只能從中選擇並說明 | 模型不碰數字 |
+| 10/27 | 產品內只呼叫 Meta 模型；所有測量數字由 `physics/` 計算 | 比賽規則；可重算、可檢查 |
+| 10/27 | Muse Code 預設用 `muse-spark-1.3`，不用 Wonder 寫程式 | Wonder 的輸出很貴 |
 
 ## 成本紀錄（Meta API）
 
-上限：150 美元額度；後端硬上限 120 美元。每天收工前填。
+上限：額度 150 美元；後端硬上限 120 美元。每天收工前填。
 
 | 日期 | 項目 | 花費（美元） | 累計 |
 | --- | --- | --- | --- |
@@ -115,17 +201,13 @@
 
 ## 工作日誌（最新在上）
 
-- 10/27 Codex：再次整合 main 的 T15 拒判與 seed_demo（PR #3），保留所有 Claude 最新狀態；不改物理或後端。
+- 10/27 Codex：依 john 最新「不等待、逐項完成」直接指示，T36 以 PR #4 已審查的前端為基底採堆疊分支開發；不替 john 合併 PR #4、不推 main。已在隔離 worktree pull main，避免共用 checkout 的 Muse 未提交工作受影響。
 
-- 10/27 Codex：git fetch origin 並合併 origin/main；STATUS 衝突合併保留 Claude T06/T07 與前端成果。GitHub 可見 main 包含 PR #1，另有 claude/T06-physics、claude/T07-api；當時未見其他工具的新分支成果；後續又合併 PR #2 的 T12/T26。
-- 10/27 Codex：依最新 main 的 T27 審查，改為四點校準（滑塊位置即路徑起點）並保留 Claude T12/T26 的狀態與紀錄。共用 checkout 被其他工具切分支後，已將自己的前端提交移回 Codex；後續改用隔離 worktree 完成以避免混入別人的分支。
-- 10/27 Codex 完成前端 API 串接及 T10 前端／T13：建立/恢復實驗、照片與重拍原因、校準版本、baseline/test/intervention 上傳、追蹤501替代、起滑、三段基準、鎖定預測、比較及品質斷線圖、有限核對與結果連結、MD/CSV 匯出。未修改 backend/physics 或 API 契約。
-- 10/27 驗證：npm test 14 項通過、TypeScript/Vite build 通過、合併最新 T12/T15/T26 後 pytest 40 項通過（1 個 Starlette/httpx 棄用提示）。Python 系統環境故障，改用 app bundled Python 3.12 與 /tmp 隔離依賴執行，未改專案 Python 3.11 技術選擇。
-- 10/27 真實 HTTP 整合：前端 compiled API client → Vite proxy → FastAPI，合成資料由現有 physics Python 產生且實驗標題明示 SYNTHETIC；跑過三段基準、兩個不可修改預測、資料不足／差異／重做一致、501、校準422、核對建立/連結、MD/CSV。這是傳輸與流程驗證，不是真片準確率。
-- 10/27 瀏覽器實查：讀回上述後端紀錄、版本/試驗來源顯示、501 切手動、insufficient_data 展示 failed checks 與 can_still_say。截圖另存輸出 api-insufficient-data.png，無付費模型呼叫。
-
-- 10/28 Claude 完成 T15，並新增 `scripts/seed_demo.py`：後端開著時執行 `python -m scripts.seed_demo --case pushed`（或 wrong_height / ok / occluded），會建立一個用合成資料的完整實驗，前端和 Antigravity 不用真影片也能測整個流程。四種情境結果：pushed→建議釋放核對、wrong_height→建議尺寸核對、ok→一致、occluded→有差異但證據不足、不建議任何驗證。
-- 10/28 Claude 完成 T12（模型輸出檢查：數字必須出自工具輸出、中英文因果誇大用語、驗證只能從證據候選選）與 T26（後端寫入後存檔）；審查 Codex 的 codex/T08-frontend，差異列在上方「Claude 審查 Codex T08/T09」。
-- 10/28 Claude 完成 T07：docs/API.md 契約 v0.1 與 FastAPI 後端（記憶體儲存、預測鎖定、預測必須早於試驗、只能選證據支持的驗證、報告匯出）。Meta 模型接入點在 backend/model_hooks.py，Muse 實作後用 set_hooks() 換掉 MockHooks。
-- 10/28 Claude 完成 T06 `physics/`：calibration、tracking、fit、experiments/slope、baseline、compare、diagnose，全部是純函式。用合成資料測過：正常、推出初速度、高度輸入錯誤、缺起滑時刻四種情境。
+- 10/28 john 指定 Claude 為協調者。新增「完成表」，並在 AGENTS.md 加上自動接續規則。Muse 回報 T05 和 T29 已在本機完成（91 個測試通過），但還沒 commit：Muse 請照新規則 commit 並 push `muse/T05-meta-client`。
+- 10/28 Claude 完成 T35：彈跳檢查（反彈比前一次高超過 5% 就判不一致）與物體持續性事件（中途消失超過 2 格、面積偏離中位數 2 倍、位移超過中位步長 4 倍）。這兩項不加進 10/29 的關卡，避免看到資料後才改規則。
+- 10/28 Claude 把所有資料整合進本檔（原本的 docs/GATE.md 已併入「可行性關卡」），並加上「現在每個工具要做什麼」。
+- 10/28 john 決定先驗證縮小版「影片物理稽核」。Claude 寫了關卡工具：`scripts/gate_run.py` 和疊加圖，規則先凍結，合成影片測試通過（PR #7、#8）。
+- 10/28 john 拍了第一支測試影片，問題列在「缺什麼」。Claude 完成 T31 拋體檢查和 `scripts/flight_probe.py`。
+- 10/28 Claude 完成 T30（`/media`），並審查 Codex PR #4：測試和 build 都通過，衝突已解。
+- 10/28 Claude 完成 T15 與 `scripts/seed_demo.py`、T12、T26、T07、T06。
 - 10/27 建立 AGENTS.md、CLAUDE.md、STATUS.md 初版。

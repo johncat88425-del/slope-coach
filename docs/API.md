@@ -21,7 +21,7 @@
 | --- | --- | --- | --- |
 | 建立實驗 | `POST /api/experiments` | `{title?}` | `ExperimentOut` |
 | 讀整個實驗紀錄 | `GET /api/experiments/{eid}` | | `ExperimentOut`（所有子紀錄） |
-| 場景照片檢查 | `POST /api/experiments/{eid}/scene-photo` | multipart `file` | `{photo_id, scene_check}`；`needs_retake: true` 時要求重拍並顯示 `retake_reasons` |
+| 場景照片檢查 | `POST /api/experiments/{eid}/scene-photo` | multipart `file` | `{photo_id, photo_url, scene_check}`；`needs_retake: true` 時要求重拍並顯示 `retake_reasons` |
 | 校準與尺寸 | `POST /api/experiments/{eid}/calibrations` | `{ruler_px:[[x,y],[x,y]], ruler_length_m, path_start_px:[x,y], path_end_px:[x,y], slope_length_m, slope_height_m, reason?}` | `CalibrationOut`（含 `version`、`m_per_px`、`angle_deg`）；0 < h < L 不成立時回 422 並附原因 |
 | 上傳試驗 | `POST /api/experiments/{eid}/trials` | multipart：`kind`（`baseline` / `test` / `intervention`）、`calibration_version`、`file`（影片，選填） | `TrialOut` |
 | 自動追蹤 | `POST /api/trials/{tid}/track?text_prompt=...` | | `TrialOut`；SAM 還沒接上時回 501，畫面要改成提供手動點選 |
@@ -37,6 +37,7 @@
 
 ## 欄位說明
 
+- 上傳的檔案由後端放在 `/media/{eid}/{檔名}`：`TrialOut.video_url` 和 `scene-photo` 回傳的 `photo_url` 都是這個路徑。開發時 Vite 要把 `/media` 也代理到後端。
 - `TrialOut.samples[]`：`{t_s, s_m 或 null, quality, source}`。`quality` 有五種：`ok`、`missing`、`area_jump`、`position_jump`、`off_path`。只有 `ok` 能畫成實測點；其他要畫成缺口，**不能連線**。
 - `PredictionOut.curve[]`：`[t, s]`，t 從起滑開始算，s 從釋放位置開始算。疊到影片上時，播放時間要先減掉 `t0_s`，s 要加上釋放位置（`ComparisonOut.fit.s0_m`）。預測到達終點後就停止，不要再畫。
 - `PredictionOut.overlay_px[]`：`[t, x_px, y_px]`，假設釋放位置就在路徑起點換算成像素。實際釋放位置不在起點時，要沿路徑方向平移 `fit.s0_m / m_per_px` 個像素。只有校準和起滑時刻都確認後才顯示疊加。

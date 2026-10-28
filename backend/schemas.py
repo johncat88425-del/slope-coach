@@ -28,6 +28,7 @@ class SceneCheck(BaseModel):
 
 class ScenePhotoOut(BaseModel):
     photo_id: str
+    photo_url: str | None = None  # None only for records saved before T30
     scene_check: SceneCheck
 
 
