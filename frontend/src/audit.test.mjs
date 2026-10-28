@@ -29,3 +29,9 @@ test('offline replay explicitly labels saved output and never requests remote me
  const html=render(createElement(AuditResult,{audit:{...fixture('consistent'),overlay_url:'/media/test/overlay.svg'},replay:true}));
  assert.match(html,/已儲存結果重播/);assert.doesNotMatch(html,/<img|<video/);assert.match(html,/123.456789/);
 });
+
+test('bounce upload, saved replay and verdicts use the selected model with raw rebound ratios',async()=>{
+ let body;const api=createApi('',async(url,init)=>{body=init.body;return Response.json({...fixture('consistent'),assumed_model:'bounce'})});
+ await api.audit(new File(['fixture'],'bounce.mp4'),0,2,true,undefined,'bounce');assert.equal(body.get('assumed_model'),'bounce');
+ for(const v of ['consistent','inconsistent','insufficient_data']){const a={...fixture(v),assumed_model:'bounce',numbers:{rebound_ratio_1:0.7654321}};assert.deepEqual(parseSavedAudit(JSON.stringify(a)),a);const html=render(createElement(AuditResult,{audit:a,replay:true}));assert.match(html,/彈跳模型/);assert.match(html,/rebound_ratio_1/);assert.match(html,/0.7654321/);assert.doesNotMatch(html,/自由落體模型/)}
+});
