@@ -57,3 +57,8 @@ test('stable test selectors survive language switching and identify audit contro
  for(const lang of ['en','zh']){const page=rawRender(createElement(LanguageProvider,{value:lang},createElement(AuditPage,{api:createApi('',async()=>Response.json({}))})));for(const id of ['audit-submit','audit-load','audit-import-json','audit-video-input','audit-model','audit-id'])assert.match(page,new RegExp('data-testid="'+id+'"'));
  const result=rawRender(createElement(LanguageProvider,{value:lang},createElement(AuditResult,{audit:fixture('consistent')})));for(const id of ['audit-result','audit-verdict','audit-events','audit-export-json','audit-export-markdown'])assert.match(result,new RegExp('data-testid="'+id+'"'));}
 });
+
+test('pendulum uses optional user length and preserves backend periods in saved replay',async()=>{
+let body;const api=createApi('',async(u,i)=>{body=i.body;return Response.json({})});await api.audit(new File(['fixture'],'p.mp4'),0,5,true,undefined,'pendulum',undefined,0.7);assert.equal(body.get('length_m'),'0.7');assert.equal(body.get('assumed_model'),'pendulum');
+const a={...fixture('consistent'),assumed_model:'pendulum',length_m:0.7,numbers:{period_s:1.23456,implied_length_m:0.76543,predicted_period_s:1.54321}};assert.deepEqual(parseSavedAudit(JSON.stringify(a)),a);const html=render(createElement(AuditResult,{audit:a,replay:true}));for(const t of ['單擺模型','1.23456','0.76543','1.54321'])assert.ok(html.includes(t));assert.throws(()=>parseSavedAudit(JSON.stringify({...a,length_m:-1})));
+});
