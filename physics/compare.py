@@ -87,6 +87,12 @@ def compare(
             said.append("the motion does not look like constant acceleration in this clip")
         return Comparison(Verdict.INSUFFICIENT_DATA, tuple(checks), fit, tolerance_rel=tol, can_still_say=tuple(said))
 
+    notes: list[str] = []
+    if not any(c.name == "key_segment" and c.passed for c in checks):
+        notes.append("the start of the slide is not visible enough to judge the release speed")
+    if frac < MIN_USABLE_FRACTION:
+        notes.append(f"only {frac:.0%} of frames were usable; results rely on the visible parts")
+
     t_pred = prediction.t_end_s
     t_obs = time_to_distance(fit.a_m_s2, fit.v0_m_s, prediction.distance_m)
     residuals = tuple(
@@ -96,10 +102,10 @@ def compare(
     )
     if t_obs is None:
         return Comparison(Verdict.DISCREPANCY, tuple(checks), fit, t_pred, None, None, tol, residuals,
-                          ("the measured motion would not cover the predicted distance",))
+                          ("the measured motion would not cover the predicted distance", *notes))
     err = (t_obs - t_pred) / t_pred
     verdict = Verdict.DISCREPANCY if abs(err) > tol else Verdict.CONSISTENT
-    return Comparison(verdict, tuple(checks), fit, t_pred, t_obs, err, tol, residuals)
+    return Comparison(verdict, tuple(checks), fit, t_pred, t_obs, err, tol, residuals, tuple(notes))
 
 
 def rel(a: float, b: float) -> float:
