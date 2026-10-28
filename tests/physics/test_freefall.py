@@ -56,3 +56,19 @@ def test_refuses_without_enough_data():
     assert check_flight(fit_flight(still)).verdict == "insufficient_data"
     with pytest.raises(PhysicsInputError):
         check_flight(fit_flight(throw()), m_per_px=0)
+
+
+def test_ghost_matches_real_flight_and_diverges_on_slow_motion():
+    from physics.experiments.freefall import ghost_track, nearest_body
+    m = 0.003
+    def pts(g):
+        return [(i / 60, 40 + 300 * i / 60, 300 - 600 * i / 60 + 0.5 * (g / m) * (i / 60) ** 2) for i in range(40)]
+    real = pts(9.81)
+    fit = fit_flight(real)
+    ghost = ghost_track(fit, [p[0] for p in real], m)
+    assert max(abs(g[2] - p[2]) for g, p in zip(ghost, real)) < 1.0
+    slow = pts(9.81 / 4)
+    ghost = ghost_track(fit_flight(slow), [p[0] for p in slow], m)
+    assert abs(ghost[-1][2] - slow[-1][2]) > 100
+    assert nearest_body(1.7)[0] == "Moon" and nearest_body(9.5)[0] == "Earth"
+    assert nearest_body(3.0)[0] == "Mars"

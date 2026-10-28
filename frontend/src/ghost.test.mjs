@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {maximumGhostGap,recordedPointAt} from '../.test-dist/ghost.js';
+test('display gap uses only matching recorded timestamps and never interpolates',()=>{const p=[[0,0,0],[1,3,4]],g=[[0,0,0],[1,6,8],[2,999,999]];assert.equal(maximumGhostGap(p,g).pixels,5);assert.equal(maximumGhostGap(p,g).t,1);assert.equal(maximumGhostGap([],g),null);assert.equal(recordedPointAt(p,.5),null);assert.deepEqual(recordedPointAt(p,1.01),p[1])});
