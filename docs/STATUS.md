@@ -75,7 +75,7 @@
 - [ ] T32 跑關卡（等 john 的影片）
 - [x] T55 Claude：稽核支援 `assumed_model=bounce`（接上 `check_bounces`）
 - [x] T56 Claude：透視檢查：物體大小沿軌跡變化超過 30% 時拒判（`physics/persistence.size_trend`）
-- [ ] T57 Claude：單擺 physics 插件（週期和擺長、等時性），給稽核和教練兩條路共用
+- [x] T57 Claude：單擺 physics 插件 `physics/experiments/pendulum.py`（週期、等時性、由週期推算擺長），給稽核和教練兩條路共用；尚未接到 API
 - [ ] T58 Claude：驗證報告產生器：從 `data/gate/results.md` 和人工標註，產生 demo 用的「多少支影片判一致、多少支拒判」表格（不挑片）
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
@@ -188,7 +188,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 後端：`uvicorn backend.main:app --reload`，網址 http://localhost:8000，互動文件在 `/docs`。API 契約見 `docs/API.md`。
 - 合成示範資料：`python -m scripts.seed_demo --case pushed`，也可以把 case 換成 wrong_height、ok 或 occluded。
-- 測試：`pytest`（目前 55 個通過）；前端 `cd frontend && npm test`。
+- 測試：`pytest`（目前 58 個通過）；前端 `cd frontend && npm test`。
 - 免模型的軌跡探測：`python -m scripts.flight_probe 影片.mp4 --start 1.0 --end 2.0 --overlay out.png`。
 - 上傳的檔案由後端放在 `/media/{eid}/{檔名}`。
 
