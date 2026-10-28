@@ -1,0 +1,18 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createElement} from 'react';import {renderToStaticMarkup as render} from 'react-dom/server';
+import {AuditPage,AuditResult} from '../.test-dist/AuditPage.js';import {createApi} from '../.test-dist/api.js';import {validateAuditInput} from '../.test-dist/audit.js';
+const fixture=verdict=>({audit_id:'ui-fixture',created_at:'2026-10-27',assumed_model:'free_flight',t_start:0,t_end:1,camera_static:true,object_size_m:null,video_url:'/media/test/clip.mp4',overlay_url:null,track_source:'frame_diff',verdict,reasons:['fixture reason'],numbers:{sentinel:123.456789},points:[],events:[],limits:['fixture limitation']});
+test('all three verdicts render as model-relative outcomes with evidence and limits',()=>{
+ const labels={consistent:'與自由落體模型一致',inconsistent:'與自由落體模型不一致',insufficient_data:'與自由落體模型無法判斷'};
+ for(const v of Object.keys(labels)){const html=render(createElement(AuditResult,{audit:fixture(v)}));assert.ok(html.includes(labels[v]));for(const s of ['fixture reason','fixture limitation','123.456789'])assert.ok(html.includes(s));assert.ok(!html.includes('role="alert"'))}
+});
+test('audit form and each outcome avoid provenance claims and render unknown numbers as absent',()=>{
+ const form=render(createElement(AuditPage,{api:createApi('',async()=>Response.json({}))}));
+ for(const html of [form,...['consistent','inconsistent','insufficient_data'].map(v=>render(createElement(AuditResult,{audit:{...fixture(v),numbers:{}}})) )])assert.doesNotMatch(html,/真影片|假影片|AI 生成|AI影片|第一個|偵測真假/);
+ assert.match(render(createElement(AuditResult,{audit:{...fixture('insufficient_data'),numbers:{}}})),/尚無可提供的數值/);
+});
+test('audit upload sends explicit window/model/camera and does not invent size',async()=>{
+ let body,path;const api=createApi('',async(url,init)=>{path=url;body=init.body;return Response.json(fixture('insufficient_data'))});
+ await api.audit(new File(['fixture'],'test.mp4'),0,2,false);
+ assert.equal(path,'/api/audits');assert.equal(body.get('assumed_model'),'free_flight');assert.equal(body.get('camera_static'),'false');assert.equal(body.get('t_start'),'0');assert.equal(body.get('t_end'),'2');assert.equal(body.has('object_size_m'),false);
+});
+test('window and optional dimension validation rejects missing or non-finite inputs',()=>{assert.deepEqual(validateAuditInput('0','2',''),[]);for(const args of [['','2',''],['1','1',''],['-1','2',''],['0','Infinity',''],['0','2','0'],['0','2','NaN']])assert.ok(validateAuditInput(...args).length)});

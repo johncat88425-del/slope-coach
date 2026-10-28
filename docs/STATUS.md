@@ -44,7 +44,7 @@
 - [x] T36b Codex：軌跡疊加圖與 2D 軌跡圖元件。實測點用橘色，有缺口的地方不連線 — commit f2c750f
 - [x] T36c Codex：所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」 — commit 0faeb49
 - [x] T40 Codex：新畫面「檢查影片」：上傳影片、選時間窗、勾選鏡頭固定、輸入物體尺寸，接 `POST /api/audits`（見 docs/API.md v0.2）。顯示 verdict、reasons、numbers、疊加圖、軌跡圖、limits。`insufficient_data` 是正常結果。畫面文字只准說「與自由落體模型一致／不一致／無法判斷」 — commit 4aa759f
-- [ ] T41 Codex：「檢查影片」畫面的 npm 測試，包括三種 verdict 的顯示，以及確認畫面沒有「真／假／AI 生成」字眼
+- [x] T41 Codex：「檢查影片」畫面的 npm 測試，包括三種 verdict 的顯示，以及確認畫面沒有「真／假／AI 生成」字眼 — commit 待回填（本次程式提交）
 - [ ] T13b Codex：稽核結果匯出成 Markdown（數字照後端給的，不自己算）
 - [ ] T17 Codex：影片預測疊加（限 2 小時）
 - [ ] T48 Codex：介面中英文切換，預設英文，因為評審看英文
@@ -227,6 +227,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | | | | 0 |
 
 ## 工作日誌（最新在上）
+
+- 10/27 Codex T41：三種 verdict、原因/限制/原值呈現、禁止來源真假宣稱、multipart 時間窗與尺寸不臆測的測試完成；26 項 npm test 與 build 通過。
 
 - 10/27 Codex T40：新增檢查影片頁與 AuditOut 型別，時間窗/尺寸/鏡頭確認以 multipart 送 /api/audits，顯示三種模型相對結果、原因、原始數字、疊加、散點、事件與限制；保留斜坡流程。22 項測試與 build 通過；不在前端計算測量值。
 
