@@ -48,7 +48,7 @@
 - [x] T13b Codex：稽核結果匯出成 Markdown（數字照後端給的，不自己算） — commit b1f833a
 - [x] T17 Codex：影片預測疊加（限 2 小時） — commit 7addfc7；預設關閉，須使用者核對影像尺度/起點/時間；真片對齊仍待驗收
 - [x] T48 Codex：介面中英文切換，預設英文，因為評審看英文 — commit 6790495
-- [x] T49 Codex：首頁說明「這個工具能判斷什麼、不能判斷什麼」，照 docs/research/competitors.md 的結論寫，不准說「第一個」 — commit 待回填（本次程式提交）
+- [x] T49 Codex：首頁說明「這個工具能判斷什麼、不能判斷什麼」，照 docs/research/competitors.md 的結論寫，不准說「第一個」 — commit 9bfc41f
 - [ ] T50 Codex：demo 模式：讀取事先存好的稽核結果 JSON，讓 demo 不用連網或等追蹤
 - [ ] T51 Codex：手機版排版與無障礙（色盲也能分辨預測線和實測線，不能只靠顏色）
 
