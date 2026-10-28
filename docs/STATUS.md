@@ -14,7 +14,7 @@
 | 誰 | 現在做 | 細節 |
 | --- | --- | --- |
 | **Muse** | T05 → T29 → T34 | T05：`meta_client/`，包括 Spark、SAM 3.1、花費計數與 120 美元上限。T29：把後端 MockHooks 換成 MetaHooks。T34：Spark 建議運動片段（見任務表）。測試素材可以用合成影片，或 john 的 `IMG_8418.MOV`。這支畫面有人臉，**只能送標準版 `muse-spark-1.3`，不能送 contributor 版**。 |
-| **Claude** | T32 → T35 | 關卡工具已經完成。接著寫彈跳檢查和物體持續性檢查（physics），並審查其他工具的 PR。 |
+| **Claude** | T32、審查 PR | 關卡工具、彈跳檢查、物體持續性檢查都已完成。等影片跑關卡；審查 Muse、Codex、Antigravity 的 PR。 |
 | **Codex** | 先等 john 合併 PR #4，再做 T36 | `vite.config.ts` 加上 `/media` 代理；做軌跡疊加圖和 2D 軌跡圖元件；所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」。 |
 | **Antigravity** | T02 → T14 | 建立開發環境（requirements.txt、`scripts/dev.sh`）。用 `python -m scripts.seed_demo --case pushed` 建立合成實驗，跑一次斜坡流程的端到端測試並截圖。 |
 | **Manus** | T21（改題）→ T23 | 競品研究改查「影片物理合理性」：VideoPhy、Physics-IQ、Tracker，以及有沒有一般人可用的工具，確認我們的差異。demo 草稿要寫兩個版本（轉向或不轉向），未完成的部分寫 [TBD]。 |
@@ -93,7 +93,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | T32 | 可行性關卡：凍結規則、`scripts/gate_run.py`、疊加圖、10/29 填結果 | Claude | 進行中 | 工具完成，等影片 |
 | T33 | 拍 3 支以上丟球影片、生成 5–10 支影片，並提供人工標註 | john | 待辦 | 見上方「關卡素材」 |
 | T34 | Spark 建議運動片段：`suggest_motion_segment(video)` 回傳 `object`、`assumed_model`（只能是 free_flight、slide 或 none）、`candidate_t_start`、`candidate_t_end`、`reason` | Muse | 待辦 | 時間只是建議，使用者確認後才用；不准回傳任何測量數字；要通過 schema 檢查 |
-| T35 | physics：彈跳檢查（每次反彈高度要變低）、物體持續性檢查（突然消失、面積跳動、分裂） | Claude | 待辦 | 用合成資料測試 |
+| T35 | physics：彈跳檢查（每次反彈高度要變低）、物體持續性檢查（突然消失、面積跳動、分裂） | Claude | 完成 | `freefall.check_bounces`、`physics/persistence.py`；合成資料測試；尚未接進關卡（關卡規則已凍結，只用 free_flight） |
 | T36 | 前端：`/media` 代理、軌跡疊加圖、2D 軌跡圖元件、Meta 產生內容的標示 | Codex | 待辦 | PR #4 合併後再做 |
 | T05 | `meta_client/`：Spark（圖片、影片）、SAM 3.1 追蹤、花費計數與 120 美元上限 | Muse | 待辦 | 實測 token 與費用後，填入下方成本紀錄；SAM API 的實際格式寫進「已做的決定」 |
 | T29 | 後端把 MockHooks 換成 MetaHooks（check_scene、track_slider、suggest_release_time） | Muse | 待辦 | T05 之後馬上做；介面在 `backend/model_hooks.py` |
@@ -124,7 +124,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 後端：`uvicorn backend.main:app --reload`，網址 http://localhost:8000，互動文件在 `/docs`。API 契約見 `docs/API.md`。
 - 合成示範資料：`python -m scripts.seed_demo --case pushed`，也可以把 case 換成 wrong_height、ok 或 occluded。
-- 測試：`pytest`（目前 47 個通過）；前端 `cd frontend && npm test`。
+- 測試：`pytest`（目前 51 個通過）；前端 `cd frontend && npm test`。
 - 免模型的軌跡探測：`python -m scripts.flight_probe 影片.mp4 --start 1.0 --end 2.0 --overlay out.png`。
 - 上傳的檔案由後端放在 `/media/{eid}/{檔名}`。
 
@@ -163,6 +163,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/28 Claude 完成 T35：彈跳檢查（反彈比前一次高超過 5% 就判不一致）與物體持續性事件（中途消失超過 2 格、面積偏離中位數 2 倍、位移超過中位步長 4 倍）。這兩項不加進 10/29 的關卡，避免看到資料後才改規則。
 - 10/28 Claude 把所有資料整合進本檔（原本的 docs/GATE.md 已併入「可行性關卡」），並加上「現在每個工具要做什麼」。
 - 10/28 john 決定先驗證縮小版「影片物理稽核」。Claude 寫了關卡工具：`scripts/gate_run.py` 和疊加圖，規則先凍結，合成影片測試通過（PR #7、#8）。
 - 10/28 john 拍了第一支測試影片，問題列在「缺什麼」。Claude 完成 T31 拋體檢查和 `scripts/flight_probe.py`。
