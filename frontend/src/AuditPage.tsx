@@ -1,3 +1,4 @@
+import {InterviewPanel} from './InterviewPanel.js';
 import {BounceChart} from './BounceChart.js';
 import {formatNumber} from './formatNumber.js';
 import {PhysicsCard} from './PhysicsCard.js';
@@ -38,6 +39,7 @@ export function AuditPage({ api, auditId = null }: {
     const [start, setStart] = useState(''), [end, setEnd] = useState(''), [size, setSize] = useState(''), [length,setLength]=useState(''), [fixed, setFixed] = useState(false);
     const [busy, setBusy] = useState(false), [error, setError] = useState(''), [attempted, setAttempted] = useState(false);
     const [audit, setAudit] = useState<AuditOut | null>(null), [id, setId] = useState('');
+    const [interviewBusy,setInterviewBusy]=useState(false);
     const [uploadPercent,setUploadPercent]=useState<number|null>(null);
     const [replay, setReplay] = useState(false);
     const [model, setModel] = useState<AuditModel>('free_flight');
@@ -64,8 +66,9 @@ export function AuditPage({ api, auditId = null }: {
         setBusy(false);
     } }
     return <Localize>{<section aria-label="檢查影片"><h2>檢查影片</h2><p>Check the selected segment against the chosen motion model. Confirm capture conditions and the time window; insufficient evidence remains an explicit outcome.</p>
- <fieldset disabled={busy}><legend>Offline demo</legend><p>Load a previously saved result. No network connection or tracking is needed.</p><label>Saved audit JSON<input data-testid="audit-import-json" type="file" accept=".json,application/json" onChange={async e => { const saved = e.target.files?.[0]; if (!saved) return; setError(''); try { if(saved.size > 5 * 1024 * 1024) throw new Error('Saved JSON must be under 5 MB.'); const result = parseSavedAudit(await saved.text()); setAudit(result); setReplay(true); setPreview(''); setFile(null); } catch(e) {setError(friendlyApiError(e));} }}/></label></fieldset>
- <fieldset disabled={busy}><legend>使用者確認的設定</legend><label>Motion model<select data-testid="audit-model" value={model} onChange={e=>setModel(e.target.value as AuditModel)}><option value="free_flight">Free flight</option><option value="bounce">Bounce</option><option value="pendulum">Pendulum</option></select></label><label>上傳影片<input data-testid="audit-video-input" type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) {
+ <InterviewPanel api={api} disabled={busy} onBusyChange={setInterviewBusy} onResult={value=>{setAudit(value);setReplay(false);setId(value.audit_id);setPreview('');setFile(null);setError('')}}/>
+ <fieldset disabled={busy||interviewBusy}><legend>Offline demo</legend><p>Load a previously saved result. No network connection or tracking is needed.</p><label>Saved audit JSON<input data-testid="audit-import-json" type="file" accept=".json,application/json" onChange={async e => { const saved = e.target.files?.[0]; if (!saved) return; setError(''); try { if(saved.size > 5 * 1024 * 1024) throw new Error('Saved JSON must be under 5 MB.'); const result = parseSavedAudit(await saved.text()); setAudit(result); setReplay(true); setPreview(''); setFile(null); } catch(e) {setError(friendlyApiError(e));} }}/></label></fieldset>
+ <fieldset disabled={busy||interviewBusy}><legend>使用者確認的設定</legend><label>Motion model<select data-testid="audit-model" value={model} onChange={e=>setModel(e.target.value as AuditModel)}><option value="free_flight">Free flight</option><option value="bounce">Bounce</option><option value="pendulum">Pendulum</option></select></label><label>上傳影片<input data-testid="audit-video-input" type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) {
         setFile(f);
         setPreview(URL.createObjectURL(f));
         setAudit(null);
