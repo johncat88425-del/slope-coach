@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {createElement} from 'react';import {renderToStaticMarkup as render} from 'react-dom/server';import {Home} from '../.test-dist/Home.js';import {LanguageProvider} from '../.test-dist/i18n.js';
+test('home states the model, evidence requirements and boundaries without novelty claims',()=>{const h=render(createElement(Home));assert.match(h,/What this version checks/);assert.match(h,/What it cannot establish/);assert.match(h,/provenance/);assert.match(h,/href="#audit"/);assert.doesNotMatch(h,/first ever|detects AI|guaranteed accurate/i)});
+test('home also exposes its scope in Chinese',()=>assert.match(render(createElement(LanguageProvider,{value:'zh'},createElement(Home))),/這個版本能檢查什麼/));
