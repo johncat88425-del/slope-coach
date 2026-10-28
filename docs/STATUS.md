@@ -39,7 +39,7 @@
 - [ ] T46 Muse：Spark 準確度評估腳本。對 `data/gate/manifest.csv` 裡的影片，比較 Spark 建議的時間窗和物體，跟 john 的人工標註差多少，結果寫進 STATUS。只能送沒有人臉的影片
 - [ ] T47 Muse：英文版的說明文字（給評審看），同樣要過 `check_model_text()`
 - [ ] T66 Muse：**Muse 偵訊**（特色功能）。下判定之前，Spark 先看影片的幾張畫面，向使用者提出最多 3 個問題，例如「有沒有開慢動作？」「鏡頭有沒有動？」「這顆球大概多大？」。使用者的回答變成確認過的輸入（`camera_static`、`object_size_m`、時間窗），Spark 不能自己填數字。畫面像一段問答，標明「由 Muse Spark 提問」
-- [ ] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。數字只能引用欄位名，再由程式填入，最後要過 `check_model_text()`。不准出現真、假、AI 生成等字眼
+- [ ] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。Spark 只寫 `{g_vs_earth:2}`、`{nearest_body}` 這種欄位位置，再交給 `backend.output_check.fill_numbers()` 填入數字並檢查，不通過就不顯示。不准出現真、假、AI 生成等字眼
 
 **Codex**（PR #4 合併後才開始，照順序做）
 - [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
@@ -90,6 +90,7 @@
 - [x] T58 Claude：驗證報告產生器：`gate_run` 的輸出最後會附上「## Summary」，列出各來源的一致、不一致、資料不足、拒判支數，並逐題算出三個關卡問題是 pass、fail 還是 pending（等 john 看疊加圖）。所有影片都列入，不挑片
 - [x] T69 Claude：鬼影軌跡與星球比喻的後端（`physics/experiments/freefall.ghost_track`、`nearest_body`，API v0.3 的 `ghost_points`、`nearest_body`），以及尺寸誤差 ±30% 的穩健度（`g_apparent_low/high`、`g_verdict_robust`）
 - [x] T70 Claude：單擺接上 `/api/audits`（`assumed_model=pendulum`，可選 `length_m`），見 docs/API.md v0.3
+- [x] T72 Claude：模型文字檢查加上真偽字眼黑名單（真／假影片、AI 生成、deepfake 等一律擋下），以及 `fill_numbers()`：模型只寫欄位位置，數字由程式填入（給 T67、T28 用）
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
 **john**
@@ -290,3 +291,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 10/28 02:30 合併 Codex PR #19（T59–T63），合併後才補做審查：pytest 61、npm 44、build 都通過，沒有違規字眼，前端沒有自己算物理。john 要求增加特色。Claude 完成 T69（鬼影軌跡、星球比喻、尺寸誤差穩健度），並新增特色任務：Codex 的 T64 鬼影對照、T65 物理名片，Muse 的 T66 Muse 偵訊、T67 名片標題，Antigravity 的 T68。
 - 10/28 Claude 完成 T70：稽核支援單擺，新增 Codex T71（畫面加上單擺選項）。
+- 10/28 02:35 例行巡查：Muse、Antigravity 仍沒有推任何分支；Codex 沒有新分支（T64、T65、T71 待做）。Claude 完成 T72。
