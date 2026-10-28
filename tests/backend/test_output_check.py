@@ -32,3 +32,21 @@ def test_choice_must_be_a_candidate():
     assert check_choice("release_check", ["release_check"]).ok
     assert not check_choice("change_surface", ["release_check"]).ok
     assert check_choice(None, []).ok
+
+
+def test_authenticity_words_rejected():
+    from backend.output_check import check_model_text
+    assert not check_model_text("This looks like an AI-generated clip.", []).ok
+    assert not check_model_text("這是假影片", []).ok
+    assert check_model_text("The motion is not consistent with free flight.", []).ok
+
+
+def test_fill_numbers_only_from_tool_output():
+    from backend.output_check import fill_numbers
+    nums = {"g_vs_earth": 0.2614, "nearest_body": "Moon", "implied_object_size_m": 2.4}
+    text, chk = fill_numbers("Falls like on the {nearest_body}: {g_vs_earth} x Earth gravity", nums)
+    assert chk.ok and text == "Falls like on the Moon: 0.26 x Earth gravity"
+    assert fill_numbers("{implied_object_size_m:1} m wide", nums)[0] == "2.4 m wide"
+    assert not fill_numbers("Gravity is 0.26 x Earth", nums)[1].ok
+    assert not fill_numbers("{g_apparent} m/s2", nums)[1].ok
+    assert not fill_numbers("Fake video: {g_vs_earth}", nums)[1].ok
