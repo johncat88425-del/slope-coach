@@ -17,7 +17,7 @@ from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
 
 from . import schemas as S
-from .model_hooks import MOCK_QUESTIONS, get_hooks
+from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
 from .output_check import check_model_text
 from .store import UPLOAD_ROOT, new_id, now, store
 from .video import read_frames, save_overlay, track_with_sizes
@@ -62,6 +62,32 @@ def checked_interview(iv: S.AuditInterview) -> S.AuditInterview:
     return iv
 
 
+def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, object_name: str):
+    """SAM 3.1 when connected, otherwise frame differencing. SAM output is normalised and converted
+    here to the same 480 px frame the rest of the audit uses; frames SAM misses stay gaps."""
+    h, w = frames.shape[1], frames.shape[2]
+    try:
+        dets = get_hooks().track_object(video, object_name, t_start, t_end)
+    except TrackingUnavailable:
+        dets = None
+    except Exception:  # a model failure falls back to the model-free tracker, never blocks the audit
+        dets = None
+    if dets:
+        pts, sizes = [], []
+        for d in sorted(dets, key=lambda d: d.t_s):
+            if d.centroid_px is None or not t_start <= d.t_s <= t_end:
+                continue
+            x, y = d.centroid_px
+            if not (0 <= x <= 1 and 0 <= y <= 1):
+                continue  # outside the contract: drop rather than guess
+            pts.append((d.t_s, x * w, y * h))
+            sizes.append(((d.area_px or 0) * w * h) ** 0.5)
+        if pts:
+            return pts, sizes, "sam"
+    pts, sizes = track_with_sizes(frames, fps, t_start)
+    return pts, sizes, "frame_diff"
+
+
 @router.post("/api/audit-drafts", response_model=S.AuditDraftOut, status_code=201)
 def create_draft(file: UploadFile = File(...)):
     """Step 1 of the Muse interview: store the clip and let the model ask what it needs to know."""
@@ -85,6 +111,7 @@ def create_audit(
     camera_static: bool = Form(...),
     assumed_model: str = Form("free_flight"),
     object_size_m: float | None = Form(None),
+    object_name: str = Form("ball", max_length=60),  # text prompt for SAM, e.g. "tennis ball"
     length_m: float | None = Form(None),  # pendulum only: user-measured string length to the bob centre
 ):
     if assumed_model not in MODELS:
@@ -127,7 +154,8 @@ def create_audit(
         frames, fps = read_frames(str(video), t_start, t_end)
     except Exception:
         raise HTTPException(422, "could not read video frames in that window")
-    pts, sizes = track_with_sizes(frames, fps, t_start)
+    pts, sizes, source = track_points(video, frames, fps, t_start, t_end, object_name)
+    rec["track_source"] = source
     size_px = sorted(sizes)[len(sizes) // 2] if sizes else None
     save_overlay(frames, pts, t_start, fps, str(d / "overlay.png"))
     rec["overlay_url"] = f"{media}/overlay.png"
