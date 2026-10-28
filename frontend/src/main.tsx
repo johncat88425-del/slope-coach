@@ -11,6 +11,7 @@ import { CurveChart } from './CurveChart';
 import { mediaUrl } from './media';
 import { ModelSource } from './ModelSource';
 import { AuditPage } from './AuditPage';
+import {DemoPage} from './DemoPage';
 import {Home} from './Home';
 import { VideoOverlay } from './VideoOverlay';
 import './style.css';
@@ -77,7 +78,7 @@ function App() {
     useEffect(() => { setRestConfirmed(false); setTrialFile(null); setTrialPreview(''); }, [predictionId, calVersion]);
     useEffect(() => () => allocatedUrls.current.forEach(value => URL.revokeObjectURL(value)), []);
     // Read-only resume: never auto-create or repeat a mutation after refresh.
-    useEffect(() => { if (['home','audit'].includes(resolveRoute(location.hash))) return; const id = rememberedId(); if (!id)
+    useEffect(() => { if (['home','audit','demo'].includes(resolveRoute(location.hash))) return; const id = rememberedId(); if (!id)
         return; let cancelled = false; setBusy(true); api.get(id).then(value => { if (!cancelled)
         selectRecord(value); }).catch(e => { if (!cancelled)
         setError(friendlyApiError(e)); }).finally(() => { if (!cancelled)
@@ -98,7 +99,7 @@ function App() {
     return <Localize>{<><a className="skip-link" href="#workspace">Skip to workspace</a><header><b>Slope Coach</b><span>真實實驗 · 先預測再核對</span><small>後端 API v0.1</small></header><main><aside><p className="eyebrow">實驗工作區</p><h1>上傳你的實驗，<br />逐步核對證據。</h1><nav aria-label="實驗步驟">{pages.map((p, i) => <a data-testid={'nav-'+p.route} href={'#' + p.route} key={p.route} aria-current={route === p.route ? 'page' : undefined}>{i + 1}　{p.title}</a>)}</nav><p>固定鏡頭 · 近似側視<br />單一直線斜坡 · 單一滑塊</p></aside><section data-testid="workspace" id="workspace" tabIndex={-1} aria-label={active.title}>
  <div className="notice">照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。</div>
  <div aria-live="polite">{busy && <p role="status">處理中，請勿重複提交…</p>}{error && <p data-testid="workspace-error" role="alert">{error}</p>}{message && <p role="status">{message}</p>}</div>
- {route !== 'audit' && route !== 'home' && <fieldset disabled={busy}><legend>實驗紀錄</legend>
+ {route !== 'audit' && route !== 'home' && route !== 'demo' && <fieldset disabled={busy}><legend>實驗紀錄</legend>
  {!record && <><label>實驗名稱<input value={title} onChange={e => setTitle(e.target.value)}/></label><button data-testid="experiment-create" onClick={() => void run(async () => { selectRecord(await api.create(title)); setLocal(createExperiment('local-draft')); setPhotoFile(null); })}>建立實驗</button></>}
  <label>讀取實驗 ID<input value={loadId} onChange={e => setLoadId(e.target.value)}/></label><button data-testid="experiment-load" disabled={!loadId.trim()} onClick={() => void run(async () => { if (record && record.experiment_id !== loadId) {
             setLocal(createExperiment('local-draft'));
@@ -111,7 +112,7 @@ function App() {
         }
         catch { /* optional storage */ } }}>開始另一個實驗（保留舊紀錄）</button><button onClick={() => void run(refresh)}>重新讀取後端</button><label>校準版本<select value={calVersion} onChange={e => { setCalVersion(Number(e.target.value)); setBaselineIds([]); }}><option value="0">尚未選取／草稿未保存</option>{record.calibrations.map(c => <option value={c.version} key={c.version}>v{c.version} · L {c.slope_length_m} m / h {c.slope_height_m} m（使用者）</option>)}</select></label></>}
  </fieldset>}
- {route === 'home' ? <Home/> : route === 'audit' ? <AuditPage api={api} auditId={auditRouteId}/> : <fieldset disabled={busy || !record}><legend>{active.title}</legend>
+ {route === 'demo' ? <DemoPage/> : route === 'home' ? <Home/> : route === 'audit' ? <AuditPage api={api} auditId={auditRouteId}/> : <fieldset disabled={busy || !record}><legend>{active.title}</legend>
  {route === 'setup' && <><h2>確認實拍照片與尺寸</h2><p>尺的兩端、滑塊（作為路徑起點）與坡底終點須由你確認；共四個標記。</p>
  <label className="upload">上傳實驗照片<input type="file" accept="image/*" onChange={event => { const file = event.target.files?.[0]; if (!file)
                 return; setCalVersion(0); setScene(null); setPhotoFile(file); setLocal(current => replacePhoto(current, { name: file.name, url: url(file) })); if (record)

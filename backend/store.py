@@ -56,6 +56,7 @@ class Store:
         self.trials: dict[str, TrialRecord] = {}
         self.intervention_owner: dict[str, str] = {}
         self.audits: dict[str, dict] = {}
+        self.audit_drafts: dict[str, str] = {}  # draft_id -> video path; not persisted
 
     def reset(self) -> None:
         self.__init__()

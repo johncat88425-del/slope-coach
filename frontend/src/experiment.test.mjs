@@ -7,7 +7,7 @@ function validExperiment() {
   return e;
 }
 test('home, five coaching routes and audit resolve; unknown and empty routes return home', () => {
-  assert.equal(pages.length, 7);
+  assert.equal(pages.length, 8);
   for (const {route} of pages) assert.equal(resolveRoute('#' + route), route);
   assert.equal(resolveRoute('#unknown'), 'home');
   assert.equal(resolveRoute(''), 'home');

@@ -38,7 +38,7 @@
 - [ ] T45 Muse：稽核代理。Spark 用工具呼叫，從固定清單（free_flight、bounce、persistence）選要跑哪些檢查，並說明理由。數字只來自工具輸出，理由先過 `check_model_text()`。這是「創意使用 Meta AI」的主要展示點
 - [ ] T46 Muse：Spark 準確度評估腳本。對 `data/gate/manifest.csv` 裡的影片，比較 Spark 建議的時間窗和物體，跟 john 的人工標註差多少，結果寫進 STATUS。只能送沒有人臉的影片
 - [ ] T47 Muse：英文版的說明文字（給評審看），同樣要過 `check_model_text()`
-- [ ] T66 Muse：**Muse 偵訊**（特色功能）。下判定之前，Spark 先看影片的幾張畫面，向使用者提出最多 3 個問題，例如「有沒有開慢動作？」「鏡頭有沒有動？」「這顆球大概多大？」。使用者的回答變成確認過的輸入（`camera_static`、`object_size_m`、時間窗），Spark 不能自己填數字。畫面像一段問答，標明「由 Muse Spark 提問」
+- [ ] T66 Muse：**Muse 偵訊**（特色功能）。後端契約已完成（docs/API.md v0.4、T78）：你只要在 MetaHooks 實作 `interview_audit(video_path) -> AuditInterview`，讓 Spark 看幾張畫面、回傳最多 3 題 `{field, text}`，後端會自動檢查，不通過就退回固定問題。下判定之前，Spark 先看影片的幾張畫面，向使用者提出最多 3 個問題，例如「有沒有開慢動作？」「鏡頭有沒有動？」「這顆球大概多大？」。使用者的回答變成確認過的輸入（`camera_static`、`object_size_m`、時間窗），Spark 不能自己填數字。畫面像一段問答，標明「由 Muse Spark 提問」
 - [ ] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。Spark 只寫 `{g_vs_earth:2}`、`{nearest_body}` 這種欄位位置，再交給 `backend.output_check.fill_numbers()` 填入數字並檢查，不通過就不顯示。不准出現真、假、AI 生成等字眼
 
 **Codex**（PR #4 合併後才開始，照順序做）
@@ -61,6 +61,10 @@
 - [x] T64 Codex：**鬼影對照**（特色功能，demo 主畫面）。在影片和軌跡圖上，把 `ghost_points` 畫成半透明的「鬼影球」，跟著影片時間和真的物體一起移動。真的物體用實線，鬼影用虛線，加上圖例「如果遵守 9.81 m/s² 會在這裡」。差距大的地方標出最大差距的像素數（數字由前端從兩組點相減，只做顯示，不做判定） — commit 676467f
 - [x] T71 Codex：「檢查影片」加入單擺選項：選 pendulum 時顯示「擺長（公尺，可留空）」欄位並送 `length_m`，結果顯示 `period_s`、`implied_length_m`、`predicted_period_s`；離線重播也要接受 pendulum — commit c6ce3d4
 - [x] T65 Codex：**物理名片**（特色功能）。把一次稽核結果做成一張可以下載成 PNG 的卡片，內容包括疊加圖縮圖、判定、`nearest_body` 和 `g_vs_earth`（例如「重力像在月球：地球的 0.26 倍」）、`implied_time_factor`（「影片大約是真實速度的 0.5 倍」）、`implied_object_size_m`（「如果這是真的，這顆球直徑 2.4 公尺」）、`g_verdict_robust` 為 0 時的提醒、limits，以及「由 Muse Spark 撰寫說明」的標示。標題位置先放 T67 的空位 — commit dbf8587
+- [x] T74 Codex：**對照展示頁**（demo 用）。把一致、不一致、拒判三種結果並排放在同一頁，每一張都有鬼影對照和物理名片縮圖。資料先讀 `data/demo/synthetic_*.json`（頁面上要寫明 SYNTHETIC，是程式畫的測試方塊），等 john 的真實影片跑完再換成真的結果。目的：demo 時評審一眼看到「會判一致、會判不一致、也會拒判」 — commit 待回填（本次程式提交）
+- [ ] T75 Codex：數字顯示格式。畫面和名片上的數字只做顯示用的四捨五入（例如 g_vs_earth 顯示 0.26、尺寸顯示 2.4 m），匯出的 JSON 保留原值。不准改變數值本身
+- [ ] T76 Codex：彈跳結果圖。用 `rebound_ratio_k` 畫每次反彈高度比例的長條圖，加一條 1.0 的參考線（超過 1.0 代表反彈得比上一次高，與被動彈跳模型不一致）
+- [ ] T77 Codex：「Muse 偵訊」問答面板的外觀（給 Muse T66 用）。先用固定的假問題做畫面，標示 mock；契約已在 docs/API.md v0.4：先 `POST /api/audit-drafts` 拿到問題，再用 `draft_id` 和使用者的回答呼叫 `POST /api/audits`；`slow_motion` 是新欄位。mock 問題現在後端就會回傳，可以直接接
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -92,6 +96,8 @@
 - [x] T70 Claude：單擺接上 `/api/audits`（`assumed_model=pendulum`，可選 `length_m`），見 docs/API.md v0.3
 - [x] T72 Claude：模型文字檢查加上真偽字眼黑名單（真／假影片、AI 生成、deepfake 等一律擋下），以及 `fill_numbers()`：模型只寫欄位位置，數字由程式填入（給 T67、T28 用）
 - [x] T73 Claude：合成測試資料 `data/demo/synthetic_*.json`，用 `python -m scripts.synthetic_audits` 重新產生。這是真的 `/api/audits` 輸出，但影片是程式畫的方塊，共 6 種：正常 g、g/4、鏡頭移動、彈跳變低、彈跳變高、單擺。檔案裡有 `synthetic: true`，只能拿來開發和測試，demo 不准說成真實或生成的影片。Codex 做 T64、T65、T71，Antigravity 做 T68 時，可以先用這些檔案
+- [x] T78 Claude：Muse 偵訊的後端：`POST /api/audit-drafts`、`interview_audit` hook（含 mock）、問題檢查（不准有數字和違規字眼，最多 3 題）、`draft_id` 與 `slow_motion` 欄位（API v0.4）
+- [x] T79 Claude：`scripts/gate_prepare.py`：列出每支關卡影片的 fps、長度、尺寸（fps 超過 90 會提醒可能是慢動作），產生附時間戳的縮圖總表方便 john 看出時間窗，並在 manifest 加上標註留空的列。不呼叫模型，也不自動填標註
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
 **john**
@@ -109,6 +115,7 @@
 **規則已凍結。** 門檻在看到任何關卡影片之前就寫進 `scripts/gate_run.py` 的 `GATE_RULES` 和 `physics/experiments/freefall.py` 的預設值，所有影片用同一個指令跑：
 
 ```
+python -m scripts.gate_prepare /mnt/project-files/gate   # 先做：縮圖總表在 data/gate/sheets/，manifest 新增空白列給 john 填
 python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gate --out data/gate/results.md --overlays data/gate/overlays
 ```
 
@@ -298,3 +305,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/27 Codex T64：鬼影影片／散點對照、播放滑桿、最大同時刻像素差與跳轉、事件回放按鈕；只用後端 ghost_points，無資料不補造、不插值。離線仍禁遠端媒體；最大差只作顯示，不作判定。新增 testid ghost-review/ghost-video/ghost-scrubber/ghost-gap/event-seek。npm 45 pass、build pass。
 - 10/27 Codex T71：單擺選項與使用者擺長 length_m（選填、正有限數），離線支援 pendulum；週期與推算擺長直接顯示後端原值。npm 46 pass、build pass；testid pendulum-length。
 - 10/27 Codex T65：新增可下載 PNG 的物理名片，包含原始數字、星球比喻、尺寸穩健度警告、reason／limits、可讀取的後端縮圖；離線不取遠端縮圖。未有 T67 模型標題時明示待提供，沒有假稱 Muse 已產生文字。合成 JSON 的 synthetic 標記在結果與卡片保留。testid physics-card/physics-card-download；npm 48 pass、build pass，pytest 56 pass/8 skip。PNG 排版與影片同步仍需 Antigravity 瀏覽器實測。
+- 10/28 04:35 例行巡查：審查並合併 Codex PR #24（T64 鬼影對照、T71 單擺選項、T65 物理名片）。pytest 64、npm 48、build 都通過，前端沒有自己算物理，畫面沒有違規字眼，合成資料有標明 SYNTHETIC。給 Codex 補上 T74 到 T77。Muse、Antigravity 還是沒有推任何分支。
+- 10/28 04:50 Claude 完成 T78（Muse 偵訊的後端契約）。
+- 10/28 06:35 例行巡查：沒有新的分支。Claude 完成 T79（關卡標註輔助）。
+- 10/28 Codex T74：#demo 同頁展示一致／不一致／拒判，直接打包 data/demo 三份後端合成結果，不改數字；顯示 SYNTHETIC 與效能非實證提示，離線無 API／媒體請求，各卡包含鬼影與名片。npm 49 pass、build pass。
