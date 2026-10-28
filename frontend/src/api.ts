@@ -1,5 +1,5 @@
 export type Pixel = [number, number];
-export type ScenePhoto = {photo_id: string; scene_check: {source: 'model'|'mock'; needs_retake: boolean; retake_reasons: string[]}};
+export type ScenePhoto = {photo_id: string; photo_url?: string|null; scene_check: {source: 'model'|'mock'; needs_retake: boolean; retake_reasons: string[]}};
 export type CalibrationInput = {ruler_px: [Pixel,Pixel]; ruler_length_m: number; path_start_px: Pixel; path_end_px: Pixel; slope_length_m: number; slope_height_m: number; reason?: string};
 export type Calibration = CalibrationInput & {version:number; m_per_px:number; angle_deg:number; created_at:string};
 export type Detection = {t_s:number; centroid_px:Pixel|null; area_px?:number; source:'sam'|'manual'};
