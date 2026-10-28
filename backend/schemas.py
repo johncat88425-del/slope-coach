@@ -210,11 +210,12 @@ class AuditOut(BaseModel):
     """Video physics audit. verdict is relative to assumed_model only; never real vs generated."""
     audit_id: str
     created_at: datetime
-    assumed_model: Literal["free_flight", "bounce"]
+    assumed_model: Literal["free_flight", "bounce", "pendulum"]
     t_start: float
     t_end: float
     camera_static: bool
     object_size_m: float | None
+    length_m: float | None = None  # pendulum only, user-measured
     video_url: str
     overlay_url: str | None
     track_source: Literal["frame_diff", "sam", "manual"]
@@ -222,5 +223,7 @@ class AuditOut(BaseModel):
     reasons: list[str]
     numbers: dict[str, float]
     points: list[tuple[float, float, float]]  # [t_s, x_px, y_px] at 480 px frame width
+    ghost_points: list[tuple[float, float, float]] = []  # same start and velocity, falling at 9.81; needs object_size_m
+    nearest_body: str | None = None  # body whose surface gravity is closest to the apparent g
     events: list[PersistenceEventOut]
     limits: list[str]

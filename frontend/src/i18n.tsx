@@ -31,6 +31,8 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Ghost comparison':'鬼影對照','Dashed ghost: where the backend model places the object under 9.81 m/s². Solid orange circles: recorded observations. This comparison is a display aid, not a new verdict.':'虛線鬼影：後端模型在 9.81 m/s² 下的位置。橘色實線圓：實測觀測。此對照只協助查看，不產生新判定。','Playback position (seconds)':'播放位置（秒）','Original video unavailable. Recorded trajectories remain available below.':'目前沒有原片，下方仍可查看已記錄的軌跡。','Maximum matched-point separation:':'同時刻最大像素差距：','Review largest gap':'查看最大差距','No backend ghost trajectory is available. No trajectory is invented.':'後端未提供鬼影軌跡，不自行補造。','Review an event':'回放事件','Jump to a reported event and inspect the original footage. Events may reflect tracking problems.':'跳至回報事件並核對原片；事件也可能來自追蹤問題。',
+
 'Upload progress':'上傳進度','Upload complete. Waiting for backend analysis; analysis progress is unavailable.':'上傳完成，等待後端分析；目前無分析進度資訊。','Request in progress. Please wait; no automatic retry will be made.':'請求處理中，請稍候；不會自動重送。','Cannot connect to the backend. Check your connection and try loading the record before submitting again.':'無法連接後端。請檢查連線；再次提交前先嘗試讀取紀錄。',
 
 'Open result link':'開啟結果連結',
