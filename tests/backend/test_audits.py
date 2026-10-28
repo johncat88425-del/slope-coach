@@ -123,3 +123,30 @@ def test_model_questions_with_numbers_fall_back_to_fixed_ones():
     ok = S.AuditInterview(source="model", questions=[
         S.AuditQuestion(field="slow_motion", text="Was slow motion on when you recorded this?")])
     assert checked_interview(ok).source == "model"
+
+
+def test_sam_track_used_when_connected(tmp_path):
+    from backend import schemas as S
+    from backend.model_hooks import MockHooks, get_hooks, set_hooks
+
+    class FakeSam(MockHooks):
+        def track_object(self, video_path, text_prompt, t_start, t_end):
+            # same motion as write_clip(9.81), normalised to the 640x480 frame
+            out = []
+            for i in range(36):
+                t = i / 60
+                x = (40 + t / 0.003 + 10) / 640
+                y = (300 - 2.0 / 0.003 * t + 0.5 * 9.81 / 0.003 * t * t + 10) / 480
+                out.append(S.DetectionIn(t_s=t, centroid_px=(x, y) if i != 5 else None, area_px=400 / (640 * 480)))
+            return out
+
+    write_clip(tmp_path / "real.mp4", 9.81)
+    old = get_hooks()
+    set_hooks(FakeSam())
+    try:
+        r = post(tmp_path / "real.mp4", object_name="black square").json()
+    finally:
+        set_hooks(old)
+    assert r["track_source"] == "sam" and r["verdict"] == "consistent", r
+    assert r["numbers"]["g_apparent_m_s2"] == pytest.approx(9.81, rel=0.05)
+    assert len(r["points"]) == 35  # the missed frame stays a gap
