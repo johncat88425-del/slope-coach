@@ -49,7 +49,7 @@
 - [x] T17 Codex：影片預測疊加（限 2 小時） — commit 7addfc7；預設關閉，須使用者核對影像尺度/起點/時間；真片對齊仍待驗收
 - [x] T48 Codex：介面中英文切換，預設英文，因為評審看英文 — commit 6790495
 - [x] T49 Codex：首頁說明「這個工具能判斷什麼、不能判斷什麼」，照 docs/research/competitors.md 的結論寫，不准說「第一個」 — commit 9bfc41f
-- [ ] T50 Codex：demo 模式：讀取事先存好的稽核結果 JSON，讓 demo 不用連網或等追蹤
+- [x] T50 Codex：demo 模式：讀取事先存好的稽核結果 JSON，讓 demo 不用連網或等追蹤 — commit 待回填（本次程式提交）
 - [ ] T51 Codex：手機版排版與無障礙（色盲也能分辨預測線和實測線，不能只靠顏色）
 
 **Antigravity**（照順序做）
@@ -246,3 +246,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Claude 完成 T30（`/media`），並審查 Codex PR #4：測試和 build 都通過，衝突已解。
 - 10/28 Claude 完成 T15 與 `scripts/seed_demo.py`、T12、T26、T07、T06。
 - 10/27 建立 AGENTS.md、CLAUDE.md、STATUS.md 初版。
+
+- 10/27 Codex T50：新增稽核 JSON 保存與離線讀取，驗證 free_flight schema／有限數字／5 MB 上限；重播明示沒有新分析，禁止載入遠端影片與疊加圖。沒有捏造產品示範結果，需先保存真實 API 結果；36 項 npm 測試與 build 通過。
