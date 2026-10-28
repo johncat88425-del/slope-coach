@@ -53,11 +53,12 @@ in the frontend.
 ## Known backend dependencies
 
 The default backend still uses MockHooks: scene/release suggestions are labelled
-mock, and SAM returns 501. T26 now persists backend records to its configured store file. Backend T30 now serves `/media/...` and supplies photo URLs. This frontend still
-uses selected local files for preview until T36 adds the media proxy and rendering.
-After refresh, reselect the original clip without uploading again. T36 starts
-after john merges PR #4, as required by docs/STATUS.md. Real Meta hooks and
-physical accuracy with independent real clips remain separate work.
+mock, and SAM returns 501. T26 now persists backend records to its configured store file. The returned
+`/media/...` URLs currently have no file-serving route; video playback therefore
+uses the user's selected local file. After refresh, reselect the original clip
+without uploading again to restore manual preview. Photo retrieval also lacks a
+media URL. Media serving and real Meta hooks and physical
+accuracy with independent real clips remain separate work.
 
 Requests have a 120-second timeout, preserve HTTP errors, and never automatically
 retry mutations. On a timeout or partial failure, refresh the experiment first
