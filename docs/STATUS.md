@@ -97,6 +97,7 @@
 - [x] T72 Claude：模型文字檢查加上真偽字眼黑名單（真／假影片、AI 生成、deepfake 等一律擋下），以及 `fill_numbers()`：模型只寫欄位位置，數字由程式填入（給 T67、T28 用）
 - [x] T73 Claude：合成測試資料 `data/demo/synthetic_*.json`，用 `python -m scripts.synthetic_audits` 重新產生。這是真的 `/api/audits` 輸出，但影片是程式畫的方塊，共 6 種：正常 g、g/4、鏡頭移動、彈跳變低、彈跳變高、單擺。檔案裡有 `synthetic: true`，只能拿來開發和測試，demo 不准說成真實或生成的影片。Codex 做 T64、T65、T71，Antigravity 做 T68 時，可以先用這些檔案
 - [x] T78 Claude：Muse 偵訊的後端：`POST /api/audit-drafts`、`interview_audit` hook（含 mock）、問題檢查（不准有數字和違規字眼，最多 3 題）、`draft_id` 與 `slow_motion` 欄位（API v0.4）
+- [x] T79 Claude：`scripts/gate_prepare.py`：列出每支關卡影片的 fps、長度、尺寸（fps 超過 90 會提醒可能是慢動作），產生附時間戳的縮圖總表方便 john 看出時間窗，並在 manifest 加上標註留空的列。不呼叫模型，也不自動填標註
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
 **john**
@@ -114,6 +115,7 @@
 **規則已凍結。** 門檻在看到任何關卡影片之前就寫進 `scripts/gate_run.py` 的 `GATE_RULES` 和 `physics/experiments/freefall.py` 的預設值，所有影片用同一個指令跑：
 
 ```
+python -m scripts.gate_prepare /mnt/project-files/gate   # 先做：縮圖總表在 data/gate/sheets/，manifest 新增空白列給 john 填
 python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gate --out data/gate/results.md --overlays data/gate/overlays
 ```
 
@@ -305,3 +307,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/27 Codex T65：新增可下載 PNG 的物理名片，包含原始數字、星球比喻、尺寸穩健度警告、reason／limits、可讀取的後端縮圖；離線不取遠端縮圖。未有 T67 模型標題時明示待提供，沒有假稱 Muse 已產生文字。合成 JSON 的 synthetic 標記在結果與卡片保留。testid physics-card/physics-card-download；npm 48 pass、build pass，pytest 56 pass/8 skip。PNG 排版與影片同步仍需 Antigravity 瀏覽器實測。
 - 10/28 04:35 例行巡查：審查並合併 Codex PR #24（T64 鬼影對照、T71 單擺選項、T65 物理名片）。pytest 64、npm 48、build 都通過，前端沒有自己算物理，畫面沒有違規字眼，合成資料有標明 SYNTHETIC。給 Codex 補上 T74 到 T77。Muse、Antigravity 還是沒有推任何分支。
 - 10/28 04:50 Claude 完成 T78（Muse 偵訊的後端契約）。
+- 10/28 06:35 例行巡查：沒有新的分支。Claude 完成 T79（關卡標註輔助）。
