@@ -59,7 +59,7 @@
 - [x] T62 Codex：demo 品質：上傳進度、處理中狀態、422／404／網路錯誤的友善訊息（照後端的 reason 顯示，不改寫數字） — commit 3a5d622
 - [x] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS — commit 4a163b7
 - [x] T64 Codex：**鬼影對照**（特色功能，demo 主畫面）。在影片和軌跡圖上，把 `ghost_points` 畫成半透明的「鬼影球」，跟著影片時間和真的物體一起移動。真的物體用實線，鬼影用虛線，加上圖例「如果遵守 9.81 m/s² 會在這裡」。差距大的地方標出最大差距的像素數（數字由前端從兩組點相減，只做顯示，不做判定） — commit 676467f
-- [ ] T71 Codex：「檢查影片」加入單擺選項：選 pendulum 時顯示「擺長（公尺，可留空）」欄位並送 `length_m`，結果顯示 `period_s`、`implied_length_m`、`predicted_period_s`；離線重播也要接受 pendulum
+- [x] T71 Codex：「檢查影片」加入單擺選項：選 pendulum 時顯示「擺長（公尺，可留空）」欄位並送 `length_m`，結果顯示 `period_s`、`implied_length_m`、`predicted_period_s`；離線重播也要接受 pendulum — commit 待回填（本次程式提交）
 - [ ] T65 Codex：**物理名片**（特色功能）。把一次稽核結果做成一張可以下載成 PNG 的卡片，內容包括疊加圖縮圖、判定、`nearest_body` 和 `g_vs_earth`（例如「重力像在月球：地球的 0.26 倍」）、`implied_time_factor`（「影片大約是真實速度的 0.5 倍」）、`implied_object_size_m`（「如果這是真的，這顆球直徑 2.4 公尺」）、`g_verdict_robust` 為 0 時的提醒、limits，以及「由 Muse Spark 撰寫說明」的標示。標題位置先放 T67 的空位
 
 **Antigravity**（照順序做）
@@ -91,6 +91,7 @@
 - [x] T69 Claude：鬼影軌跡與星球比喻的後端（`physics/experiments/freefall.ghost_track`、`nearest_body`，API v0.3 的 `ghost_points`、`nearest_body`），以及尺寸誤差 ±30% 的穩健度（`g_apparent_low/high`、`g_verdict_robust`）
 - [x] T70 Claude：單擺接上 `/api/audits`（`assumed_model=pendulum`，可選 `length_m`），見 docs/API.md v0.3
 - [x] T72 Claude：模型文字檢查加上真偽字眼黑名單（真／假影片、AI 生成、deepfake 等一律擋下），以及 `fill_numbers()`：模型只寫欄位位置，數字由程式填入（給 T67、T28 用）
+- [x] T73 Claude：合成測試資料 `data/demo/synthetic_*.json`，用 `python -m scripts.synthetic_audits` 重新產生。這是真的 `/api/audits` 輸出，但影片是程式畫的方塊，共 6 種：正常 g、g/4、鏡頭移動、彈跳變低、彈跳變高、單擺。檔案裡有 `synthetic: true`，只能拿來開發和測試，demo 不准說成真實或生成的影片。Codex 做 T64、T65、T71，Antigravity 做 T68 時，可以先用這些檔案
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
 **john**
@@ -292,4 +293,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 02:30 合併 Codex PR #19（T59–T63），合併後才補做審查：pytest 61、npm 44、build 都通過，沒有違規字眼，前端沒有自己算物理。john 要求增加特色。Claude 完成 T69（鬼影軌跡、星球比喻、尺寸誤差穩健度），並新增特色任務：Codex 的 T64 鬼影對照、T65 物理名片，Muse 的 T66 Muse 偵訊、T67 名片標題，Antigravity 的 T68。
 - 10/28 Claude 完成 T70：稽核支援單擺，新增 Codex T71（畫面加上單擺選項）。
 - 10/28 02:35 例行巡查：Muse、Antigravity 仍沒有推任何分支；Codex 沒有新分支（T64、T65、T71 待做）。Claude 完成 T72。
+- 10/28 03:00 Claude 完成 T73 合成測試資料。john 說繼續做，明天再檢查。
+
 - 10/27 Codex T64：鬼影影片／散點對照、播放滑桿、最大同時刻像素差與跳轉、事件回放按鈕；只用後端 ghost_points，無資料不補造、不插值。離線仍禁遠端媒體；最大差只作顯示，不作判定。新增 testid ghost-review/ghost-video/ghost-scrubber/ghost-gap/event-seek。npm 45 pass、build pass。
+- 10/27 Codex T71：單擺選項與使用者擺長 length_m（選填、正有限數），離線支援 pendulum；週期與推算擺長直接顯示後端原值。npm 46 pass、build pass；testid pendulum-length。
