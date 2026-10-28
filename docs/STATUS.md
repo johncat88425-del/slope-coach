@@ -312,3 +312,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T75：稽核數字／名片與差距顯示採文字四捨五入；極小非零值用科學記號，不顯示成零。數字原值仍存在 title 與 JSON／Markdown，資料本身不變。npm 50 pass、build pass。
 - 10/28 Codex T76：彈跳比例長條圖依 k 排序，提供 1.0 虛線與可讀資料；明示後端會套用容差，前端圖表不另下判定。testid bounce-chart；npm 51 pass、build pass。
 - 10/28 Codex T77：接上 /api/audit-drafts 與 draft_id 回答提交，來源 model／mock 分開標示。相機、慢動作、模型、時間都須使用者明確確認，未知尺寸留空；不由問題填入數字。single-use draft 成功後清除，404／連線不明時要求重新準備，不自動重送；一般稽核與偵訊互斥避免結果競爭。新增 testid interview-panel/interview-video/interview-prepare/interview-questions/interview-camera/interview-slow/interview-model/interview-submit。npm 53 pass、build pass。
+
+- 10/28 Codex 工作總結：T74–T77 已完成並各自推送；重新 pull main 後沒有剩餘 Codex 未勾項。最終 npm 53 pass、build pass、pytest 56 pass/11 skip（環境依賴）。#demo 可離線看三種結果；Muse 偵訊用現有契約。瀏覽器端到端與 PNG 視覺驗收仍交 Antigravity，未推 main。
