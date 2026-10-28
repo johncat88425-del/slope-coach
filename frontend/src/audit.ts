@@ -1,6 +1,6 @@
 export type AuditModel='free_flight'|'bounce';
 export type AuditVerdict='consistent'|'inconsistent'|'insufficient_data';
-export type AuditOut={audit_id:string;created_at:string;assumed_model:AuditModel;t_start:number;t_end:number;camera_static:boolean;object_size_m:number|null;video_url:string;overlay_url:string|null;track_source:'frame_diff'|'sam'|'manual';verdict:AuditVerdict;reasons:string[];numbers:Record<string,number>;points:[number,number,number][];events:{kind:string;t_s:number;detail:string}[];limits:string[]};
+export type AuditOut={audit_id:string;created_at:string;assumed_model:AuditModel;t_start:number;t_end:number;camera_static:boolean;object_size_m:number|null;ghost_points?:[number,number,number][];nearest_body?:string|null;video_url:string;overlay_url:string|null;track_source:'frame_diff'|'sam'|'manual';verdict:AuditVerdict;reasons:string[];numbers:Record<string,number>;points:[number,number,number][];events:{kind:string;t_s:number;detail:string}[];limits:string[]};
 export function verdictText(verdict:AuditVerdict,model:AuditModel='free_flight') {const name=model==='bounce'?'彈跳':'自由落體';return {consistent:`與${name}模型一致`,inconsistent:`與${name}模型不一致`,insufficient_data:`與${name}模型無法判斷`}[verdict]}
 export function validateAuditInput(start:string,end:string,size:string){const errors:string[]=[];
  if(!start.trim()||!end.trim()||!Number.isFinite(Number(start))||!Number.isFinite(Number(end))||Number(start)<0||Number(end)<=Number(start))errors.push('時間窗必須為有限秒數，且 0 ≤ 開始 < 結束。');
@@ -17,6 +17,8 @@ export function parseSavedAudit(text:string):AuditOut {
  || !['frame_diff','sam','manual'].includes(a.track_source) || !['consistent','inconsistent','insufficient_data'].includes(a.verdict)
  || !strings(a.reasons) || !strings(a.limits) || !a.numbers || Array.isArray(a.numbers) || typeof a.numbers!=='object' || !Object.values(a.numbers).every(finite)
  || !Array.isArray(a.points) || a.points.length>100000 || !a.points.every((p:unknown)=>Array.isArray(p)&&p.length===3&&p.every(finite))
+ || (a.ghost_points!==undefined && (!Array.isArray(a.ghost_points)||a.ghost_points.length>100000||!a.ghost_points.every((p:unknown)=>Array.isArray(p)&&p.length===3&&p.every(finite))))
+ || (a.nearest_body!==undefined && a.nearest_body!==null && typeof a.nearest_body!=='string')
  || !Array.isArray(a.events) || !a.events.every((e:any)=>e&&typeof e.kind==='string'&&finite(e.t_s)&&typeof e.detail==='string'))
  throw new Error('Invalid saved audit JSON (free_flight or bounce required).');
  return a as AuditOut;
