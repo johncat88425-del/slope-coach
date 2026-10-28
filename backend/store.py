@@ -55,6 +55,7 @@ class Store:
         self.experiments: dict[str, ExperimentRecord] = {}
         self.trials: dict[str, TrialRecord] = {}
         self.intervention_owner: dict[str, str] = {}
+        self.audits: dict[str, dict] = {}
 
     def reset(self) -> None:
         self.__init__()
@@ -67,14 +68,16 @@ class Store:
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".tmp")
         with tmp.open("wb") as f:
-            pickle.dump((self.experiments, self.trials, self.intervention_owner), f)
+            pickle.dump((self.experiments, self.trials, self.intervention_owner, self.audits), f)
         tmp.replace(path)
 
     def load(self) -> None:
         # The snapshot is written only by this server; never point STORE_PATH at an uploaded file.
         if STORE_PATH and Path(STORE_PATH).exists():
             with open(STORE_PATH, "rb") as f:
-                self.experiments, self.trials, self.intervention_owner = pickle.load(f)
+                data = pickle.load(f)
+            self.experiments, self.trials, self.intervention_owner = data[:3]
+            self.audits = data[3] if len(data) > 3 else {}
 
 
 store = Store()
