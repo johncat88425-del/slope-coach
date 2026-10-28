@@ -54,7 +54,7 @@
 - [x] T59 Codex：「檢查影片」和離線重播支援 `assumed_model=bounce`（顯示 `rebound_ratio_k`）。目前離線重播只接受 free_flight，會擋掉 bounce 結果 — commit fa8fcbe
 - [x] T60 Codex：稽核結果顯示 `events`（消失、大小跳動、位置跳動）的時間軸，以及 `size_trend` 拒判的說明文字 — commit 8e3162c
 - [x] T61 Codex：稽核結果的網址可以直接打開（`#/audits/:id`，用 `GET /api/audits/{id}`） — commit 977ccae
-- [ ] T62 Codex：demo 品質：上傳進度、處理中狀態、422／404／網路錯誤的友善訊息（照後端的 reason 顯示，不改寫數字）
+- [x] T62 Codex：demo 品質：上傳進度、處理中狀態、422／404／網路錯誤的友善訊息（照後端的 reason 顯示，不改寫數字） — commit 待回填（本次程式提交）
 - [ ] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS
 
 **Antigravity**（照順序做）
@@ -266,3 +266,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/27 Codex T60：以依時間排序的文字時間軸顯示三種事件，保留原始秒數與 detail；size_trend 拒判區呈現原值與二維品質限制，不把事件判成因果。npm 40 pass、build pass。
 
 - 10/27 Codex T61：新增 #/audits/:id 直接讀取與結果連結，ID 編碼並僅 GET；換 ID 時清空舊結果，忽略過期請求。離線重播不顯示需連線的結果連結。npm 41 pass、build pass。
+
+- 10/27 Codex T62：稽核使用原生 XHR upload bytes 進度，上傳完成後明示等待後端分析（無分析百分比）；不重送。404／422 加操作提示並完整保留後端 reason／數字；網路、逾時與中斷有明確提示。無新套件或 API 契約變更。npm 43 pass、build pass。

@@ -1,6 +1,7 @@
 import {auditHash} from './experiment.js';
 import { Localize } from './i18n.js';
 import { useEffect, useRef, useState } from 'react';
+import {friendlyApiError} from './api.js';
 import type { createApi } from './api';
 import type { AuditModel, AuditOut } from './audit.js';
 import { parseSavedAudit, validateAuditInput, verdictText } from './audit.js';
@@ -32,11 +33,12 @@ export function AuditPage({ api, auditId = null }: {
     const [start, setStart] = useState(''), [end, setEnd] = useState(''), [size, setSize] = useState(''), [fixed, setFixed] = useState(false);
     const [busy, setBusy] = useState(false), [error, setError] = useState(''), [attempted, setAttempted] = useState(false);
     const [audit, setAudit] = useState<AuditOut | null>(null), [id, setId] = useState('');
+    const [uploadPercent,setUploadPercent]=useState<number|null>(null);
     const [replay, setReplay] = useState(false);
     const [model, setModel] = useState<AuditModel>('free_flight');
     useEffect(()=>{
-        if(!auditId)return;let cancelled=false;setBusy(true);setError('');setAudit(null);setPreview('');setReplay(false);setId(auditId);
-        api.getAudit(auditId).then(value=>{if(!cancelled)setAudit(value)}).catch(e=>{if(!cancelled)setError(e instanceof Error ? e.message : String(e))}).finally(()=>{if(!cancelled)setBusy(false)});
+        if(!auditId){setBusy(false);return;}let cancelled=false;setBusy(true);setError('');setAudit(null);setPreview('');setReplay(false);setId(auditId);
+        api.getAudit(auditId).then(value=>{if(!cancelled)setAudit(value)}).catch(e=>{if(!cancelled)setError(friendlyApiError(e))}).finally(()=>{if(!cancelled)setBusy(false)});
         return ()=>{cancelled=true};
     },[api,auditId]);
     const video = useRef<HTMLVideoElement>(null);
@@ -44,20 +46,20 @@ export function AuditPage({ api, auditId = null }: {
     useEffect(() => () => { if (preview)
         URL.revokeObjectURL(preview); }, [preview]);
     async function run(action: () => Promise<AuditOut>) { if (busy)
-        return; setBusy(true); setError(''); try {
+        return; setBusy(true); setError('');setAudit(null);setUploadPercent(null); try {
         const value = await action();
         setAudit(value);
         setReplay(false);
         setId(value.audit_id);
     }
     catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(friendlyApiError(e));
     }
     finally {
         setBusy(false);
     } }
     return <Localize>{<section aria-label="檢查影片"><h2>檢查影片</h2><p>Check the selected segment against the chosen motion model. Confirm capture conditions and the time window; insufficient evidence remains an explicit outcome.</p>
- <fieldset disabled={busy}><legend>Offline demo</legend><p>Load a previously saved result. No network connection or tracking is needed.</p><label>Saved audit JSON<input type="file" accept=".json,application/json" onChange={async e => { const saved = e.target.files?.[0]; if (!saved) return; setError(''); try { if(saved.size > 5 * 1024 * 1024) throw new Error('Saved JSON must be under 5 MB.'); const result = parseSavedAudit(await saved.text()); setAudit(result); setReplay(true); setPreview(''); setFile(null); } catch(e) {setError(e instanceof Error ? e.message : String(e));} }}/></label></fieldset>
+ <fieldset disabled={busy}><legend>Offline demo</legend><p>Load a previously saved result. No network connection or tracking is needed.</p><label>Saved audit JSON<input type="file" accept=".json,application/json" onChange={async e => { const saved = e.target.files?.[0]; if (!saved) return; setError(''); try { if(saved.size > 5 * 1024 * 1024) throw new Error('Saved JSON must be under 5 MB.'); const result = parseSavedAudit(await saved.text()); setAudit(result); setReplay(true); setPreview(''); setFile(null); } catch(e) {setError(friendlyApiError(e));} }}/></label></fieldset>
  <fieldset disabled={busy}><legend>使用者確認的設定</legend><label>Motion model<select value={model} onChange={e=>setModel(e.target.value as AuditModel)}><option value="free_flight">Free flight</option><option value="bounce">Bounce</option></select></label><label>上傳影片<input type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) {
         setFile(f);
         setPreview(URL.createObjectURL(f));
@@ -72,9 +74,9 @@ export function AuditPage({ api, auditId = null }: {
  <label>物體尺寸（米，選填）<input type="number" min="0" step="any" value={size} onChange={e => setSize(e.target.value)}/></label><p>尺寸由使用者量測；未知請留空，不從物體名稱猜測。</p>
  <label><input type="checkbox" checked={fixed} onChange={e => setFixed(e.target.checked)}/> 我確認鏡頭固定</label><p>未勾選會將 camera_static=false 送至後端，由後端保留無法判斷結果。</p>
  <button onClick={() => { setAttempted(true); if (!file || errors.length)
-        return; void run(() => api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model)); }}>提交片段檢查</button>
+        return; void run(() => api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent)); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input value={id} onChange={e => setId(e.target.value)}/></label><button disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
- </fieldset><div aria-live="polite">{busy && <p role="status">正在處理片段，請勿重複提交…</p>}{error && <p role="alert">{error}</p>}</div>{audit && <AuditResult audit={audit} replay={replay}/>}
+ </fieldset><div aria-live="polite">{busy && <div role="status">{uploadPercent===100 ? <p>Upload complete. Waiting for backend analysis; analysis progress is unavailable.</p> : uploadPercent!==null ? <><label>Upload progress<progress max="100" value={uploadPercent}/></label><p>{uploadPercent}%</p></> : <p>Request in progress. Please wait; no automatic retry will be made.</p>}</div>}{error && <p role="alert">{error}</p>}</div>{audit && <AuditResult audit={audit} replay={replay}/>}
  </section>}</Localize>;
 }
