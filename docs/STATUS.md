@@ -81,7 +81,7 @@
 - [x] T55 Claude：稽核支援 `assumed_model=bounce`（接上 `check_bounces`）
 - [x] T56 Claude：透視檢查：物體大小沿軌跡變化超過 30% 時拒判（`physics/persistence.size_trend`）
 - [x] T57 Claude：單擺 physics 插件 `physics/experiments/pendulum.py`（週期、等時性、由週期推算擺長），給稽核和教練兩條路共用；尚未接到 API
-- [ ] T58 Claude：驗證報告產生器：從 `data/gate/results.md` 和人工標註，產生 demo 用的「多少支影片判一致、多少支拒判」表格（不挑片）
+- [x] T58 Claude：驗證報告產生器：`gate_run` 的輸出最後會附上「## Summary」，列出各來源的一致、不一致、資料不足、拒判支數，並逐題算出三個關卡問題是 pass、fail 還是 pending（等 john 看疊加圖）。所有影片都列入，不挑片
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
 **john**
@@ -138,6 +138,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | t_start、t_end | 物體離手到落地前的時間（秒） |
 | camera_static | yes 或 no |
 | object、object_size_m | 物體名稱和直徑（公尺），由 john 填 |
+| track_ok | john 看過疊加圖後填 yes 或 no（追蹤點有沒有落在物體上）。先留空，第一次跑完再填 |
 
 ### 已知限制（結果裡要照實寫）
 
@@ -258,3 +259,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/27 Codex T51：窄螢幕欄位／導覽換行、44px 控制目標、焦點外框、跳至工作區、強制色彩支援；曲線保留虛線 vs 實線圓點，新增鍵盤可讀資料表。npm 37 pass、build pass；pytest 53 pass/5 skip（缺 ffmpeg 等環境條件）。本機瀏覽器 origin 授權被拒，未繞過，實機手機／螢幕閱讀器驗收仍待 Antigravity。
 
 - 10/27 Codex 工作總結：已依完成表完成並分支推送 T36a/T36b/T36c/T40/T41/T13b/T17/T48/T49/T50/T51；重新 pull main 後沒有剩餘 Codex 未勾項。最終 npm 37 pass、build pass、pytest 53 pass/5 skip。尚待真實影片疊加對齊與手機／螢幕閱讀器實測；只改 frontend 與本 STATUS，未推 main。
+- 10/28 02:10 Claude 完成 T58：關卡結果自動附上總表和三題判定；manifest 新增 `track_ok` 欄。john 回報 Muse、Antigravity 說做完了，但 GitHub 上沒有它們的分支，代表還沒 commit 和 push。
