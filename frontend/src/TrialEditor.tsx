@@ -21,7 +21,7 @@ export function TrialEditor({trial,videoUrl,api,run,refresh}:Props){
     if(p){setSaved(false);setDetections(old=>[...old.filter(d=>d.t_s!==el.currentTime),{t_s:el.currentTime,centroid_px:[p.x,p.y] as [number,number],source:'manual' as const}].sort((a,b)=>a.t_s-b.t_s))}
   }
   return <div className="empty"><h3>試驗 {trial.trial_id} · {trial.kind}</h3><p>校準 v{trial.calibration_version}；已確認起滑：{trial.t0_s??'尚無'} s；來源：{trial.t0_source??'尚無'}；手動影格：{trial.manual_frames}</p>
-    {videoUrl?<div onClick={record}><video ref={video} controls={!manual} src={videoUrl} onError={()=>setSuggestion('影片無法載入；後端目前沒有提供 /media 檔案服務，重新選擇本機影片可恢復預覽。')}/></div>:<p>目前沒有本機影片預覽。重新整理後請重新選取原片以恢復手動標記。</p>}
+    {videoUrl?<div onClick={record}><video ref={video} controls={!manual} src={videoUrl} onError={()=>setSuggestion('影片無法載入。請確認後端媒體仍存在，或重新選擇原片恢復預覽。')}/></div>:<p>此紀錄沒有可讀取的影片網址，請重新選取原片恢復預覽。</p>}
     <button onClick={()=>void run(async()=>{try{await api.track(trial.trial_id);await refresh()}catch(error){if(error instanceof ApiError && error.status===501){setManual(true);setSuggestion('自動追蹤尚未接通。請暫停影片，點選滑塊中心；可移動播放時間後繼續標記。')}else throw error}})}>自動追蹤</button>
     <button onClick={()=>{video.current?.pause();setManual(!manual)}}>{manual?'關閉手動點選':'手動標記影格'}</button>
     {manual&&<><p>手動資料會明確標為 manual，不代表 SAM 觀測。每個時間戳只留一個標記；開啟點選會暫停並隱藏播放控制；需換影格時先關閉手動點選，使用播放時間軸，再開啟點選。保存會取代這段試驗的全部偵測資料。</p>
