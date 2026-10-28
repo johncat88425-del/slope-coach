@@ -68,3 +68,13 @@ def test_gate_summary_rejects_weak_anomaly_and_too_many_refusals():
             _r("y", "generated", "refused"), _r("z", "generated", "refused")]
     s = gate_summary(rows)
     assert s["q2"] == "fail" and s["q3"] == "fail" and s["q1"] == "pending"
+
+
+def test_unlabelled_rows_are_not_counted(tmp_path):
+    from scripts.gate_run import gate_summary
+    blank = {"clip": "x.mp4", "source": "", "assumed_model": "free_flight", "t_start": "", "t_end": "",
+             "camera_static": "", "object": "", "object_size_m": ""}
+    r = run_clip(blank, tmp_path)
+    assert r["result"] == "unlabelled"
+    s = gate_summary([r, _r("a", "own", "consistent", g=9.8)])
+    assert s["unlabelled"] == ["x.mp4"] and s["total"] == 1 and s["refused"] == 0
