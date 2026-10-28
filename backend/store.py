@@ -2,13 +2,18 @@
 are never edited, only superseded by new versions. Persistence can replace this module later."""
 from __future__ import annotations
 
+import os
+import pickle
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-UPLOAD_ROOT = Path(__file__).resolve().parent.parent / "data" / "uploads"
+DATA_ROOT = Path(__file__).resolve().parent.parent / "data"
+UPLOAD_ROOT = DATA_ROOT / "uploads"
+# Set SLOPE_STORE_PATH="" to keep everything in memory (tests do this).
+STORE_PATH = os.environ.get("SLOPE_STORE_PATH", str(DATA_ROOT / "store.pkl"))
 
 
 def now() -> datetime:
@@ -54,5 +59,23 @@ class Store:
     def reset(self) -> None:
         self.__init__()
 
+    def save(self) -> None:
+        """Snapshot the whole store after each write, so a restart keeps every experiment."""
+        if not STORE_PATH:
+            return
+        path = Path(STORE_PATH)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        with tmp.open("wb") as f:
+            pickle.dump((self.experiments, self.trials, self.intervention_owner), f)
+        tmp.replace(path)
+
+    def load(self) -> None:
+        # The snapshot is written only by this server; never point STORE_PATH at an uploaded file.
+        if STORE_PATH and Path(STORE_PATH).exists():
+            with open(STORE_PATH, "rb") as f:
+                self.experiments, self.trials, self.intervention_owner = pickle.load(f)
+
 
 store = Store()
+store.load()
