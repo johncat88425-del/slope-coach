@@ -1,4 +1,5 @@
 export const pages = [
+  {route: 'home', title: '首頁'},
   {route: 'setup', title: '場景設定'},
   {route: 'prediction', title: '預測'},
   {route: 'analysis', title: '影片分析'},
@@ -40,7 +41,7 @@ export function createExperiment(id: string): Experiment {
 }
 export function resolveRoute(hash: string): Route {
   const route = hash.replace(/^#\/?/, '');
-  return pages.find(page => page.route === route)?.route ?? 'setup';
+  return pages.find(page => page.route === route)?.route ?? 'home';
 }
 export function validateDraft(draft: Draft): string[] {
   const errors: string[] = [];
