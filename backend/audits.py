@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from physics.errors import PhysicsInputError
-from physics.experiments.freefall import check_bounces, check_flight, fit_flight
+from physics.experiments.freefall import check_bounces, check_flight, fit_flight, ghost_track, nearest_body
 from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
 
@@ -21,6 +21,7 @@ router = APIRouter()
 
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
+SIZE_ERROR = 0.3  # assumed worst-case error of the object's pixel size, same as gate question 2
 MODELS = ("free_flight", "bounce")
 LIMITS = [
     "Tracking uses frame differencing, not a model; motion blur inflates the object size.",
@@ -58,7 +59,7 @@ def create_audit(
         "t_start": t_start, "t_end": t_end, "camera_static": camera_static, "object_size_m": object_size_m,
         "video_url": f"/media/audits/{aid}/{video.name}", "overlay_url": None,
         "track_source": "frame_diff", "verdict": "insufficient_data", "reasons": [], "numbers": {},
-        "points": [], "events": [], "limits": LIMITS,
+        "points": [], "ghost_points": [], "nearest_body": None, "events": [], "limits": LIMITS,
     }
     if not camera_static:
         rec["reasons"] = ["camera is not static; this check needs a fixed camera"]
@@ -111,6 +112,15 @@ def create_audit(
         return rec
     rec["verdict"] = chk.verdict
     rec["reasons"] = list(chk.reasons)
+    if m_per_px and chk.g_apparent_m_s2:
+        rec["ghost_points"] = [list(p) for p in ghost_track(fit, [p[0] for p in pts], m_per_px)]
+        rec["nearest_body"], rec["numbers"]["g_vs_earth"] = nearest_body(chk.g_apparent_m_s2)
+        # If the measured pixel size of the object is off by 30% (motion blur, mask edges), does the g verdict hold?
+        g = chk.g_apparent_m_s2
+        lo, hi = g / (1 + SIZE_ERROR), g / (1 - SIZE_ERROR)
+        inside = [9.81 * (1 - 0.15) <= v <= 9.81 * (1 + 0.15) for v in (lo, g, hi)]
+        rec["numbers"] |= {"g_apparent_low": lo, "g_apparent_high": hi,
+                           "g_verdict_robust": float(all(inside) or not any(inside))}
     rec["numbers"] |= {
         "a_px_s2": fit.a_px_s2, "tilt_deg": fit.tilt_deg, "rms_over_travel": fit.rms_residual_px / fit.travel_px,
         "g_apparent_m_s2": chk.g_apparent_m_s2, "implied_time_factor": chk.implied_time_factor,
