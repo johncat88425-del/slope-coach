@@ -222,5 +222,7 @@ class AuditOut(BaseModel):
     reasons: list[str]
     numbers: dict[str, float]
     points: list[tuple[float, float, float]]  # [t_s, x_px, y_px] at 480 px frame width
+    ghost_points: list[tuple[float, float, float]] = []  # same start and velocity, falling at 9.81; needs object_size_m
+    nearest_body: str | None = None  # body whose surface gravity is closest to the apparent g
     events: list[PersistenceEventOut]
     limits: list[str]
