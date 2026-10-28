@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createExperiment, imagePoint, pages, replacePhoto, resolveRoute, saveCalibration, updateDraft, validateDraft} from '../.test-dist/experiment.js';
 function validExperiment() {
   const e = createExperiment('test');
-  e.draft = {...e.draft, photo: {name: 'slope.png', url: 'blob:test'}, size: {width: 1000, height: 500}, points: [{x:0,y:0},{x:500,y:0},{x:100,y:100}], length:'1', height:'0.2', rulerLength:'0.3', captureConfirmed:true};
+  e.draft = {...e.draft, photo: {name: 'slope.png', url: 'blob:test'}, size: {width: 1000, height: 500}, points: [{x:0,y:0},{x:500,y:0},{x:100,y:100},{x:1000,y:0}], length:'1', height:'0.2', rulerLength:'0.3', captureConfirmed:true};
   return e;
 }
 test('all five routes resolve; unknown and empty routes return setup', () => {
@@ -34,7 +34,7 @@ test('blocks missing, zero, negative, nonfinite and impossible dimensions for ev
     assert.ok(validateDraft(e.draft).some(s => s.includes('h ≥ L')));
   }
 });
-test('requires loaded media, three valid points and confirmed capture conditions', () => {
+test('requires loaded media, four valid points and confirmed capture conditions', () => {
   for (const patch of [{photo:null},{size:{width:0,height:0}},{points:[]},{captureConfirmed:false},
     {points:[{x:0,y:0},{x:0,y:0},{x:10,y:10}]},
     {points:[{x:0,y:0},{x:500,y:0},{x:1001,y:10}]},
