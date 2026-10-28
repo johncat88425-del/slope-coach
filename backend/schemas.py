@@ -198,3 +198,29 @@ class ExperimentOut(BaseModel):
     predictions: list[PredictionOut]
     comparisons: list[ComparisonOut]
     interventions: list[InterventionOut]
+
+
+class PersistenceEventOut(BaseModel):
+    kind: str
+    t_s: float
+    detail: str
+
+
+class AuditOut(BaseModel):
+    """Video physics audit. verdict is relative to assumed_model only; never real vs generated."""
+    audit_id: str
+    created_at: datetime
+    assumed_model: Literal["free_flight"]
+    t_start: float
+    t_end: float
+    camera_static: bool
+    object_size_m: float | None
+    video_url: str
+    overlay_url: str | None
+    track_source: Literal["frame_diff", "sam", "manual"]
+    verdict: Literal["consistent", "inconsistent", "insufficient_data"]
+    reasons: list[str]
+    numbers: dict[str, float]
+    points: list[tuple[float, float, float]]  # [t_s, x_px, y_px] at 480 px frame width
+    events: list[PersistenceEventOut]
+    limits: list[str]
