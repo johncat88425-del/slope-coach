@@ -34,7 +34,8 @@ def row(clip, static="yes"):
 def test_gate_flags_wrong_gravity_and_passes_real_one(tmp_path):
     write_clip(tmp_path / "real.mp4", 9.81)
     write_clip(tmp_path / "slow.mp4", 9.81 / 4)
-    real = run_clip(row("real.mp4"), tmp_path)
+    real = run_clip(row("real.mp4"), tmp_path, tmp_path / "ov")
+    assert (tmp_path / "ov" / "real_track.png").stat().st_size > 0
     slow = run_clip(row("slow.mp4"), tmp_path)
     assert real["result"] == "consistent", real
     assert real["g_apparent"] == pytest.approx(9.81, rel=0.15)

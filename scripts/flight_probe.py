@@ -52,6 +52,19 @@ def track(frames: np.ndarray, fps: float, start: float, thresh: float = 30.0, mi
     return pts, (float(np.median(sizes)) if sizes else None)
 
 
+def save_overlay(frames: np.ndarray, pts, start: float, fps: float, path: str) -> None:
+    """Darkest-pixel composite of the window with tracked points as red dots, for a human to confirm
+    that the track sits on the object."""
+    comp = frames.min(axis=0).astype(np.uint8)
+    rgb = np.stack([comp] * 3, axis=-1)
+    h, w = comp.shape
+    for t, x, y in pts:
+        xi, yi = int(round(x)), int(round(y))
+        rgb[max(yi - 2, 0):min(yi + 3, h), max(xi - 2, 0):min(xi + 3, w)] = (255, 0, 0)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{w}x{h}",
+                    "-i", "-", path], input=rgb.tobytes(), check=True)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("video")
@@ -59,9 +72,12 @@ def main() -> None:
     ap.add_argument("--end", type=float, required=True)
     ap.add_argument("--m-per-px", type=float, default=None, help=f"user-confirmed scale at {WIDTH}px width")
     ap.add_argument("--thresh", type=float, default=30.0)
+    ap.add_argument("--overlay", default=None, help="write a PNG with the tracked points")
     a = ap.parse_args()
     frames, fps = read_frames(a.video, a.start, a.end)
     pts, size_px = track(frames, fps, a.start, a.thresh)
+    if a.overlay:
+        save_overlay(frames, pts, a.start, fps, a.overlay)
     out = {"fps": fps, "frames": len(frames), "tracked": len(pts)}
     try:
         fit = fit_flight(pts)
