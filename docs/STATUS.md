@@ -52,7 +52,7 @@
 - [x] T50 Codex：demo 模式：讀取事先存好的稽核結果 JSON，讓 demo 不用連網或等追蹤 — commit 1abd274
 - [x] T51 Codex：手機版排版與無障礙（色盲也能分辨預測線和實測線，不能只靠顏色） — commit 77ab223
 - [x] T59 Codex：「檢查影片」和離線重播支援 `assumed_model=bounce`（顯示 `rebound_ratio_k`）。目前離線重播只接受 free_flight，會擋掉 bounce 結果 — commit fa8fcbe
-- [x] T60 Codex：稽核結果顯示 `events`（消失、大小跳動、位置跳動）的時間軸，以及 `size_trend` 拒判的說明文字 — commit 待回填（本次程式提交）
+- [x] T60 Codex：稽核結果顯示 `events`（消失、大小跳動、位置跳動）的時間軸，以及 `size_trend` 拒判的說明文字 — commit 8e3162c
 - [ ] T61 Codex：稽核結果的網址可以直接打開（`#/audits/:id`，用 `GET /api/audits/{id}`）
 - [ ] T62 Codex：demo 品質：上傳進度、處理中狀態、422／404／網路錯誤的友善訊息（照後端的 reason 顯示，不改寫數字）
 - [ ] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS
