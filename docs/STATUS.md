@@ -1,7 +1,7 @@
 # STATUS：目前進度、缺什麼、誰在做
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。最新的放最上面。
-> 最後更新：2026-10-28（Claude：T06、T07 完成）
+> 最後更新：2026-10-28（Claude：T12、T26 完成，審查 Codex T08/T09）
 
 ## 一句話現況
 
@@ -35,7 +35,7 @@
 | T09 | 校準點選畫面（點尺兩端、點滑塊） | Codex | 待辦 | |
 | T10 | 預測鎖定 + 實測比較 + 曲線圖 | Claude（後端）/ Codex（圖） | 待辦 | |
 | T11 | 釋放方式核對：受限驗證資料庫 + Spark 工具呼叫代理 | Muse | 待辦 | 只能從兩種驗證選 |
-| T12 | 輸出檢查：schema、數字必須出自工具輸出、禁用因果字眼 | Claude | 待辦 | |
+| T12 | 輸出檢查：schema、數字必須出自工具輸出、禁用因果字眼 | Claude | 完成 | backend/output_check.py；選驗證時的 model_rationale 會自動檢查；Muse 的說明文字也請呼叫 check_model_text() |
 | T13 | 報告匯出（Markdown + CSV） | Codex | 待辦 | |
 | T14 | 端到端瀏覽器測試與截圖 | Antigravity | 待辦 | T10 之後 |
 | T15 | 拒判情境：遮擋、起滑不明、追蹤跳動 | Claude | 待辦 | |
@@ -46,6 +46,8 @@
 | T20 | 部署、README、demo 錄影 | Antigravity / john | 待辦 | |
 | T24 | 語音口述設定：Voice Transcribe 轉文字 → Spark 抽出欄位 → 使用者確認 | Muse | 待辦 | T11 之後做；數字一律要使用者確認 |
 | T25 | 第二個實驗：單擺（沿用追蹤，換 physics/experiments/pendulum.py） | Claude | 待辦 | 10/30 循環跑通後才可開始，否則砍 |
+| T26 | 後端資料持久化（重啟不清空） | Claude | 完成 | 每次寫入後存 data/store.pkl；設 SLOPE_STORE_PATH="" 可關閉 |
+| T27 | 前端照 docs/API.md 接上後端（見下方「Claude 審查 Codex T08/T09」） | Codex | 待辦 | 先 merge main |
 | T21 | 競品實測比較：PhET、Video2World、直接問 Muse | Manus | 待辦 | 成果放 docs/research/competitors.md |
 | T22 | 使用者測試計畫：招募訊息、任務腳本、記錄表 | Manus | 待辦 | 11/02 要用，10/31 前完成 |
 | T23 | 三分鐘 demo 分鏡與英文提交文字草稿 | Manus | 待辦 | 只寫已完成的功能，11/03 依實際結果修改 |
@@ -53,7 +55,6 @@
 ## 缺什麼（阻擋中或尚未知道）
 
 - [ ] 還沒有真實影片；physics 門檻只用合成資料測過。
-- [ ] 後端目前存在記憶體，重啟就會清空；部署前要改成檔案或 SQLite（之後再開任務）。
 - [ ] requirements.txt 由 Antigravity（T02）建立；physics 和 backend 需要 fastapi、uvicorn、numpy、scipy、pytest、python-multipart、httpx（測試用）。
 - [ ] Meta API 金鑰與 150 美元額度是否已可用：未確認。
 - [ ] 影片送 Spark 的實際 token 數與費用：未測（目前預算用假設值）。
@@ -61,6 +62,19 @@
 - [ ] 評分權重：30/25/20/25 或四項等權，未確認。
 - [ ] Muse Code 用 API 金鑰時是否扣 150 美元額度：官方說計費依金鑰帳戶，應該會扣，需看帳單確認。
 - [ ] Discord「要用 Muse」的完整原文與是否允許其他 AI 寫程式：請 john 貼上原文。
+
+## Claude 審查 Codex T08/T09（給 Codex，T27）
+
+前端做得很完整（校準驗證、來源標示、不假造數字都符合規則）。要接上 `docs/API.md` 時有這幾個差異：
+
+1. **校準要多點一個點。** 後端需要 `path_start_px` 和 `path_end_px`（滑塊路徑的起點和終點）。前端目前是三點：尺兩端 + 滑塊。請把「滑塊位置」當成 `path_start_px`，再加第四點「滑塊會滑到的終點（坡底）」當成 `path_end_px`。
+2. **上傳照片** 用 `POST /api/experiments/{eid}/scene-photo`（multipart `file`），回傳 `scene_check`；`needs_retake: true` 時顯示 `retake_reasons`。
+3. **影片** 跟著 `POST /api/experiments/{eid}/trials` 一起上傳（multipart：`kind`、`calibration_version`、`file`）。test 試驗要在預測建立之後才上傳，否則比較時會得到 409。
+4. **分析沒有 job 輪詢。** `POST /api/trials/{tid}/track` 是同步的；現在 SAM 還沒接，會回 501。收到 501 時，顯示「手動點選滑塊位置」模式，把點選結果用 `PUT /api/trials/{tid}/detections` 送出（`source: "manual"`）。
+5. **起滑時刻** 要由使用者確認：先 `GET /release-suggestion` 拿建議（可能是空的），使用者確認後 `PUT /release-time`。
+6. **比較** 是 `POST /api/experiments/{eid}/comparisons`，不是 GET。`verdict: insufficient_data` 是正常結果，要顯示沒通過的 `checks` 和 `can_still_say`。
+7. **報告** 是 `GET /report.md` 和 `GET /report.csv`。
+8. 你分支上的 STATUS.md 是根據舊版改的，merge main 時會有衝突：請保留 main 的內容，再加上你的更新。你之前在「待 john 決定」提的端點提案已經由 docs/API.md 取代，可以刪掉。
 
 ## 待 john 決定
 
@@ -87,6 +101,7 @@
 
 ## 工作日誌（最新在上）
 
+- 10/28 Claude 完成 T12（模型輸出檢查：數字必須出自工具輸出、中英文因果誇大用語、驗證只能從證據候選選）與 T26（後端寫入後存檔）；審查 Codex 的 codex/T08-frontend，差異列在上方「Claude 審查 Codex T08/T09」。
 - 10/28 Claude 完成 T07：docs/API.md 契約 v0.1 與 FastAPI 後端（記憶體儲存、預測鎖定、預測必須早於試驗、只能選證據支持的驗證、報告匯出）。Meta 模型接入點在 backend/model_hooks.py，Muse 實作後用 set_hooks() 換掉 MockHooks。
 - 10/28 Claude 完成 T06 `physics/`：calibration、tracking、fit、experiments/slope、baseline、compare、diagnose，全部是純函式。用合成資料測過：正常、推出初速度、高度輸入錯誤、缺起滑時刻四種情境。
 - 10/27 建立 AGENTS.md、CLAUDE.md、STATUS.md 初版。
