@@ -61,6 +61,10 @@
 - [x] T64 Codex：**鬼影對照**（特色功能，demo 主畫面）。在影片和軌跡圖上，把 `ghost_points` 畫成半透明的「鬼影球」，跟著影片時間和真的物體一起移動。真的物體用實線，鬼影用虛線，加上圖例「如果遵守 9.81 m/s² 會在這裡」。差距大的地方標出最大差距的像素數（數字由前端從兩組點相減，只做顯示，不做判定） — commit 676467f
 - [x] T71 Codex：「檢查影片」加入單擺選項：選 pendulum 時顯示「擺長（公尺，可留空）」欄位並送 `length_m`，結果顯示 `period_s`、`implied_length_m`、`predicted_period_s`；離線重播也要接受 pendulum — commit c6ce3d4
 - [x] T65 Codex：**物理名片**（特色功能）。把一次稽核結果做成一張可以下載成 PNG 的卡片，內容包括疊加圖縮圖、判定、`nearest_body` 和 `g_vs_earth`（例如「重力像在月球：地球的 0.26 倍」）、`implied_time_factor`（「影片大約是真實速度的 0.5 倍」）、`implied_object_size_m`（「如果這是真的，這顆球直徑 2.4 公尺」）、`g_verdict_robust` 為 0 時的提醒、limits，以及「由 Muse Spark 撰寫說明」的標示。標題位置先放 T67 的空位 — commit dbf8587
+- [ ] T74 Codex：**對照展示頁**（demo 用）。把一致、不一致、拒判三種結果並排放在同一頁，每一張都有鬼影對照和物理名片縮圖。資料先讀 `data/demo/synthetic_*.json`（頁面上要寫明 SYNTHETIC，是程式畫的測試方塊），等 john 的真實影片跑完再換成真的結果。目的：demo 時評審一眼看到「會判一致、會判不一致、也會拒判」
+- [ ] T75 Codex：數字顯示格式。畫面和名片上的數字只做顯示用的四捨五入（例如 g_vs_earth 顯示 0.26、尺寸顯示 2.4 m），匯出的 JSON 保留原值。不准改變數值本身
+- [ ] T76 Codex：彈跳結果圖。用 `rebound_ratio_k` 畫每次反彈高度比例的長條圖，加一條 1.0 的參考線（超過 1.0 代表反彈得比上一次高，與被動彈跳模型不一致）
+- [ ] T77 Codex：「Muse 偵訊」問答面板的外觀（給 Muse T66 用）。先用固定的假問題做畫面，標示 mock；資料格式等 Claude 在 docs/API.md 寫好 `questions[]`／`answers[]` 契約後再接上
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -298,3 +302,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/27 Codex T64：鬼影影片／散點對照、播放滑桿、最大同時刻像素差與跳轉、事件回放按鈕；只用後端 ghost_points，無資料不補造、不插值。離線仍禁遠端媒體；最大差只作顯示，不作判定。新增 testid ghost-review/ghost-video/ghost-scrubber/ghost-gap/event-seek。npm 45 pass、build pass。
 - 10/27 Codex T71：單擺選項與使用者擺長 length_m（選填、正有限數），離線支援 pendulum；週期與推算擺長直接顯示後端原值。npm 46 pass、build pass；testid pendulum-length。
 - 10/27 Codex T65：新增可下載 PNG 的物理名片，包含原始數字、星球比喻、尺寸穩健度警告、reason／limits、可讀取的後端縮圖；離線不取遠端縮圖。未有 T67 模型標題時明示待提供，沒有假稱 Muse 已產生文字。合成 JSON 的 synthetic 標記在結果與卡片保留。testid physics-card/physics-card-download；npm 48 pass、build pass，pytest 56 pass/8 skip。PNG 排版與影片同步仍需 Antigravity 瀏覽器實測。
+- 10/28 04:35 例行巡查：審查並合併 Codex PR #24（T64 鬼影對照、T71 單擺選項、T65 物理名片）。pytest 64、npm 48、build 都通過，前端沒有自己算物理，畫面沒有違規字眼，合成資料有標明 SYNTHETIC。給 Codex 補上 T74 到 T77。Muse、Antigravity 還是沒有推任何分支。
