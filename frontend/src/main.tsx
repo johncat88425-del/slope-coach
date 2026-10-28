@@ -4,7 +4,7 @@ import type { MouseEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { auditIdFromHash, createExperiment, imagePoint, pages, replacePhoto, resolveRoute, updateDraft, validateDraft } from './experiment';
 import type { Draft, Point } from './experiment';
-import { createApi } from './api';
+import { createApi, friendlyApiError } from './api';
 import type { ExperimentRecord, TrialKind, ScenePhoto } from './api';
 import { TrialEditor } from './TrialEditor';
 import { CurveChart } from './CurveChart';
@@ -62,7 +62,7 @@ function App() {
         await action();
     }
     catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(friendlyApiError(e));
     }
     finally {
         setBusy(false);
@@ -80,7 +80,7 @@ function App() {
     useEffect(() => { if (['home','audit'].includes(resolveRoute(location.hash))) return; const id = rememberedId(); if (!id)
         return; let cancelled = false; setBusy(true); api.get(id).then(value => { if (!cancelled)
         selectRecord(value); }).catch(e => { if (!cancelled)
-        setError(e.message + '；紀錄可能不存在或未持久化，可明確建立新實驗。'); }).finally(() => { if (!cancelled)
+        setError(friendlyApiError(e)); }).finally(() => { if (!cancelled)
         setBusy(false); }); return () => { cancelled = true; }; }, []);
     function mark(event: MouseEvent<HTMLDivElement>) { if (!image.current || draft.points.length >= 4)
         return; const point = imagePoint({ x: event.clientX, y: event.clientY }, image.current.getBoundingClientRect(), draft.size); if (point)

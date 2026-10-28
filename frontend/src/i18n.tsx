@@ -31,6 +31,8 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Upload progress':'上傳進度','Upload complete. Waiting for backend analysis; analysis progress is unavailable.':'上傳完成，等待後端分析；目前無分析進度資訊。','Request in progress. Please wait; no automatic retry will be made.':'請求處理中，請稍候；不會自動重送。','Cannot connect to the backend. Check your connection and try loading the record before submitting again.':'無法連接後端。請檢查連線；再次提交前先嘗試讀取紀錄。',
+
 'Open result link':'開啟結果連結',
 'Tracking event timeline':'追蹤事件時間軸','Events may reflect tracking or capture problems. Review the original clip; they do not establish a cause.':'事件可能來自追蹤或拍攝問題；請對照原片，不可據此確定原因。','Disappearance':'消失','Size jump':'大小跳動','Position jump':'位置跳動','No tracking events were reported.':'後端未回報追蹤事件。','Size trend limitation':'尺寸變化的拒判限制','A changing apparent size can make the 2D motion check unreliable. The backend rejects changes beyond its quality threshold. Review the backend reasons above; this value alone does not establish a cause.':'影像中的尺寸變化可能讓二維運動檢查不可靠。超過品質門檻時由後端拒判；請核對上方後端原因，不能只憑此值確定原因。',
 
