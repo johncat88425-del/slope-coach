@@ -1,10 +1,10 @@
 import {useEffect,useRef,useState} from 'react';
 import type {createApi} from './api';
-import type {AuditOut} from './audit';
-import {validateAuditInput,verdictText} from './audit';
-import {ModelSource} from './ModelSource';
-import {Trajectory2D,TrajectoryOverlay} from './Trajectory';
-import {mediaUrl} from './media';
+import type {AuditOut} from './audit.js';
+import {validateAuditInput,verdictText} from './audit.js';
+import {ModelSource} from './ModelSource.js';
+import {Trajectory2D,TrajectoryOverlay} from './Trajectory.js';
+import {mediaUrl} from './media.js';
 export function AuditResult({audit}:{audit:AuditOut}){
  return <article aria-label="稽核結果"><h2>{verdictText(audit.verdict)}</h2><p>稽核 {audit.audit_id} · 假設：free_flight · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
  <h3>原因</h3><ul>{audit.reasons.map((r,i)=><li key={i}>{r}</li>)}</ul>
