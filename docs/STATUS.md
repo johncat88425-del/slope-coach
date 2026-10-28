@@ -29,7 +29,7 @@
 - [ ] T05 Muse：`meta_client/`（Spark、SAM 3.1、花費計數與 120 美元上限、mock 測試）
 - [ ] T29 Muse：後端接上 MetaHooks（沒有金鑰時退回 Mock）
 - [ ] T34 Muse：Spark 建議運動片段 `suggest_motion_segment`。只回傳建議，不回傳測量數字，要通過 schema 檢查
-- [ ] T38 Muse：在 ModelHooks 加 `track_object(video_path, text_prompt, t_start, t_end)`，由 SAM 3.1 回傳每格的中心和面積，讓 `backend/audits.py` 可以改用 SAM（`track_source: "sam"`）。沒接上時維持 frame_diff
+- [ ] T38 Muse：（後端介面已由 Claude 在 T84 做好，你只要在 MetaHooks 實作 `track_object`，呼叫 SAM 3.1，座標正規化規則見 docs/API.md v0.5）在 ModelHooks 加 `track_object(video_path, text_prompt, t_start, t_end)`，由 SAM 3.1 回傳每格的中心和面積，讓 `backend/audits.py` 可以改用 SAM（`track_source: "sam"`）。沒接上時維持 frame_diff
 - [ ] T39 Muse：Spark 檢查稽核影片的拍攝條件，包括鏡頭是否固定、是否近似側視、物體是否全程入鏡。只回傳布林值和原因，結果給使用者確認
 - [ ] T28 Muse：結果說明層。Spark 讀 `ComparisonOut` 或 `AuditOut` 寫說明，先過 `check_model_text()` 才顯示，畫面標明「由 Muse Spark 產生」。不准出現「真／假影片」「AI 生成」等字眼
 - [ ] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）
@@ -65,6 +65,9 @@
 - [x] T75 Codex：數字顯示格式。畫面和名片上的數字只做顯示用的四捨五入（例如 g_vs_earth 顯示 0.26、尺寸顯示 2.4 m），匯出的 JSON 保留原值。不准改變數值本身 — commit 52f4c34
 - [x] T76 Codex：彈跳結果圖。用 `rebound_ratio_k` 畫每次反彈高度比例的長條圖，加一條 1.0 的參考線（超過 1.0 代表反彈得比上一次高，與被動彈跳模型不一致） — commit c55ae96
 - [x] T77 Codex：「Muse 偵訊」問答面板的外觀（給 Muse T66 用）。先用固定的假問題做畫面，標示 mock；契約已在 docs/API.md v0.4：先 `POST /api/audit-drafts` 拿到問題，再用 `draft_id` 和使用者的回答呼叫 `POST /api/audits`；`slow_motion` 是新欄位。mock 問題現在後端就會回傳，可以直接接 — commit 2c8bcd2
+- [ ] T80 Codex：修正 `formatNumber`：尺寸和長度目前只留 1 位小數，0.067 m 會顯示成「0.1」，會誤導使用者。改成 3 位有效數字（0.067、2.40、0.250），並補測試
+- [ ] T81 Codex：**demo 導覽模式**。加一個「Guided demo」按鈕，按照順序帶評審看：首頁說明（能判斷什麼、不能判斷什麼）→ Muse 偵訊 → 結果與鬼影對照 → 物理名片 → 三種結果並排。每一步用一句英文說明，加上「Next」按鈕，並標明哪些內容由 Muse Spark 產生。只用已經有的畫面，不新增假資料
+- [ ] T82 Codex：英文介面文字總檢查，給評審看的。統一用語（consistent / inconsistent / insufficient data with the assumed model），刪掉內部用語（例如 fixture、draft id），按鈕文字要短。不准出現 real、fake、AI-generated、detect
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -98,6 +101,8 @@
 - [x] T73 Claude：合成測試資料 `data/demo/synthetic_*.json`，用 `python -m scripts.synthetic_audits` 重新產生。這是真的 `/api/audits` 輸出，但影片是程式畫的方塊，共 6 種：正常 g、g/4、鏡頭移動、彈跳變低、彈跳變高、單擺。檔案裡有 `synthetic: true`，只能拿來開發和測試，demo 不准說成真實或生成的影片。Codex 做 T64、T65、T71，Antigravity 做 T68 時，可以先用這些檔案
 - [x] T78 Claude：Muse 偵訊的後端：`POST /api/audit-drafts`、`interview_audit` hook（含 mock）、問題檢查（不准有數字和違規字眼，最多 3 題）、`draft_id` 與 `slow_motion` 欄位（API v0.4）
 - [x] T79 Claude：`scripts/gate_prepare.py`：列出每支關卡影片的 fps、長度、尺寸（fps 超過 90 會提醒可能是慢動作），產生附時間戳的縮圖總表方便 john 看出時間窗，並在 manifest 加上標註留空的列。不呼叫模型，也不自動填標註
+- [x] T83 Claude：關卡工具用合成影片從頭到尾試跑過一次（prepare → 標註 → run → 總表）。修正一個問題：還沒標註的影片原本會被算成「拒判」，現在改成「unlabelled」，不列入任何計數，總表另外列出。門檻沒有改
+- [x] T84 Claude：稽核接上 SAM 的後端介面 `track_object`（MockHooks 會丟出 TrackingUnavailable，後端自動改用 frame differencing）。新增 `object_name` 欄位，`track_source` 會標明實際用了哪一種，API v0.5
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
 **john**
@@ -314,3 +319,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T77：接上 /api/audit-drafts 與 draft_id 回答提交，來源 model／mock 分開標示。相機、慢動作、模型、時間都須使用者明確確認，未知尺寸留空；不由問題填入數字。single-use draft 成功後清除，404／連線不明時要求重新準備，不自動重送；一般稽核與偵訊互斥避免結果競爭。新增 testid interview-panel/interview-video/interview-prepare/interview-questions/interview-camera/interview-slow/interview-model/interview-submit。npm 53 pass、build pass。
 
 - 10/28 Codex 工作總結：T74–T77 已完成並各自推送；重新 pull main 後沒有剩餘 Codex 未勾項。最終 npm 53 pass、build pass、pytest 56 pass/11 skip（環境依賴）。#demo 可離線看三種結果；Muse 偵訊用現有契約。瀏覽器端到端與 PNG 視覺驗收仍交 Antigravity，未推 main。
+- 10/28 12:40 例行巡查：審查並合併 Codex PR #27（T74 三種結果並排、T75 數字格式、T76 彈跳圖、T77 Muse 偵訊面板）。pytest 67、npm 53、build 都通過，面板有標明問題來源（Muse Spark 或固定問題），合成資料有標明 SYNTHETIC。發現尺寸只顯示 1 位小數的問題，交給 T80。新增 Codex 的 T80 到 T82。Muse、Antigravity 仍然沒有推任何東西。
+- 10/28 15:45 john 說等一下就去拍片。Claude 完成 T83（關卡工具試跑）和 T84（SAM 介面）。
