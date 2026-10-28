@@ -14,7 +14,7 @@ from pathlib import Path
 from physics.errors import PhysicsInputError
 from physics.experiments.freefall import check_flight, fit_flight
 
-from .flight_probe import read_frames, save_overlay, track
+from backend.video import read_frames, save_overlay, track
 
 # Frozen 2026-10-28 before any gate clip was seen. Do not tune per clip.
 GATE_RULES = {

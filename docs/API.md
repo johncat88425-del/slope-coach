@@ -35,6 +35,23 @@
 | 連結驗證結果 | `PATCH /api/interventions/{iid}` | `{result_trial_id}` | `InterventionOut` |
 | 報告 | `GET /api/experiments/{eid}/report.md`、`report.csv` | | 文字檔 |
 
+## 影片物理稽核（T37，v0.2 新增）
+
+| 步驟 | 方法與路徑 | 送出 | 回傳 |
+| --- | --- | --- | --- |
+| 建立稽核 | `POST /api/audits` | multipart：`file`（影片）、`t_start`、`t_end`（秒，由使用者確認）、`camera_static`（true/false）、`assumed_model`（目前只有 `free_flight`）、`object_size_m`（選填，使用者提供） | `AuditOut` |
+| 讀取稽核 | `GET /api/audits/{aid}` | | `AuditOut` |
+
+`AuditOut` 的欄位：
+- `verdict`：只會是 `consistent`、`inconsistent` 或 `insufficient_data`，**都是相對於 `assumed_model`**。畫面上不准寫成「真影片」或「AI 影片」。
+- `reasons[]`：判定的原因，或拒判的原因。
+- `numbers{}`：程式算出的數字。可能有 `g_apparent_m_s2`、`implied_time_factor`、`implied_object_size_m`、`tilt_deg`、`rms_over_travel`、`tracked_fraction`、`n_points`。沒算出來的就不會出現。
+- `points[]`：`[t, x_px, y_px]`，座標以寬 480 px 的畫面為準。
+- `overlay_url`：軌跡疊加圖，給使用者確認追蹤點有落在物體上。
+- `events[]`：物體持續性事件（消失、大小跳動、位置跳動），附發生時間。
+- `track_source`：目前是 `frame_diff`。接上 SAM 後是 `sam`，畫面要標明「由 SAM 3.1 產生」。
+- `limits[]`：已知限制，畫面要顯示。
+
 ## 欄位說明
 
 - 上傳的檔案由後端放在 `/media/{eid}/{檔名}`：`TrialOut.video_url` 和 `scene-photo` 回傳的 `photo_url` 都是這個路徑。開發時 Vite 要把 `/media` 也代理到後端。
