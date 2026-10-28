@@ -29,6 +29,8 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Skip to workspace':'跳至工作區','Curve data (backend samples)':'曲線資料（後端樣本）','Curve data':'曲線資料','Prediction — dashed line; observed — solid line with dots':'預測：虛線；實測：實線加圓點','Series':'資料類型','Time (s)':'時間（秒）','Displacement (m)':'位移（米）','Quality':'品質','Prediction':'預測','Observed':'實測','Missing':'缺失','Unreliable / missing':'不可靠／缺失',
+
 'Offline demo':'離線示範','Saved audit JSON':'已儲存的稽核 JSON','Save audit JSON':'儲存稽核 JSON','Saved result replay — no new analysis or model call.':'已儲存結果重播：沒有重新分析或呼叫模型。','Load a previously saved result. No network connection or tracking is needed.':'讀取先前儲存的結果，不需網路連線或等待追蹤。',
 
 'Tool scope':'工具範圍','Check motion against a stated model.':'依明確模型檢查運動。','Upload an experiment clip, confirm a time window and camera conditions, and inspect the numerical evidence behind a model-relative result.':'上傳實驗影片、確認時間窗與攝影條件，再核對結果背後的數值證據。','Check a video →':'檢查影片 →','Open slope experiment coach →':'開啟斜坡實驗教練 →','What this version checks':'這個版本能檢查什麼','What it cannot establish':'不能據此判定什麼','Before uploading':'上傳之前','Where the evidence comes from':'證據來源',

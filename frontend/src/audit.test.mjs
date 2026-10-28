@@ -27,5 +27,5 @@ test('saved audit validation preserves numbers and rejects malformed or unsuppor
 });
 test('offline replay explicitly labels saved output and never requests remote media',()=>{
  const html=render(createElement(AuditResult,{audit:{...fixture('consistent'),overlay_url:'/media/test/overlay.svg'},replay:true}));
- assert.match(html,/Saved result replay/);assert.doesNotMatch(html,/<img|<video/);assert.match(html,/123.456789/);
+ assert.match(html,/已儲存結果重播/);assert.doesNotMatch(html,/<img|<video/);assert.match(html,/123.456789/);
 });
