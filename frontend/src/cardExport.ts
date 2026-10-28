@@ -1,13 +1,13 @@
 import {formatNumber} from './formatNumber.js';
 import type {AuditOut} from './audit';
-import {verdictText} from './audit.js';
+
 export function physicsCardLines(a:AuditOut){
- const lines=['SLOPE COACH · PHYSICS CARD',a.synthetic?'SYNTHETIC DEVELOPMENT FIXTURE — not real footage':'Video motion audit',`Audit: ${a.audit_id}`,`Model: ${a.assumed_model}`,verdictText(a.verdict,a.assumed_model),'Muse Spark headline: pending — no model text supplied'];
+ const lines=['SLOPE COACH · PHYSICS CARD',a.synthetic?'SYNTHETIC TEST EXAMPLE — program-drawn motion':'Video motion audit',`Audit: ${a.audit_id}`,`Model: ${a.assumed_model}`,`${a.verdict==='consistent'?'Consistent':a.verdict==='inconsistent'?'Inconsistent':'Insufficient data'} with the assumed ${a.assumed_model.replace('_','-')} model`,'Muse Spark headline: awaiting a validated explanation'];
  if(a.nearest_body)lines.push(`Nearest gravity analogy: ${a.nearest_body} (an analogy, not a verdict)`);
  const labels:Record<string,string>={g_vs_earth:'Apparent gravity / Earth gravity',implied_time_factor:'Implied time factor (model-dependent)',implied_object_size_m:'Implied object size under model assumptions (m)',period_s:'Observed period (s)',implied_length_m:'Implied pendulum length (m)',predicted_period_s:'Predicted period (s)'};
  for(const [key,label] of Object.entries(labels))if(a.numbers[key]!==undefined)lines.push(`${label}: ${formatNumber(a.numbers[key],key)}`);
  if(a.numbers.g_verdict_robust===0)lines.push('CAUTION: the gravity verdict changes within the backend size-error range. Check the measured size.');
- lines.push(`Tracking source: ${a.track_source}`,'Backend reasons:',...a.reasons,'Known limitations:',...a.limits,'Model-relative result only. This card does not establish provenance or cause.');return lines;
+ lines.push(`Tracking: ${{frame_diff:'frame comparison',sam:'SAM 3.1',manual:'manual observations'}[a.track_source]}`,'Backend reasons:',...a.reasons,'Known limitations:',...a.limits,'Model-relative result only. This card does not establish provenance or cause.');return lines;
 }
 export async function downloadPhysicsCard(a:AuditOut,overlay?:string){
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');if(!ctx)throw new Error('PNG export is unavailable in this browser.');
