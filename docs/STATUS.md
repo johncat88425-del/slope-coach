@@ -50,6 +50,7 @@
 | T27 | 前端照 docs/API.md 接上後端（見下方「Claude 審查 Codex T08/T09」） | Codex | 待辦 | 先 merge main |
 | T28 | 結果說明層：Spark 讀 ComparisonOut，寫給使用者的中英文說明，先過 backend/output_check.check_model_text() 才顯示 | Muse | 待辦 | T11 之後；畫面標明「由 Muse Spark 產生」 |
 | T29 | 在 backend 把 MockHooks 換成 MetaHooks（check_scene、track_slider、suggest_release_time） | Muse | 待辦 | T05 完成後馬上做；介面見 backend/model_hooks.py |
+| T30 | 後端提供 `/media` 讀取上傳的影片與照片，場景照片回傳 `photo_url` | Claude | 完成 | 前端要在 `vite.config.ts` 的 proxy 加上 `/media`（Codex） |
 | T21 | 競品實測比較：PhET、Video2World、直接問 Muse | Manus | 待辦 | 成果放 docs/research/competitors.md |
 | T22 | 使用者測試計畫：招募訊息、任務腳本、記錄表 | Manus | 待辦 | 11/02 要用，10/31 前完成 |
 | T23 | 三分鐘 demo 分鏡與英文提交文字草稿 | Manus | 待辦 | 只寫已完成的功能，11/03 依實際結果修改 |
@@ -104,6 +105,7 @@
 
 ## 工作日誌（最新在上）
 
+- 10/28 Claude 完成 T30：後端把 `data/uploads/` 掛在 `/media`，`video_url` 現在可以直接播放；`scene-photo` 多回傳 `photo_url`。**Codex：請在 `frontend/vite.config.ts` 的 proxy 加上 `/media` → `http://localhost:8000`，校準畫面改用 `photo_url` 顯示照片。** 也審查了 Codex PR #4（T27），測試與 build 通過，已解 STATUS 衝突，等 john 按 Ready for review 後合併。
 - 10/28 Claude 完成 T15，並新增 `scripts/seed_demo.py`：後端開著時執行 `python -m scripts.seed_demo --case pushed`（或 wrong_height / ok / occluded），會建立一個用合成資料的完整實驗，前端和 Antigravity 不用真影片也能測整個流程。四種情境結果：pushed→建議釋放核對、wrong_height→建議尺寸核對、ok→一致、occluded→有差異但證據不足、不建議任何驗證。
 - 10/28 Claude 完成 T12（模型輸出檢查：數字必須出自工具輸出、中英文因果誇大用語、驗證只能從證據候選選）與 T26（後端寫入後存檔）；審查 Codex 的 codex/T08-frontend，差異列在上方「Claude 審查 Codex T08/T09」。
 - 10/28 Claude 完成 T07：docs/API.md 契約 v0.1 與 FastAPI 後端（記憶體儲存、預測鎖定、預測必須早於試驗、只能選證據支持的驗證、報告匯出）。Meta 模型接入點在 backend/model_hooks.py，Muse 實作後用 set_hooks() 換掉 MockHooks。
