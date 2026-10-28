@@ -51,6 +51,11 @@
 - [x] T49 Codex：首頁說明「這個工具能判斷什麼、不能判斷什麼」，照 docs/research/competitors.md 的結論寫，不准說「第一個」 — commit 9bfc41f
 - [x] T50 Codex：demo 模式：讀取事先存好的稽核結果 JSON，讓 demo 不用連網或等追蹤 — commit 1abd274
 - [x] T51 Codex：手機版排版與無障礙（色盲也能分辨預測線和實測線，不能只靠顏色） — commit 77ab223
+- [ ] T59 Codex：「檢查影片」和離線重播支援 `assumed_model=bounce`（顯示 `rebound_ratio_k`）。目前離線重播只接受 free_flight，會擋掉 bounce 結果
+- [ ] T60 Codex：稽核結果顯示 `events`（消失、大小跳動、位置跳動）的時間軸，以及 `size_trend` 拒判的說明文字
+- [ ] T61 Codex：稽核結果的網址可以直接打開（`#/audits/:id`，用 `GET /api/audits/{id}`）
+- [ ] T62 Codex：demo 品質：上傳進度、處理中狀態、422／404／網路錯誤的友善訊息（照後端的 reason 顯示，不改寫數字）
+- [ ] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -70,7 +75,7 @@
 **Claude**
 - [x] T31 拋體檢查、T32 關卡工具、T35 彈跳與持續性檢查、T30 `/media`
 - [ ] 審查並合併 Muse 的 T05、T29
-- [ ] 審查並合併 Codex PR #4（等 john 按 Ready for review）
+- [x] 審查並合併 Codex PR #4 與 #16（T36–T51，含 #4 的內容）：pytest 58、npm 37、build 都通過；前端沒有自己算物理，畫面沒有「真／假／AI 生成」字眼
 - [x] T37 Claude：後端稽核端點 `POST /api/audits`、`GET /api/audits/{aid}`（docs/API.md v0.2）
 - [ ] T32 跑關卡（等 john 的影片）
 - [x] T55 Claude：稽核支援 `assumed_model=bounce`（接上 `check_bounces`）
@@ -81,7 +86,7 @@
 
 **john**
 - [ ] T33 拍片並生成影片，提供標註
-- [ ] 合併 PR #4
+- [x] 合併 PR #4（已隨 PR #16 一起合併）
 - [ ] 在 Discord 問：用其他工具生成的影片當測試素材可不可以
 
 ## 可行性關卡：影片物理稽核（10/28–10/29）
@@ -228,6 +233,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/28 02:05Z Claude 巡查：Codex 完成 11 件（PR #16，已審查合併）；Muse 和 Antigravity 還沒有 push。替 Codex 補了 T59 到 T63。
 - 10/27 Codex T48：介面英/繁中切換，首次預設英文、記住語言偏好，所有頁面顯示層使用同一詞表；後端原始原因/使用者資料與數字不改寫。32 項測試、build 通過。
 
 - 10/27 Codex T17：限時內完成預測影片疊加元件與原點/時間/缺失處理測試。只做契約指定的顯示座標映射，不重擬合；到終點停止，非 ok 或時間不近的觀測隱藏。無可核對真片，預設關閉並要求使用者核對；不宣稱實際對齊精度。30 項測試與 build 通過。
