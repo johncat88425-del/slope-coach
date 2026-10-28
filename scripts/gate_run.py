@@ -25,11 +25,14 @@ GATE_RULES = {
     "max_rms_fraction": 0.02,
 }
 
-COLUMNS = ["clip", "source", "assumed_model", "t_start", "t_end", "camera_static", "object", "object_size_m"]
+COLUMNS = ["clip", "source", "assumed_model", "t_start", "t_end", "camera_static", "object", "object_size_m",
+           "track_ok"]  # track_ok: john's yes/no after looking at the overlay; blank until he has
+RESULTS = ("consistent", "inconsistent", "insufficient_data", "refused")
 
 
 def run_clip(row: dict, clips_dir: Path, overlay_dir: Path | None = None) -> dict:
     out = {k: row.get(k, "") for k in ("clip", "source", "assumed_model", "object")}
+    out["track_ok"] = (row.get("track_ok") or "").strip().lower()
     if row["assumed_model"] != "free_flight":
         return out | {"result": "refused", "why": f"model '{row['assumed_model']}' not checked by this gate"}
     if row["camera_static"].strip().lower() not in ("yes", "y", "1", "true"):
@@ -63,16 +66,81 @@ def run_clip(row: dict, clips_dir: Path, overlay_dir: Path | None = None) -> dic
     }
 
 
+def _yes(v) -> bool:
+    return str(v).strip().lower() in ("yes", "y", "1", "true")
+
+
+def strong_anomaly(r: dict) -> bool:
+    """An inconsistent verdict that survives a 30% error in the object size (gate question 2)."""
+    if r.get("result") != "inconsistent":
+        return False
+    if (r.get("tilt_deg") or 0) > GATE_RULES["max_tilt_deg"]:
+        return True
+    if (r.get("rms_over_travel") or 0) > GATE_RULES["max_rms_fraction"]:
+        return True
+    g = r.get("g_apparent")
+    return g is not None and abs(g / 9.81 - 1) > 0.5
+
+
+def gate_summary(rows: list[dict]) -> dict:
+    """Counts per source and the three gate questions, computed the same way for every clip.
+    A question is 'pending' while it depends on overlay checks john has not made yet."""
+    counts: dict[str, dict[str, int]] = {}
+    for r in rows:
+        c = counts.setdefault(r.get("source") or "other", {k: 0 for k in RESULTS})
+        c[r["result"]] = c.get(r["result"], 0) + 1
+
+    own = [r for r in rows if r.get("source") == "own"]
+    good = [r for r in own if r["result"] == "consistent" and r.get("g_apparent") is not None
+            and abs(r["g_apparent"] / 9.81 - 1) <= GATE_RULES["g_tolerance"]]
+    if len(own) < 3:
+        q1 = "pending"
+    elif len(good) < 2:
+        q1 = "fail"
+    elif sum(_yes(r.get("track_ok")) for r in good) >= 2:
+        q1 = "pass"
+    else:
+        q1 = "pending" if any(not r.get("track_ok") for r in good) else "fail"
+
+    cand = [r for r in rows if strong_anomaly(r) and (r.get("tracked_fraction") or 0) >= GATE_RULES["min_tracked_fraction"]]
+    if any(_yes(r.get("track_ok")) for r in cand):
+        q2 = "pass"
+    elif any(not r.get("track_ok") for r in cand):
+        q2 = "pending"
+    else:
+        q2 = "fail"
+
+    refused = sum(r["result"] == "refused" for r in rows)
+    q3 = "pending" if not rows else ("pass" if refused * 2 <= len(rows) else "fail")
+    false_alarms = [r["clip"] for r in own if r["result"] == "inconsistent"]
+    return {"counts": counts, "q1": q1, "q2": q2, "q3": q3, "refused": refused, "total": len(rows),
+            "own_false_alarms": false_alarms, "strong_anomalies": [r["clip"] for r in cand]}
+
+
+def summary_markdown(s: dict) -> str:
+    lines = ["| source | " + " | ".join(RESULTS) + " |", "|" + " --- |" * (len(RESULTS) + 1)]
+    for src, c in sorted(s["counts"].items()):
+        lines.append(f"| {src} | " + " | ".join(str(c.get(k, 0)) for k in RESULTS) + " |")
+    lines += ["", f"Q1 trustworthy tracks on own clips: {s['q1']}",
+              f"Q2 clear anomaly not explained by tracking or size error: {s['q2']}"
+              + (f" ({', '.join(s['strong_anomalies'])})" if s["strong_anomalies"] else ""),
+              f"Q3 one rule set, at most half refused: {s['q3']} ({s['refused']}/{s['total']} refused)"]
+    if s["own_false_alarms"]:
+        lines.append(f"False alarms on own clips (explain each): {', '.join(s['own_false_alarms'])}")
+    lines.append("All clips in the manifest are listed; none are left out.")
+    return "\n".join(lines) + "\n"
+
+
 def to_markdown(rows: list[dict]) -> str:
     keys = ["clip", "source", "assumed_model", "result", "why", "g_apparent", "time_factor",
-            "implied_size_m", "tilt_deg", "rms_over_travel", "tracked_fraction"]
+            "implied_size_m", "tilt_deg", "rms_over_travel", "tracked_fraction", "track_ok"]
     lines = ["| " + " | ".join(keys) + " |", "|" + " --- |" * len(keys)]
     for r in rows:
         lines.append("| " + " | ".join("" if r.get(k) is None else str(r.get(k, "")) for k in keys) + " |")
     refused = sum(r["result"] == "refused" for r in rows)
     lines.append("")
     lines.append(f"Rules: {GATE_RULES}. Refused {refused}/{len(rows)}.")
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines) + "\n\n## Summary\n\n" + summary_markdown(gate_summary(rows))
 
 
 def main() -> None:
