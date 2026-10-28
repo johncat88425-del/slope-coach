@@ -15,3 +15,5 @@ main>*{min-width:0}section,article,fieldset{overflow-wrap:anywhere}input,select,
 .event-timeline{padding-left:24px;border-left:3px solid #506563;margin-left:10px}.event-timeline li{padding:12px 0 12px 8px}.event-timeline p{margin:8px 0}.event-timeline strong{font-variant-numeric:tabular-nums}
 
 .demo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.demo-grid section{padding:12px}.demo-grid h2{font-size:22px}.demo-comparison{padding:12px}.demo-grid>div{min-width:0}@media(max-width:1100px){.demo-grid{grid-template-columns:1fr}}
+
+.guided-demo{position:sticky;top:0;background:#fff;border-bottom:2px solid #214f45;padding:8px 24px;z-index:20}.guided-demo p{margin:4px 0;max-width:1000px}.guided-demo button{margin:4px 8px 4px 0}.guided-demo~main [data-testid]{scroll-margin-top:180px}
