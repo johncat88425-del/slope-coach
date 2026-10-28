@@ -30,8 +30,12 @@ def test_audit_consistent_and_inconsistent(tmp_path):
     assert r["numbers"]["g_apparent_m_s2"] == pytest.approx(9.81, rel=0.15)
     assert client.get(r["overlay_url"]).status_code == 200
     assert client.get(f"/api/audits/{r['audit_id']}").json()["verdict"] == "consistent"
+    assert r["nearest_body"] == "Earth" and len(r["ghost_points"]) == len(r["points"])
     slow = post(tmp_path / "slow.mp4").json()
     assert slow["verdict"] == "inconsistent" and slow["reasons"]
+    assert slow["nearest_body"] in ("Moon", "Mars") and slow["numbers"]["g_vs_earth"] < 0.5
+    assert abs(slow["ghost_points"][-1][2] - slow["points"][-1][2]) > 20
+    assert slow["numbers"]["g_verdict_robust"] == 1.0 and slow["numbers"]["g_apparent_high"] < 9.81 * 0.85
 
 
 def test_audit_refuses_moving_camera_and_bad_input(tmp_path):
