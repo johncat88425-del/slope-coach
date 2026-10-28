@@ -69,7 +69,7 @@
 
 ## Meta 模型接入點（給 Muse Code）
 
-`backend/model_hooks.py` 定義了 `ModelHooks` 介面，共三個方法：`check_scene`、`track_slider`、`suggest_release_time`。預設的 `MockHooks` 不連網路。`meta_client` 寫好後，在啟動時呼叫 `set_hooks(MetaHooks())` 替換掉它。選下一次驗證的代理（T11）只能從 `ComparisonOut.evidence` 的候選中挑一個，並把理由放進 `model_rationale`。
+`backend/model_hooks.py` 定義了 `ModelHooks` 介面，共四個方法：`check_scene`、`track_slider`、`suggest_release_time`、`interview_audit`（v0.4）。預設的 `MockHooks` 不連網路。`meta_client` 寫好後，在啟動時呼叫 `set_hooks(MetaHooks())` 替換掉它。選下一次驗證的代理（T11）只能從 `ComparisonOut.evidence` 的候選中挑一個，並把理由放進 `model_rationale`。
 
 ### Muse 偵訊（v0.4，T78）
 
