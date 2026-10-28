@@ -20,6 +20,7 @@ from physics.fit import fit_constant_acceleration
 from physics.tracking import Detection, to_samples, usable_fraction
 
 from . import report, schemas as S
+from .audits import router as audits_router
 from .interventions import CATALOG
 from .model_hooks import TrackingUnavailable, get_hooks
 from .output_check import check_model_text
@@ -41,6 +42,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allo
 # Uploaded videos and photos, served as /media/<eid>/<file>. File names are generated server-side.
 UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
 app.mount("/media", StaticFiles(directory=UPLOAD_ROOT), name="media")
+app.include_router(audits_router)
 
 
 # ---------- helpers ----------

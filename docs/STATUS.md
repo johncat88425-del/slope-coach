@@ -25,31 +25,43 @@
 
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
-**Muse**
+**Muse**（照順序做）
 - [ ] T05 Muse：`meta_client/`（Spark、SAM 3.1、花費計數與 120 美元上限、mock 測試）
 - [ ] T29 Muse：後端接上 MetaHooks（沒有金鑰時退回 Mock）
-- [ ] T34 Muse：Spark 建議運動片段 `suggest_motion_segment`（只回傳建議，不回傳測量數字，要通過 schema 檢查）
-- [ ] T28 Muse：結果說明層（先過 `check_model_text()`，畫面標明「由 Muse Spark 產生」）
+- [ ] T34 Muse：Spark 建議運動片段 `suggest_motion_segment`。只回傳建議，不回傳測量數字，要通過 schema 檢查
+- [ ] T38 Muse：在 ModelHooks 加 `track_object(video_path, text_prompt, t_start, t_end)`，由 SAM 3.1 回傳每格的中心和面積，讓 `backend/audits.py` 可以改用 SAM（`track_source: "sam"`）。沒接上時維持 frame_diff
+- [ ] T39 Muse：Spark 檢查稽核影片的拍攝條件，包括鏡頭是否固定、是否近似側視、物體是否全程入鏡。只回傳布林值和原因，結果給使用者確認
+- [ ] T28 Muse：結果說明層。Spark 讀 `ComparisonOut` 或 `AuditOut` 寫說明，先過 `check_model_text()` 才顯示，畫面標明「由 Muse Spark 產生」。不准出現「真／假影片」「AI 生成」等字眼
 - [ ] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）
+- [ ] T24 Muse：語音口述設定（Voice Transcribe 轉文字，Spark 抽出欄位，使用者確認）
+- [ ] T16 Muse：Spark 與 Wonder 的 A/B 比較腳本。先用 mock 跑通，實際呼叫限 1 美元以內，花費記進成本紀錄
 
-**Codex**（PR #4 合併後才開始）
+**Codex**（PR #4 合併後才開始，照順序做）
 - [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
-- [ ] T36b Codex：軌跡疊加圖與 2D 軌跡圖元件（實測點用橘色，有缺口的地方不連線）
+- [ ] T36b Codex（進行中）：軌跡疊加圖與 2D 軌跡圖元件。實測點用橘色，有缺口的地方不連線
 - [ ] T36c Codex：所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」
+- [ ] T40 Codex：新畫面「檢查影片」：上傳影片、選時間窗、勾選鏡頭固定、輸入物體尺寸，接 `POST /api/audits`（見 docs/API.md v0.2）。顯示 verdict、reasons、numbers、疊加圖、軌跡圖、limits。`insufficient_data` 是正常結果。畫面文字只准說「與自由落體模型一致／不一致／無法判斷」
+- [ ] T41 Codex：「檢查影片」畫面的 npm 測試，包括三種 verdict 的顯示，以及確認畫面沒有「真／假／AI 生成」字眼
+- [ ] T13b Codex：稽核結果匯出成 Markdown（數字照後端給的，不自己算）
+- [ ] T17 Codex：影片預測疊加（限 2 小時）
 
-**Antigravity**
-- [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo）
+**Antigravity**（照順序做）
+- [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
 - [ ] T14 Antigravity：用 `seed_demo` 跑斜坡流程的端到端測試，截圖放 `docs/screenshots/`，問題寫進「缺什麼」
+- [ ] T42 Antigravity：稽核流程的端到端測試。用 `tests/scripts/test_gate_run.py` 的 `write_clip` 產生合成影片，經 API 或畫面跑一次正常 g 和 g/4 兩種情況，截圖
+- [ ] T43 Antigravity：部署草稿：Dockerfile 與啟動說明。只在本機測，不要公開部署；`.env` 不准進映像檔
+- [ ] T44 Antigravity：README 的安裝與使用說明（英文），只寫已經能用的功能
 
 **Manus**（不寫程式）
 - [x] T21 Manus：影片物理合理性競品研究（附來源），結果放在 `docs/research/competitors.md`
-- [ ] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）
+- [ ] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）。差異點照 competitors.md 的結論寫，不准說「第一個」或「偵測 AI 影片」
+- [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
 **Claude**
 - [x] T31 拋體檢查、T32 關卡工具、T35 彈跳與持續性檢查、T30 `/media`
 - [ ] 審查並合併 Muse 的 T05、T29
 - [ ] 審查並合併 Codex PR #4（等 john 按 Ready for review）
-- [ ] T37 Claude：後端稽核端點 `POST /api/audits`（上傳影片和標註，回傳軌跡檢查結果與疊加圖）
+- [x] T37 Claude：後端稽核端點 `POST /api/audits`、`GET /api/audits/{aid}`（docs/API.md v0.2）
 - [ ] T32 跑關卡（等 john 的影片）
 
 **john**
@@ -161,7 +173,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 後端：`uvicorn backend.main:app --reload`，網址 http://localhost:8000，互動文件在 `/docs`。API 契約見 `docs/API.md`。
 - 合成示範資料：`python -m scripts.seed_demo --case pushed`，也可以把 case 換成 wrong_height、ok 或 occluded。
-- 測試：`pytest`（目前 51 個通過）；前端 `cd frontend && npm test`。
+- 測試：`pytest`（目前 53 個通過）；前端 `cd frontend && npm test`。
 - 免模型的軌跡探測：`python -m scripts.flight_probe 影片.mp4 --start 1.0 --end 2.0 --overlay out.png`。
 - 上傳的檔案由後端放在 `/media/{eid}/{檔名}`。
 
@@ -201,10 +213,9 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
-- 10/27 Codex T36a：新增 /media proxy、讀回 photo_url 與影片 URL、跨 API origin 媒體網址解析，舊資料無 URL 時保留本機選檔替代。前端測試 17 項、build 通過；pytest 結果見本輪驗證。未改 API 或模型。
+- 10/27 Codex：依 john 最新連續工作授權，PR #4 基底採堆疊分支不等待合併；T36a 已推 codex/T36a-media，讀最新完成表後接 T36b。
 
-- 10/27 Codex：依 john 最新「不等待、逐項完成」直接指示，T36 以 PR #4 已審查的前端為基底採堆疊分支開發；不替 john 合併 PR #4、不推 main。已在隔離 worktree pull main，避免共用 checkout 的 Muse 未提交工作受影響。
-
+- 10/28 Claude 完成 T37 稽核端點（另開 `backend/audits.py` router，避免和 Muse 改 main.py 衝突；影片處理移到 `backend/video.py`）。完成表補到夠做一整晚：Muse 加 T38、T39、T16，Codex 加 T40、T41、T13b，Antigravity 加 T42 到 T44。
 - 10/28 john 指定 Claude 為協調者。新增「完成表」，並在 AGENTS.md 加上自動接續規則。Muse 回報 T05 和 T29 已在本機完成（91 個測試通過），但還沒 commit：Muse 請照新規則 commit 並 push `muse/T05-meta-client`。
 - 10/28 Claude 完成 T35：彈跳檢查（反彈比前一次高超過 5% 就判不一致）與物體持續性事件（中途消失超過 2 格、面積偏離中位數 2 倍、位移超過中位步長 4 倍）。這兩項不加進 10/29 的關卡，避免看到資料後才改規則。
 - 10/28 Claude 把所有資料整合進本檔（原本的 docs/GATE.md 已併入「可行性關卡」），並加上「現在每個工具要做什麼」。
