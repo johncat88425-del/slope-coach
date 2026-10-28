@@ -4,6 +4,7 @@ export const pages = [
   {route: 'analysis', title: '影片分析'},
   {route: 'verification', title: '下一次驗證'},
   {route: 'report', title: '實驗報告'},
+  {route: 'audit', title: '檢查影片'},
 ] as const;
 export type Route = typeof pages[number]['route'];
 export type Point = {x: number; y: number};
