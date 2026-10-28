@@ -250,3 +250,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/27 Codex T50：新增稽核 JSON 保存與離線讀取，驗證 free_flight schema／有限數字／5 MB 上限；重播明示沒有新分析，禁止載入遠端影片與疊加圖。沒有捏造產品示範結果，需先保存真實 API 結果；36 項 npm 測試與 build 通過。
 
 - 10/27 Codex T51：窄螢幕欄位／導覽換行、44px 控制目標、焦點外框、跳至工作區、強制色彩支援；曲線保留虛線 vs 實線圓點，新增鍵盤可讀資料表。npm 37 pass、build pass；pytest 53 pass/5 skip（缺 ffmpeg 等環境條件）。本機瀏覽器 origin 授權被拒，未繞過，實機手機／螢幕閱讀器驗收仍待 Antigravity。
+
+- 10/27 Codex 工作總結：已依完成表完成並分支推送 T36a/T36b/T36c/T40/T41/T13b/T17/T48/T49/T50/T51；重新 pull main 後沒有剩餘 Codex 未勾項。最終 npm 37 pass、build pass、pytest 53 pass/5 skip。尚待真實影片疊加對齊與手機／螢幕閱讀器實測；只改 frontend 與本 STATUS，未推 main。
