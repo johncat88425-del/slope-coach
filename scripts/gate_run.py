@@ -1,9 +1,9 @@
-"""Run the feasibility gate (docs/GATE.md) on every clip in a manifest with one fixed rule set.
+"""Run the feasibility gate (docs/STATUS.md, section 可行性關卡) on every clip in a manifest with one fixed rule set.
 
     python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gate --out data/gate/results.md
 
 The only per-clip inputs are john's human labels in the manifest. Thresholds live in GATE_RULES
-and in physics defaults; changing either after the first run must be recorded in docs/GATE.md.
+and in physics defaults; changing either after the first run must be recorded in docs/STATUS.md (規則變更紀錄).
 """
 from __future__ import annotations
 
