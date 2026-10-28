@@ -42,7 +42,7 @@
 - [ ] T14 Antigravity：用 `seed_demo` 跑斜坡流程的端到端測試，截圖放 `docs/screenshots/`，問題寫進「缺什麼」
 
 **Manus**（不寫程式）
-- [ ] T21 Manus：影片物理合理性競品研究（附來源）
+- [x] T21 Manus：影片物理合理性競品研究（附來源），結果放在 `docs/research/competitors.md`
 - [ ] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）
 
 **Claude**
@@ -182,6 +182,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 | 日期 | 決定 | 原因 |
 | --- | --- | --- |
+| 10/28 | 競品結論（T21）：Tracker、FizziQ 已能讓一般人量影片中的 g；MotionPhys 已在研究用物理特徵偵測 AI 影片。所以我們不能說「第一個」，也不碰 AI 偵測。我們的差異要靠 Muse 自動做掉 Tracker、FizziQ 需要手動的步驟（選物體、選片段、說明結果），再加上凍結的品質門檻和拒判 | `docs/research/competitors.md` |
 | 10/28 | 先驗證縮小版「影片物理稽核」，用上方關卡決定是否轉向；採用 award-strategy.md 的證據標準與拒判原則；不宣稱能辨識 AI 真偽 | john 選定。設計代理留作長期產品方向 |
 | 10/28 | 評分權重：Impact 30%、Meta AI 工具運用 25%、技術深度 20%、Demo 25%；Indie 另看創意、技術野心、能不能運作 | 官方規則與 waiver |
 | 10/28 | Muse 優先：產品裡的理解、判斷、說明都交給 Meta 模型；新開發任務優先給 Muse；畫面標明哪些由 Muse 產生 | john：要得名，主要得用 Muse |
