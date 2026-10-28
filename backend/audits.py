@@ -9,17 +9,19 @@ from __future__ import annotations
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from physics.errors import PhysicsInputError
-from physics.experiments.freefall import check_flight, fit_flight
-from physics.persistence import persistence_events
+from physics.experiments.freefall import check_bounces, check_flight, fit_flight
+from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
 
 from . import schemas as S
 from .store import UPLOAD_ROOT, new_id, now, store
-from .video import read_frames, save_overlay, track
+from .video import read_frames, save_overlay, track_with_sizes
 
 router = APIRouter()
 
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
+MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
+MODELS = ("free_flight", "bounce")
 LIMITS = [
     "Tracking uses frame differencing, not a model; motion blur inflates the object size.",
     "Perspective is not modelled: motion towards or away from the camera is not reliable.",
@@ -36,8 +38,8 @@ def create_audit(
     assumed_model: str = Form("free_flight"),
     object_size_m: float | None = Form(None),
 ):
-    if assumed_model != "free_flight":
-        raise HTTPException(422, "only assumed_model=free_flight is supported")
+    if assumed_model not in MODELS:
+        raise HTTPException(422, f"assumed_model must be one of {MODELS}")
     if not 0 <= t_start < t_end:
         raise HTTPException(422, "need 0 <= t_start < t_end")
     if object_size_m is not None and object_size_m <= 0:
@@ -67,7 +69,8 @@ def create_audit(
         frames, fps = read_frames(str(video), t_start, t_end)
     except Exception:
         raise HTTPException(422, "could not read video frames in that window")
-    pts, size_px = track(frames, fps, t_start)
+    pts, sizes = track_with_sizes(frames, fps, t_start)
+    size_px = sorted(sizes)[len(sizes) // 2] if sizes else None
     save_overlay(frames, pts, t_start, fps, str(d / "overlay.png"))
     rec["overlay_url"] = f"/media/audits/{aid}/overlay.png"
     rec["points"] = [[t, x, y] for t, x, y in pts]
@@ -78,6 +81,23 @@ def create_audit(
     rec["numbers"]["tracked_fraction"] = frac
     if frac < MIN_TRACKED_FRACTION:
         rec["reasons"] = [f"object tracked in only {frac:.0%} of frames"]
+        store.audits[aid] = rec
+        return rec
+
+    trend = size_trend([p[0] for p in pts], sizes)
+    if trend is not None:
+        rec["numbers"]["size_trend"] = trend
+        if abs(trend) > MAX_SIZE_TREND:
+            rec["reasons"] = [f"object size changes {trend:+.0%} along the track; it moves towards or away "
+                              "from the camera, which this 2D check cannot judge"]
+            store.audits[aid] = rec
+            return rec
+
+    if assumed_model == "bounce":
+        b = check_bounces(pts)
+        rec["verdict"], rec["reasons"] = b.verdict, list(b.reasons)
+        rec["numbers"] |= {f"rebound_ratio_{i + 1}": e * e for i, e in enumerate(b.restitution)}
+        rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v == v and abs(v) != float("inf")}
         store.audits[aid] = rec
         return rec
 
