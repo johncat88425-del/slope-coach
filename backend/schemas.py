@@ -206,6 +206,27 @@ class PersistenceEventOut(BaseModel):
     detail: str
 
 
+QuestionField = Literal["camera_static", "slow_motion", "object_size_m", "time_window", "assumed_model", "length_m"]
+
+
+class AuditQuestion(BaseModel):
+    """A question the model asks the user before an audit. The answer, not the model, sets the input."""
+    field: QuestionField
+    text: str = Field(max_length=200)
+
+
+class AuditInterview(BaseModel):
+    source: Literal["model", "mock"]
+    questions: list[AuditQuestion]
+    note: str | None = None
+
+
+class AuditDraftOut(BaseModel):
+    draft_id: str
+    video_url: str
+    interview: AuditInterview
+
+
 class AuditOut(BaseModel):
     """Video physics audit. verdict is relative to assumed_model only; never real vs generated."""
     audit_id: str
@@ -216,6 +237,7 @@ class AuditOut(BaseModel):
     camera_static: bool
     object_size_m: float | None
     length_m: float | None = None  # pendulum only, user-measured
+    slow_motion: bool | None = None  # user's answer; True refuses the timing-based checks
     video_url: str
     overlay_url: str | None
     track_source: Literal["frame_diff", "sam", "manual"]
