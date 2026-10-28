@@ -8,6 +8,7 @@ import shutil
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from physics.baseline import BaselineEstimate, estimate_baseline
 from physics.calibration import Calibration, SlopeGeometry
@@ -36,6 +37,10 @@ async def persist_after_writes(request, call_next):
 
 
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["*"], allow_headers=["*"])
+
+# Uploaded videos and photos, served as /media/<eid>/<file>. File names are generated server-side.
+UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+app.mount("/media", StaticFiles(directory=UPLOAD_ROOT), name="media")
 
 
 # ---------- helpers ----------
@@ -79,10 +84,14 @@ def _save_upload(eid: str, f: UploadFile, prefix: str):
     return path
 
 
+def _media_url(eid: str, path) -> str:
+    return f"/media/{eid}/{path.name}"
+
+
 def _trial_out(t: TrialRecord) -> S.TrialOut:
     return S.TrialOut(
         trial_id=t.trial_id, kind=t.kind, calibration_version=t.calibration_version, uploaded_at=t.uploaded_at,
-        video_url=f"/media/{t.experiment_id}/{t.video_path.name}" if t.video_path else None,
+        video_url=_media_url(t.experiment_id, t.video_path) if t.video_path else None,
         t0_s=t.t0_s, t0_source="user" if t.t0_s is not None else None,
         samples=[S.SampleOut(t_s=s.t_s, s_m=s.s_m, quality=s.quality.value, source=s.source) for s in t.samples],
         usable_fraction=usable_fraction(t.samples),
@@ -123,7 +132,7 @@ def get_experiment(eid: str):
 def upload_scene_photo(eid: str, file: UploadFile = File(...)):
     exp = _exp(eid)
     path = _save_upload(eid, file, "photo")
-    out = {"photo_id": path.stem, "scene_check": get_hooks().check_scene(path)}
+    out = {"photo_id": path.stem, "photo_url": _media_url(eid, path), "scene_check": get_hooks().check_scene(path)}
     exp.scene_photos.append(out)
     return out
 

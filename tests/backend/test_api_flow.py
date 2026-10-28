@@ -127,3 +127,11 @@ def test_store_snapshot_roundtrip(tmp_path, monkeypatch):
     assert eid not in store.experiments
     store.load()
     assert pid in store.experiments[eid].predictions
+
+
+def test_uploads_are_served_under_media():
+    eid = client.post("/api/experiments", json={}).json()["experiment_id"]
+    photo = client.post(f"/api/experiments/{eid}/scene-photo", files={"file": ("scene.jpg", b"fake-jpeg", "image/jpeg")}).json()
+    assert photo["photo_url"] == f"/media/{eid}/{photo['photo_id']}.jpg"
+    assert client.get(photo["photo_url"]).content == b"fake-jpeg"
+    assert client.get(f"/media/{eid}/../../store.pkl").status_code == 404
