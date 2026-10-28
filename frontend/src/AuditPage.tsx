@@ -7,6 +7,10 @@ import { ModelSource } from './ModelSource.js';
 import { Trajectory2D, TrajectoryOverlay } from './Trajectory.js';
 import { mediaUrl } from './media.js';
 import { auditMarkdown, downloadText } from './auditReport.js';
+export function EventTimeline({events}:{events:AuditOut['events']}) {
+ const labels:Record<string,string>={vanished:'Disappearance',size_jump:'Size jump',position_jump:'Position jump'};
+ return <Localize><section aria-label="Tracking event timeline"><h3>Tracking event timeline</h3><p>Events may reflect tracking or capture problems. Review the original clip; they do not establish a cause.</p>{events.length ? <ol className="event-timeline">{[...events].sort((a,b)=>a.t_s-b.t_s).map((e,i)=><li key={i}><strong>{e.t_s} s · {labels[e.kind]??e.kind}</strong><p>{e.detail}</p><small>{e.kind}</small></li>)}</ol> : <p>No tracking events were reported.</p>}</section></Localize>;
+}
 export function AuditResult({ audit, replay = false }: {
     audit: AuditOut; replay?: boolean;
 }) {
@@ -15,7 +19,8 @@ export function AuditResult({ audit, replay = false }: {
  <h3>後端計算數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
- {audit.assumed_model==='bounce' && <p>Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.</p>}<h3>追蹤事件（需對照原片）</h3><ul>{audit.events.map((e, i) => <li key={i}>{e.t_s} s · {e.kind}：{e.detail}</li>)}</ul>
+ {audit.assumed_model==='bounce' && <p>Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.</p>}<EventTimeline events={audit.events}/>
+ {audit.verdict==='insufficient_data' && audit.numbers.size_trend!==undefined && <aside aria-label="Size trend limitation"><h3>Size trend limitation</h3><p>size_trend: {audit.numbers.size_trend}</p><p>A changing apparent size can make the 2D motion check unreliable. The backend rejects changes beyond its quality threshold. Review the backend reasons above; this value alone does not establish a cause.</p></aside>}
  <button onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json")}>Save audit JSON</button><button onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}>{r}</li>)}</ul>
  </article>}</Localize>;
 }

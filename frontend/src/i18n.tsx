@@ -31,6 +31,8 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Tracking event timeline':'追蹤事件時間軸','Events may reflect tracking or capture problems. Review the original clip; they do not establish a cause.':'事件可能來自追蹤或拍攝問題；請對照原片，不可據此確定原因。','Disappearance':'消失','Size jump':'大小跳動','Position jump':'位置跳動','No tracking events were reported.':'後端未回報追蹤事件。','Size trend limitation':'尺寸變化的拒判限制','A changing apparent size can make the 2D motion check unreliable. The backend rejects changes beyond its quality threshold. Review the backend reasons above; this value alone does not establish a cause.':'影像中的尺寸變化可能讓二維運動檢查不可靠。超過品質門檻時由後端拒判；請核對上方後端原因，不能只憑此值確定原因。',
+
 'Motion model':'運動模型','Free flight':'自由落體','Bounce':'彈跳','Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.':'反彈比例是每次反彈高度除以前一次高度；上方照實顯示後端數字。','Check the selected segment against the chosen motion model. Confirm capture conditions and the time window; insufficient evidence remains an explicit outcome.':'依選定的運動模型檢查片段。請確認拍攝條件與時間窗；證據不足時保留無法判斷。',
 
 'Skip to workspace':'跳至工作區','Curve data (backend samples)':'曲線資料（後端樣本）','Curve data':'曲線資料','Prediction — dashed line; observed — solid line with dots':'預測：虛線；實測：實線加圓點','Series':'資料類型','Time (s)':'時間（秒）','Displacement (m)':'位移（米）','Quality':'品質','Prediction':'預測','Observed':'實測','Missing':'缺失','Unreliable / missing':'不可靠／缺失',
