@@ -9,6 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from physics.errors import PhysicsInputError
+from physics.experiments.pendulum import check_pendulum
 from physics.experiments.freefall import check_bounces, check_flight, fit_flight, ghost_track, nearest_body
 from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
@@ -22,7 +23,7 @@ router = APIRouter()
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
 SIZE_ERROR = 0.3  # assumed worst-case error of the object's pixel size, same as gate question 2
-MODELS = ("free_flight", "bounce")
+MODELS = ("free_flight", "bounce", "pendulum")
 LIMITS = [
     "Tracking uses frame differencing, not a model; motion blur inflates the object size.",
     "Perspective is not modelled: motion towards or away from the camera is not reliable.",
@@ -38,6 +39,7 @@ def create_audit(
     camera_static: bool = Form(...),
     assumed_model: str = Form("free_flight"),
     object_size_m: float | None = Form(None),
+    length_m: float | None = Form(None),  # pendulum only: user-measured string length to the bob centre
 ):
     if assumed_model not in MODELS:
         raise HTTPException(422, f"assumed_model must be one of {MODELS}")
@@ -45,6 +47,8 @@ def create_audit(
         raise HTTPException(422, "need 0 <= t_start < t_end")
     if object_size_m is not None and object_size_m <= 0:
         raise HTTPException(422, "object_size_m must be positive")
+    if length_m is not None and length_m <= 0:
+        raise HTTPException(422, "length_m must be positive")
 
     aid = new_id("aud")
     d = UPLOAD_ROOT / "audits" / aid
@@ -57,6 +61,7 @@ def create_audit(
     rec = {
         "audit_id": aid, "created_at": now(), "assumed_model": assumed_model,
         "t_start": t_start, "t_end": t_end, "camera_static": camera_static, "object_size_m": object_size_m,
+        "length_m": length_m,
         "video_url": f"/media/audits/{aid}/{video.name}", "overlay_url": None,
         "track_source": "frame_diff", "verdict": "insufficient_data", "reasons": [], "numbers": {},
         "points": [], "ghost_points": [], "nearest_body": None, "events": [], "limits": LIMITS,
@@ -93,6 +98,20 @@ def create_audit(
                               "from the camera, which this 2D check cannot judge"]
             store.audits[aid] = rec
             return rec
+
+    if assumed_model == "pendulum":
+        try:
+            p = check_pendulum([q[0] for q in pts], [q[1] for q in pts], length_m=length_m)
+        except PhysicsInputError as e:
+            rec["reasons"] = [str(e)]
+            store.audits[aid] = rec
+            return rec
+        rec["verdict"], rec["reasons"] = p.verdict, list(p.reasons)
+        rec["numbers"] |= {"period_s": p.period_s, "period_spread": p.period_spread,
+                           "implied_length_m": p.implied_length_m, "predicted_period_s": p.predicted_period_s}
+        rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v is not None}
+        store.audits[aid] = rec
+        return rec
 
     if assumed_model == "bounce":
         b = check_bounces(pts)
