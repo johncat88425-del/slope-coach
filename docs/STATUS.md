@@ -1,7 +1,7 @@
 # STATUS：目前進度、缺什麼、誰在做
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。最新的放最上面。
-> 最後更新：2026-10-28（Claude：T12、T26 完成，審查 Codex T08/T09）
+> 最後更新：2026-10-28（Claude：T15 完成、新增示範資料腳本）
 
 ## 一句話現況
 
@@ -38,7 +38,7 @@
 | T12 | 輸出檢查：schema、數字必須出自工具輸出、禁用因果字眼 | Claude | 完成 | backend/output_check.py；選驗證時的 model_rationale 會自動檢查；Muse 的說明文字也請呼叫 check_model_text() |
 | T13 | 報告匯出（Markdown + CSV） | Codex | 待辦 | |
 | T14 | 端到端瀏覽器測試與截圖 | Antigravity | 待辦 | T10 之後 |
-| T15 | 拒判情境：遮擋、起滑不明、追蹤跳動 | Claude | 待辦 | |
+| T15 | 拒判情境：遮擋、起滑不明、追蹤跳動 | Claude | 完成 | 開頭被遮住時不判斷初速度並說明原因；偏離路徑的點不納入；4 個情境測試 |
 | T16 | Spark 對 Wonder A/B（同一組開發片） | Muse | 待辦 | 10/31 |
 | T17 | 影片預測疊加（限 2 小時） | Codex | 待辦 | 核心穩定後才做 |
 | T18 | 尺寸核對（第二種驗證） | 任何人 | 待辦 | 時間不夠就砍 |
@@ -101,6 +101,7 @@
 
 ## 工作日誌（最新在上）
 
+- 10/28 Claude 完成 T15，並新增 `scripts/seed_demo.py`：後端開著時執行 `python -m scripts.seed_demo --case pushed`（或 wrong_height / ok / occluded），會建立一個用合成資料的完整實驗，前端和 Antigravity 不用真影片也能測整個流程。四種情境結果：pushed→建議釋放核對、wrong_height→建議尺寸核對、ok→一致、occluded→有差異但證據不足、不建議任何驗證。
 - 10/28 Claude 完成 T12（模型輸出檢查：數字必須出自工具輸出、中英文因果誇大用語、驗證只能從證據候選選）與 T26（後端寫入後存檔）；審查 Codex 的 codex/T08-frontend，差異列在上方「Claude 審查 Codex T08/T09」。
 - 10/28 Claude 完成 T07：docs/API.md 契約 v0.1 與 FastAPI 後端（記憶體儲存、預測鎖定、預測必須早於試驗、只能選證據支持的驗證、報告匯出）。Meta 模型接入點在 backend/model_hooks.py，Muse 實作後用 set_hooks() 換掉 MockHooks。
 - 10/28 Claude 完成 T06 `physics/`：calibration、tracking、fit、experiments/slope、baseline、compare、diagnose，全部是純函式。用合成資料測過：正常、推出初速度、高度輸入錯誤、缺起滑時刻四種情境。

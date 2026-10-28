@@ -2,6 +2,8 @@
 
 後端：`uvicorn backend.main:app --reload`（預設 http://localhost:8000），互動文件在 `/docs`。所有欄位名稱以 `backend/schemas.py` 為準；要改契約，先在 `docs/STATUS.md` 的「待 john 決定」提出。
 
+沒有真影片時，可以先執行 `python -m scripts.seed_demo --case pushed` 建立示範實驗（合成資料，標為 manual）。
+
 單位：時間用秒（`_s`），距離用米（`_m`），像素用 `_px`。`s` 是沿斜坡路徑、從使用者確認的路徑起點量起的距離。
 
 ## 資料原則（前端也要遵守）
