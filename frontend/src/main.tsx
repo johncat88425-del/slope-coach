@@ -1,133 +1,93 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import type {MouseEvent} from 'react';
 import {createRoot} from 'react-dom/client';
-import {createExperiment, imagePoint, pages, replacePhoto, resolveRoute, saveCalibration, updateDraft, validateDraft} from './experiment';
-import type {Draft, Point} from './experiment';
+import {createExperiment,imagePoint,pages,replacePhoto,resolveRoute,updateDraft,validateDraft} from './experiment';
+import type {Draft,Point} from './experiment';
+import {createApi} from './api';
+import type {ExperimentRecord,TrialKind,ScenePhoto} from './api';
+import {TrialEditor} from './TrialEditor';
+import {CurveChart} from './CurveChart';
 import './style.css';
-
-const markerNames = ['尺的第一端', '尺的第二端', '滑塊位置'];
-function App() {
-  const [route, setRoute] = useState(() => resolveRoute(location.hash));
-  const [experiment, setExperiment] = useState(() => createExperiment(crypto.randomUUID()));
-  const [attempted, setAttempted] = useState(false);
-  const [mediaError, setMediaError] = useState('');
-  const [manualPoint, setManualPoint] = useState({x: '', y: ''});
-  const image = useRef<HTMLImageElement>(null);
-  const {draft, calibration, video} = experiment;
-  const photoUrl = draft.photo?.url;
-  const videoUrl = video?.url;
-  const errors = validateDraft(draft);
-  const activePage = pages.find(page => page.route === route)!;
-
-  useEffect(() => {
-    const update = () => setRoute(resolveRoute(location.hash));
-    window.addEventListener('hashchange', update);
-    return () => window.removeEventListener('hashchange', update);
-  }, []);
-  useEffect(() => () => {if (photoUrl) URL.revokeObjectURL(photoUrl)}, [photoUrl]);
-  useEffect(() => () => {if (videoUrl) URL.revokeObjectURL(videoUrl)}, [videoUrl]);
-  useEffect(() => {document.title = `${activePage.title} · Slope Coach`}, [activePage.title]);
-
-  function change(patch: Partial<Draft>) {
-    setExperiment(current => updateDraft(current, patch));
-    setAttempted(false);
-  }
-  function addPoint(point: Point) {
-    if (draft.points.length < 3) change({points: [...draft.points, point]});
-  }
-  function mark(event: MouseEvent<HTMLDivElement>) {
-    if (!image.current) return;
-    const point = imagePoint({x: event.clientX, y: event.clientY}, image.current.getBoundingClientRect(), draft.size);
-    if (point) addPoint(point);
-  }
-
-  return <>
-    <header><b>Slope Coach</b><span>真實實驗 · 先預測再核對</span><small>本機 mock · 未連接後端</small></header>
-    <main>
-      <aside>
-        <p className="eyebrow">實驗工作區</p><h1>上傳你的實驗，<br/>逐步核對證據。</h1>
-        <nav aria-label="實驗步驟">{pages.map((page, index) => <a key={page.route} href={`#${page.route}`} aria-current={route === page.route ? 'page' : undefined}><span>{index + 1}</span>{page.title}</a>)}</nav>
-        <p>固定鏡頭 · 近似正側視<br/>單一直線斜坡 · 單一滑塊</p>
-      </aside>
-      <section aria-label={activePage.title}>
-        <div className="notice">目前為 mock 模式。照片、影片與實驗紀錄只留在這個分頁，重新整理會清除。分析結果尚未取得；不會把本機預覽當成已分析的實驗。</div>
-        <details className="record"><summary>共用實驗紀錄</summary>
-          <dl><dt>本機紀錄 ID</dt><dd>{experiment.id}</dd><dt>照片</dt><dd>{draft.photo?.name ?? '尚未上傳'}</dd><dt>校準草稿</dt><dd>{calibration ? '已確認並保存' : '尚未保存／已修改，需重新確認'}</dd><dt>影片</dt><dd>{video?.name ?? '尚未選擇'}</dd></dl>
-        </details>
-        {route === 'setup' && <>
-          <p className="eyebrow">01 / 場景設定</p><h2>確認你的實驗裝置</h2>
-          <p>上傳自己拍的照片。尺與滑塊放在同一運動平面，拍到完整路徑，避免人臉入鏡。</p>
-          <label className="upload">上傳實驗照片<input type="file" accept="image/*" onChange={event => {
-            const file = event.target.files?.[0]; if (!file) return;
-            if (!file.type.startsWith('image/')) {setMediaError('請選擇圖片檔案。'); return}
-            setMediaError(''); setAttempted(false); setManualPoint({x: '', y: ''});
-            setExperiment(current => replacePhoto(current, {name: file.name, url: URL.createObjectURL(file)}));
-          }}/></label>
-          {draft.photo && <>
-            <h3>標記：{markerNames[draft.points.length] ?? '標記完成'}</h3>
-            <p id="marker-help">依序點選尺的兩端、滑塊。數字為原始照片像素座標；也可在下方輸入座標新增標記。</p>
-            <div className="photo" onClick={mark} aria-describedby="marker-help">
-              <img ref={image} src={draft.photo.url} alt="使用者上傳、待校準的實驗照片" onLoad={event => {
-                const size = {width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight};
-                // Reentering the route must preserve the saved calibration.
-                if (size.width !== draft.size.width || size.height !== draft.size.height) change({size});
-              }} onError={() => {setMediaError('照片無法讀取，請重新選擇 JPEG、PNG 或其他瀏覽器支援的圖片。'); change({size: {width: 0, height: 0}, points: []})}}/>
-              {draft.size.width > 0 && draft.points.map((point, index) => <span className="marker" key={index} style={{left: `${point.x / draft.size.width * 100}%`, top: `${point.y / draft.size.height * 100}%`}}>{index + 1}</span>)}
-            </div>
-            <p>原始照片：{draft.size.width} × {draft.size.height} px；標記 {draft.points.length}/3</p>
-            <div className="fields">
-              <label>標記 X（px）<input type="number" min="0" max={draft.size.width} value={manualPoint.x} onChange={e => setManualPoint({...manualPoint, x: e.target.value})}/></label>
-              <label>標記 Y（px）<input type="number" min="0" max={draft.size.height} value={manualPoint.y} onChange={e => setManualPoint({...manualPoint, y: e.target.value})}/></label>
-            </div>
-            <button disabled={draft.points.length >= 3 || !manualPoint.x.trim() || !manualPoint.y.trim() || !imagePoint({x: Number(manualPoint.x), y: Number(manualPoint.y)}, {left: 0, top: 0, width: draft.size.width, height: draft.size.height}, draft.size)} onClick={() => {addPoint({x: Number(manualPoint.x), y: Number(manualPoint.y)}); setManualPoint({x: '', y: ''})}}>新增座標標記</button>
-            <button disabled={!draft.points.length} onClick={() => change({points: draft.points.slice(0, -1)})}>撤銷上一個標記</button>
-            <ol aria-label="已選標記">{draft.points.map((point, index) => <li key={index}>{markerNames[index]}：({point.x.toFixed(1)}, {point.y.toFixed(1)}) px</li>)}</ol>
-          </>}
-          <h3>使用者量測並確認的尺寸</h3>
-          <div className="fields">{([
-            ['length', '斜坡沿面長度 L（米）'], ['height', '斜坡垂直高度 h（米）'], ['rulerLength', '尺兩端實際距離（米）'],
-          ] as const).map(([key, label]) => <label key={key}>{label}<input type="number" min="0" step="any" value={draft[key]} onChange={event => change({[key]: event.target.value})}/></label>)}</div>
-          <p>以上尺寸來自你使用尺量測後的輸入。影像估計：尚無；不會自動補入尺寸。</p>
-          <label><input type="checkbox" checked={draft.captureConfirmed} onChange={event => change({captureConfirmed: event.target.checked})}/> 我已確認固定鏡頭、近似側視，尺與滑塊在同一平面。</label>
-          <div aria-live="polite">{attempted && errors.length > 0 && <div role="alert"><p>無法保存校準，請修正：</p><ul>{errors.map(error => <li key={error}>{error}</li>)}</ul></div>}
-            {calibration && <p role="status">已保存本機校準草稿；後端校準與版本尚待確認。</p>}</div>
-          <button className="primary" onClick={() => {setAttempted(true); setExperiment(current => saveCalibration(current))}}>保存校準草稿</button>
-          {calibration && <a className="next" href="#prediction">繼續至預測 →</a>}
-        </>}
-        {route === 'prediction' && <>
-          <p className="eyebrow">02 / 預測</p><h2>在實測之前保存預測</h2>
-          <p>{calibration ? `使用者確認尺寸：L = ${calibration.lengthM} m，h = ${calibration.heightM} m。` : '請先回到場景設定，完成校準草稿。'}</p>
-          <div className="empty"><Legend/><h3>尚無已鎖定的預測</h3><p>目前 mock 紀錄沒有基準試驗或預測資料。需先完成獨立基準試驗，由後端計算並保存預測，再提交測試影片。</p></div>
-          <button disabled>鎖定預測（等待後端）</button>
-        </>}
-        {route === 'analysis' && <>
-          <p className="eyebrow">03 / 影片分析</p><h2>上傳自己拍的實驗影片</h2>
-          <p>目前可選擇並預覽真實影片。尚未鎖定預測，影片不會提交分析；串接後端後須先鎖定再上傳。</p>
-          <label className="upload">選擇實驗影片（本機預覽）<input type="file" accept="video/*" onChange={event => {
-            const file = event.target.files?.[0]; if (!file) return;
-            if (!file.type.startsWith('video/')) {setMediaError('請選擇影片檔案。'); return}
-            setMediaError(''); setExperiment(current => ({...current, video: {name: file.name, url: URL.createObjectURL(file)}}));
-          }}/></label>
-          {video && <><p>已選擇：{video.name}</p><video controls src={video.url} onError={() => setMediaError('影片無法播放，請使用瀏覽器支援的編碼重新匯出影片。')}/></>}
-          <div className="empty"><Legend/><p>尚無可用追蹤資料，不產生曲線或測量數字。未來缺失區段將保留斷線。</p></div>
-          <button disabled>提交並分析（等待後端與已鎖定預測）</button>
-        </>}
-        {route === 'verification' && <>
-          <p className="eyebrow">04 / 下一次驗證</p><h2>依證據選下一次核對</h2><p>目前證據不足，尚無驗證建議。以下為允許的核對類型，並非本次分析結論。</p>
-          <div className="empty"><h3>釋放方式核對</h3><p>保持坡度、表面和起點不變，以擋片避免向前推；須先有可信的起滑時間與量測。</p><h3>尺寸核對</h3><p>重測高度與沿面長度；先保存新版本預測，再重做試驗。</p></div><button disabled>取得建議（等待後端）</button>
-        </>}
-        {route === 'report' && <>
-          <p className="eyebrow">05 / 實驗報告</p><h2>回看同一份實驗紀錄</h2>
-          <dl><dt>照片</dt><dd>{draft.photo?.name ?? '未提供'}</dd><dt>校準</dt><dd>{calibration ? `使用者確認：L ${calibration.lengthM} m / h ${calibration.heightM} m / 尺距離 ${calibration.rulerLengthM} m` : '尚未保存有效草稿'}</dd><dt>影片</dt><dd>{video?.name ?? '未提供'}</dd><dt>影像估計／實測結果</dt><dd>尚未取得</dd><dt>預測與驗證紀錄</dt><dd>尚未建立</dd></dl>
-          <button disabled>匯出報告（T13）</button>
-        </>}
-        {mediaError && <p role="alert">{mediaError}</p>}
-        <footer><a href="#setup">返回場景設定</a><span>可隨時查看前一步，切頁不清除目前紀錄。</span></footer>
-      </section>
-    </main>
-  </>;
+const api=createApi(import.meta.env.VITE_API_BASE_URL??'');
+const markerNames=['尺的第一端','尺的第二端','滑塊位置（路徑起點）','路徑終點（坡底）'];
+function rememberedId(){try{return localStorage.getItem('slope-experiment')??''}catch{return ''}}
+function App(){
+ const [route,setRoute]=useState(()=>resolveRoute(location.hash));
+ const [local,setLocal]=useState(()=>createExperiment('local-draft'));
+ const [record,setRecord]=useState<ExperimentRecord|null>(null);
+ const [loadId,setLoadId]=useState(rememberedId);
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
+ const [scene,setScene]=useState<ScenePhoto|null>(null),[photoFile,setPhotoFile]=useState<File|null>(null);
+ const [attempted,setAttempted]=useState(false),[manualPoint,setManualPoint]=useState({x:'',y:''});
+ const [calVersion,setCalVersion]=useState(0),[baseVersion,setBaseVersion]=useState(0),[predictionId,setPredictionId]=useState('');
+ const [trialId,setTrialId]=useState(''),[comparisonId,setComparisonId]=useState(''),[interventionId,setInterventionId]=useState('');
+ const [trialKind,setTrialKind]=useState<TrialKind>('baseline'),[trialFile,setTrialFile]=useState<File|null>(null),[trialPreview,setTrialPreview]=useState('');
+ const [videos,setVideos]=useState<Record<string,string>>({}),[baselineIds,setBaselineIds]=useState<string[]>([]);
+ const [distance,setDistance]=useState(''),[restConfirmed,setRestConfirmed]=useState(false);
+ const [title,setTitle]=useState('斜坡滑塊實驗');
+ const image=useRef<HTMLImageElement>(null);
+ const allocatedUrls=useRef<string[]>([]);
+ const {draft}=local;
+ const active=pages.find(page=>page.route===route)!;
+ const calibration=record?.calibrations.find(c=>c.version===calVersion);
+ const prediction=record?.predictions.find(p=>p.prediction_id===predictionId);
+ const trial=record?.trials.find(t=>t.trial_id===trialId);
+ const comparison=record?.comparisons.find(c=>c.comparison_id===comparisonId);
+ const comparedPrediction=record?.predictions.find(p=>p.prediction_id===comparison?.prediction_id);
+ const comparedTrial=record?.trials.find(t=>t.trial_id===comparison?.trial_id);
+ const intervention=record?.interventions.find(i=>i.intervention_id===interventionId);
+ const retake=scene?.scene_check.needs_retake;
+ const errors=validateDraft(draft);
+ function url(file:File){const value=URL.createObjectURL(file);allocatedUrls.current.push(value);return value}
+ function adopt(value:ExperimentRecord){setRecord(value);setLoadId(value.experiment_id);try{localStorage.setItem('slope-experiment',value.experiment_id)}catch{/* optional browser storage */}}
+ async function refresh(){if(record)adopt(await api.get(record.experiment_id))}
+ async function run(action:()=>Promise<void>){if(busy)return;setBusy(true);setError('');setMessage('');try{await action()}catch(e){setError(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}
+ function change(patch:Partial<Draft>){setLocal(current=>updateDraft(current,patch));setCalVersion(0);setAttempted(false)}
+ function selectRecord(value:ExperimentRecord){adopt(value);setScene(value.scene_photos.at(-1)??null);setCalVersion(value.calibrations.at(-1)?.version??0);setBaseVersion(value.baselines.at(-1)?.version??0);setPredictionId(value.predictions.at(-1)?.prediction_id??'');setTrialId(value.trials.at(-1)?.trial_id??'');setComparisonId(value.comparisons.at(-1)?.comparison_id??'');setInterventionId(value.interventions.at(-1)?.intervention_id??'');setBaselineIds([])}
+ useEffect(()=>{const update=()=>setRoute(resolveRoute(location.hash));window.addEventListener('hashchange',update);return()=>window.removeEventListener('hashchange',update)},[]);
+ useEffect(()=>{document.title=active.title+' · Slope Coach'},[active.title]);
+ useEffect(()=>{setRestConfirmed(false);setTrialFile(null);setTrialPreview('')},[predictionId,calVersion]);
+ useEffect(()=>()=>allocatedUrls.current.forEach(value=>URL.revokeObjectURL(value)),[]);
+ // Read-only resume: never auto-create or repeat a mutation after refresh.
+ useEffect(()=>{const id=rememberedId();if(!id)return;let cancelled=false;setBusy(true);api.get(id).then(value=>{if(!cancelled)selectRecord(value)}).catch(e=>{if(!cancelled)setError(e.message+'；紀錄可能不存在或未持久化，可明確建立新實驗。')}).finally(()=>{if(!cancelled)setBusy(false)});return()=>{cancelled=true}},[]);
+ function mark(event:MouseEvent<HTMLDivElement>){if(!image.current||draft.points.length>=4)return;const point=imagePoint({x:event.clientX,y:event.clientY},image.current.getBoundingClientRect(),draft.size);if(point)change({points:[...draft.points,point]})}
+ async function save(){setAttempted(true);if(!record||errors.length||!scene||retake)return;const pixel=(p:Point):[number,number]=>[p.x,p.y];const c=await api.calibration(record.experiment_id,{ruler_px:[pixel(draft.points[0]),pixel(draft.points[1])],ruler_length_m:Number(draft.rulerLength),path_start_px:pixel(draft.points[2]),path_end_px:pixel(draft.points[3]),slope_length_m:Number(draft.length),slope_height_m:Number(draft.height),reason:record.calibrations.length?'user_recalibration':'initial'});setCalVersion(c.version);await refresh();setMessage(`已保存後端校準 v${c.version}。滑塊點保留在目前頁面，API v0.1 不保存此欄位。`)}
+ async function uploadTrial(){if(!record||!trialFile||!calibration)return;if(trialKind!=='baseline'&&(!prediction||prediction.calibration_version!==calVersion||!restConfirmed))throw new Error('請先選取此校準版本的已鎖定預測，並確認本次從靜止釋放。');const t=await api.trial(record.experiment_id,trialKind,calVersion,trialFile);setVideos(old=>({...old,[t.trial_id]:trialPreview}));setTrialId(t.trial_id);setTrialFile(null);setTrialPreview('');await refresh();setMessage('影片已上傳。請自動追蹤或手動標記，再確認起滑時刻。')}
+ async function download(format:'md'|'csv'){if(!record)return;const content=await api.report(record.experiment_id,format);const href=URL.createObjectURL(new Blob([content],{type:format==='csv'?'text/csv;charset=utf-8':'text/markdown;charset=utf-8'}));const anchor=document.createElement('a');anchor.href=href;anchor.download=record.experiment_id+'.'+format;anchor.click();setTimeout(()=>URL.revokeObjectURL(href),1000)}
+ return <><header><b>Slope Coach</b><span>真實實驗 · 先預測再核對</span><small>後端 API v0.1</small></header><main><aside><p className="eyebrow">實驗工作區</p><h1>上傳你的實驗，<br/>逐步核對證據。</h1><nav aria-label="實驗步驟">{pages.map((p,i)=><a href={'#'+p.route} key={p.route} aria-current={route===p.route?'page':undefined}>{i+1}　{p.title}</a>)}</nav><p>固定鏡頭 · 近似側視<br/>單一直線斜坡 · 單一滑塊</p></aside><section aria-label={active.title}>
+ <div className="notice">照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。</div>
+ <div aria-live="polite">{busy&&<p role="status">處理中，請勿重複提交…</p>}{error&&<p role="alert">{error}</p>}{message&&<p role="status">{message}</p>}</div>
+ <fieldset disabled={busy}><legend>實驗紀錄</legend>
+ {!record&&<><label>實驗名稱<input value={title} onChange={e=>setTitle(e.target.value)}/></label><button onClick={()=>void run(async()=>{selectRecord(await api.create(title));setLocal(createExperiment('local-draft'));setPhotoFile(null)})}>建立實驗</button></>}
+ <label>讀取實驗 ID<input value={loadId} onChange={e=>setLoadId(e.target.value)}/></label><button disabled={!loadId.trim()} onClick={()=>void run(async()=>{if(record&&record.experiment_id!==loadId){setLocal(createExperiment('local-draft'));setPhotoFile(null);setTrialFile(null);setVideos({})}selectRecord(await api.get(loadId.trim()))})}>讀取紀錄</button>
+ {record&&<><p>{record.title} · {record.experiment_id}</p><button onClick={()=>{setRecord(null);setLoadId('');setScene(null);setLocal(createExperiment('local-draft'));setPhotoFile(null);setCalVersion(0);setBaseVersion(0);setPredictionId('');setTrialId('');setComparisonId('');setInterventionId('');setVideos({});setError('');setMessage('舊紀錄保留於後端，可用原 ID 讀回。');try{localStorage.removeItem('slope-experiment')}catch{/* optional storage */}}}>開始另一個實驗（保留舊紀錄）</button><button onClick={()=>void run(refresh)}>重新讀取後端</button><label>校準版本<select value={calVersion} onChange={e=>{setCalVersion(Number(e.target.value));setBaselineIds([])}}><option value="0">尚未選取／草稿未保存</option>{record.calibrations.map(c=><option value={c.version} key={c.version}>v{c.version} · L {c.slope_length_m} m / h {c.slope_height_m} m（使用者）</option>)}</select></label></>}
+ </fieldset>
+ <fieldset disabled={busy||!record}><legend>{active.title}</legend>
+ {route==='setup'&&<><h2>確認實拍照片與尺寸</h2><p>尺的兩端、滑塊（作為路徑起點）與坡底終點須由你確認；共四個標記。</p>
+ <label className="upload">上傳實驗照片<input type="file" accept="image/*" onChange={event=>{const file=event.target.files?.[0];if(!file)return;setCalVersion(0);setScene(null);setPhotoFile(file);setLocal(current=>replacePhoto(current,{name:file.name,url:url(file)}));if(record)void run(async()=>{setScene(await api.photo(record.experiment_id,file));await refresh()})}}/></label>
+ {photoFile&&!scene&&<button onClick={()=>void run(async()=>{if(record){setScene(await api.photo(record.experiment_id,photoFile));await refresh()}})}>重新提交照片（前次尚未成功）</button>}
+ {scene&&<div className="empty"><p>場景檢查來源：{scene.scene_check.source==='mock'?'mock（模型尚未接上，不代表拍攝合格）':'model（影像模型）'}</p>{retake?<><p role="alert">需要重拍，不能保存此照片的校準。</p><ul>{scene.scene_check.retake_reasons.map((r,i)=><li key={i}>{r}</li>)}</ul></>:<p>請自行核對拍攝條件與尺寸，模型檢查不取代使用者確認。</p>}</div>}
+ {draft.photo&&<><h3>標記：{markerNames[draft.points.length]??'四點完成'}</h3><div className="photo" onClick={mark}><img ref={image} src={draft.photo.url} alt="使用者上傳的校準照片" onLoad={e=>{const size={width:e.currentTarget.naturalWidth,height:e.currentTarget.naturalHeight};if(size.width!==draft.size.width||size.height!==draft.size.height)setLocal(current=>updateDraft(current,{size}))}} onError={()=>{change({size:{width:0,height:0},points:[]});setError('照片無法讀取，請選擇瀏覽器可開啟的圖片。')}}/>{draft.size.width>0&&draft.points.map((p,i)=><span className="marker" key={i} style={{left:`${p.x/draft.size.width*100}%`,top:`${p.y/draft.size.height*100}%`}}>{i+1}</span>)}</div><p>原圖 {draft.size.width} × {draft.size.height} px；標記 {draft.points.length}/4</p>
+ <div className="fields"><label>標記 X（px）<input type="number" value={manualPoint.x} onChange={e=>setManualPoint({...manualPoint,x:e.target.value})}/></label><label>標記 Y（px）<input type="number" value={manualPoint.y} onChange={e=>setManualPoint({...manualPoint,y:e.target.value})}/></label></div><button disabled={draft.points.length>=4||!manualPoint.x.trim()||!manualPoint.y.trim()||!imagePoint({x:Number(manualPoint.x),y:Number(manualPoint.y)},{left:0,top:0,width:draft.size.width,height:draft.size.height},draft.size)} onClick={()=>{change({points:[...draft.points,{x:Number(manualPoint.x),y:Number(manualPoint.y)}]});setManualPoint({x:'',y:''})}}>新增座標標記</button><button disabled={!draft.points.length} onClick={()=>change({points:draft.points.slice(0,-1)})}>撤銷上一個標記</button><ol>{draft.points.map((p,i)=><li key={i}>{markerNames[i]}：({p.x.toFixed(1)}, {p.y.toFixed(1)}) px</li>)}</ol></>}
+ <h3>使用者量測並確認的尺寸</h3><div className="fields">{([['length','沿面長度 L（米）'],['height','垂直高度 h（米）'],['rulerLength','尺兩端距離（米）']] as const).map(([key,label])=><label key={key}>{label}<input type="number" min="0" step="any" value={draft[key]} onChange={e=>change({[key]:e.target.value})}/></label>)}</div><p>影像估計尺寸：尚無。上述數字由使用者實際量測。</p><label><input type="checkbox" checked={draft.captureConfirmed} onChange={e=>change({captureConfirmed:e.target.checked})}/> 已確認固定鏡頭、近似側視，尺與路徑在同一平面。</label>
+ {attempted&&errors.length>0&&<ul role="alert">{errors.map(e=><li key={e}>{e}</li>)}</ul>}<button disabled={!scene||retake} onClick={()=>void run(save)}>保存後端校準新版本</button>{calibration&&<p>已選校準 v{calibration.version}；後端計算角度 {calibration.angle_deg}°、比例 {calibration.m_per_px} m/px。來源：physics；輸入來源：user。</p>}
+ </>}
+ {route==='prediction'&&<><h2>基準校準與鎖定預測</h2><p>先在影片分析建立至少三段 baseline 試驗，追蹤並確認起滑。基準資料不可當測試評分。</p>{record?.trials.filter(t=>t.kind==='baseline'&&t.calibration_version===calVersion).map(t=><label className="block" key={t.trial_id}><input type="checkbox" checked={baselineIds.includes(t.trial_id)} disabled={t.t0_s===null||!t.samples.length} onChange={e=>setBaselineIds(ids=>e.target.checked?[...ids,t.trial_id]:ids.filter(id=>id!==t.trial_id))}/>{t.trial_id} · {t.samples.length} 筆 · 起滑 {t.t0_s??'待確認'} s</label>)}<button disabled={!calibration||baselineIds.length<3} onClick={()=>void run(async()=>{if(record){const b=await api.baseline(record.experiment_id,baselineIds,calVersion);setBaseVersion(b.version);await refresh()}})}>建立基準新版本</button>
+ <label>基準版本<select value={baseVersion} onChange={e=>setBaseVersion(Number(e.target.value))}><option value="0">請選擇</option>{record?.baselines.map(b=><option key={b.version} value={b.version}>v{b.version} · μ {b.mu_eff} ± {b.mu_spread}（physics）</option>)}</select></label><label>預測滑行距離（米，使用者確認）<input type="number" min="0" step="any" value={distance} onChange={e=>setDistance(e.target.value)}/></label><p>預測假設從靜止釋放；距離由使用者量測，不從測試影片反推。</p><button disabled={!calibration||!baseVersion||!distance.trim()||!Number.isFinite(Number(distance))||Number(distance)<=0} onClick={()=>void run(async()=>{if(record){const p=await api.predict(record.experiment_id,calVersion,baseVersion,Number(distance));setPredictionId(p.prediction_id);await refresh()}})}>建立並鎖定新預測</button>
+ <PredictionSelect record={record} value={predictionId} onChange={setPredictionId}/>{prediction&&<><p>已鎖定：{prediction.created_at} · 校準 v{prediction.calibration_version} · 基準 v{prediction.baseline_version}</p><ul>{prediction.assumptions.map(a=><li key={a}>{a}</li>)}</ul><CurveChart prediction={prediction}/><a href="#analysis">前往上傳測試影片 →</a></>}
+ </>}
+ {route==='analysis'&&<><h2>上傳與分析真實影片</h2><PredictionSelect record={record} value={predictionId} onChange={setPredictionId}/><label>試驗類型<select value={trialKind} onChange={e=>setTrialKind(e.target.value as TrialKind)}><option value="baseline">基準 baseline</option><option value="test">測試 test</option><option value="intervention">核對重做 intervention</option></select></label>{trialKind!=='baseline'&&<><p>須先鎖定此校準版本的預測，再選取新拍影片。</p><label><input type="checkbox" checked={restConfirmed} onChange={e=>setRestConfirmed(e.target.checked)}/> 本次計畫從靜止釋放，已在操作前保存上述預測。</label></>}
+ <label className="upload">選擇自己拍的影片<input type="file" accept="video/*" disabled={!calibration||(trialKind!=='baseline'&&(!prediction||prediction.calibration_version!==calVersion))} onChange={e=>{const file=e.target.files?.[0];if(file){setTrialFile(file);setTrialPreview(url(file))}}}/></label>{trialPreview&&<video controls src={trialPreview}/>}<button disabled={!trialFile||!calibration||(trialKind!=='baseline'&&(!prediction||!restConfirmed||prediction.calibration_version!==calVersion))} onClick={()=>void run(uploadTrial)}>上傳試驗影片</button>
+ <label>已上傳試驗<select value={trialId} onChange={e=>setTrialId(e.target.value)}><option value="">請選擇</option>{record?.trials.map(t=><option key={t.trial_id} value={t.trial_id}>{t.trial_id} · {t.kind} · 校準 v{t.calibration_version}</option>)}</select></label>
+ {trial&&<><label>重新選取原片以恢復本機預覽（不重複上傳）<input type="file" accept="video/*" onChange={e=>{const f=e.target.files?.[0];if(f)setVideos(old=>({...old,[trial.trial_id]:url(f)}))}}/></label><TrialEditor key={trial.trial_id} trial={trial} api={api} run={run} refresh={refresh} videoUrl={videos[trial.trial_id]}/></>}
+ <button disabled={!trial||trial.kind==='baseline'||!prediction} onClick={()=>void run(async()=>{if(record&&trial&&prediction){const c=await api.compare(record.experiment_id,prediction.prediction_id,trial.trial_id);setComparisonId(c.comparison_id);await refresh()}})}>比較已鎖定預測與試驗</button>
+ <ComparisonSelect record={record} value={comparisonId} onChange={setComparisonId}/>{comparison&&<><h3>{comparison.verdict==='insufficient_data'?'目前證據不足':comparison.verdict==='discrepancy'?'觀察到差異':'與預測一致'}</h3><ul>{comparison.checks.map(c=><li key={c.name}>{c.passed?'通過':'未通過'} · {c.name}：{c.detail}{c.blocking?'（影響判斷）':''}</li>)}</ul><h4>仍能說明</h4><ul>{comparison.can_still_say.map((s,i)=><li key={i}>{s}</li>)}</ul><p>預測到達時間：{comparison.predicted_arrival_s??'不可判斷'} s；實測到達時間：{comparison.observed_arrival_s??'不可判斷'} s；相對誤差：{comparison.arrival_error_rel??'不可判斷'}（來源 physics）</p>{comparedPrediction&&<CurveChart prediction={comparedPrediction} trial={comparedTrial} comparison={comparison}/>}<a href="#verification">查看下一次核對 →</a></>}
+ </>}
+ {route==='verification'&&<><h2>依據證據選擇核對</h2><ComparisonSelect record={record} value={comparisonId} onChange={setComparisonId}/>{!comparison?.evidence.length&&<p>目前沒有證據支持的核對候選，請補資料；不自行產生建議。</p>}{comparison?.evidence.map(e=><div className="empty" key={e.candidate}><h3>{e.candidate==='release_check'?'釋放方式核對':'尺寸核對'}</h3><p>{e.finding}</p><p>目前無法區分：{e.cannot_distinguish}</p><pre>{JSON.stringify(e.numbers,null,2)}</pre><button onClick={()=>void run(async()=>{if(record){const i=await api.intervene(record.experiment_id,comparison.comparison_id,e.candidate);setInterventionId(i.intervention_id);await refresh()}})}>選擇此核對（使用者）</button></div>)}<label>已建立核對<select value={interventionId} onChange={e=>setInterventionId(e.target.value)}><option value="">請選擇</option>{record?.interventions.map(i=><option key={i.intervention_id} value={i.intervention_id}>{i.intervention_id} · {i.check_type}</option>)}</select></label>{intervention&&<><h3>後端提供的核對指示</h3>{Object.entries(intervention.instructions).map(([key,value])=><div key={key}><b>{key}</b>{Array.isArray(value)?<ul>{value.map((v,i)=><li key={i}>{v}</li>)}</ul>:<p>{value}</p>}</div>)}<p>已連結結果：{intervention.result_trial_id??'尚無'}。先保存新預測，再上傳 intervention 影片。</p><select aria-label="核對結果試驗" value={trialId} onChange={e=>setTrialId(e.target.value)}><option value="">請選取重做試驗</option>{record?.trials.filter(t=>t.kind==='intervention').map(t=><option key={t.trial_id} value={t.trial_id}>{t.trial_id}</option>)}</select><button disabled={trial?.kind!=='intervention'} onClick={()=>void run(async()=>{await api.link(intervention.intervention_id,trialId);await refresh()})}>連結核對結果</button></>}
+ </>}
+ {route==='report'&&<><h2>匯出後端實驗紀錄</h2><p>校準 {record?.calibrations.length??0} 版 · 試驗 {record?.trials.length??0} 段 · 預測 {record?.predictions.length??0} 筆 · 比較 {record?.comparisons.length??0} 筆。來源與人工修正保留於報告。</p><button onClick={()=>void run(()=>download('md'))}>下載 Markdown 報告</button><button onClick={()=>void run(()=>download('csv'))}>下載 CSV 資料</button><details><summary>完整後端紀錄</summary><pre>{JSON.stringify(record,null,2)}</pre></details></>}
+ </fieldset><footer><a href="#setup">返回場景設定</a><span>各頁共用同一份後端實驗紀錄。</span></footer></section></main></>;
 }
-function Legend() {
-  return <div className="legend" aria-label="曲線圖例"><span><i className="prediction-line"/>預測（青色虛線）</span><span><i className="observed-line"/>實測（橘色實線）</span></div>;
-}
+function PredictionSelect({record,value,onChange}:{record:ExperimentRecord|null;value:string;onChange:(id:string)=>void}){return <label>已鎖定預測<select value={value} onChange={e=>onChange(e.target.value)}><option value="">請選擇</option>{record?.predictions.map(p=><option key={p.prediction_id} value={p.prediction_id}>{p.prediction_id} · 校準 v{p.calibration_version} · {p.created_at}</option>)}</select></label>}
+function ComparisonSelect({record,value,onChange}:{record:ExperimentRecord|null;value:string;onChange:(id:string)=>void}){return <label>比較紀錄<select value={value} onChange={e=>onChange(e.target.value)}><option value="">請選擇</option>{record?.comparisons.map(c=><option key={c.comparison_id} value={c.comparison_id}>{c.comparison_id} · {c.verdict}</option>)}</select></label>}
 createRoot(document.getElementById('root')!).render(<App/>);

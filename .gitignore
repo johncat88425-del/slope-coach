@@ -8,3 +8,6 @@ data/raw/
 data/frames/
 *.mp4
 *.mov
+data/uploads/
+data/store.pkl
+data/store.tmp

@@ -49,9 +49,10 @@ export function validateDraft(draft: Draft): string[] {
     if (!value.trim() || !Number.isFinite(Number(value)) || Number(value) <= 0) errors.push(`${label}必須是大於零的有限數值，單位為米。`);
   }
   if (Number(draft.height) >= Number(draft.length) && draft.length.trim() && draft.height.trim()) errors.push('垂直高度 h 必須小於沿面長度 L（不可 h ≥ L）。');
-  if (draft.points.length !== 3) errors.push('請依序標記尺的兩端及滑塊位置。');
+  if (draft.points.length !== 4) errors.push('請依序標記尺的兩端、滑塊（路徑起點）與坡底終點。');
   if (draft.points.some(p => !Number.isFinite(p.x) || !Number.isFinite(p.y) || p.x < 0 || p.y < 0 || p.x > draft.size.width || p.y > draft.size.height)) errors.push('標記必須位於原始照片範圍內。');
   if (draft.points.length >= 2 && draft.points[0].x === draft.points[1].x && draft.points[0].y === draft.points[1].y) errors.push('尺的兩端不能重疊。');
+  if (draft.points.length === 4 && draft.points[2].x === draft.points[3].x && draft.points[2].y === draft.points[3].y) errors.push('路徑起點與終點不能重疊。');
   if (!draft.captureConfirmed) errors.push('請確認固定鏡頭、近似側視與同一運動平面的拍攝條件。');
   return errors;
 }
