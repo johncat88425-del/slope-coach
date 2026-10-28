@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createApi,ApiError} from '../.test-dist/api.js';
+import {createApi,ApiError,friendlyApiError,uploadAudit} from '../.test-dist/api.js';
 test('multipart uploads use documented names and let fetch supply boundary',async()=>{
  const calls=[]; const api=createApi('http://localhost:8000/',async(url,init)=>{calls.push({url,init});return Response.json({trial_id:'trial'})});
  const file=new File(['ui test fixture'],'clip.mp4',{type:'video/mp4'});
@@ -43,4 +43,14 @@ test('manual detections retain missing frames and source, release time requires 
 test('report download preserves plain text and format-specific endpoint',async()=>{
  let path;const api=createApi('',async(url)=>{path=url;return new Response('trial_id,t_s\n')});
  assert.equal(await api.report('e','csv'),'trial_id,t_s\n');assert.equal(path,'/api/experiments/e/report.csv');
+});
+
+test('friendly errors distinguish 404 and 422 without changing backend reasons or numbers',()=>{
+ assert.match(friendlyApiError(new ApiError(404,'missing 123.456')),/Result not found.*missing 123.456/);assert.match(friendlyApiError(new ApiError(422,'size 0.123456')),/check the submitted settings.*size 0.123456/);
+});
+test('XHR upload progress measures bytes only, then waits for backend result without retry',async()=>{
+ let x,sends=0;const updates=[];const factory=()=>x={upload:{},open(method,url){assert.equal(method,'POST');assert.equal(url,'/api/audits')},send(){sends++}};
+ const pending=uploadAudit('/api/audits',new FormData(),v=>updates.push(v),factory);x.upload.onprogress({lengthComputable:true,loaded:25,total:100});x.upload.onload();assert.deepEqual(updates,[0,25,100]);x.status=200;x.responseText='{"audit_id":"fixture"}';x.onload();assert.deepEqual(await pending,{audit_id:'fixture'});assert.equal(sends,1);
+ const failed=uploadAudit('/api/audits',new FormData(),()=>{},factory);x.status=422;x.responseText='{"detail":"bad 0.123456"}';x.onload();await assert.rejects(failed,e=>e.status===422&&e.message==='bad 0.123456');
+ const network=uploadAudit('/api/audits',new FormData(),()=>{},factory);x.onerror();await assert.rejects(network,/Cannot connect/);
 });

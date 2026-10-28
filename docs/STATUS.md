@@ -51,11 +51,11 @@
 - [x] T49 Codex：首頁說明「這個工具能判斷什麼、不能判斷什麼」，照 docs/research/competitors.md 的結論寫，不准說「第一個」 — commit 9bfc41f
 - [x] T50 Codex：demo 模式：讀取事先存好的稽核結果 JSON，讓 demo 不用連網或等追蹤 — commit 1abd274
 - [x] T51 Codex：手機版排版與無障礙（色盲也能分辨預測線和實測線，不能只靠顏色） — commit 77ab223
-- [ ] T59 Codex：「檢查影片」和離線重播支援 `assumed_model=bounce`（顯示 `rebound_ratio_k`）。目前離線重播只接受 free_flight，會擋掉 bounce 結果
-- [ ] T60 Codex：稽核結果顯示 `events`（消失、大小跳動、位置跳動）的時間軸，以及 `size_trend` 拒判的說明文字
-- [ ] T61 Codex：稽核結果的網址可以直接打開（`#/audits/:id`，用 `GET /api/audits/{id}`）
-- [ ] T62 Codex：demo 品質：上傳進度、處理中狀態、422／404／網路錯誤的友善訊息（照後端的 reason 顯示，不改寫數字）
-- [ ] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS
+- [x] T59 Codex：「檢查影片」和離線重播支援 `assumed_model=bounce`（顯示 `rebound_ratio_k`）。目前離線重播只接受 free_flight，會擋掉 bounce 結果 — commit fa8fcbe
+- [x] T60 Codex：稽核結果顯示 `events`（消失、大小跳動、位置跳動）的時間軸，以及 `size_trend` 拒判的說明文字 — commit 8e3162c
+- [x] T61 Codex：稽核結果的網址可以直接打開（`#/audits/:id`，用 `GET /api/audits/{id}`） — commit 977ccae
+- [x] T62 Codex：demo 品質：上傳進度、處理中狀態、422／404／網路錯誤的友善訊息（照後端的 reason 顯示，不改寫數字） — commit 3a5d622
+- [x] T63 Codex：在主要按鈕和結果區塊加上 `data-testid`，給 Antigravity 的端到端測試用，並把清單寫進 STATUS — commit 4a163b7
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -260,3 +260,22 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 10/27 Codex 工作總結：已依完成表完成並分支推送 T36a/T36b/T36c/T40/T41/T13b/T17/T48/T49/T50/T51；重新 pull main 後沒有剩餘 Codex 未勾項。最終 npm 37 pass、build pass、pytest 53 pass/5 skip。尚待真實影片疊加對齊與手機／螢幕閱讀器實測；只改 frontend 與本 STATUS，未推 main。
 - 10/28 02:10 Claude 完成 T58：關卡結果自動附上總表和三題判定；manifest 新增 `track_ok` 欄。john 回報 Muse、Antigravity 說做完了，但 GitHub 上沒有它們的分支，代表還沒 commit 和 push。
+
+- 10/27 Codex T59：支援 free_flight／bounce 選擇與 multipart 送出，結果與離線 parser 依 assumed_model 顯示；rebound_ratio_k 原值保留。npm 38 pass、build pass。
+
+- 10/27 Codex T60：以依時間排序的文字時間軸顯示三種事件，保留原始秒數與 detail；size_trend 拒判區呈現原值與二維品質限制，不把事件判成因果。npm 40 pass、build pass。
+
+- 10/27 Codex T61：新增 #/audits/:id 直接讀取與結果連結，ID 編碼並僅 GET；換 ID 時清空舊結果，忽略過期請求。離線重播不顯示需連線的結果連結。npm 41 pass、build pass。
+
+- 10/27 Codex T62：稽核使用原生 XHR upload bytes 進度，上傳完成後明示等待後端分析（無分析百分比）；不重送。404／422 加操作提示並完整保留後端 reason／數字；網路、逾時與中斷有明確提示。無新套件或 API 契約變更。npm 43 pass、build pass。
+
+### Codex T63：前端 data-testid 清單（給 Antigravity）
+
+- 導覽：`nav-home`、`nav-setup`、`nav-prediction`、`nav-analysis`、`nav-verification`、`nav-report`、`nav-audit`；首頁 `home-audit`、`home-coach`。
+- 共用：`workspace`、`workspace-error`（發生錯誤時）。
+- 斜坡主要操作：`experiment-create`、`experiment-load`、`calibration-save`、`baseline-create`、`prediction-lock`、`trial-upload`、`trial-track`、`detections-save`、`release-suggest`、`release-confirm`、`comparison-create`、`intervention-select`（每個候選一個）、`intervention-link`、`report-markdown`、`report-csv`；結果圖 `comparison-chart`。
+- 稽核輸入：`audit-video-input`、`audit-model`、`audit-submit`、`audit-id`、`audit-load`、`audit-import-json`。
+- 稽核狀態與結果：`audit-progress`（請求中）、`audit-error`（錯誤時）、`audit-result`、`audit-verdict`、`audit-events`、`audit-size-trend`（有 size_trend 的拒判結果）、`audit-export-json`、`audit-export-markdown`。
+- ID 不隨語言切換；其餘欄位請用可見 label／role。沒有結果或未達操作前提的元件不會出現在 DOM。
+
+- 10/27 Codex T63：主要斜坡與稽核操作、導覽、狀態與結果加入穩定 data-testid，清單見本檔；測試確認英／中文不變。npm 44 pass、build pass、pytest 53 pass/7 skip（ffmpeg 等環境依賴），尚未重做瀏覽器端到端驗收。T59–T63 均只改前端與 STATUS，沒有改後端契約或物理門檻。
