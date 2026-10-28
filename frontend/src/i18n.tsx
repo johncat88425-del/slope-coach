@@ -33,6 +33,7 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Rebound height ratios':'反彈高度比例','Rebound ratio data':'反彈比例資料','No backend rebound ratios are available.':'後端尚未提供反彈比例。','A ratio above 1 means a higher rebound than the preceding one. The backend applies its tolerance before deciding consistency; the chart does not issue a separate verdict.':'比例大於 1 表示比上次反彈得高。後端會套用容差後才判定是否一致；此圖不另外判定。',
 'Three outcomes, one set of rules':'同一套規則，三種結果','Compare three outcomes →':'比較三種結果 →','SYNTHETIC — development fixtures made from program-drawn moving squares. These are not real experiment footage or evidence of real-video accuracy.':'SYNTHETIC：程式繪製移動方塊的開發測試素材，並非實拍實驗或真實影片準確度的證據。','Consistent, inconsistent and insufficient-data results are shown together. Saved backend results are replayed without network calls or a new analysis.':'一致、不一致與無法判斷一起展示；離線重播後端結果，不呼叫網路或重新分析。',
 'Physics card':'物理名片','Download physics card PNG':'下載物理名片 PNG','Preparing PNG…':'正在準備 PNG…','Synthetic development fixture — not real footage.':'合成開發測試素材，並非實拍影片。','Muse Spark headline: pending — no model text supplied':'Muse Spark 標題待提供：目前沒有模型說明。','Model-relative result only. This card does not establish provenance or cause.':'結果只針對假設模型，不確定影片來源或因果。',
 
