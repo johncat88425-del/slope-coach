@@ -1,3 +1,4 @@
+import {PhysicsCard} from './PhysicsCard.js';
 import {GhostReview} from './GhostReview.js';
 import {auditHash} from './experiment.js';
 import { Localize } from './i18n.js';
@@ -17,14 +18,14 @@ export function EventTimeline({events}:{events:AuditOut['events']}) {
 export function AuditResult({ audit, replay = false, videoUrl }: {
     audit: AuditOut; replay?: boolean; videoUrl?:string;
 }) {
-    return <Localize>{<article data-testid="audit-result" aria-label="稽核結果">{replay && <p role="status">Saved result replay — no new analysis or model call.</p>}<h2 data-testid="audit-verdict">{verdictText(audit.verdict,audit.assumed_model)}</h2><p>稽核 {audit.audit_id} · 假設：{audit.assumed_model} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
+    return <Localize>{<article data-testid="audit-result" aria-label="稽核結果">{replay && <p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">Synthetic development fixture — not real footage.</p>}<h2 data-testid="audit-verdict">{verdictText(audit.verdict,audit.assumed_model)}</h2><p>稽核 {audit.audit_id} · 假設：{audit.assumed_model} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
  {!replay && <p><a href={auditHash(audit.audit_id)}>Open result link</a></p>}<h3>原因</h3><ul>{audit.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
  <h3>後端計算數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <GhostReview audit={audit} url={replay ? undefined : videoUrl??mediaUrl(audit.video_url, import.meta.env?.VITE_API_BASE_URL)}/><Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
  {audit.assumed_model==='bounce' && <p>Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.</p>}<EventTimeline events={audit.events}/>
  {audit.verdict==='insufficient_data' && audit.numbers.size_trend!==undefined && <aside data-testid="audit-size-trend" aria-label="Size trend limitation"><h3>Size trend limitation</h3><p>size_trend: {audit.numbers.size_trend}</p><p>A changing apparent size can make the 2D motion check unreliable. The backend rejects changes beyond its quality threshold. Review the backend reasons above; this value alone does not establish a cause.</p></aside>}
- <button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}>{r}</li>)}</ul>
+ <PhysicsCard audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/><button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json", "application/json;charset=utf-8")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}>{r}</li>)}</ul>
  </article>}</Localize>;
 }
 export function AuditPage({ api, auditId = null }: {
