@@ -39,7 +39,13 @@ export type Experiment = {
 export function createExperiment(id: string): Experiment {
   return {id, draft: {photo: null, size: {width: 0, height: 0}, points: [], length: '', height: '', rulerLength: '', captureConfirmed: false}, calibration: null, video: null, prediction: null, analysis: null, intervention: null};
 }
+export function auditIdFromHash(hash:string):string|null {
+ const match=/^#\/audits\/([^/?#]+)$/.exec(hash);if(!match)return null;
+ try {return decodeURIComponent(match[1]) || null} catch{return null}
+}
+export function auditHash(id:string){return '#/audits/'+encodeURIComponent(id)}
 export function resolveRoute(hash: string): Route {
+  if(auditIdFromHash(hash)!==null)return 'audit';
   const route = hash.replace(/^#\/?/, '');
   return pages.find(page => page.route === route)?.route ?? 'home';
 }

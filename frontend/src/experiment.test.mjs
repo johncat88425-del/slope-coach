@@ -59,3 +59,5 @@ test('editing invalidates saved calibration; replacing media clears stale points
   assert.equal(replaced.draft.size.width,0); assert.equal(replaced.calibration,null);
   assert.equal(replaced.id,saved.id);
 });
+
+// Audit deep links retain encoded IDs and do not alter the five-step draft.

@@ -1,4 +1,4 @@
-import type {AuditOut} from './audit';
+import type {AuditModel,AuditOut} from './audit';
 export type Pixel = [number, number];
 export type ScenePhoto = {photo_id: string; photo_url?: string|null; scene_check: {source: 'model'|'mock'; needs_retake: boolean; retake_reasons: string[]}};
 export type CalibrationInput = {ruler_px: [Pixel,Pixel]; ruler_length_m: number; path_start_px: Pixel; path_end_px: Pixel; slope_length_m: number; slope_height_m: number; reason?: string};
@@ -16,6 +16,23 @@ export type ExperimentRecord = {experiment_id:string;title:string;created_at:str
 export class ApiError extends Error {
   constructor(public status:number, message:string) {super(message); this.name='ApiError'}
 }
+export function friendlyApiError(error:unknown):string {
+ if(error instanceof ApiError){const prefix=error.status===404?'Result not found. Check the ID or load a saved JSON.':error.status===422?'Please check the submitted settings.':'The backend could not complete this request.';return prefix+' Backend reason: '+error.message}
+ return error instanceof Error ? error.message : String(error);
+}
+function backendError(status:number,raw:string){let message=raw;try{const body=JSON.parse(raw);message=typeof body.detail==='string'?body.detail:JSON.stringify(body.detail??body)}catch{}return new ApiError(status,message||'Request failed')}
+export type UploadProgress=(percent:number|null)=>void;
+export function uploadAudit(url:string,data:FormData,progress:UploadProgress,makeXhr:()=>XMLHttpRequest=()=>new XMLHttpRequest()):Promise<AuditOut>{
+ return new Promise((resolve,reject)=>{const xhr=makeXhr();xhr.open('POST',url);xhr.timeout=120000;
+ xhr.upload.onprogress=e=>progress(e.lengthComputable&&e.total>0?Math.min(100,Math.round(e.loaded/e.total*100)):null);
+ xhr.upload.onload=()=>progress(100);
+ xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){reject(backendError(xhr.status,xhr.responseText));return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(new Error('The backend returned an unreadable result. Load the record before submitting again.'))}};
+ xhr.onerror=()=>reject(new Error('Cannot connect to the backend. Check your connection and try loading the record before submitting again.'));
+ xhr.ontimeout=()=>reject(new Error('Request timed out. Processing may have completed; load the record before submitting again.'));
+ xhr.onabort=()=>reject(new Error('Upload was interrupted. No automatic retry was made.'));
+ progress(0);xhr.send(data);
+ });
+}
 export function createApi(base='', transport:typeof fetch=fetch) {
   const root=base.replace(/\/$/,'');
   async function request<T>(path:string, init:RequestInit={}, text=false):Promise<T> {
@@ -31,13 +48,13 @@ export function createApi(base='', transport:typeof fetch=fetch) {
     } catch(error) {
       if(error instanceof ApiError) throw error;
       if(error instanceof Error && error.name==='AbortError') throw new Error('請求逾時。操作可能已在伺服器完成，請先重新讀取紀錄，不會自動重送。');
-      throw new Error('無法連接後端。請確認 http://localhost:8000 與 Vite proxy 已啟動。');
+      throw new Error('Cannot connect to the backend. Check your connection and try loading the record before submitting again.');
     } finally {clearTimeout(timer)}
   }
   function json<T>(method:string,path:string,body:unknown) {return request<T>(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
   const e=(id:string)=>'/experiments/'+encodeURIComponent(id), t=(id:string)=>'/trials/'+encodeURIComponent(id);
   return {
-    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number)=>{const data=new FormData();data.append('file',file);data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model','free_flight');if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));return request<AuditOut>('/audits',{method:'POST',body:data})},
+    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight',onProgress?:UploadProgress)=>{const data=new FormData();data.append('file',file);data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));return onProgress?uploadAudit(root+'/api/audits',data,onProgress):request<AuditOut>('/audits',{method:'POST',body:data})},
     getAudit:(id:string)=>request<AuditOut>('/audits/'+encodeURIComponent(id)),
     create:(title:string)=>json<ExperimentRecord>('POST','/experiments',{title}),
     get:(id:string)=>request<ExperimentRecord>(e(id)),
