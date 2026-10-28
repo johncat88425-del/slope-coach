@@ -2,7 +2,7 @@ import { Localize, LanguageRoot } from './i18n.js';
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createExperiment, imagePoint, pages, replacePhoto, resolveRoute, updateDraft, validateDraft } from './experiment';
+import { auditIdFromHash, createExperiment, imagePoint, pages, replacePhoto, resolveRoute, updateDraft, validateDraft } from './experiment';
 import type { Draft, Point } from './experiment';
 import { createApi } from './api';
 import type { ExperimentRecord, TrialKind, ScenePhoto } from './api';
@@ -23,6 +23,7 @@ catch {
     return '';
 } }
 function App() {
+    const [auditRouteId, setAuditRouteId] = useState(()=>auditIdFromHash(location.hash));
     const [route, setRoute] = useState(() => resolveRoute(location.hash));
     const [local, setLocal] = useState(() => createExperiment('local-draft'));
     const [record, setRecord] = useState<ExperimentRecord | null>(null);
@@ -71,7 +72,7 @@ function App() {
         const c = value.calibrations.at(-1);
         setLocal(current => ({ ...current, draft: { ...current.draft, photo: { name: photo!.photo_id, url: photoUrl }, size: { width: 0, height: 0 }, points: c ? [...c.ruler_px, c.path_start_px, c.path_end_px].map(([x, y]) => ({ x, y })) : [], length: c ? String(c.slope_length_m) : '', height: c ? String(c.slope_height_m) : '', rulerLength: c ? String(c.ruler_length_m) : '', captureConfirmed: false } }));
     } adopt(value); setScene(value.scene_photos.at(-1) ?? null); setCalVersion(value.calibrations.at(-1)?.version ?? 0); setBaseVersion(value.baselines.at(-1)?.version ?? 0); setPredictionId(value.predictions.at(-1)?.prediction_id ?? ''); setTrialId(value.trials.at(-1)?.trial_id ?? ''); setComparisonId(value.comparisons.at(-1)?.comparison_id ?? ''); setInterventionId(value.interventions.at(-1)?.intervention_id ?? ''); setBaselineIds([]); }
-    useEffect(() => { const update = () => setRoute(resolveRoute(location.hash)); window.addEventListener('hashchange', update); return () => window.removeEventListener('hashchange', update); }, []);
+    useEffect(() => { const update = () => {setRoute(resolveRoute(location.hash));setAuditRouteId(auditIdFromHash(location.hash));}; window.addEventListener('hashchange', update); return () => window.removeEventListener('hashchange', update); }, []);
     useEffect(() => { document.title = active.title + ' · Slope Coach'; }, [active.title]);
     useEffect(() => { setRestConfirmed(false); setTrialFile(null); setTrialPreview(''); }, [predictionId, calVersion]);
     useEffect(() => () => allocatedUrls.current.forEach(value => URL.revokeObjectURL(value)), []);
@@ -110,7 +111,7 @@ function App() {
         }
         catch { /* optional storage */ } }}>開始另一個實驗（保留舊紀錄）</button><button onClick={() => void run(refresh)}>重新讀取後端</button><label>校準版本<select value={calVersion} onChange={e => { setCalVersion(Number(e.target.value)); setBaselineIds([]); }}><option value="0">尚未選取／草稿未保存</option>{record.calibrations.map(c => <option value={c.version} key={c.version}>v{c.version} · L {c.slope_length_m} m / h {c.slope_height_m} m（使用者）</option>)}</select></label></>}
  </fieldset>}
- {route === 'home' ? <Home/> : route === 'audit' ? <AuditPage api={api}/> : <fieldset disabled={busy || !record}><legend>{active.title}</legend>
+ {route === 'home' ? <Home/> : route === 'audit' ? <AuditPage api={api} auditId={auditRouteId}/> : <fieldset disabled={busy || !record}><legend>{active.title}</legend>
  {route === 'setup' && <><h2>確認實拍照片與尺寸</h2><p>尺的兩端、滑塊（作為路徑起點）與坡底終點須由你確認；共四個標記。</p>
  <label className="upload">上傳實驗照片<input type="file" accept="image/*" onChange={event => { const file = event.target.files?.[0]; if (!file)
                 return; setCalVersion(0); setScene(null); setPhotoFile(file); setLocal(current => replacePhoto(current, { name: file.name, url: url(file) })); if (record)

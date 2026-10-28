@@ -43,3 +43,12 @@ test('event timeline sorts exact timestamps, keeps backend details and labels al
 test('size-trend refusal shows the exact backend value and retains backend reasons',()=>{
  const html=rawRender(createElement(AuditResult,{audit:{...fixture('insufficient_data'),numbers:{size_trend:-0.456789}}}));assert.match(html,/Size trend limitation/);assert.match(html,/-0.456789/);assert.match(html,/fixture reason/);assert.match(html,/does not establish a cause/);
 });
+
+test('audit links round-trip encoded IDs, resolve audit route and use read-only GET',async()=>{
+ const {auditHash,auditIdFromHash,resolveRoute}=await import('../.test-dist/experiment.js');
+ for(const id of ['audit-123','id with space','id/slash']){assert.equal(auditIdFromHash(auditHash(id)),id);assert.equal(resolveRoute(auditHash(id)),'audit')}
+ for(const hash of ['#/audits/','#/audits/%ZZ','#setup'])assert.equal(auditIdFromHash(hash),null);
+ let path,init;await createApi('',async(p,i)=>{path=p;init=i;return Response.json(fixture('consistent'))}).getAudit('id/slash');assert.equal(path,'/api/audits/id%2Fslash');assert.equal(init.method,undefined);
+ const html=rawRender(createElement(AuditResult,{audit:fixture('consistent')}));assert.match(html,/href="#\/audits\/ui-fixture"/);
+ assert.doesNotMatch(rawRender(createElement(AuditResult,{audit:fixture('consistent'),replay:true})),/Open result link/);
+});
