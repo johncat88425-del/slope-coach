@@ -210,7 +210,7 @@ class AuditOut(BaseModel):
     """Video physics audit. verdict is relative to assumed_model only; never real vs generated."""
     audit_id: str
     created_at: datetime
-    assumed_model: Literal["free_flight"]
+    assumed_model: Literal["free_flight", "bounce"]
     t_start: float
     t_end: float
     camera_static: bool
