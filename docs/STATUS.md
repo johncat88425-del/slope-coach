@@ -1,7 +1,7 @@
 # STATUS：目前進度、缺什麼、誰在做
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。最新的放最上面。
-> 最後更新：2026-10-27（建立初版，尚無程式碼）
+> 最後更新：2026-10-28（Claude：T06、T07 完成）
 
 ## 一句話現況
 
@@ -29,8 +29,8 @@
 | T03 | 產生 Meta API 金鑰放進 `.env`；確認 150 美元額度已入帳；確認帳單是否綁卡 | john | 待辦 | |
 | T04 | 搭器材，拍 3 段 5–15 秒測試片（固定手機、側視、尺入鏡） | john | 待辦 | |
 | T05 | `meta_client/`：spark 呼叫（圖片、影片）、sam 追蹤、花費計數與 120 美元上限 | Muse | 待辦 | 先用 T04 的 1 段片實測 token 與費用，填入下方成本紀錄 |
-| T06 | `physics/`：像素↔米校準、遮罩中心→s(t)、品質標記、定加速度擬合（a、v0、誤差）+ 測試 | Claude | 待辦 | 不呼叫模型 |
-| T07 | `docs/API.md` 前後端契約初版 + `backend/` 骨架（experiment / trial / prediction / intervention） | Claude | 待辦 | T08 依賴它 |
+| T06 | `physics/`：像素↔米校準、遮罩中心→s(t)、品質標記、定加速度擬合（a、v0、誤差）+ 測試 | Claude | 完成 | 分支 claude/T06-physics；23 個測試通過；另含 baseline、compare（拒判檢查）、diagnose（兩種驗證的證據） |
+| T07 | `docs/API.md` 前後端契約初版 + `backend/` 骨架（experiment / trial / prediction / intervention） | Claude | 完成 | 分支 claude/T07-api（建在 T06 之上）；含 5 個 API 流程測試；Codex 請照 docs/API.md 接 |
 | T08 | `frontend/` 骨架與五個畫面路由 | Codex | 待辦 | 等 T07 契約 |
 | T09 | 校準點選畫面（點尺兩端、點滑塊） | Codex | 待辦 | |
 | T10 | 預測鎖定 + 實測比較 + 曲線圖 | Claude（後端）/ Codex（圖） | 待辦 | |
@@ -52,7 +52,9 @@
 
 ## 缺什麼（阻擋中或尚未知道）
 
-- [ ] 還沒有 repo、程式碼、影片。
+- [ ] 還沒有真實影片；physics 門檻只用合成資料測過。
+- [ ] 後端目前存在記憶體，重啟就會清空；部署前要改成檔案或 SQLite（之後再開任務）。
+- [ ] requirements.txt 由 Antigravity（T02）建立；physics 和 backend 需要 fastapi、uvicorn、numpy、scipy、pytest、python-multipart、httpx（測試用）。
 - [ ] Meta API 金鑰與 150 美元額度是否已可用：未確認。
 - [ ] 影片送 Spark 的實際 token 數與費用：未測（目前預算用假設值）。
 - [ ] SAM 3.1 的 API 呼叫格式（影片怎麼上傳、遮罩怎麼回傳）：未讀官方範例。
@@ -71,6 +73,8 @@
 | 10/27 | 產品內只呼叫 Meta 模型 | 比賽規則與工具運用分數 |
 | 10/27 | 所有測量數字由 `physics/` 程式算，模型不碰數字 | 可重算、可檢查 |
 | 10/27 | 保留斜坡核心，定位改為「動手之前先預測」的實驗教練；加語音口述（T24）；單擺（T25）為延伸 | john 選定：故事更大、多用一種 Meta 模型，又不犧牲可驗證性 |
+| 10/28 | 拒判門檻（開發值，會用真實影片調整）：可用影格 ≥ 80%（不阻擋，只提示）；起滑後至少 6 個可用點；擬合殘差 RMS ≤ 10 mm；前 20% 路程至少 3 點才可判斷初速度；差異門檻為到達時間相對誤差 15% 或基準變異的兩倍，取較大者 | PLAN 第二十五節：拒判不能只看可追蹤比例 |
+| 10/28 | 下一次驗證的候選由 `physics/diagnose.py` 依數字產生（release_check / dimension_check），模型只能從中選擇與說明 | 模型不碰數字，也不能自創驗證 |
 | 10/27 | Muse Code 預設用 `muse-spark-1.3`，不用 Wonder 寫程式 | Wonder 每百萬輸出 token 20 美元，寫程式很快燒掉額度 |
 
 ## 成本紀錄（Meta API）
@@ -83,4 +87,6 @@
 
 ## 工作日誌（最新在上）
 
+- 10/28 Claude 完成 T07：docs/API.md 契約 v0.1 與 FastAPI 後端（記憶體儲存、預測鎖定、預測必須早於試驗、只能選證據支持的驗證、報告匯出）。Meta 模型接入點在 backend/model_hooks.py，Muse 實作後用 set_hooks() 換掉 MockHooks。
+- 10/28 Claude 完成 T06 `physics/`：calibration、tracking、fit、experiments/slope、baseline、compare、diagnose，全部是純函式。用合成資料測過：正常、推出初速度、高度輸入錯誤、缺起滑時刻四種情境。
 - 10/27 建立 AGENTS.md、CLAUDE.md、STATUS.md 初版。
