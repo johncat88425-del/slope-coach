@@ -5,6 +5,7 @@ import {validateAuditInput,verdictText} from './audit.js';
 import {ModelSource} from './ModelSource.js';
 import {Trajectory2D,TrajectoryOverlay} from './Trajectory.js';
 import {mediaUrl} from './media.js';
+import {auditMarkdown,downloadText} from './auditReport.js';
 export function AuditResult({audit}:{audit:AuditOut}){
  return <article aria-label="稽核結果"><h2>{verdictText(audit.verdict)}</h2><p>稽核 {audit.audit_id} · 假設：free_flight · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
  <h3>原因</h3><ul>{audit.reasons.map((r,i)=><li key={i}>{r}</li>)}</ul>
@@ -12,7 +13,7 @@ export function AuditResult({audit}:{audit:AuditOut}){
  <TrajectoryOverlay url={mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/>
  <Trajectory2D points={audit.points.map(([t,x,y])=>({t,x,y}))}/>
  <h3>追蹤事件（需對照原片）</h3><ul>{audit.events.map((e,i)=><li key={i}>{e.t_s} s · {e.kind}：{e.detail}</li>)}</ul>
- <h3>已知限制</h3><ul>{audit.limits.map((r,i)=><li key={i}>{r}</li>)}</ul>
+ <button onClick={()=>downloadText(auditMarkdown(audit),audit.audit_id+'.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r,i)=><li key={i}>{r}</li>)}</ul>
  </article>;
 }
 export function AuditPage({api}:{api:ReturnType<typeof createApi>}){
