@@ -11,6 +11,7 @@ import { CurveChart } from './CurveChart';
 import { mediaUrl } from './media';
 import { ModelSource } from './ModelSource';
 import { AuditPage } from './AuditPage';
+import {GuidedDemo} from './GuidedDemo';
 import {DemoPage} from './DemoPage';
 import {Home} from './Home';
 import { VideoOverlay } from './VideoOverlay';
@@ -96,7 +97,7 @@ function App() {
         throw new Error('請先選取此校準版本的已鎖定預測，並確認本次從靜止釋放。'); const t = await api.trial(record.experiment_id, trialKind, calVersion, trialFile); setVideos(old => ({ ...old, [t.trial_id]: trialPreview })); setTrialId(t.trial_id); setTrialFile(null); setTrialPreview(''); await refresh(); setMessage('影片已上傳。請自動追蹤或手動標記，再確認起滑時刻。'); }
     async function download(format: 'md' | 'csv') { if (!record)
         return; const content = await api.report(record.experiment_id, format); const href = URL.createObjectURL(new Blob([content], { type: format === 'csv' ? 'text/csv;charset=utf-8' : 'text/markdown;charset=utf-8' })); const anchor = document.createElement('a'); anchor.href = href; anchor.download = record.experiment_id + '.' + format; anchor.click(); setTimeout(() => URL.revokeObjectURL(href), 1000); }
-    return <Localize>{<><a className="skip-link" href="#workspace">Skip to workspace</a><header><b>Slope Coach</b><span>真實實驗 · 先預測再核對</span><small>後端 API v0.1</small></header><main><aside><p className="eyebrow">實驗工作區</p><h1>上傳你的實驗，<br />逐步核對證據。</h1><nav aria-label="實驗步驟">{pages.map((p, i) => <a data-testid={'nav-'+p.route} href={'#' + p.route} key={p.route} aria-current={route === p.route ? 'page' : undefined}>{i + 1}　{p.title}</a>)}</nav><p>固定鏡頭 · 近似側視<br />單一直線斜坡 · 單一滑塊</p></aside><section data-testid="workspace" id="workspace" tabIndex={-1} aria-label={active.title}>
+    return <Localize>{<><GuidedDemo route={route}/><a className="skip-link" href="#workspace">Skip to workspace</a><header><b>Slope Coach</b><span>真實實驗 · 先預測再核對</span><small>後端 API v0.1</small></header><main><aside><p className="eyebrow">實驗工作區</p><h1>上傳你的實驗，<br />逐步核對證據。</h1><nav aria-label="實驗步驟">{pages.map((p, i) => <a data-testid={'nav-'+p.route} href={'#' + p.route} key={p.route} aria-current={route === p.route ? 'page' : undefined}>{i + 1}　{p.title}</a>)}</nav><p>固定鏡頭 · 近似側視<br />單一直線斜坡 · 單一滑塊</p></aside><section data-testid="workspace" id="workspace" tabIndex={-1} aria-label={active.title}>
  <div className="notice">照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。</div>
  <div aria-live="polite">{busy && <p role="status">處理中，請勿重複提交…</p>}{error && <p data-testid="workspace-error" role="alert">{error}</p>}{message && <p role="status">{message}</p>}</div>
  {route !== 'audit' && route !== 'home' && route !== 'demo' && <fieldset disabled={busy}><legend>實驗紀錄</legend>
