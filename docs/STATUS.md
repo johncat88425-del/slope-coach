@@ -43,7 +43,7 @@
 - [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
 - [x] T36b Codex：軌跡疊加圖與 2D 軌跡圖元件。實測點用橘色，有缺口的地方不連線 — commit f2c750f
 - [x] T36c Codex：所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」 — commit 0faeb49
-- [ ] T40 Codex：新畫面「檢查影片」：上傳影片、選時間窗、勾選鏡頭固定、輸入物體尺寸，接 `POST /api/audits`（見 docs/API.md v0.2）。顯示 verdict、reasons、numbers、疊加圖、軌跡圖、limits。`insufficient_data` 是正常結果。畫面文字只准說「與自由落體模型一致／不一致／無法判斷」
+- [x] T40 Codex：新畫面「檢查影片」：上傳影片、選時間窗、勾選鏡頭固定、輸入物體尺寸，接 `POST /api/audits`（見 docs/API.md v0.2）。顯示 verdict、reasons、numbers、疊加圖、軌跡圖、limits。`insufficient_data` 是正常結果。畫面文字只准說「與自由落體模型一致／不一致／無法判斷」 — commit 待回填（本次程式提交）
 - [ ] T41 Codex：「檢查影片」畫面的 npm 測試，包括三種 verdict 的顯示，以及確認畫面沒有「真／假／AI 生成」字眼
 - [ ] T13b Codex：稽核結果匯出成 Markdown（數字照後端給的，不自己算）
 - [ ] T17 Codex：影片預測疊加（限 2 小時）
@@ -75,7 +75,7 @@
 - [ ] T32 跑關卡（等 john 的影片）
 - [x] T55 Claude：稽核支援 `assumed_model=bounce`（接上 `check_bounces`）
 - [x] T56 Claude：透視檢查：物體大小沿軌跡變化超過 30% 時拒判（`physics/persistence.size_trend`）
-- [ ] T57 Claude：單擺 physics 插件（週期和擺長、等時性），給稽核和教練兩條路共用
+- [x] T57 Claude：單擺 physics 插件 `physics/experiments/pendulum.py`（週期、等時性、由週期推算擺長），給稽核和教練兩條路共用；尚未接到 API
 - [ ] T58 Claude：驗證報告產生器：從 `data/gate/results.md` 和人工標註，產生 demo 用的「多少支影片判一致、多少支拒判」表格（不挑片）
 - [ ] 審查 Muse、Codex、Antigravity 的所有 PR
 
@@ -188,7 +188,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 後端：`uvicorn backend.main:app --reload`，網址 http://localhost:8000，互動文件在 `/docs`。API 契約見 `docs/API.md`。
 - 合成示範資料：`python -m scripts.seed_demo --case pushed`，也可以把 case 換成 wrong_height、ok 或 occluded。
-- 測試：`pytest`（目前 55 個通過）；前端 `cd frontend && npm test`。
+- 測試：`pytest`（目前 58 個通過）；前端 `cd frontend && npm test`。
 - 免模型的軌跡探測：`python -m scripts.flight_probe 影片.mp4 --start 1.0 --end 2.0 --overlay out.png`。
 - 上傳的檔案由後端放在 `/media/{eid}/{檔名}`。
 
@@ -227,6 +227,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | | | | 0 |
 
 ## 工作日誌（最新在上）
+
+- 10/27 Codex T40：新增檢查影片頁與 AuditOut 型別，時間窗/尺寸/鏡頭確認以 multipart 送 /api/audits，顯示三種模型相對結果、原因、原始數字、疊加、散點、事件與限制；保留斜坡流程。22 項測試與 build 通過；不在前端計算測量值。
 
 - 10/28 john 要求加更多任務。新增 T45 到 T58，重點放在：Muse 當稽核代理（提高 Meta 工具運用分）、英文介面與 demo 模式（評審體驗）、CI 與效能（能不能運作）、透視與單擺（技術深度）。
 - 10/28 Claude 完成 T37 稽核端點（另開 `backend/audits.py` router，避免和 Muse 改 main.py 衝突；影片處理移到 `backend/video.py`）。完成表補到夠做一整晚：Muse 加 T38、T39、T16，Codex 加 T40、T41、T13b，Antigravity 加 T42 到 T44。
