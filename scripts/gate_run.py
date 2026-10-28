@@ -33,6 +33,9 @@ RESULTS = ("consistent", "inconsistent", "insufficient_data", "refused")
 def run_clip(row: dict, clips_dir: Path, overlay_dir: Path | None = None) -> dict:
     out = {k: row.get(k, "") for k in ("clip", "source", "assumed_model", "object")}
     out["track_ok"] = (row.get("track_ok") or "").strip().lower()
+    missing = [k for k in ("source", "t_start", "t_end", "camera_static") if not (row.get(k) or "").strip()]
+    if missing:
+        return out | {"result": "unlabelled", "why": "waiting for john's labels: " + ", ".join(missing)}
     if row["assumed_model"] != "free_flight":
         return out | {"result": "refused", "why": f"model '{row['assumed_model']}' not checked by this gate"}
     if row["camera_static"].strip().lower() not in ("yes", "y", "1", "true"):
@@ -84,7 +87,10 @@ def strong_anomaly(r: dict) -> bool:
 
 def gate_summary(rows: list[dict]) -> dict:
     """Counts per source and the three gate questions, computed the same way for every clip.
-    A question is 'pending' while it depends on overlay checks john has not made yet."""
+    A question is 'pending' while it depends on overlay checks john has not made yet.
+    Clips john has not labelled yet are left out of every count and listed separately."""
+    unlabelled = [r["clip"] for r in rows if r["result"] == "unlabelled"]
+    rows = [r for r in rows if r["result"] != "unlabelled"]
     counts: dict[str, dict[str, int]] = {}
     for r in rows:
         c = counts.setdefault(r.get("source") or "other", {k: 0 for k in RESULTS})
@@ -114,7 +120,8 @@ def gate_summary(rows: list[dict]) -> dict:
     q3 = "pending" if not rows else ("pass" if refused * 2 <= len(rows) else "fail")
     false_alarms = [r["clip"] for r in own if r["result"] == "inconsistent"]
     return {"counts": counts, "q1": q1, "q2": q2, "q3": q3, "refused": refused, "total": len(rows),
-            "own_false_alarms": false_alarms, "strong_anomalies": [r["clip"] for r in cand]}
+            "own_false_alarms": false_alarms, "strong_anomalies": [r["clip"] for r in cand],
+            "unlabelled": unlabelled}
 
 
 def summary_markdown(s: dict) -> str:
@@ -125,6 +132,8 @@ def summary_markdown(s: dict) -> str:
               f"Q2 clear anomaly not explained by tracking or size error: {s['q2']}"
               + (f" ({', '.join(s['strong_anomalies'])})" if s["strong_anomalies"] else ""),
               f"Q3 one rule set, at most half refused: {s['q3']} ({s['refused']}/{s['total']} refused)"]
+    if s["unlabelled"]:
+        lines.append(f"Not labelled yet (not counted): {', '.join(s['unlabelled'])}")
     if s["own_false_alarms"]:
         lines.append(f"False alarms on own clips (explain each): {', '.join(s['own_false_alarms'])}")
     lines.append("All clips in the manifest are listed; none are left out.")
@@ -137,9 +146,8 @@ def to_markdown(rows: list[dict]) -> str:
     lines = ["| " + " | ".join(keys) + " |", "|" + " --- |" * len(keys)]
     for r in rows:
         lines.append("| " + " | ".join("" if r.get(k) is None else str(r.get(k, "")) for k in keys) + " |")
-    refused = sum(r["result"] == "refused" for r in rows)
     lines.append("")
-    lines.append(f"Rules: {GATE_RULES}. Refused {refused}/{len(rows)}.")
+    lines.append(f"Rules: {GATE_RULES}.")
     return "\n".join(lines) + "\n\n## Summary\n\n" + summary_markdown(gate_summary(rows))
 
 
