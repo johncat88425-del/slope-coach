@@ -1,11 +1,11 @@
 # STATUS：目前進度、缺什麼、誰在做
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。最新的放最上面。
-> 最後更新：2026-10-28（Claude：T15 完成、新增示範資料腳本）
+> 最後更新：2026-10-28（Claude：方向關卡 T32、T30 媒體路徑）
 
 ## 一句話現況
 
-第 2 天（10/27）結束前：計畫書完成、比賽規則已查、Discord 回覆「要用 Muse」。**還沒有任何程式碼、影片或 API 測試結果。**
+10/28：斜坡閉環（後端＋前端，合成資料）可以跑。john 決定先做可行性關卡，驗證縮小版的「影片物理稽核」（`docs/GATE.md`），10/29 晚上依結果決定轉向或回到實驗調查員。Muse（T05）、Antigravity（T02）尚未 push。
 
 ## 里程碑
 
@@ -51,7 +51,9 @@
 | T28 | 結果說明層：Spark 讀 ComparisonOut，寫給使用者的中英文說明，先過 backend/output_check.check_model_text() 才顯示 | Muse | 待辦 | T11 之後；畫面標明「由 Muse Spark 產生」 |
 | T29 | 在 backend 把 MockHooks 換成 MetaHooks（check_scene、track_slider、suggest_release_time） | Muse | 待辦 | T05 完成後馬上做；介面見 backend/model_hooks.py |
 | T30 | 後端提供 `/media` 讀取上傳的影片與照片，場景照片回傳 `photo_url` | Claude | 完成 | 前端要在 `vite.config.ts` 的 proxy 加上 `/media`（Codex） |
-| T31 | physics：拋體／掉落軌跡檢查 `physics/experiments/freefall.py`（不需尺也能算出「要符合 g 物體得多大」、慢動作倍率） | Claude | 完成（等方向決定才合併） | 方向 A/B/C 都會用到 |
+| T31 | physics：拋體／掉落軌跡檢查 `physics/experiments/freefall.py`（不需尺也能算出「要符合 g 物體得多大」、慢動作倍率） | Claude | 完成 | 方向 A/B/C 都會用到 |
+| T32 | 可行性關卡：凍結規則、`scripts/gate_run.py` 一次跑完所有影片、10/29 填結果 | Claude | 進行中 | 規程見 docs/GATE.md |
+| T33 | 拍 3 支以上正側面丟球影片＋生成 5–10 支影片，並提供人工標註 | john | 待辦 | 拍法與標註欄位見 docs/GATE.md |
 | T21 | 競品實測比較：PhET、Video2World、直接問 Muse | Manus | 待辦 | 成果放 docs/research/competitors.md |
 | T22 | 使用者測試計畫：招募訊息、任務腳本、記錄表 | Manus | 待辦 | 11/02 要用，10/31 前完成 |
 | T23 | 三分鐘 demo 分鏡與英文提交文字草稿 | Manus | 待辦 | 只寫已完成的功能，11/03 依實際結果修改 |
@@ -106,6 +108,7 @@
 
 ## 工作日誌（最新在上）
 
+- 10/28 john 決定：先驗證縮小版「影片物理稽核」，採用 award-strategy.md 的證據標準；不宣稱能辨識 AI 真偽。Claude 寫了 docs/GATE.md（三個問題的通過條件、決定規則）與 scripts/gate_run.py（規則在看到關卡影片前凍結；合成影片測試通過）。AGENTS.md 加上「目前階段」一節。
 - 10/28 john 拍了第一支測試影片（IMG_8418.MOV）：斜角低機位、滑塊小又淺、0.75 秒滑完、畫面有人臉；下一支要正側視、深色大滑塊、放慢、不入鏡。john 想改更大膽的方向，Claude 提了 A（拍任何運動的教練）／B（影片物理真假檢查）／C（A＋B），待 john 選。Claude 先寫了 T31 拋體檢查（三個方向都會用到），以及 `scripts/flight_probe.py`（不用模型、用畫面差異抓移動物體，給可行性測試用）。
 - 10/28 Claude 完成 T30：後端把 `data/uploads/` 掛在 `/media`，`video_url` 現在可以直接播放；`scene-photo` 多回傳 `photo_url`。**Codex：請在 `frontend/vite.config.ts` 的 proxy 加上 `/media` → `http://localhost:8000`，校準畫面改用 `photo_url` 顯示照片。** 也審查了 Codex PR #4（T27），測試與 build 通過，已解 STATUS 衝突，等 john 按 Ready for review 後合併。
 - 10/28 Claude 完成 T15，並新增 `scripts/seed_demo.py`：後端開著時執行 `python -m scripts.seed_demo --case pushed`（或 wrong_height / ok / occluded），會建立一個用合成資料的完整實驗，前端和 Antigravity 不用真影片也能測整個流程。四種情境結果：pushed→建議釋放核對、wrong_height→建議尺寸核對、ok→一致、occluded→有差異但證據不足、不建議任何驗證。
