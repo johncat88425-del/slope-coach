@@ -38,7 +38,7 @@
 
 **Codex**（PR #4 合併後才開始，照順序做）
 - [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
-- [ ] T36b Codex（進行中）：軌跡疊加圖與 2D 軌跡圖元件。實測點用橘色，有缺口的地方不連線
+- [x] T36b Codex：軌跡疊加圖與 2D 軌跡圖元件。實測點用橘色，有缺口的地方不連線 — commit 待回填（本次程式提交）
 - [ ] T36c Codex：所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」
 - [ ] T40 Codex：新畫面「檢查影片」：上傳影片、選時間窗、勾選鏡頭固定、輸入物體尺寸，接 `POST /api/audits`（見 docs/API.md v0.2）。顯示 verdict、reasons、numbers、疊加圖、軌跡圖、limits。`insufficient_data` 是正常結果。畫面文字只准說「與自由落體模型一致／不一致／無法判斷」
 - [ ] T41 Codex：「檢查影片」畫面的 npm 測試，包括三種 verdict 的顯示，以及確認畫面沒有「真／假／AI 生成」字眼
@@ -212,6 +212,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | | | | 0 |
 
 ## 工作日誌（最新在上）
+
+- 10/27 Codex T36b：軌跡疊加圖與 2D 元件完成；資料無完整逐影格品質時只畫散點，明確缺失／非 ok 時斷線。20 項前端測試與 build 通過；將在 T40 接入 AuditOut。
 
 - 10/27 Codex：依 john 最新連續工作授權，PR #4 基底採堆疊分支不等待合併；T36a 已推 codex/T36a-media，讀最新完成表後接 T36b。
 
