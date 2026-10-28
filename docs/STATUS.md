@@ -65,7 +65,7 @@
 - [x] T75 Codex：數字顯示格式。畫面和名片上的數字只做顯示用的四捨五入（例如 g_vs_earth 顯示 0.26、尺寸顯示 2.4 m），匯出的 JSON 保留原值。不准改變數值本身 — commit 52f4c34
 - [x] T76 Codex：彈跳結果圖。用 `rebound_ratio_k` 畫每次反彈高度比例的長條圖，加一條 1.0 的參考線（超過 1.0 代表反彈得比上一次高，與被動彈跳模型不一致） — commit c55ae96
 - [x] T77 Codex：「Muse 偵訊」問答面板的外觀（給 Muse T66 用）。先用固定的假問題做畫面，標示 mock；契約已在 docs/API.md v0.4：先 `POST /api/audit-drafts` 拿到問題，再用 `draft_id` 和使用者的回答呼叫 `POST /api/audits`；`slow_motion` 是新欄位。mock 問題現在後端就會回傳，可以直接接 — commit 2c8bcd2
-- [ ] T80 Codex：修正 `formatNumber`：尺寸和長度目前只留 1 位小數，0.067 m 會顯示成「0.1」，會誤導使用者。改成 3 位有效數字（0.067、2.40、0.250），並補測試
+- [x] T80 Codex：修正 `formatNumber`：尺寸和長度目前只留 1 位小數，0.067 m 會顯示成「0.1」，會誤導使用者。改成 3 位有效數字（0.067、2.40、0.250），並補測試 — commit 待回填（本次程式提交）
 - [ ] T81 Codex：**demo 導覽模式**。加一個「Guided demo」按鈕，按照順序帶評審看：首頁說明（能判斷什麼、不能判斷什麼）→ Muse 偵訊 → 結果與鬼影對照 → 物理名片 → 三種結果並排。每一步用一句英文說明，加上「Next」按鈕，並標明哪些內容由 Muse Spark 產生。只用已經有的畫面，不新增假資料
 - [ ] T82 Codex：英文介面文字總檢查，給評審看的。統一用語（consistent / inconsistent / insufficient data with the assumed model），刪掉內部用語（例如 fixture、draft id），按鈕文字要短。不准出現 real、fake、AI-generated、detect
 
@@ -321,3 +321,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex 工作總結：T74–T77 已完成並各自推送；重新 pull main 後沒有剩餘 Codex 未勾項。最終 npm 53 pass、build pass、pytest 56 pass/11 skip（環境依賴）。#demo 可離線看三種結果；Muse 偵訊用現有契約。瀏覽器端到端與 PNG 視覺驗收仍交 Antigravity，未推 main。
 - 10/28 12:40 例行巡查：審查並合併 Codex PR #27（T74 三種結果並排、T75 數字格式、T76 彈跳圖、T77 Muse 偵訊面板）。pytest 67、npm 53、build 都通過，面板有標明問題來源（Muse Spark 或固定問題），合成資料有標明 SYNTHETIC。發現尺寸只顯示 1 位小數的問題，交給 T80。新增 Codex 的 T80 到 T82。Muse、Antigravity 仍然沒有推任何東西。
 - 10/28 15:45 john 說等一下就去拍片。Claude 完成 T83（關卡工具試跑）和 T84（SAM 介面）。
+- 10/28 Codex T80：尺寸／長度改為三位有效數字（0.0670、2.40、0.250），只改顯示字串，原始匯出不變。補極小尺寸測試；npm 54 pass、build pass。
