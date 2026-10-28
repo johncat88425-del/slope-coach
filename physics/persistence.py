@@ -58,3 +58,22 @@ def persistence_events(
                 events.append(PersistenceEvent(
                     "position_jump", dets[b].t_s, f"step {st:.0f} px/frame vs median {med_step:.0f}"))
     return sorted(events, key=lambda e: e.t_s)
+
+
+def size_trend(times: list[float], sizes: list[float]) -> float | None:
+    """Relative change of object size over the track from a straight-line fit (end / start - 1).
+    A large steady change means the object moves towards or away from the camera, which a 2D
+    check cannot handle. None when there is too little data."""
+    if len(times) < 3 or len(times) != len(sizes):
+        return None
+    n = len(times)
+    mt, ms = sum(times) / n, sum(sizes) / n
+    var = sum((t - mt) ** 2 for t in times)
+    if var == 0 or ms <= 0:
+        return None
+    slope = sum((t - mt) * (z - ms) for t, z in zip(times, sizes)) / var
+    start = ms + slope * (min(times) - mt)
+    end = ms + slope * (max(times) - mt)
+    if start <= 0:
+        return None
+    return end / start - 1

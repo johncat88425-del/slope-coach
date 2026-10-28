@@ -30,6 +30,12 @@ def read_frames(path: str, start: float, end: float) -> tuple[np.ndarray, float]
 
 
 def track(frames: np.ndarray, fps: float, start: float, thresh: float = 30.0, min_px: int = 20):
+    pts, sizes = track_with_sizes(frames, fps, start, thresh, min_px)
+    return pts, (float(np.median(sizes)) if sizes else None)
+
+
+def track_with_sizes(frames: np.ndarray, fps: float, start: float, thresh: float = 30.0, min_px: int = 20):
+    """Same tracker as track(), also returning the per-frame object size (sqrt of mask area, px)."""
     bg = np.median(frames, axis=0)
     pts, sizes = [], []
     for i, f in enumerate(frames):
@@ -39,7 +45,7 @@ def track(frames: np.ndarray, fps: float, start: float, thresh: float = 30.0, mi
         ys, xs = np.nonzero(mask)
         pts.append((start + i / fps, float(xs.mean()), float(ys.mean())))
         sizes.append(float(np.sqrt(mask.sum())))
-    return pts, (float(np.median(sizes)) if sizes else None)
+    return pts, sizes
 
 
 def save_overlay(frames: np.ndarray, pts, start: float, fps: float, path: str) -> None:
