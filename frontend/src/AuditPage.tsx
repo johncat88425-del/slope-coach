@@ -1,3 +1,4 @@
+import {auditHash} from './experiment.js';
 import { Localize } from './i18n.js';
 import { useEffect, useRef, useState } from 'react';
 import type { createApi } from './api';
@@ -15,7 +16,7 @@ export function AuditResult({ audit, replay = false }: {
     audit: AuditOut; replay?: boolean;
 }) {
     return <Localize>{<article aria-label="稽核結果">{replay && <p role="status">Saved result replay — no new analysis or model call.</p>}<h2>{verdictText(audit.verdict,audit.assumed_model)}</h2><p>稽核 {audit.audit_id} · 假設：{audit.assumed_model} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
- <h3>原因</h3><ul>{audit.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+ {!replay && <p><a href={auditHash(audit.audit_id)}>Open result link</a></p>}<h3>原因</h3><ul>{audit.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
  <h3>後端計算數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
@@ -24,8 +25,8 @@ export function AuditResult({ audit, replay = false }: {
  <button onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json")}>Save audit JSON</button><button onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}>{r}</li>)}</ul>
  </article>}</Localize>;
 }
-export function AuditPage({ api }: {
-    api: ReturnType<typeof createApi>;
+export function AuditPage({ api, auditId = null }: {
+    api: ReturnType<typeof createApi>; auditId?: string|null;
 }) {
     const [file, setFile] = useState<File | null>(null), [preview, setPreview] = useState('');
     const [start, setStart] = useState(''), [end, setEnd] = useState(''), [size, setSize] = useState(''), [fixed, setFixed] = useState(false);
@@ -33,6 +34,11 @@ export function AuditPage({ api }: {
     const [audit, setAudit] = useState<AuditOut | null>(null), [id, setId] = useState('');
     const [replay, setReplay] = useState(false);
     const [model, setModel] = useState<AuditModel>('free_flight');
+    useEffect(()=>{
+        if(!auditId)return;let cancelled=false;setBusy(true);setError('');setAudit(null);setPreview('');setReplay(false);setId(auditId);
+        api.getAudit(auditId).then(value=>{if(!cancelled)setAudit(value)}).catch(e=>{if(!cancelled)setError(e instanceof Error ? e.message : String(e))}).finally(()=>{if(!cancelled)setBusy(false)});
+        return ()=>{cancelled=true};
+    },[api,auditId]);
     const video = useRef<HTMLVideoElement>(null);
     const errors = validateAuditInput(start, end, size);
     useEffect(() => () => { if (preview)
