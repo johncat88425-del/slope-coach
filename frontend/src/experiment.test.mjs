@@ -6,8 +6,8 @@ function validExperiment() {
   e.draft = {...e.draft, photo: {name: 'slope.png', url: 'blob:test'}, size: {width: 1000, height: 500}, points: [{x:0,y:0},{x:500,y:0},{x:100,y:100},{x:1000,y:0}], length:'1', height:'0.2', rulerLength:'0.3', captureConfirmed:true};
   return e;
 }
-test('all five routes resolve; unknown and empty routes return setup', () => {
-  assert.equal(pages.length, 5);
+test('five coaching routes and audit resolve; unknown and empty routes return setup', () => {
+  assert.equal(pages.length, 6);
   for (const {route} of pages) assert.equal(resolveRoute('#' + route), route);
   assert.equal(resolveRoute('#unknown'), 'setup');
   assert.equal(resolveRoute(''), 'setup');
