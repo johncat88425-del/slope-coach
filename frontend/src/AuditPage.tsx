@@ -1,7 +1,7 @@
 import { Localize } from './i18n.js';
 import { useEffect, useRef, useState } from 'react';
 import type { createApi } from './api';
-import type { AuditOut } from './audit.js';
+import type { AuditModel, AuditOut } from './audit.js';
 import { parseSavedAudit, validateAuditInput, verdictText } from './audit.js';
 import { ModelSource } from './ModelSource.js';
 import { Trajectory2D, TrajectoryOverlay } from './Trajectory.js';
@@ -10,12 +10,12 @@ import { auditMarkdown, downloadText } from './auditReport.js';
 export function AuditResult({ audit, replay = false }: {
     audit: AuditOut; replay?: boolean;
 }) {
-    return <Localize>{<article aria-label="稽核結果">{replay && <p role="status">Saved result replay — no new analysis or model call.</p>}<h2>{verdictText(audit.verdict)}</h2><p>稽核 {audit.audit_id} · 假設：free_flight · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
+    return <Localize>{<article aria-label="稽核結果">{replay && <p role="status">Saved result replay — no new analysis or model call.</p>}<h2>{verdictText(audit.verdict,audit.assumed_model)}</h2><p>稽核 {audit.audit_id} · 假設：{audit.assumed_model} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
  <h3>原因</h3><ul>{audit.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
  <h3>後端計算數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{String(value)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
- <h3>追蹤事件（需對照原片）</h3><ul>{audit.events.map((e, i) => <li key={i}>{e.t_s} s · {e.kind}：{e.detail}</li>)}</ul>
+ {audit.assumed_model==='bounce' && <p>Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.</p>}<h3>追蹤事件（需對照原片）</h3><ul>{audit.events.map((e, i) => <li key={i}>{e.t_s} s · {e.kind}：{e.detail}</li>)}</ul>
  <button onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json")}>Save audit JSON</button><button onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}>{r}</li>)}</ul>
  </article>}</Localize>;
 }
@@ -27,6 +27,7 @@ export function AuditPage({ api }: {
     const [busy, setBusy] = useState(false), [error, setError] = useState(''), [attempted, setAttempted] = useState(false);
     const [audit, setAudit] = useState<AuditOut | null>(null), [id, setId] = useState('');
     const [replay, setReplay] = useState(false);
+    const [model, setModel] = useState<AuditModel>('free_flight');
     const video = useRef<HTMLVideoElement>(null);
     const errors = validateAuditInput(start, end, size);
     useEffect(() => () => { if (preview)
@@ -44,9 +45,9 @@ export function AuditPage({ api }: {
     finally {
         setBusy(false);
     } }
-    return <Localize>{<section aria-label="檢查影片"><h2>檢查影片</h2><p>檢查指定片段是否與自由落體模型一致。請先確認攝影條件與時間窗；缺少足夠觀測時會保留無法判斷的結果。</p>
+    return <Localize>{<section aria-label="檢查影片"><h2>檢查影片</h2><p>Check the selected segment against the chosen motion model. Confirm capture conditions and the time window; insufficient evidence remains an explicit outcome.</p>
  <fieldset disabled={busy}><legend>Offline demo</legend><p>Load a previously saved result. No network connection or tracking is needed.</p><label>Saved audit JSON<input type="file" accept=".json,application/json" onChange={async e => { const saved = e.target.files?.[0]; if (!saved) return; setError(''); try { if(saved.size > 5 * 1024 * 1024) throw new Error('Saved JSON must be under 5 MB.'); const result = parseSavedAudit(await saved.text()); setAudit(result); setReplay(true); setPreview(''); setFile(null); } catch(e) {setError(e instanceof Error ? e.message : String(e));} }}/></label></fieldset>
- <fieldset disabled={busy}><legend>使用者確認的設定</legend><label>上傳影片<input type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) {
+ <fieldset disabled={busy}><legend>使用者確認的設定</legend><label>Motion model<select value={model} onChange={e=>setModel(e.target.value as AuditModel)}><option value="free_flight">Free flight</option><option value="bounce">Bounce</option></select></label><label>上傳影片<input type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) {
         setFile(f);
         setPreview(URL.createObjectURL(f));
         setAudit(null);
@@ -60,7 +61,7 @@ export function AuditPage({ api }: {
  <label>物體尺寸（米，選填）<input type="number" min="0" step="any" value={size} onChange={e => setSize(e.target.value)}/></label><p>尺寸由使用者量測；未知請留空，不從物體名稱猜測。</p>
  <label><input type="checkbox" checked={fixed} onChange={e => setFixed(e.target.checked)}/> 我確認鏡頭固定</label><p>未勾選會將 camera_static=false 送至後端，由後端保留無法判斷結果。</p>
  <button onClick={() => { setAttempted(true); if (!file || errors.length)
-        return; void run(() => api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined)); }}>提交片段檢查</button>
+        return; void run(() => api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model)); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input value={id} onChange={e => setId(e.target.value)}/></label><button disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
  </fieldset><div aria-live="polite">{busy && <p role="status">正在處理片段，請勿重複提交…</p>}{error && <p role="alert">{error}</p>}</div>{audit && <AuditResult audit={audit} replay={replay}/>}

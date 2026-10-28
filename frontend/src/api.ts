@@ -1,4 +1,4 @@
-import type {AuditOut} from './audit';
+import type {AuditModel,AuditOut} from './audit';
 export type Pixel = [number, number];
 export type ScenePhoto = {photo_id: string; photo_url?: string|null; scene_check: {source: 'model'|'mock'; needs_retake: boolean; retake_reasons: string[]}};
 export type CalibrationInput = {ruler_px: [Pixel,Pixel]; ruler_length_m: number; path_start_px: Pixel; path_end_px: Pixel; slope_length_m: number; slope_height_m: number; reason?: string};
@@ -37,7 +37,7 @@ export function createApi(base='', transport:typeof fetch=fetch) {
   function json<T>(method:string,path:string,body:unknown) {return request<T>(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
   const e=(id:string)=>'/experiments/'+encodeURIComponent(id), t=(id:string)=>'/trials/'+encodeURIComponent(id);
   return {
-    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number)=>{const data=new FormData();data.append('file',file);data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model','free_flight');if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));return request<AuditOut>('/audits',{method:'POST',body:data})},
+    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight')=>{const data=new FormData();data.append('file',file);data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));return request<AuditOut>('/audits',{method:'POST',body:data})},
     getAudit:(id:string)=>request<AuditOut>('/audits/'+encodeURIComponent(id)),
     create:(title:string)=>json<ExperimentRecord>('POST','/experiments',{title}),
     get:(id:string)=>request<ExperimentRecord>(e(id)),
