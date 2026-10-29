@@ -92,7 +92,7 @@
 - [ ] 審查並合併 Muse 的 T05、T29
 - [x] 審查並合併 Codex PR #4 與 #16（T36–T51，含 #4 的內容）：pytest 58、npm 37、build 都通過；前端沒有自己算物理，畫面沒有「真／假／AI 生成」字眼
 - [x] T37 Claude：後端稽核端點 `POST /api/audits`、`GET /api/audits/{aid}`（docs/API.md v0.2）
-- [ ] T32 跑關卡：自拍 3 支 Q1 pass、Q3 pass；等 john 的 Meta AI 影片跑 Q2
+- [x] T32 跑關卡：三題都通過（自拍 3、Meta AI 6），方向等 john 決定
 - [x] T91 Claude：`data/demo/real_own_1..3.json`：john 3 支真實影片經 `/api/audits` 的完整結果（顏色追蹤、0.11 m），給 demo 和 Codex T90 用；不含影片和疊加圖 — 見 PR T91
 - [x] T88 Claude：網站的「檢查影片」沒接 SAM 時，物體名稱有顏色（如 `orange ball`）就用 T87 的顏色追蹤，`track_source: "color"`（API v0.6）。前端只加了最小的型別與標籤，讓畫面不會拒收；Codex 請檢查文字和樣式。用 john 的 3 支影片走網站流程：g = 9.62、9.81、8.15，和關卡一致 — 見 PR T88
 - [x] T87 Claude：不用模型的顏色＋移動追蹤（`backend/video.track_color`）。人工標註的物體名稱有顏色（例如 `orange ball`）時，關卡改用它；`--tracker frame_diff` 可重現舊規則。球的大小改用短軸寬度，不受動態模糊影響。3 支真實影片的紅點都落在球上 — 見 PR T87
@@ -181,6 +181,24 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
   - 新版 color：三支軌跡都是乾淨拋物線（殘差只有行程的 0.4% 到 0.8%，偏角 1 到 6 度），但算出的 g 只有 3.7 到 4.5 m/s²。換句話說，如果 g 是 9.81，球的直徑應該是 0.11 到 0.13 m，不是 0.05 m。三支都偏同一個方向，比較像是尺寸標註的問題，所以先請 john 用尺量球（圓周 ÷ 3.14）。**不准為了讓結果變成一致去改門檻或改顏色參數。**
 
 ### 關卡結果
+
+**10/29 03:10 正式結果：三題都通過（用 T87 之後的規則）**（`data/gate/results.md`；舊規則版本 `results_frame_diff.md`）
+
+| 來源 | 一致 | 不一致 | 資料不足 | 拒判 |
+| --- | --- | --- | --- | --- |
+| 自拍（john） | 2 | 1 | 0 | 0 |
+| Meta AI 生成 | 0 | 6 | 0 | 0 |
+
+- Q1 **pass**：own_1 g = 9.62、own_2 g = 9.82，john 確認紅點在球上。
+- Q2 **pass**：john 確認追蹤正確的 3 支 Meta 影片（clip2、3、6）都是明確異常。例如 clip6 的軌跡是乾淨拋物線（殘差 1.8%），但 g 只有 0.12 m/s²（落下約 0.9 m 花了約 3.5 秒）。clip1、4、5 john 判定追蹤不可靠（`track_ok = no`），不拿來當證據。
+- Q3 **pass**：9 支都用同一套規則，0 支拒判。
+- 舊規則（frame_diff）：Q1 fail，因為追到手臂。
+
+**要誠實寫出來的限制：**
+1. 顏色追蹤是看過 john 的 3 支自拍之後才加的（見規則變更紀錄）。Meta 影片是在規則定下之後才生成、才跑的，沒有再調參數。
+2. 網站稽核比關卡更保守。它多了「物體大小沿軌跡變化超過 30% 就拒判」這條透視檢查（T56，看資料前就有）。同樣 6 支 Meta 影片，網站判 clip2（g 像月球）、clip3（g 像冥王星）不一致，另外 4 支因為球朝鏡頭飛而判資料不足。demo 和文件要用網站的結果。
+3. 目前只有一家生成模型（Meta AI），每家 1 支只是試驗。不能說「能檢查任何影片」或「能辨識 AI 影片」。
+4. 還沒列入關卡：Manus 生成 1 支（球是咖啡色，標註等 john）、Antigravity 用程式渲染的 3D 影片 2 支。後者不是生成式 AI，屬於「程式模擬」類；試跑 ag_clip1 得到 g = 23.75，最接近木星。
 
 **10/29 02:30 第一次正式試跑**（john 量的球直徑 0.11 m；john 10/29 02:28 確認時間窗，並確認三張疊加圖的紅點都在球上；`data/gate/results.md`，舊規則版本在 `results_frame_diff.md`）
 
@@ -275,6 +293,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 03:10 Claude：關卡正式結果三題都通過。依決定規則應轉向「影片物理稽核」，已請 john 決定。
 - 10/29 02:35 Muse 查證：Meta Model API 的 `/v1/models` 只有 muse-spark、muse-wonder-1.0、sam-3.1、muse-voice-transcribe-1.0、muse-image-1.0，**沒有影片生成**。關卡用的生成影片改由 john 在 Meta AI app／meta.ai 手動生成（提示詞在 `/mnt/project-files/gate/meta_ai_prompts.md`）。
 - 10/29 02:40 例行巡查：Muse、Antigravity 仍然沒有 push；Codex 沒有新分支。Claude 加了真實影片的 demo 紀錄（T91），替 Codex 補 T89、T90。
 - 10/29 Claude T88：網站稽核接上顏色追蹤（`track_source: color`）。為了不讓前端拒收新值，Claude 直接改了前端 4 個檔案的型別和標籤（只加一個值，沒動樣式），請 Codex 之後檢查。
