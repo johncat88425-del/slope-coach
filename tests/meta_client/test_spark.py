@@ -362,7 +362,7 @@ def test_suggest_object_success(tmp_path, monkeypatch):
     clip, fake = _object_setup(tmp_path, monkeypatch, [payload])
     tracker = _tracker(tmp_path)
     out = spark.suggest_object(clip, tracker=tracker)
-    assert out == payload
+    assert out == {**payload, "source": "muse-spark-1.3"}
     parts = fake.responses.calls[0]["input"][0]["content"]
     assert parts[0]["type"] == "input_text"
     assert sum(p["type"] == "input_image" for p in parts) == 2
@@ -385,7 +385,7 @@ def test_suggest_object_rejects(tmp_path, monkeypatch):
     for payload, match in cases:
         clip, fake = _object_setup(tmp_path, monkeypatch, [payload] * n_calls)
         if match is None:
-            assert spark.suggest_object(clip) == good
+            assert spark.suggest_object(clip) == {**good, "source": "muse-spark-1.3"}
         else:
             with pytest.raises(ModelOutputError, match=match):
                 spark.suggest_object(clip)
