@@ -11,3 +11,4 @@ data/frames/
 data/uploads/
 data/store.pkl
 data/store.tmp
+!data/gate/clips/*.mp4

@@ -227,6 +227,25 @@ class AuditDraftOut(BaseModel):
     interview: AuditInterview
 
 
+class FlightWindow(BaseModel):
+    t_start: float
+    t_end: float
+
+
+class FlightWindowsOut(BaseModel):
+    """Suggested flight windows (T141). Computed by physics/, never by a model; the user picks and confirms."""
+    draft_id: str
+    source: Literal["physics"] = "physics"
+    track_source: Literal["frame_diff", "color"]
+    windows: list[FlightWindow]
+    scanned_until_s: float
+
+
+class AuditExplanation(BaseModel):
+    source: Literal["template", "model"]  # "model" = Muse Spark (T45); numbers are always filled by the program
+    text: str
+
+
 class AuditOut(BaseModel):
     """Video physics audit. verdict is relative to assumed_model only; never real vs generated."""
     audit_id: str
@@ -249,3 +268,5 @@ class AuditOut(BaseModel):
     nearest_body: str | None = None  # body whose surface gravity is closest to the apparent g
     events: list[PersistenceEventOut]
     limits: list[str]
+    explanation: AuditExplanation | None = None
+    headline: AuditExplanation | None = None  # one-line Muse Spark headline (T67/T143); None without a model

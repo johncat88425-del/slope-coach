@@ -7,6 +7,10 @@ export const pages = [
   {route: 'report', title: '實驗報告'},
   {route: 'audit', title: '檢查影片'},
   {route:'demo',title:'對照展示'},
+  {route:'wall',title:'結果牆'},
+ {route:'compare',title:'雙片比較'},
+ {route:'examples',title:'範例結果'},
+ {route:'how',title:'運作方式'},
 ] as const;
 export type Route = typeof pages[number]['route'];
 export type Point = {x: number; y: number};
@@ -45,10 +49,12 @@ export function auditIdFromHash(hash:string):string|null {
  try {return decodeURIComponent(match[1]) || null} catch{return null}
 }
 export function auditHash(id:string){return '#/audits/'+encodeURIComponent(id)}
+export function exampleKeyFromHash(hash:string){const m=/^#examples\/([^/?#]+)$/.exec(hash);try{return m?decodeURIComponent(m[1]):null}catch{return null}}
 export function resolveRoute(hash: string): Route {
+ if(exampleKeyFromHash(hash))return 'examples';
   if(auditIdFromHash(hash)!==null)return 'audit';
   const route = hash.replace(/^#\/?/, '');
-  return pages.find(page => page.route === route)?.route ?? 'home';
+  return pages.find(page => page.route === route)?.route ?? 'audit';
 }
 export function validateDraft(draft: Draft): string[] {
   const errors: string[] = [];
@@ -86,3 +92,6 @@ export function saveCalibration(experiment: Experiment): Experiment {
     lengthM: Number(draft.length), heightM: Number(draft.height), rulerLengthM: Number(draft.rulerLength),
   }};
 }
+
+export function auditIdFromPath(path:string){const m=/^\/audit\/([^/]+)\/?$/.exec(path);try{return m?decodeURIComponent(m[1]):null}catch{return null}}
+export function shareAuditUrl(id:string,origin:string){return new URL('/audit/'+encodeURIComponent(id),origin).href}

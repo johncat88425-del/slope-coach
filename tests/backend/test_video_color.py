@@ -50,3 +50,19 @@ def test_colour_comes_only_from_the_human_label():
     assert color_for("orange ball") == "orange"
     assert color_for("Orange ping pong ball") == "orange"
     assert color_for("ball") is None and color_for("") is None
+
+
+def test_other_named_colours_including_red_across_zero_hue():
+    import pytest as _pytest
+
+    for name, rgb in (("yellow", (240, 220, 30)), ("green", (40, 200, 60)), ("blue", (30, 80, 230)),
+                      ("red", (230, 30, 40))):
+        frames = []
+        for i in range(12):
+            f = np.full((200, 300, 3), 230, np.float32)
+            disk(f, 40 + 6 * i, 60 + i, 8, rgb)
+            frames.append(f)
+        pts, _ = track_color(np.stack(frames), 30.0, 0.0, name)
+        assert len(pts) == 12, name
+        assert pts[5][1] == _pytest.approx(70, abs=1.0), name
+    assert color_for("yellow tennis ball") == "yellow" and color_for("red ball") == "red"

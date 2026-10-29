@@ -4,6 +4,7 @@ export type Language='en'|'zh';
 const Context=createContext<Language>('en');
 export const LanguageProvider=Context.Provider;
 export const dictionary:Record<string,string>={
+'固定模板（未使用模型）':'Fixed template (no model used)',
 '由 SAM 3.1 追蹤':'Tracked by SAM 3.1','frame differencing（未使用模型）':'frame differencing (no model used)','顏色＋移動追蹤（未使用模型）':'colour + motion tracking (no model used)',
 '對照展示':'Compare outcomes',
 '與單擺模型一致':'Consistent with the assumed pendulum model','與單擺模型不一致':'Inconsistent with the assumed pendulum model','與單擺模型無法判斷':'Insufficient data with the assumed pendulum model',
@@ -34,6 +35,9 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Before recording':'拍攝檢查清單','Keep the camera fixed on a tripod.':'鏡頭固定在腳架上。','Film from the side.':'從側面拍攝。','Keep one moving object in frame.':'畫面中只有一個移動物體。','Use a clearly coloured ball, such as orange.':'使用橘色等顏色鮮明的球。','Use normal speed, without slow motion or retiming.':'正常速度，不用慢動作或變速。','Keep motion parallel to the image plane, away from the camera direction.':'運動平行於影像平面，不要朝鏡頭飛。','When capture conditions or evidence fail the quality checks, the system returns insufficient data rather than forcing an answer.':'拍攝條件或證據未通過品質檢查時，系統會拒判，不會硬給答案。',
+'Motion Audit':'影片物理稽核','Video physics audit':'影片物理稽核','Check motion against your assumed physical model.':'檢查影片中的運動是否符合你假設的物理模型。','Check whether motion in a video fits your assumed physical model.':'檢查影片中的運動是否符合你假設的物理模型','Experiment coach':'實驗教練','Check video':'檢查影片','Main sections':'主要分頁','Review resources':'參考內容','Scope and limitations':'支援範圍與限制','Compare outcomes':'結果對照','Fixed camera · Supported motion models · Explicit insufficient-data outcomes':'固定鏡頭・支援限定模型・明確呈現無法判斷','Fixed camera · Approximately side-on · One straight slope · One slider':'固定鏡頭・近似側視・單一直線斜坡・單一滑塊',
+'John’s recorded experiments':'john 的實拍實驗','Videos filmed by john; annotations confirmed by john. All three records are shown, including the inconsistent result whose cause remains unknown.':'影片由 john 自己拍攝、標註由 john 確認。完整呈現三份紀錄，包括原因未明的不一致結果。','Original videos are withheld for household privacy. These saved records show trajectories and measurements without loading video.':'為保護住家隱私，不公開原片；只顯示保存的軌跡與量測結果。','Inconsistent with the assumed model; cause unknown. This result does not establish a cause.':'與假設模型不一致，原因不明；此結果不能確定原因。',
 'Slow motion or retimed playback (user):':'慢動作或變速播放（使用者）：','Not provided':'未提供','Reported limitations':'後端回報的限制',
 'Object name':'物體名稱',
 'Muse interview — confirm before checking':'Muse 偵訊：檢查前先確認','Questions by Muse Spark':'由 Muse Spark 提問','Fixed questions (mock)':'固定問題（mock，未呼叫模型）','Prepare questions':'準備問題','Confirm and check':'確認答案並檢查','Interview video':'偵訊影片','Camera remained fixed':'鏡頭全程固定','Slow motion or retimed playback':'慢動作或變速播放','Choose…':'請選擇…','Yes':'是','No':'否','Measured object size (metres, optional)':'使用者量測的物體尺寸（公尺，選填）','Questions guide your review. Only your confirmed answers are sent as measurements and capture conditions.':'問題協助核對；量測與拍攝條件只送出你確認的答案。','Answer the questions using the matching fields below. All values remain yours to confirm.':'請用下方對應欄位回答問題；所有數值仍需由你確認。','Segment start (seconds)':'片段開始（秒）','Segment end (seconds)':'片段結束（秒）','Confirm camera, playback speed and motion model.':'請確認鏡頭、播放速度與運動模型。',
