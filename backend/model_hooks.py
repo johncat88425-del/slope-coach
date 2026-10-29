@@ -26,6 +26,10 @@ class ModelHooks(Protocol):
         y/height in 0..1, area as a fraction of width*height. One detection per frame, centroid None
         where the object is not found. Raise TrackingUnavailable when SAM is not connected."""
         ...
+    # Optional (T143); the backend looks them up with getattr, so hooks without them still work.
+    # Both get the finished audit (verdict, reasons, numbers) and return checked text or None.
+    #   def explain_audit(self, audit: dict) -> str | None: ...   plain-language explanation
+    #   def headline_audit(self, audit: dict) -> str | None: ...  one-line headline
 
 
 # Asked when no model is connected, or when the model's questions fail the output checks.
