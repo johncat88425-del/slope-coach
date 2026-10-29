@@ -25,3 +25,5 @@ main>*{min-width:0}section,article,fieldset{overflow-wrap:anywhere}input,select,
 article,figure,details,.results-grid,.demo-grid{min-width:0;max-width:100%}h1,h2,h3,figcaption,blockquote{overflow-wrap:anywhere}blockquote{margin:12px 0;padding-left:12px;border-left:3px solid #a8bbb1}input[type=range],progress{width:100%}.results-grid details>article{padding:0}summary:focus-visible{outline:3px solid #007e91;outline-offset:2px}
 @media(max-width:390px){header b{font-size:20px}header span{width:100%}main{padding:0 8px}.guided-demo{padding:8px 12px}section{padding:12px}fieldset{padding:10px}.language-switch label{flex-wrap:wrap}.demo-grid,.results-grid{grid-template-columns:minmax(0,1fr)}button{white-space:normal;overflow-wrap:anywhere}}
 @media(prefers-reduced-motion:reduce){html:focus-within{scroll-behavior:auto}}
+
+.pair-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.pair-grid>div{min-width:0}.pair-grid section{padding:12px}@media(max-width:900px){.pair-grid{grid-template-columns:minmax(0,1fr)}}

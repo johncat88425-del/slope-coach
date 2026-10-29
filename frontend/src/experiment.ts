@@ -8,6 +8,7 @@ export const pages = [
   {route: 'audit', title: '檢查影片'},
   {route:'demo',title:'對照展示'},
   {route:'wall',title:'結果牆'},
+ {route:'compare',title:'雙片比較'},
 ] as const;
 export type Route = typeof pages[number]['route'];
 export type Point = {x: number; y: number};
