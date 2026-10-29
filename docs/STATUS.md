@@ -13,7 +13,7 @@
 | 誰 | 現在做 | 細節 |
 | --- | --- | --- |
 | **Muse**（最優先） | push T05、T29 → **T38 SAM** → T66 → T34 | 你做好的 T05、T29 一直沒 push，**先 commit 並 push 到 `muse/T05-meta-client`**。接著做 T38：在 MetaHooks 實作 `track_object(video_path, text_prompt, t_start, t_end)`，呼叫 `sam-3.1`，回傳格式見 docs/API.md v0.5（座標正規化到 0..1）。後端已經接好，你只要回傳 detections，稽核就會自動改用 SAM。測試影片可以用 `/mnt/project-files/gate/own_*.mov`（只有手入鏡，沒有臉），提示文字用 `orange ball`。再來做 T66：`interview_audit`。 |
-| **Codex** | T85 → T86 | 物體名稱欄位、標明 `track_source`（SAM 3.1 或 frame differencing）、顯示 `slow_motion`。細節見完成表。 |
+| **Codex** | T89 → T90 | 檢查 Claude 在 T88 加的 `track_source: color` 前端標籤；把 john 的真實影片結果（`data/demo/real_own_*.json`）放進 demo 導覽。細節見完成表。 |
 | **Antigravity** | T02 → T52 → T42 | requirements.txt 與 `scripts/dev.sh`；GitHub Actions 跑 pytest 和 npm test（要裝 ffmpeg）；稽核流程的端到端測試與截圖。 |
 | **Manus** | T23 → T22 | demo 分鏡加一段「真實影片上誠實拒判／換追蹤方法」的故事。成功和拒判要放在同一段 demo。 |
 | **Claude** | T32 關卡、T87 顏色追蹤、審查 PR | 跑關卡、填結果、決定方向。 |
@@ -67,6 +67,8 @@
 - [x] T81 Codex：**demo 導覽模式**。加一個「Guided demo」按鈕，按照順序帶評審看：首頁說明（能判斷什麼、不能判斷什麼）→ Muse 偵訊 → 結果與鬼影對照 → 物理名片 → 三種結果並排。每一步用一句英文說明，加上「Next」按鈕，並標明哪些內容由 Muse Spark 產生。只用已經有的畫面，不新增假資料 — commit c4b1481
 - [x] T82 Codex：英文介面文字總檢查，給評審看的。統一用語（consistent / inconsistent / insufficient data with the assumed model），刪掉內部用語（例如 fixture、draft id），按鈕文字要短。不准出現 real、fake、AI-generated、detect — commit 6b73368
 - [x] T85 Codex：「檢查影片」和 Muse 偵訊加一個「物體名稱」欄位，送 `object_name`（給 SAM 的文字提示，預設 ball）。結果區要依照 `track_source` 標明「由 SAM 3.1 追蹤」或「frame differencing（未使用模型）」，物理名片和匯出也要寫（API v0.5） — commit 8a7bd26
+- [ ] T89 Codex：檢查並修飾 Claude 在 T88 對前端的最小改動（`track_source: "color"` → 「顏色＋移動追蹤（未使用模型）」），樣式和其他來源標籤一致，補一個測試
+- [ ] T90 Codex：demo 導覽加「真實影片」一段，讀 `data/demo/real_own_1.json` 到 `real_own_3.json`（`real_clip: true`）。要標明「john 自己拍的影片、標註由 john 確認」，並把 own_1、own_2 的「一致、最接近地球」和 own_3 的「不一致、原因不明」放在一起，不挑片。這些紀錄沒有影片（`video_url` 是空字串，john 的家不放上公開 repo），要能正常顯示軌跡、鬼影和數字
 - [x] T86 Codex：結果、名片和匯出都要顯示使用者回答的 `slow_motion`。如果是因為慢動作被拒判，要用一句話說明原因（直接照後端的 reason，不要自己改寫） — commit d560608
 
 **Antigravity**（照順序做）
@@ -91,6 +93,7 @@
 - [x] 審查並合併 Codex PR #4 與 #16（T36–T51，含 #4 的內容）：pytest 58、npm 37、build 都通過；前端沒有自己算物理，畫面沒有「真／假／AI 生成」字眼
 - [x] T37 Claude：後端稽核端點 `POST /api/audits`、`GET /api/audits/{aid}`（docs/API.md v0.2）
 - [ ] T32 跑關卡：自拍 3 支 Q1 pass、Q3 pass；等 john 的 Meta AI 影片跑 Q2
+- [x] T91 Claude：`data/demo/real_own_1..3.json`：john 3 支真實影片經 `/api/audits` 的完整結果（顏色追蹤、0.11 m），給 demo 和 Codex T90 用；不含影片和疊加圖 — 見 PR T91
 - [x] T88 Claude：網站的「檢查影片」沒接 SAM 時，物體名稱有顏色（如 `orange ball`）就用 T87 的顏色追蹤，`track_source: "color"`（API v0.6）。前端只加了最小的型別與標籤，讓畫面不會拒收；Codex 請檢查文字和樣式。用 john 的 3 支影片走網站流程：g = 9.62、9.81、8.15，和關卡一致 — 見 PR T88
 - [x] T87 Claude：不用模型的顏色＋移動追蹤（`backend/video.track_color`）。人工標註的物體名稱有顏色（例如 `orange ball`）時，關卡改用它；`--tracker frame_diff` 可重現舊規則。球的大小改用短軸寬度，不受動態模糊影響。3 支真實影片的紅點都落在球上 — 見 PR T87
 - [x] T55 Claude：稽核支援 `assumed_model=bounce`（接上 `check_bounces`）
@@ -272,6 +275,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 02:40 例行巡查：Muse、Antigravity 仍然沒有 push；Codex 沒有新分支。Claude 加了真實影片的 demo 紀錄（T91），替 Codex 補 T89、T90。
 - 10/29 Claude T88：網站稽核接上顏色追蹤（`track_source: color`）。為了不讓前端拒收新值，Claude 直接改了前端 4 個檔案的型別和標籤（只加一個值，沒動樣式），請 Codex 之後檢查。
 - 10/29 02:35 Claude：john 確認時間窗和 track_ok，關卡 Q1 通過、Q3 通過，Q2 等 Meta AI 影片。
 - 10/29 02:30 Claude：john 量到球直徑 0.11 m。關卡試跑：own_1 g = 9.62、own_2 g = 9.82 一致，own_3 g = 8.17 小幅不一致。舊版 frame_diff 三支都失敗。結果寫進「關卡結果」。
