@@ -315,7 +315,9 @@ def describe_scene(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_scene(json.loads(response.output_text or ""))
+            out = _validate_scene(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"scene check failed validation: {last_error}")
@@ -372,7 +374,9 @@ def suggest_release_time(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_release(json.loads(response.output_text or ""))
+            out = _validate_release(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"release suggestion failed validation: {last_error}")
@@ -430,7 +434,9 @@ def suggest_motion_segment(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_segment(json.loads(response.output_text or ""))
+            out = _validate_segment(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"motion segment failed validation: {last_error}")
@@ -551,7 +557,9 @@ def check_capture_conditions(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_capture(json.loads(response.output_text or ""))
+            out = _validate_capture(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"capture check failed validation: {last_error}")

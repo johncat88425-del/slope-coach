@@ -44,7 +44,7 @@ def test_explain_success_grounds_numbers(tmp_path, monkeypatch):
 def test_explain_audit_kind(tmp_path, monkeypatch):
     fake = _setup(monkeypatch, tmp_path, "與假設一致。")
     out = explain.explain_result({"verdict": "consistent"}, kind="audit")
-    assert out == {"explanation": "與假設一致。"}
+    assert out == {"explanation": "與假設一致。", "source": "muse-spark-1.3"}
     assert fake.responses.calls[0]["model"] == "muse-spark-1.3"
 
 

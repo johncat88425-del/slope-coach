@@ -123,8 +123,9 @@ def choose_intervention(
 ) -> dict[str, Any]:
     """Pick one next check from the evidence candidates.
 
-    Returns {"choice": check_type | None, "rationale": str}. With no
-    candidates, returns insufficient-evidence without an API call.
+    Returns {"choice", "rationale", "source"}. With no
+    candidates, returns insufficient-evidence without an API call
+    (and without "source").
     """
     if not isinstance(comparison, Mapping):
         raise ModelOutputError("comparison must be a mapping")
@@ -185,7 +186,8 @@ def choose_intervention(
                             raise ModelOutputError(
                                 "output check failed: " + "; ".join(text_check.problems)
                             )
-                        return {"choice": choice, "rationale": rationale.strip()}
+                        return {"choice": choice, "rationale": rationale.strip(),
+                                "source": resolved}
                     else:
                         raise ModelOutputError(f"unknown tool call {name!r}")
             raise ModelOutputError("agent exceeded the step limit without deciding")
@@ -356,8 +358,8 @@ def plan_audit_checks(
 ) -> dict[str, Any]:
     """Plan which audit checks to keep, with a grounded rationale (T45).
 
-    Returns {"selected": [...], "rationale": str}. With no tracked points,
-    returns an empty plan without an API call.
+    Returns {"selected", "rationale", "source"}. With no tracked points,
+    returns an empty plan without an API call (and without "source").
     """
     if not isinstance(audit, Mapping):
         raise ModelOutputError("audit must be a mapping")
@@ -438,6 +440,7 @@ def plan_audit_checks(
                         return {
                             "selected": list(dict.fromkeys(selected)),
                             "rationale": filled,
+                            "source": resolved,
                         }
                     else:
                         raise ModelOutputError(f"unknown tool call {cname!r}")

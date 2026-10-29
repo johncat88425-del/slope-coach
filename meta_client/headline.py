@@ -110,10 +110,10 @@ def write_headline(
     model: str | None = None,
     timeout: float = _client.SPARK_TIMEOUT_S,
     tracker: CostTracker | None = None,
-) -> str | None:
+) -> dict[str, str] | None:
     """Write one headline template for an audit, filled and verified.
 
-    Returns the filled headline, or None when the audit has no gravity
+    Returns {"headline", "source"}, or None when the audit has no gravity
     numbers (insufficient_data, pendulum) or no valid headline passes
     after retries (caller must not display anything then).
     """
@@ -151,7 +151,8 @@ def write_headline(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_headline(json.loads(response.output_text or ""), audit)
+            filled = _validate_headline(json.loads(response.output_text or ""), audit)
+            return {"headline": filled, "source": resolved}
         except (json.JSONDecodeError, ModelOutputError, ValueError):
             continue
     return None

@@ -32,7 +32,7 @@ def test_describe_scene_success_and_cost(tmp_path, monkeypatch):
     monkeypatch.setattr(spark, "get_tracker", lambda: tracker)
 
     out = spark.describe_scene(photo, tracker=tracker)
-    assert out == SCENE_OK
+    assert out == {**SCENE_OK, "source": "muse-spark-1.3"}
 
     call = fake.responses.calls[0]
     assert call["model"] == "muse-spark-1.3"
@@ -126,7 +126,8 @@ def test_suggest_release_time_success(tmp_path, monkeypatch):
     monkeypatch.setattr("meta_client.client.upload_file", lambda p, **k: "file-9")
     tracker = _tracker(tmp_path)
     out = spark.suggest_release_time(clip, tracker=tracker)
-    assert out == {"candidate_t0_s": 1.5, "reason": payload["reason"]}
+    assert out == {"candidate_t0_s": 1.5, "reason": payload["reason"],
+                     "source": "muse-spark-1.3"}
     parts = fake.responses.calls[0]["input"][0]["content"]
     assert parts[1] == {"type": "input_file", "file_id": "file-9"}
     assert tracker.total_usd() > 0
@@ -190,7 +191,7 @@ def test_suggest_motion_segment_success(tmp_path, monkeypatch):
     clip, fake = _segment_setup(tmp_path, monkeypatch, payload)
     tracker = _tracker(tmp_path)
     out = spark.suggest_motion_segment(clip, tracker=tracker)
-    assert out == payload
+    assert out == {**payload, "source": "muse-spark-1.3"}
     call = fake.responses.calls[0]
     assert call["model"] == "muse-spark-1.3"
     assert call["text"]["type"] == "json_schema"
@@ -289,7 +290,7 @@ def test_check_capture_conditions_success(tmp_path, monkeypatch):
     clip, fake = _capture_setup(tmp_path, monkeypatch, payload)
     tracker = _tracker(tmp_path)
     out = spark.check_capture_conditions(clip, tracker=tracker)
-    assert out == payload
+    assert out == {**payload, "source": "muse-spark-1.3"}
     assert fake.responses.calls[0]["text"]["type"] == "json_schema"
     assert tracker.total_usd() > 0
 
