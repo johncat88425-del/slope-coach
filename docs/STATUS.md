@@ -15,9 +15,9 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T118（解說和標題改英文，重產 demo 紀錄） |
+| **Muse** | 目前沒有待辦（等 Claude 補） |
 | **Codex** | T157（demo 資料已定版，可以做） |
-| **Antigravity** | T161 → T121 → T122 → T53 → T68 |
+| **Antigravity** | T121 → T122 → T53 → T68 |
 | **Manus** | T163 → T22 |
 | **Claude** | 審查合併 PR；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
@@ -48,7 +48,6 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
-- [x] T118 Muse：（最優先）demo 紀錄裡的解說和標題現在是中文，但介面預設英文，評審也看英文。(1) `meta_client/headline.py` 加英文版（`lang` 參數，規則跟中文版一樣：模型不寫數字、不准真假字眼），補測試；(2) `meta_client/hooks.py` 的 `explain_audit` 傳 `lang="en"`，`headline_audit` 用英文版；(3) `pytest` 全過；(4) 重跑 T117 的同一個指令（約 $0.35，`--json-dir data/demo --explain`）；(5) 確認 10 支的 verdict 和數字跟現在一樣（只有 explanation、headline 文字變），不一樣就寫進 STATUS；(6) `git status` 確認沒有影片，commit，push 分支 `muse/T118-english-text`。 — commit 342d06c（headline 加 lang 版＋hooks 切英文＋3 測試；10 支 verdict 全同、數字差 <0.2%、文字全轉英文無中文殘留。explain 又是 10 次零重試。$0.333，累計 $1.686）
 - [x] T117 Muse：（最優先）產生 demo 用的 SAM 版紀錄（含 Muse Spark 解說）。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --json-dir data/demo --explain --out data/gate/product_results_sam_v4_demo.md`（約 $0.35；會覆蓋 `data/demo/real_own_*.json` 和 `generated_*.json`，顏色版留在 git 歷史和 `product_results.md`）；(3) 確認 10 支的 verdict 跟 v4 表一樣，不一樣就寫進 STATUS，不要挑；(4) `git status` 確認只有 `data/demo/*.json`、結果檔、STATUS、cost_log 改動，**沒有任何影片**；(5) commit，push 分支 `muse/T117-demo-sam`。 — commit 02fb0c6（10 支 verdict 全跟 v4 一樣；10 個 demo JSON 換成 SAM 版＋模型解說／標題；explain 10 次零重試，T115 修好了。$0.344，累計 $1.353）
 - [x] T116 Muse：（最優先）Claude 已修好 SAM 的計時 bug（`meta_client/sam.py` 改用 `-vf fps=15`），請重跑 SAM 全部 10 支：(1) `git checkout main`、`git pull origin main`；(2) 確認 `~/slope-own-clips` 裡有 3 支自拍＋7 支生成影片；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v4.md`（約 $0.12，不會呼叫解說）；(4) 表格貼進「SAM 對照」v3 下面，標題「v4（修正 15fps 計時後）」，v2、v3 不要刪；(5) 看自拍 3 支的 overlay 紅點，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T116-sam-v4`。 — commit 61f00f2（v4：自拍 3 支全變一致 g=9.30／9.46／8.68，生成側 verdict 不變；3 張 overlay 紅點在球上。`~` 目錄仍不存在，續用 /tmp/slope-own-clips。$0.107，累計 $1.009）
 - [x] T114 Muse：自拍影片也用 SAM 跑（demo 要「同一種追蹤」下真實一致、生成不一致、拒判三種都有）。步驟：(1) 請 john 把 3 支自拍影片 IMG_8426.mov、IMG_8429.mov、IMG_8434.mov 放進 repo 外的資料夾 `~/slope-own-clips`，檔名改成 manifest 的名字 `own_1_IMG_8426.mov`、`own_2_IMG_8429.mov`、`own_3_IMG_8434.mov`（**不准放進 repo、不准 commit**）；(2) `cp data/gate/clips/*.mp4 ~/slope-own-clips/`；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v3.md`（現在批次預設不呼叫解說和標題，只花 SAM 的錢，約 $0.12）；(4) 表格貼進「SAM 對照」v2 下面，標題「v3（加入自拍影片）」；(5) 每支自拍影片看 overlay 確認紅點在球上，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T114-sam-own`。 — commit 32e8600（v3：自拍 3 支全判不一致、偏角 -22～-27 度，與顏色版矛盾；3 張 overlay 紅點都在球上。$0.107，累計 $0.902）
@@ -62,7 +61,6 @@
 **Antigravity**（照順序做）
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
-- [x] T161 Antigravity：（T120 的手機版重做）三張 390 px 手機截圖檔案已重拍，先等 data-testid 出現並捲入視窗後截圖，確認三張 md5 皆不同（results_wall: 92ab8e63, pair_comparison: 3b5addab, ghost_review: 716e193e）— commit f7f98f2
 - [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
 - [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
 
@@ -292,6 +290,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 10/29 13:35 Claude：合併 Muse T118（英文解說與標題；10 支 verdict 不變，SAM 重跑數字差 <0.2%，例如 own_1 9.30→9.31，README 註明）與 Antigravity T161（三張手機截圖 md5 都不同；gate_prepare 在沒有 drawtext 的 ffmpeg 改用無字幕縮圖）。
 - 10/29 Muse 完成 T118（分支 muse/T118-english-text）：headline 加 lang 參數（英文 prompt＋天體名不轉中文，禁真假／real／fake／AI 規則不變）＋hooks 切英文＋3 測試；pytest 221 pass。重跑 demo 指令：10 支 verdict 全同、數字差 <0.2%（SAM 非確定性；own_1 顯示值 9.30→9.31）、10 份文字全轉英文且無中文殘留、6 份合成 JSON 未動。explain 連續第二次 10 次零重試。$0.333，累計 $1.686。
 - 10/29 13:20 Claude：審查並合併 Codex T162（鍵盤焦點、對比、停用狀態可讀、解說來源標示）。
 - 10/29 Codex 沒有待辦了。T162 已完成並推送 codex/T162-a11y（PR #80，目標 main），已同步協調者的最新進度。T157 尚無 Claude 的資料定版公告，依 john 規則保留未勾；無其他可執行的 Codex 待辦。
@@ -324,6 +323,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ### 已完成的任務（從完成表搬來）
 
+- [x] T118 Muse：（最優先）demo 紀錄裡的解說和標題現在是中文，但介面預設英文，評審也看英文。(1) `meta_client/headline.py` 加英文版（`lang` 參數，規則跟中文版一樣：模型不寫數字、不准真假字眼），補測試；(2) `meta_client/hooks.py` 的 `explain_audit` 傳 `lang="en"`，`headline_audit` 用英文版；(3) `pytest` 全過；(4) 重跑 T117 的同一個指令（約 $0.35，`--json-dir data/demo --explain`）；(5) 確認 10 支的 verdict 和數字跟現在一樣（只有 explanation、headline 文字變），不一樣就寫進 STATUS；(6) `git status` 確認沒有影片，commit，push 分支 `muse/T118-english-text`。 — commit 342d06c（headline 加 lang 版＋hooks 切英文＋3 測試；10 支 verdict 全同、數字差 <0.2%、文字全轉英文無中文殘留。explain 又是 10 次零重試。$0.333，累計 $1.686）
+- [x] T161 Antigravity：（T120 的手機版重做）三張 390 px 手機截圖檔案已重拍，先等 data-testid 出現並捲入視窗後截圖，確認三張 md5 皆不同（results_wall: 92ab8e63, pair_comparison: 3b5addab, ghost_review: 716e193e）— commit f7f98f2
 - [x] T162 Codex：評審用鍵盤和手機看的品質檢查（只改 `frontend/`）。(1) 只用鍵盤（Tab、Enter、空白鍵）從上傳影片走到看到結果，記下卡住或看不到焦點的地方並修好；(2) 檢查文字和背景的對比至少 4.5:1，不夠的改顏色 token；(3) 390 px 寬時沒有橫向捲動；(4) 每個由模型產生的區塊都有「由 Muse Spark／SAM 3.1 產生」標示，沒有的補上。補測試，`npm test` 和 `npm run build` 都要過，push 分支 `codex/T162-a11y`。 — commit be58457
 - [x] T159 Codex：（API v1.0）偵訊畫面用 `draft.suggestion` 預填「Object name」，旁邊寫「Suggested by Muse Spark — please check」，使用者改了就用使用者的。`camera_looks_static` 只顯示成提示文字，**不准自動勾選**「鏡頭固定」。`suggestion` 是 null 時什麼都不顯示。補測試 — commit 585c561
 - [x] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch） — commit 3c69d20
