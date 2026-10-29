@@ -115,6 +115,8 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T149 Codex：T133–T142 的新元件補齊繁中和英文切換，加測試確認沒有漏翻的字串 — commit f53db34
 - [x] T150 Codex：時間窗選擇器的鍵盤操作（方向鍵移動把手、Enter 確認）和螢幕閱讀器標籤，補測試 — commit 381df65
 
+- [x] T152 Codex：依 john「發現待辦就做」指示，修正時間窗候選請求途中換片／送出時，舊草稿晚到可能綁到新片的競態；補測試。 — commit 待回填（本次程式提交）
+
 **Antigravity**（照順序做）
 - [x] T02 Antigravity→Claude：（10/29 06:40 Antigravity 整晚沒有 push，改由 Claude 做）`requirements.txt`、`scripts/dev.sh`（檢查 ffmpeg／python3／npm，缺什麼就列出 brew 指令；後端 8000、前端 5173；沒有金鑰時用 mock） — 見 PR T02
 - [ ] T14 Antigravity：用 `seed_demo` 跑斜坡流程的端到端測試，截圖放 `docs/screenshots/`，問題寫進「缺什麼」
@@ -534,3 +536,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T150：把手方向鍵精確0.01秒、Home/End有界移動，Enter僅在時間輸入且有效未確認時確認；數字欄與把手分開label、讀屏秒數與雙語操作說明。鍵盤邏輯與SSR語意測試通過；npm85 pass、標準/靜態build pass（主入口約72kB），pytest192 pass/1 fail（drawtext）。
 
 - 10/29 Codex 沒有待辦了：T143→T146→T151→T145→T149→T150 已依序測試、各自分支推送並回填commit；再次pull main確認Codex區沒有[ ]。npm85 pass、標準/靜態build pass（entry約72kB），pytest192 pass/1 fail（ffmpeg缺drawtext，未略過）。interview來源跨載入與spend回傳契約待後端確認，已列待決定；未呼叫付費模型、未推main或部署，瀏覽器視覺/鍵盤實測仍待Antigravity。
+- 10/29 Codex T152：主動檢查發現換片時候選草稿可能晚到綁錯片；新增選取版本綁定、同片請求去重、送出／切換／匯入後失效，忽略已卸載候選回傳。另用結果ID綁定本機預覽，讀其他紀錄時不套用舊片。補慢回應、切換、消耗、重試與錯片預覽測試；npm90 pass、兩種build pass，pytest192 pass/1 fail（drawtext）。
