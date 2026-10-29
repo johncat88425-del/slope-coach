@@ -60,6 +60,21 @@ HEADLINE_PROMPT = (
     'matching the schema: exactly one key, "headline_template".'
 )
 
+HEADLINE_PROMPT_EN = (
+    "You write ONE memorable headline in English for a video physics "
+    "audit. The clip's apparent gravity is {g_vs_earth:2} times Earth's, "
+    "closest to {nearest_body} among known bodies. Write the headline as "
+    "a TEMPLATE: copy those two slots exactly as written (names and "
+    "braces), never write any digits yourself. Example shape: This ball "
+    "falls as if on {nearest_body}, at {g_vs_earth:2} times Earth's "
+    "gravity. Rules. One sentence, under 200 characters, about how the "
+    "motion compares to the model; never claim proof or causes (no "
+    "proves, confirms, must be). Never write real video, fake video, "
+    "AI-generated, or any equivalent: this is about motion matching a "
+    "model, not about whether the video is real. Return JSON only, "
+    'matching the schema: exactly one key, "headline_template".'
+)
+
 
 def rounded_number_sources(values: dict[str, float]) -> dict[str, float]:
     """Deterministic roundings of slot values, for the filled-text check.
@@ -75,7 +90,7 @@ def rounded_number_sources(values: dict[str, float]) -> dict[str, float]:
     return out
 
 
-def _validate_headline(raw: Any, audit: dict[str, Any]) -> str:
+def _validate_headline(raw: Any, audit: dict[str, Any], *, lang: str = "zh") -> str:
     if not isinstance(raw, dict):
         raise ModelOutputError("headline must be a JSON object")
     template = raw.get("headline_template")
@@ -93,7 +108,8 @@ def _validate_headline(raw: Any, audit: dict[str, Any]) -> str:
         raise ModelOutputError("nearest_body must be a string")
     if _STRING_SLOT.search(template) is None:
         raise ModelOutputError("headline must use the {nearest_body} slot")
-    with_body = _STRING_SLOT.sub(BODY_ZH.get(body, body), template)
+    name = BODY_ZH.get(body, body) if lang == "zh" else body
+    with_body = _STRING_SLOT.sub(name, template)
     filled, fill_check = fill_numbers(with_body, {"g_vs_earth": g_vs_earth})
     if not fill_check.ok:
         raise ModelOutputError("headline slots failed: " + "; ".join(fill_check.problems))
@@ -117,6 +133,7 @@ def _validate_headline(raw: Any, audit: dict[str, Any]) -> str:
 def write_headline(
     audit: dict[str, Any],
     *,
+    lang: str = "zh",
     model: str | None = None,
     timeout: float = _client.SPARK_TIMEOUT_S,
     tracker: CostTracker | None = None,
@@ -127,6 +144,9 @@ def write_headline(
     numbers (insufficient_data, pendulum) or no valid headline passes
     after retries (caller must not display anything then).
     """
+    if lang not in ("zh", "en"):
+        raise ValueError("lang must be 'zh' or 'en'")
+    prompt = HEADLINE_PROMPT if lang == "zh" else HEADLINE_PROMPT_EN
     numbers = audit.get("numbers") or {}
     g_vs_earth = numbers.get("g_vs_earth")
     if audit.get("verdict") == "insufficient_data":
@@ -145,7 +165,7 @@ def write_headline(
                 input=[{
                     "type": "message",
                     "role": "user",
-                    "content": [{"type": "input_text", "text": HEADLINE_PROMPT}],
+                    "content": [{"type": "input_text", "text": prompt}],
                 }],
                 text=_text_format("headline", HEADLINE_SCHEMA),
                 timeout=timeout,
@@ -161,7 +181,8 @@ def write_headline(
             output_tokens=usage["output_tokens"],
         )
         try:
-            filled = _validate_headline(json.loads(response.output_text or ""), audit)
+            filled = _validate_headline(
+                json.loads(response.output_text or ""), audit, lang=lang)
             return {"headline": filled, "source": resolved}
         except (json.JSONDecodeError, ModelOutputError, ValueError):
             continue
