@@ -49,3 +49,5 @@ article,figure,details,.results-grid,.demo-grid{min-width:0;max-width:100%}h1,h2
 
 [data-testid="window-selector"] .fields>div{flex:1;min-width:min(100%,200px)}
 .model-headline{display:block;padding:12px 0;border:0;background:transparent}.model-headline h2{overflow-wrap:anywhere}.model-headline span{display:block;font-size:14px;line-height:1.5}
+
+.verdict-banner{padding:18px 20px;border-radius:8px;color:#fff;margin-bottom:16px}.verdict-banner h2{margin:0;font-size:clamp(22px,3vw,32px);line-height:1.3;color:inherit}.verdict-consistent{background:#185b3a}.verdict-inconsistent{background:#8b3e0b}.verdict-insufficient_data{background:#4e5960}

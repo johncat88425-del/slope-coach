@@ -1,4 +1,12 @@
 export const newUiCopy:Record<string,string>={
+"Consistent with free flight on Earth":"與地球上的自由飛行一致",
+"Inconsistent with free flight on Earth":"與地球上的自由飛行不一致",
+"Consistent with passive bouncing":"與被動彈跳一致",
+"Inconsistent with passive bouncing":"與被動彈跳不一致",
+"Consistent with pendulum motion":"與單擺運動一致",
+"Inconsistent with pendulum motion":"與單擺運動不一致",
+"Cannot judge this clip":"無法判斷這段影片",
+"Details":"詳細資料",
 "Upload a video → Prepare questions → Answer → Confirm time window → Check":"上傳影片 → 準備問題 → 回答 → 確認時間窗 → 檢查",
 "Offline demo: import saved JSON":"離線 demo：匯入已儲存的 JSON",
 "Advanced: check without the interview":"進階：略過問答直接檢查",
