@@ -6,17 +6,42 @@ Slope Coach audits moving objects in real-world or simulated videos against assu
 
 All model calls in production are strictly restricted to Meta AI models (Meta SAM 3.1 and Meta Muse Spark). Every physical measurement and fit is computed deterministically by Python numerical routines—no language model ever invents or estimates raw measurement numbers.
 
+**What it is not.** It does not judge whether a video is real or AI-generated, and it does not work on every video. A result only says whether the tracked motion is *consistent with*, *inconsistent with*, or *cannot be judged against* the motion model the user assumed. A real video can fail (bad framing, wrong scale), and a generated video can pass.
+
+## Where Meta models are used
+
+| Step | Meta model | What the model does | What it never does |
+| --- | --- | --- | --- |
+| Interview before the check | Muse Spark (`muse-spark-1.3`) | Looks at a few frames, suggests the object name, asks up to 3 questions (camera static? slow motion? object size?) | Fill in an answer for the user: every suggestion must be confirmed |
+| Object tracking | SAM 3.1 (`sam-3.1`) | Segments the named object frame by frame | Produce physics numbers: the centroids go to `physics/` |
+| Spoken answers | Voice Transcribe (`muse-voice-transcribe-1.0`) + Muse Spark | Turns a spoken answer into transcript and draft fields | Confirm a number: the user checks each field |
+| Explanation and headline | Muse Spark | Writes a plain-language explanation of the result | Write any number: numbers are slot-filled by code, and the text is checked for causal or authenticity claims before it is shown (falls back to a template) |
+
+Every model output is validated (JSON schema, value ranges, banned phrases) and labelled in the UI with the model that produced it. The backend refuses new paid calls once logged Meta API spend reaches US$120. Without `MODEL_API_KEY` the app runs with labelled mock hooks and colour tracking / frame differencing.
+
+## Results on our test set (one frozen rule set, no per-clip tuning)
+
+From `data/gate/product_results.md` (colour tracking). Rules were frozen in `scripts/gate_run.py` before any clip was run; later rule changes are logged with old and new results in `docs/STATUS.md`.
+
+| Clips | Consistent | Inconsistent | Insufficient data |
+| --- | --- | --- | --- |
+| 3 own clips of a thrown ball (phone, fixed camera) | 2 (g = 9.62, 9.81 m/s²) | 1 (g = 8.15 m/s²) | 0 |
+| 6 clips made with the Meta AI app | 0 | 2 (g = 1.71, 0.26 m/s²; acceleration not pointing down) | 4 (object size changes 30–79%, so it moves toward/away from the camera) |
+| 1 clip made with Manus | 0 | 0 | 1 (object tracked in only 55% of frames) |
+
+This is a small feasibility set, not a reliability benchmark. The own clips are not committed (privacy); the generated clips are in `data/gate/clips/`.
+
 ---
 
 ## Key Features (Currently Working)
 
 ### 1. Video Motion Physics Audit (`POST /api/audits`)
-- **Model Verification**: Tests whether motion in an uploaded video clip is consistent with an assumed physical hypothesis (`free_flight`, `bounce`, or `pendulum`).
+- **Model Verification**: Tests whether motion in an uploaded video clip is consistent with an assumed physical hypothesis (`free_flight`, `bounce`, or `pendulum`). Free flight is tested on real and generated clips; the bounce and pendulum checks are unit-tested on synthetic tracks but not yet on real clips.
 - **Deterministic Trajectory Analysis**:
   - Automatically extracts object centroid coordinates across frames (using frame differencing / color tracking, with zero-shot segmentation hooks for Meta SAM 3.1).
   - Fits apparent gravitational acceleration ($g_{\text{apparent}}$) and initial velocities ($v_{x0}, v_{y0}$) via least-squares optimization.
   - Compares the observed acceleration to reference celestial bodies (Earth: $9.81\text{ m/s}^2$, Moon: $1.62\text{ m/s}^2$, Mars: $3.71\text{ m/s}^2$, etc.).
-  - Computes implied time factor (detecting unintentional slow-motion effects).
+  - Computes the implied time factor, which flags footage that may be slowed down.
 - **Ghost Trajectory Comparison**:
   - Projects theoretical "ghost" coordinates following standard Earth gravity ($9.81\text{ m/s}^2$) directly alongside real empirical points.
 - **Principled Abstention**:
@@ -144,6 +169,15 @@ python scripts/e2e_audit.py
 
 ---
 
+## Limitations
+
+- One object, fixed camera, roughly side-on view. Handheld footage, objects moving toward the camera (size change over 30%), slow motion, and gaps in tracking are refused rather than guessed.
+- 2D only: no depth, no live streaming.
+- The metre scale comes from a user-entered object size; a wrong size scales g by the same factor.
+- Generated clips were made with consumer apps at one point in time; results say nothing about other generators or later versions.
+
+---
+
 ## Project Structure
 
 ```
@@ -162,4 +196,4 @@ slope-coach/
 ---
 
 ## License & Attribution
-Developed for the Meta Global AI Developer Hackathon. Open-source under the MIT License.
+Developed for the Meta Global AI Developer Hackathon. Open-source under the MIT License (see `LICENSE`). All work was done during the hackathon period (from 2026-10-26).

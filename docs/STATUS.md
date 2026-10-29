@@ -229,6 +229,7 @@
 
 ## 工作日誌（最新在上）
 
+- 10/29 12:45 Claude：README 補上提交需要的段落（路線圖第 9 步初稿）：「不是什麼」聲明、Meta 模型用在哪（表格）、測試集結果（顏色版，SAM v2 等 T113 後補）、限制；彈跳與單擺註明「只在合成資料測過」。新增 MIT `LICENSE`（README 原本就寫 MIT 但沒有檔案）。合併 Antigravity T120 桌機截圖；三張手機截圖完全相同，已拿掉並開 T161 重做。
 - 10/29 12:20 Claude：STATUS 瘦身（john 要求省 token）。上半部只留現況、路線圖、待辦、關卡結果、規則與最近日誌，約 27 KB（原本 105 KB）。打勾的任務、舊任務表、舊日誌、T63 testid 清單搬到最下面「封存」，內容一行都沒刪。之後各工具只要讀到「## 封存」為止；Claude 合併時會把打勾的行搬去封存。
 - 10/29 10:40 Claude：審查並合併 Muse 的 T107–T112（重跑 SAM、建議物體名稱、語音回答、花費端點、來源標示、MetaHooks 的說明和標題）。修好 Muse 回報的 SAM 分母 bug（T146），新增 Muse T113 重跑。
 - 10/29 Muse 完成 T107（分支 muse/T107-sam-rerun）：audit_batch 跑 data/gate/clips 7 支，track_source 全是 sam，但 7 支全因「只追到 61–63%」拒判——查出是後端覆蓋率分母用 24fps 來源格數、SAM 只出 15fps（天花板 62.5% < 門檻 0.8），修法在後端已寫進待 john 決定。SAM 對照表和兩版比較已貼進關卡結果。花費 $0.077，累計 $0.167。pip install 用「逐一確認 requirements 可 import＋ffmpeg＋meta-sam-parser 存在」代替（venv 本來就齊，避免重裝弄壞環境）。
