@@ -412,6 +412,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 Muse 沒有待辦了。（T107–T112 全在分支上做完並 push，等 Claude 合併；重驗過 6 條分支都在 origin 上且內容完整，未重跑任何付費呼叫，累計維持 $0.435）
 - 10/29 Muse 完成 T111（分支 muse/T111-source＋三條分支的同改補丁）：全部模型回傳帶精確 model id；headline 改 dict；hooks 濾鍵不斷言；agent 無呼叫 early return 不帶 source（有測試鎖住）。全套件 192 pass（gate_prepare 原生失敗之外）。$0，累計 $0.435。Muse 這區沒有 [ ] 了。
 - 10/29 09:00 Claude：查出昨晚工具停下來的原因。(1) 各工具把當時看到的任務做完就結束了，Claude 後來加的任務沒有人去讀。(2) Muse 的 T107 要用 `/mnt/project-files/gate/`，但那個路徑只在 Claude 的雲端電腦上，Muse 早就回報找不到。已把生成影片放進 `data/gate/clips/`（T144），`audit_batch` 預設讀那裡，找不到的影片列為 missing，T107 也改成一步一步的指令。頂端加了「做完一件不要結束對話」。
 - 10/29 06:40 Claude：巡查時發現 04:37 之後沒有任何工具 push 新東西（john 睡了，工具可能停了）。Claude 代做 T02。**Antigravity 下一件改成 T52（CI）**。
