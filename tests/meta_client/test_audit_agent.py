@@ -58,20 +58,41 @@ def test_plan_audit_checks_success(tmp_path, monkeypatch):
         _resp(_call("run_check", {"name": "free_flight"}, "c1")),
         _resp(_call("propose_plan", {
             "selected": ["free_flight"],
-            "rationale": f"視在重力 {g:.2f}，與假設不一致。",
+            "rationale_template": "視在重力 {free_flight_g_apparent_m_s2:2}，與假設不一致。",
         }, "c2")),
     ])
     monkeypatch.setattr(agent, "get_client", lambda: fake)
     tracker = _tracker(tmp_path)
     out = agent.plan_audit_checks(_audit(), tracker=tracker)
     assert out["selected"] == ["free_flight"]
+    assert f"{g:.2f}" in out["rationale"]
     assert "不一致" in out["rationale"]
     assert tracker.total_usd() > 0
 
 
+def test_plan_rejects_raw_digits_and_unknown_slots(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    run = _resp(_call("run_check", {"name": "free_flight"}, "c1"))
+    bad_digit = _resp(_call("propose_plan", {
+        "selected": ["free_flight"], "rationale_template": "視在重力 4.5，不一致。",
+    }, "c2"))
+    fake = FakeClient([run, bad_digit] * 3)
+    monkeypatch.setattr(agent, "get_client", lambda: fake)
+    monkeypatch.setattr(agent, "get_tracker", lambda: _tracker(tmp_path))
+    with pytest.raises(ModelOutputError, match="slots failed"):
+        agent.plan_audit_checks(_audit())
+    bad_slot = _resp(_call("propose_plan", {
+        "selected": ["free_flight"], "rationale_template": "視在重力 {g_force}。",
+    }, "c2"))
+    fake2 = FakeClient([run, bad_slot] * 3)
+    monkeypatch.setattr(agent, "get_client", lambda: fake2)
+    with pytest.raises(ModelOutputError, match="unknown slot"):
+        agent.plan_audit_checks(_audit())
+
+
 def test_plan_rejects_unknown_selection(tmp_path, monkeypatch):
     monkeypatch.setattr(time, "sleep", lambda s: None)
-    run = _resp(_call("propose_plan", {"selected": ["orbit"], "rationale": "x"}, "c1"))
+    run = _resp(_call("propose_plan", {"selected": ["orbit"], "rationale_template": "x"}, "c1"))
     fake = FakeClient([run, run, run])
     monkeypatch.setattr(agent, "get_client", lambda: fake)
     monkeypatch.setattr(agent, "get_tracker", lambda: _tracker(tmp_path))
