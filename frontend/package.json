@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build && node scripts/check-bundle.mjs",
-    "test": "tsc src/env.d.ts src/experiment.ts src/api.ts src/media.ts src/overlay.ts src/CurveChart.tsx src/Trajectory.tsx src/ModelSource.tsx src/AuditPage.tsx src/Home.tsx src/GuidedDemo.tsx src/tourTiming.ts src/SpendPanel.tsx src/ExplanationSource.tsx --jsx react-jsx --target ES2022 --module ESNext --moduleResolution Bundler --outDir .test-dist --skipLibCheck && node --test src/*.test.mjs"
+    "test": "tsc src/env.d.ts src/experiment.ts src/api.ts src/media.ts src/overlay.ts src/CurveChart.tsx src/Trajectory.tsx src/ModelSource.tsx src/AuditPage.tsx src/Home.tsx src/GuidedDemo.tsx src/tourTiming.ts src/SpendPanel.tsx src/ExplanationSource.tsx src/SiteHeader.tsx --jsx react-jsx --target ES2022 --module ESNext --moduleResolution Bundler --outDir .test-dist --skipLibCheck && node --test src/*.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
