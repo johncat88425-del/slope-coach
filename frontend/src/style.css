@@ -40,3 +40,5 @@ article,figure,details,.results-grid,.demo-grid{min-width:0;max-width:100%}h1,h2
  #audit-print-root dt,#audit-print-root dd{margin:0;overflow-wrap:anywhere}#audit-print-root li{margin:1mm 0}
  #audit-print-root .source-label{padding:1mm;background:#fff;color:#000}
 }
+
+.candidate-timeline{height:60px;position:relative;background:#eef2ef;border:1px solid #a8bbb1;overflow:hidden}.candidate-timeline button{position:absolute;top:0;background:#007e91;color:white;padding:2px;margin:0;min-width:0}.candidate-timeline button:focus{z-index:2;outline-offset:-3px}
