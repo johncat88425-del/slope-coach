@@ -104,13 +104,13 @@ class MetaHooks(ModelHooks):
         return _voice.answer_interview_voice(audio_path)
 
     def explain_audit(self, audit: dict) -> str | None:
-        """Plain-language explanation via Spark (T112); None keeps the fixed template."""
+        """Plain-language explanation via Spark (T112, English since T118); None keeps the fixed template."""
         try:
-            return _explain.explain_result(audit, kind="audit")["explanation"]
+            return _explain.explain_result(audit, kind="audit", lang="en")["explanation"]
         except ModelOutputError:
             return None
 
     def headline_audit(self, audit: dict) -> str | None:
-        """One-line headline via Spark (T112); None shows no headline."""
-        result = _headline.write_headline(audit)
+        """One-line headline via Spark (T112, English since T118); None shows no headline."""
+        result = _headline.write_headline(audit, lang="en")
         return result["headline"] if result else None
