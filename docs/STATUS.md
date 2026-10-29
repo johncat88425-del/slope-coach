@@ -15,11 +15,11 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T117（demo 用 SAM 版紀錄） |
-| **Codex** | T162 →（等 Claude 寫「demo 資料已定版」）T157 |
+| **Muse** | T118（解說和標題改英文，重產 demo 紀錄） |
+| **Codex** | T162 → T157（demo 資料已定版，可以做） |
 | **Antigravity** | T161 → T121 → T122 → T53 → T68 |
 | **Manus** | T163 → T22 |
-| **Claude** | 審查合併 PR；T117 合併後寫「demo 資料已定版」；README 與提交前檢查 |
+| **Claude** | 審查合併 PR；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
 
 ## 提交前路線圖（10/29 09:30 Claude，john 要求一次列完；截止 11/04 21:00 ET，我們目標 11/03 交）
@@ -48,7 +48,8 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
-- [ ] T117 Muse：（最優先）產生 demo 用的 SAM 版紀錄（含 Muse Spark 解說）。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --json-dir data/demo --explain --out data/gate/product_results_sam_v4_demo.md`（約 $0.35；會覆蓋 `data/demo/real_own_*.json` 和 `generated_*.json`，顏色版留在 git 歷史和 `product_results.md`）；(3) 確認 10 支的 verdict 跟 v4 表一樣，不一樣就寫進 STATUS，不要挑；(4) `git status` 確認只有 `data/demo/*.json`、結果檔、STATUS、cost_log 改動，**沒有任何影片**；(5) commit，push 分支 `muse/T117-demo-sam`。
+- [ ] T118 Muse：（最優先）demo 紀錄裡的解說和標題現在是中文，但介面預設英文，評審也看英文。(1) `meta_client/headline.py` 加英文版（`lang` 參數，規則跟中文版一樣：模型不寫數字、不准真假字眼），補測試；(2) `meta_client/hooks.py` 的 `explain_audit` 傳 `lang="en"`，`headline_audit` 用英文版；(3) `pytest` 全過；(4) 重跑 T117 的同一個指令（約 $0.35，`--json-dir data/demo --explain`）；(5) 確認 10 支的 verdict 和數字跟現在一樣（只有 explanation、headline 文字變），不一樣就寫進 STATUS；(6) `git status` 確認沒有影片，commit，push 分支 `muse/T118-english-text`。
+- [x] T117 Muse：（最優先）產生 demo 用的 SAM 版紀錄（含 Muse Spark 解說）。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --json-dir data/demo --explain --out data/gate/product_results_sam_v4_demo.md`（約 $0.35；會覆蓋 `data/demo/real_own_*.json` 和 `generated_*.json`，顏色版留在 git 歷史和 `product_results.md`）；(3) 確認 10 支的 verdict 跟 v4 表一樣，不一樣就寫進 STATUS，不要挑；(4) `git status` 確認只有 `data/demo/*.json`、結果檔、STATUS、cost_log 改動，**沒有任何影片**；(5) commit，push 分支 `muse/T117-demo-sam`。 — commit 02fb0c6（10 支 verdict 全跟 v4 一樣；10 個 demo JSON 換成 SAM 版＋模型解說／標題；explain 10 次零重試，T115 修好了。$0.344，累計 $1.353）
 - [x] T116 Muse：（最優先）Claude 已修好 SAM 的計時 bug（`meta_client/sam.py` 改用 `-vf fps=15`），請重跑 SAM 全部 10 支：(1) `git checkout main`、`git pull origin main`；(2) 確認 `~/slope-own-clips` 裡有 3 支自拍＋7 支生成影片；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v4.md`（約 $0.12，不會呼叫解說）；(4) 表格貼進「SAM 對照」v3 下面，標題「v4（修正 15fps 計時後）」，v2、v3 不要刪；(5) 看自拍 3 支的 overlay 紅點，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T116-sam-v4`。 — commit 61f00f2（v4：自拍 3 支全變一致 g=9.30／9.46／8.68，生成側 verdict 不變；3 張 overlay 紅點在球上。`~` 目錄仍不存在，續用 /tmp/slope-own-clips。$0.107，累計 $1.009）
 - [x] T114 Muse：自拍影片也用 SAM 跑（demo 要「同一種追蹤」下真實一致、生成不一致、拒判三種都有）。步驟：(1) 請 john 把 3 支自拍影片 IMG_8426.mov、IMG_8429.mov、IMG_8434.mov 放進 repo 外的資料夾 `~/slope-own-clips`，檔名改成 manifest 的名字 `own_1_IMG_8426.mov`、`own_2_IMG_8429.mov`、`own_3_IMG_8434.mov`（**不准放進 repo、不准 commit**）；(2) `cp data/gate/clips/*.mp4 ~/slope-own-clips/`；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v3.md`（現在批次預設不呼叫解說和標題，只花 SAM 的錢，約 $0.12）；(4) 表格貼進「SAM 對照」v2 下面，標題「v3（加入自拍影片）」；(5) 每支自拍影片看 overlay 確認紅點在球上，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T114-sam-own`。 — commit 32e8600（v3：自拍 3 支全判不一致、偏角 -22～-27 度，與顏色版矛盾；3 張 overlay 紅點都在球上。$0.107，累計 $0.902）
 - [x] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。 — commit 800f506（原因見日誌：門檻數字只在原因句裡、檢查只收數字欄，提示詞和檢查打架。修：程式 parse 原因句數字加入 allowlist＋提示詞點名陷阱；2 測試。$0 真打）
@@ -287,9 +288,12 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T113：SAM v2 重跑 7 支（SAM 7 次 $0.077＋explain 15 次 $0.244 含 8 次重試＋headline 4 次 $0.038） | 0.360 | 0.794 |
 | 10/29 | T114：SAM v3 跑 10 支（自拍 3＋生成 7，純 SAM 無解說） | 0.107 | 0.902 |
 | 10/29 | T116：SAM v4 跑 10 支（計時修好後，純 SAM） | 0.107 | 1.009 |
+| 10/29 | T117：demo 版 10 支（SAM $0.107＋解說 10 次零重試 $0.155＋標題 7 次 $0.081） | 0.344 | 1.353 |
 
 ## 工作日誌（最新在上）
 
+- 10/29 13:15 Claude：**demo 資料已定版**（Codex 可以做 T157）。合併 Muse T117：`data/demo/` 的 10 筆真實／生成紀錄改成 SAM v4 版，verdict 與 v4 表完全相同，沒有影片連結，解說和標題都是 Muse Spark 寫的且通過後端檢查。數字和判定不會再變；只有解說和標題的文字會由 Muse T118 換成英文（同樣欄位，前端不用改）。
+- 10/29 Muse 完成 T117（分支 muse/T117-demo-sam）：10 支重跑＋解說＋標題，verdict 全跟 v4 一樣（own_2 g 9.46→9.45 顯示捨入而已）；10 個 data/demo JSON 換成 SAM 版，解說／標題 source 都是 model。T115 修好得到驗證：explain 10 次零重試（T113 是 15 次 8 重試）。git status 確認只有 json／md／STATUS／cost_log，無影片。$0.344，累計 $1.353。
 - 10/29 13:05 Claude：合併 Muse T116（SAM v4）。修好計時後自拍 3 支 g = 9.30、9.46、8.68 全部一致；生成影片結果和 v2、v3 幾乎一樣。`audit_batch` 加 `--json-dir`，存完整稽核紀錄給 demo（不含影片連結）。README 結果表改成 SAM 為主、顏色對照。新增 Muse T117。
 - 10/29 Muse 完成 T116（分支 muse/T116-sam-v4）：計時修好後重跑 10 支，自拍 3 支全變一致（g=9.30／9.46／8.68），v3 偏角確認是轉碼 bug；生成側 verdict 不變、數字微移；3 張自拍 overlay 紅點在球上。demo「同一種追蹤三種結果」達成。$0.107，累計 $1.009。
 - 10/29 12:55 Claude：合併 Muse T114（SAM v3）、T115（解說可引用原因句裡的門檻數字）。T115 只改了 meta_client 的檢查，後端的第二道檢查會照樣擋掉，所以後端 `_number_sources` 也加上「程式自己寫的原因句裡的數字」（有測試；模型自己編的數字仍然擋）。找到並修好 SAM 15fps 計時 bug（見規則變更紀錄），v2、v3 的 SAM 數字作廢待 v4。新增 Muse T116。

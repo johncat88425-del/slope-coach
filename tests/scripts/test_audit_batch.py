@@ -39,5 +39,5 @@ def test_json_dir_saves_demo_records_without_media(tmp_path):
     r = row("own_1_ball.mp4") | {"object": "orange ball", "source": "own"}
     audit_row(c, r, tmp_path, tmp_path / "demo")
     rec = json.loads((tmp_path / "demo" / "real_own_1.json").read_text())
-    assert rec["real_clip"] is True and rec["video_url"] == "" and rec["overlay_url"] is None
+    assert rec["real_clip"] is True and "generated_clip" not in rec and rec["video_url"] == "" and rec["overlay_url"] is None
     assert rec["verdict"] == "consistent" and rec["points"] and rec["clip"] == "own_1_ball.mp4"
