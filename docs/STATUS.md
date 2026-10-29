@@ -111,20 +111,20 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 
 **Manus**（不寫程式）
 - [x] T21 Manus：影片物理合理性競品研究（附來源），結果放在 `docs/research/competitors.md`
-- [ ] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）。差異點照 competitors.md 的結論寫，不准說「第一個」或「偵測 AI 影片」。**10/29 改成單一版本：影片物理稽核**（真實影片一致 → Meta 影片不一致 → 拒判例子 → Muse 問問題與說明）
-- [ ] T95 Manus：提交頁文字草稿（英文，300 字以內）：問題、做法、Meta 模型用在哪、限制。數字只能引用 STATUS「關卡結果」，不准說「偵測 AI 影片」
+- [x] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）。差異點照 competitors.md 的結論寫，不准說「第一個」或「偵測 AI 影片」。**10/29 改成單一版本：影片物理稽核**（真實影片一致 → Meta 影片不一致 → 拒判例子 → Muse 問問題與說明）
+- [x] T95 Manus：提交頁文字草稿（英文，300 字以內）：問題、做法、Meta 模型用在哪、限制。數字只能引用 STATUS「關卡結果」，不准說「偵測 AI 影片」
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
-- [ ] T123 Manus：三分鐘英文旁白稿，逐秒對應 T23 分鏡；只用 `data/gate/product_results.md` 裡的數字
-- [ ] T124 Manus：評分標準對照表：Impact 30%、Meta 工具運用 25%、技術深度 20%、Demo 25%，每一項寫我們的證據（指到 repo 裡的檔案或 demo 片段），做不到的老實寫「沒有」
-- [ ] T125 Manus：使用者測試計畫改版（取代 T22）：找 5 個人用自己的手機拍丟球影片上傳，記錄他們能不能看懂結果、哪裡卡住。附招募訊息和記錄表
-- [ ] T126 Manus：限制與常見問題（英文 FAQ）：為什麼不判斷真假、為什麼會拒判、需要怎麼拍、數字怎麼來、Meta 模型做了什麼
+- [x] T123 Manus：三分鐘英文旁白稿，逐秒對應 T23 分鏡；只用 `data/gate/product_results.md` 裡的數字
+- [x] T124 Manus：評分標準對照表：Impact 30%、Meta 工具運用 25%、技術深度 20%、Demo 25%，每一項寫我們的證據（指到 repo 裡的檔案或 demo 片段），做不到的老實寫「沒有」
+- [x] T125 Manus：使用者測試計畫改版（取代 T22）：找 5 個人用自己的手機拍丟球影片上傳，記錄他們能不能看懂結果、哪裡卡住。附招募訊息和記錄表
+- [x] T126 Manus：限制與常見問題（英文 FAQ）：為什麼不判斷真假、為什麼會拒判、需要怎麼拍、數字怎麼來、Meta 模型做了什麼
 
 **Claude**
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [x] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
 - [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
-- [x] T130 Claude：（T95 第一版已入庫並更新數字，其餘等 Manus）把 Manus 交來的 T23、T95、T123–T126 檢查用詞和數字後放進 `docs/research/`
+- [x] T130 Claude：（10/29 03:50 Manus 的 T23、T95、T123–T126 已檢查入庫：`docs/research/manus_t23_t95_t123_t126.md`。用詞符合規則，數字都來自 product_results，Muse/SAM 標 TBD）把 Manus 交來的 T23、T95、T123–T126 檢查用詞和數字後放進 `docs/research/`
 - [ ] T131 Claude：彈跳和單擺的真實影片流程（等 john 拍片）：準備標註表和試跑腳本
 - [x] T106 Claude：`data/demo/generated_*.json`：6 支 Meta、1 支 Manus 影片經網站流程的完整結果（含說明，不含影片），給 Codex T101 結果牆用 — 見 PR
 - [x] T99 Claude：稽核結果新增 `explanation`（API v0.7），先用固定模板寫一般人看得懂的說明，數字由 `fill_numbers` 填入，例如「the object falls as if gravity were 1.71 m/s², 0.17 times Earth's, closest to Moon」。Muse T45 接上後改成 `source: model`。`data/demo/real_own_*.json` 已重新產生，含說明 — 見 PR T99
@@ -342,6 +342,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 03:50 Claude：Manus 交了 T23、T95、T123–T126（john 轉交），檢查後入庫。Claude 也完成了 T128（更多顏色）。Manus 的待辦清空；下一輪等 Muse 接上 SAM 後再更新 demo 稿。
 - 10/29 03:40 Claude：john 去睡覺前要求給一整晚的量。新增 Muse T107–T111、Codex T113–T118、Antigravity T119–T122、Manus T123–T126、Claude T127–T131，並重寫頂端的順序表。
 - 10/29 03:30 Claude：合併 Codex PR #42（T89、T90、T92）。新增生成影片的 demo 紀錄（T106），替 Codex 補 T101 到 T105。
 - 10/29 03:35 Claude T99：稽核結果加上用一般人的話寫的說明（固定模板，API v0.7），新增 Codex T100。
