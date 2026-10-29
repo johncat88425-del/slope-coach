@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -64,7 +65,11 @@ def main() -> None:
     ap.add_argument("manifest")
     ap.add_argument("--clips", default="data/gate/clips")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--explain", action="store_true",
+                    help="also ask Muse Spark for explanation and headline text (paid; off by default)")
     a = ap.parse_args()
+    if not a.explain:
+        os.environ["SLOPE_MODEL_TEXT"] = "0"
     client = TestClient(app)
     with open(a.manifest, newline="", encoding="utf-8") as f:
         rows = [audit_row(client, r, Path(a.clips)) for r in csv.DictReader(f)]
