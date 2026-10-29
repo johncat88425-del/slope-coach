@@ -43,7 +43,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T66 Muse：**Muse 偵訊**（特色功能）。後端契約已完成（docs/API.md v0.4、T78）：你只要在 MetaHooks 實作 `interview_audit(video_path) -> AuditInterview`，讓 Spark 看幾張畫面、回傳最多 3 題 `{field, text}`，後端會自動檢查，不通過就退回固定問題。下判定之前，Spark 先看影片的幾張畫面，向使用者提出最多 3 個問題，例如「有沒有開慢動作？」「鏡頭有沒有動？」「這顆球大概多大？」。使用者的回答變成確認過的輸入（`camera_static`、`object_size_m`、時間窗），Spark 不能自己填數字。畫面像一段問答，標明「由 Muse Spark 提問」 — commit 20f4337（真片實測 3 題全過）
 - [x] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。Spark 只寫 `{g_vs_earth:2}`、`{nearest_body}` 這種欄位位置，再交給 `backend.output_check.fill_numbers()` 填入數字並檢查，不通過就不顯示。不准出現真、假、AI 生成等字眼 — commit bacce3f（meta_client/headline.py：{nearest_body} 字串槽程式代換＋fill_numbers 數字槽＋check＋真/假/AI 字禁令；insufficient_data/無重力數字回 None 不呼叫 API；4 測試；全套件 185 pass）
 
-- [ ] T107 Muse：SAM 3.1 全部重跑。**影片已經放進 repo 的 `data/gate/clips/`**（Meta 6 支＋Manus 1 支；john 自己拍的 3 支不進 git，沒有就列成 missing，沒關係）。步驟：
+- [x] T107 Muse：SAM 3.1 全部重跑 — commit 4971cec（7 支 track_source 全 sam 但全拒判：後端分母用 24fps、SAM 只出 15fps，天花板 62.5% < 0.8；已寫進待 john 決定等 Claude 修。$0.077，累計 $0.167）。**影片已經放進 repo 的 `data/gate/clips/`**（Meta 6 支＋Manus 1 支；john 自己拍的 3 支不進 git，沒有就列成 missing，沒關係）。步驟：
     1. `git pull origin main`，確認 `.env` 有 `MODEL_API_KEY`，`pip install -r requirements.txt`
     2. `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --out data/gate/product_results_sam.md`（有金鑰時後端會自動用 SAM 追蹤；表格的 track_source 欄要是 sam）
     3. 把 `product_results_sam.md` 的表格貼到 STATUS「關卡結果」下面的新小節「SAM 對照」，和 `data/gate/product_results.md`（顏色追蹤版）並排。兩版都要報告，不准只放好看的，也不准改 manifest 的標註
