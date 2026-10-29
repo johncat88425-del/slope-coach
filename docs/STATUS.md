@@ -2,10 +2,7 @@
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
 > **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
-> **只讀到「- 10/29 Codex T159：接 API v1.0 的 suggestion 預填物體名；手動改名優先，換片重設。鏡頭建議只顯示文字，從不填確認欄位；null 不顯示提示。原因保留原文，中英文同步；npm101 pass、build pass。pytest213 pass/1 fail，仍為既有 ffmpeg drawtext 缺口。未改後端或量測值。
-- 10/29 Codex T160：接 API v1.0 錄音→預聽→明確送出→逐字稿／欄位預覽，每欄 Use this 才填一般表單，不自動提交稽核；語音時間窗仍需影片確認。來源標示 Voice Transcribe／Spark；mock 停用錄音。錄音超過10MB／錯誤／卸載均釋放麥克風，送出防重複、失敗保留答案與錄音，換草稿忽略晚到回應；未加套件、未呼叫付費模型。新增假的 fetch、錄音器、逐欄、精度、mock、錯誤及雙語測試；npm108 pass、標準與靜態build pass（入口79,345／78,456 bytes）；pytest213 pass/1既有drawtext失敗。實機端到端待Antigravity。
-
-## 封存」為止。** 封存區是已完成的任務和舊日誌，平常不用讀；要查舊紀錄再搜尋。
+> **只讀到「## 封存」為止。** 封存區是已完成的任務和舊日誌，平常不用讀；要查舊紀錄再搜尋。
 > 最後更新：2026-10-29 12:20Z（Claude，STATUS 瘦身）
 
 ## 一句話現況
@@ -231,6 +228,10 @@
 | 10/29 | T112：explain＋headline 真打 own_2、clip2 各兩種（7 次呼叫含 1 次驗證重試） | 0.096 | 0.263（含未合併 T107 的 0.077） |
 
 ## 工作日誌（最新在上）
+
+- 10/29 Codex 沒有待辦了。T159／T160 已完成並推送 PR #70／#74，目標都是 main，兩者已同步最新 main 且可合併。T157 仍待 Claude 資料定版通知，依規則保留未勾；無其他可執行的 Codex 待辦。npm108 pass、標準／靜態 build pass；pytest213 pass／1既有drawtext環境失敗。
+- 10/29 Codex T160：接 API v1.0 錄音→預聽→明確送出→逐字稿／欄位預覽，每欄 Use this 才填一般表單，不自動提交稽核；語音時間窗仍需影片確認。來源標示 Voice Transcribe／Spark；mock 停用錄音。錄音超過10MB／錯誤／卸載均釋放麥克風，送出防重複、失敗保留答案與錄音，換草稿忽略晚到回應；未加套件、未呼叫付費模型。新增假的 fetch、錄音器、逐欄、精度、mock、錯誤及雙語測試；npm108 pass、標準與靜態build pass（入口79,345／78,456 bytes）；pytest213 pass/1既有drawtext失敗。實機端到端待Antigravity。
+- 10/29 Codex T159：接 API v1.0 的 suggestion 預填物體名；手動改名優先，換片重設。鏡頭建議只顯示文字，從不填確認欄位；null 不顯示提示。原因保留原文，中英文同步；npm101 pass、build pass。pytest213 pass/1 fail，仍為既有 ffmpeg drawtext 缺口。未改後端或量測值。
 
 - 10/29 12:45 Claude：README 補上提交需要的段落（路線圖第 9 步初稿）：「不是什麼」聲明、Meta 模型用在哪（表格）、測試集結果（顏色版，SAM v2 等 T113 後補）、限制；彈跳與單擺註明「只在合成資料測過」。新增 MIT `LICENSE`（README 原本就寫 MIT 但沒有檔案）。合併 Antigravity T120 桌機截圖；三張手機截圖完全相同，已拿掉並開 T161 重做。
 - 10/29 12:20 Claude：STATUS 瘦身（john 要求省 token）。上半部只留現況、路線圖、待辦、關卡結果、規則與最近日誌，約 27 KB（原本 105 KB）。打勾的任務、舊任務表、舊日誌、T63 testid 清單搬到最下面「封存」，內容一行都沒刪。之後各工具只要讀到「## 封存」為止；Claude 合併時會把打勾的行搬去封存。
