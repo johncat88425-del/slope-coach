@@ -2,7 +2,7 @@
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
 > **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
-> 最後更新：2026-10-29 04:45Z（Claude）
+> 最後更新：2026-10-29 06:40Z（Claude）
 
 ## 一句話現況
 
@@ -16,7 +16,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 | --- | --- | --- |
 | **Muse**（最優先） | （T05–T67 已合併）→ **T107 SAM 全部重跑** → **T112 說明與標題接上稽核** → T108 → T109 → T110 → T111 | SAM 是最大的缺口：顏色追蹤在 Meta clip1、4、5 和 Manus 那支失敗，測試影片在 `/mnt/project-files/gate/meta/`、`manus/`。所有用到模型的輸出都要標來源；數字只能由 physics 產生。花費超過 10 美元先停，寫進 STATUS。 |
 | **Codex** | T143 → T146 → T151 → T145 → T149 → T150（T100–T142 已完成並合併） | demo 用的資料都在 `data/demo/`（`real_own_*`、`generated_*`）。不准出現「偵測 AI」「假影片」「真假」。 |
-| **Antigravity** | T02 → T52 → T42 → T119 → T120 → T121 → T122 → T54 → T53 | **10/29 john 已在 Mac 設好 `gh auth login`，現在 push 得上去了**（之前 Muse 推不上去就是這個原因）。不要再做 3D 渲染影片。部署帳號等 john 決定。 |
+| **Antigravity** | （T02 已由 Claude 做完）T52 → T42 → T119 → T120 → T121 → T122 → T54 → T53 | **10/29 john 已在 Mac 設好 `gh auth login`，現在 push 得上去了**（之前 Muse 推不上去就是這個原因）。不要再做 3D 渲染影片。部署帳號等 john 決定。 |
 | **Manus** | T23 → T95 → T123 → T124 → T125 → T126 | 只寫文件，交給 john 轉給 Claude。數字只用 `data/gate/product_results.md`。 |
 | **Claude** | T127 → T129 → T128 → T130 → T131 | 每 2 小時巡查、審查合併。 |
 | **john**（明天） | 把 Manus 的文件傳給 Claude；看 demo 導覽；可選：Kling／Luma 各生成 1 支 | 錄 demo 前先讓 Claude 確認數字。 |
@@ -41,7 +41,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T66 Muse：**Muse 偵訊**（特色功能）。後端契約已完成（docs/API.md v0.4、T78）：你只要在 MetaHooks 實作 `interview_audit(video_path) -> AuditInterview`，讓 Spark 看幾張畫面、回傳最多 3 題 `{field, text}`，後端會自動檢查，不通過就退回固定問題。下判定之前，Spark 先看影片的幾張畫面，向使用者提出最多 3 個問題，例如「有沒有開慢動作？」「鏡頭有沒有動？」「這顆球大概多大？」。使用者的回答變成確認過的輸入（`camera_static`、`object_size_m`、時間窗），Spark 不能自己填數字。畫面像一段問答，標明「由 Muse Spark 提問」 — commit 20f4337（真片實測 3 題全過）
 - [x] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。Spark 只寫 `{g_vs_earth:2}`、`{nearest_body}` 這種欄位位置，再交給 `backend.output_check.fill_numbers()` 填入數字並檢查，不通過就不顯示。不准出現真、假、AI 生成等字眼 — commit bacce3f（meta_client/headline.py：{nearest_body} 字串槽程式代換＋fill_numbers 數字槽＋check＋真/假/AI 字禁令；insufficient_data/無重力數字回 None 不呼叫 API；4 測試；全套件 185 pass）
 
-- [ ] T107 Muse：SAM 3.1 全部重跑：用 `scripts/audit_batch.py` 的方式，把 `data/gate/manifest.csv` 所有影片改用 SAM 追蹤跑一遍，結果寫進 STATUS「關卡結果」下面的新小節「SAM 對照」，和顏色追蹤的結果並排列出，**兩版都要報告，不准只放好看的**。花費記進成本紀錄
+- [ ] T107 Muse：（10/29 06:40 還沒開始，Muse 從這裡接）SAM 3.1 全部重跑：用 `scripts/audit_batch.py` 的方式，把 `data/gate/manifest.csv` 所有影片改用 SAM 追蹤跑一遍，結果寫進 STATUS「關卡結果」下面的新小節「SAM 對照」，和顏色追蹤的結果並排列出，**兩版都要報告，不准只放好看的**。花費記進成本紀錄
 - [ ] T108 Muse：Spark 看第一格畫面，建議 `object_name`（例如 orange basketball）和「鏡頭看起來固定嗎」。只是建議，要使用者確認才會用；回傳要過 schema 和 `check_model_text`
 - [ ] T109 Muse：語音回答偵訊問題：`muse-voice-transcribe-1.0` 把使用者說的話轉成文字，Spark 抽出欄位（例如物體大小），**數字一定要使用者在畫面上確認**才送出。沒有金鑰時用 mock
 - [ ] T110 Muse：花費顯示：後端 `/api/spend` 回傳目前累計花費和 120 美元上限，給前端顯示。到上限時所有付費呼叫拒絕，並有測試
@@ -110,7 +110,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [ ] T150 Codex：時間窗選擇器的鍵盤操作（方向鍵移動把手、Enter 確認）和螢幕閱讀器標籤，補測試
 
 **Antigravity**（照順序做）
-- [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
+- [x] T02 Antigravity→Claude：（10/29 06:40 Antigravity 整晚沒有 push，改由 Claude 做）`requirements.txt`、`scripts/dev.sh`（檢查 ffmpeg／python3／npm，缺什麼就列出 brew 指令；後端 8000、前端 5173；沒有金鑰時用 mock） — 見 PR T02
 - [ ] T14 Antigravity：用 `seed_demo` 跑斜坡流程的端到端測試，截圖放 `docs/screenshots/`，問題寫進「缺什麼」
 - [ ] T42 Antigravity：稽核流程的端到端測試。用 `tests/scripts/test_gate_run.py` 的 `write_clip` 產生合成影片，經 API 或畫面跑一次正常 g 和 g/4 兩種情況，截圖
 - [ ] T43 Antigravity：部署草稿：Dockerfile 與啟動說明。只在本機測，不要公開部署；`.env` 不准進映像檔
@@ -383,6 +383,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 06:40 Claude：巡查時發現 04:37 之後沒有任何工具 push 新東西（john 睡了，工具可能停了）。Claude 代做 T02。**Antigravity 下一件改成 T52（CI）**。
 - 10/29 04:45 Claude：合併 Codex T133–T142（PR #51，npm 76、build 通過、主 bundle 64 kB）。做了 T143：說明和標題可以由 Muse Spark 寫，但要通過後端檢查才用。給 Muse 加 T112（在 MetaHooks 接上），給 Codex 加 T143、T145、T146、T149、T150、T151。Antigravity 到現在什麼都沒推，可能也是 GitHub 登入的問題，已在頂端寫明現在能 push。
 - 10/29 04:10 Claude：Muse 的程式一直沒上 GitHub，原因是 Mac 上沒有 GitHub 登入；john 已用 `gh auth login` 設好，**以後 Muse 可以自己 push**。審查並合併 `muse/T67-headline`（T05、T29、T34、T38、T39、T28、T11、T24、T16、T45、T46、T47、T66、T67）。沒有金鑰外洩、不呼叫非 Meta 模型、數字都用槽位由程式填入、120 美元上限有實作。Claude 的雲端環境沒裝 `meta-sam-parser`，所以 test_sam 有 3 個測試失敗；john 的 Mac 上有裝，那邊會通過。
 - 10/29 04:00 Claude：審查並合併 Codex PR #46（T100–T118 全部完成：結果牆、鬼影播放、重力刻度尺、並排比較、列印版、自動導覽等）。pytest 79、npm 69、build 通過，沒有禁用字。替 Codex 補 T133–T140。
