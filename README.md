@@ -2,6 +2,8 @@
 
 A neuro-symbolic physical inquiry and audit system developed for the **Meta Global AI Developer Hackathon (Indie Track)**.
 
+**Static demo:** https://johncat88425-del.github.io/slope-coach/ replays the saved results in `data/demo/` in the browser. It has no upload and makes no backend or model calls. To check your own clips, run the full app locally (see below).
+
 Slope Coach audits moving objects in real-world or simulated videos against assumed physical motion models (such as free flight under constant gravity, bouncing balls, and single pendulums), and guides tabletop slope-and-slider mechanics experiments through an empirical "predict before you act" workflow.
 
 All model calls in production are strictly restricted to Meta AI models (Meta SAM 3.1 and Meta Muse Spark). Every physical measurement and fit is computed deterministically by Python numerical routines—no language model ever invents or estimates raw measurement numbers.
