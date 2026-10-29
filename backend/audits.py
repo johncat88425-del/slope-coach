@@ -17,6 +17,7 @@ from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
 
 from . import schemas as S
+from .explain import explain_audit
 from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
 from .output_check import check_model_text
 from .store import UPLOAD_ROOT, new_id, now, store
@@ -37,6 +38,11 @@ LIMITS = [
 
 
 MAX_QUESTIONS = 3
+
+
+def _finish(rec: dict) -> dict:
+    rec["explanation"] = explain_audit(rec)
+    return rec
 
 
 def _save_upload(file: UploadFile, d: Path) -> Path:
@@ -153,7 +159,7 @@ def create_audit(
     }
     if not camera_static:
         rec["reasons"] = ["camera is not static; this check needs a fixed camera"]
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     try:
@@ -173,7 +179,7 @@ def create_audit(
     rec["numbers"]["tracked_fraction"] = frac
     if frac < MIN_TRACKED_FRACTION:
         rec["reasons"] = [f"object tracked in only {frac:.0%} of frames"]
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     trend = size_trend([p[0] for p in pts], sizes)
@@ -182,13 +188,13 @@ def create_audit(
         if abs(trend) > MAX_SIZE_TREND:
             rec["reasons"] = [f"object size changes {trend:+.0%} along the track; it moves towards or away "
                               "from the camera, which this 2D check cannot judge"]
-            store.audits[aid] = rec
+            store.audits[aid] = _finish(rec)
             return rec
 
     if slow_motion and assumed_model in ("free_flight", "pendulum"):
         rec["reasons"] = ["the user says the clip is slow motion, so its timing is not real time and "
                           f"the {assumed_model} timing check cannot be judged"]
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     if assumed_model == "pendulum":
@@ -196,13 +202,13 @@ def create_audit(
             p = check_pendulum([q[0] for q in pts], [q[1] for q in pts], length_m=length_m)
         except PhysicsInputError as e:
             rec["reasons"] = [str(e)]
-            store.audits[aid] = rec
+            store.audits[aid] = _finish(rec)
             return rec
         rec["verdict"], rec["reasons"] = p.verdict, list(p.reasons)
         rec["numbers"] |= {"period_s": p.period_s, "period_spread": p.period_spread,
                            "implied_length_m": p.implied_length_m, "predicted_period_s": p.predicted_period_s}
         rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v is not None}
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     if assumed_model == "bounce":
@@ -210,7 +216,7 @@ def create_audit(
         rec["verdict"], rec["reasons"] = b.verdict, list(b.reasons)
         rec["numbers"] |= {f"rebound_ratio_{i + 1}": e * e for i, e in enumerate(b.restitution)}
         rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v == v and abs(v) != float("inf")}
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     m_per_px = object_size_m / size_px if object_size_m and size_px else None
@@ -219,7 +225,7 @@ def create_audit(
         chk = check_flight(fit, m_per_px=m_per_px, object_size_px=size_px)
     except PhysicsInputError as e:
         rec["reasons"] = [str(e)]
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
     rec["verdict"] = chk.verdict
     rec["reasons"] = list(chk.reasons)
@@ -238,7 +244,7 @@ def create_audit(
         "implied_object_size_m": chk.implied_object_size_m, "n_points": fit.n,
     }
     rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v is not None and v == v and abs(v) != float("inf")}
-    store.audits[aid] = rec
+    store.audits[aid] = _finish(rec)
     return rec
 
 
