@@ -56,6 +56,7 @@ class TrackResult:
     n_frames: int = 0
     billed_frames: int = 0
     cost_usd: float = 0.0
+    source: str = SAM_MODEL
 
     def object_ids(self) -> list[int]:
         return sorted({d.object_id for d in self.detections})

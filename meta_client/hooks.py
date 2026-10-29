@@ -60,7 +60,8 @@ def _dense_detections(
 class MetaHooks(ModelHooks):
     def check_scene(self, photo_path: Path) -> SceneCheck:
         result = _spark.describe_scene(photo_path)
-        return SceneCheck(source="model", **result)
+        fields = {k: v for k, v in result.items() if k != "source"}
+        return SceneCheck(source="model", **fields)
 
     def track_slider(self, video_path: Path, text_prompt: str) -> list[DetectionIn]:
         try:
@@ -80,7 +81,8 @@ class MetaHooks(ModelHooks):
 
     def suggest_release_time(self, video_path: Path) -> ReleaseSuggestion:
         result = _spark.suggest_release_time(video_path)
-        return ReleaseSuggestion(source="model", **result)
+        fields = {k: v for k, v in result.items() if k != "source"}
+        return ReleaseSuggestion(source="model", **fields)
 
     def interview_audit(self, video_path: Path) -> AuditInterview:
         result = _interview.interview_audit(video_path)

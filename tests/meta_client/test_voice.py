@@ -55,7 +55,8 @@ def test_transcribe_success_and_cost(tmp_path, monkeypatch):
     clip = tmp_path / "rec.m4a"
     clip.write_bytes(b"fake-audio")
     out = voice.transcribe(clip, tracker=tracker)
-    assert out == {"transcript": "斜坡長一米", "audio_seconds": 5.9}
+    assert out == {"transcript": "斜坡長一米", "audio_seconds": 5.9,
+                     "source": "muse-voice-transcribe-1.0"}
     assert calls[0][0].endswith("/asr/transcribe")
     assert tracker.total_usd() == pytest.approx(5 / 3600 * 0.18)  # whole seconds
     assert not (tmp_path / "in.wav").exists()  # transcribe deletes the converted wav
@@ -130,7 +131,7 @@ def test_extract_setup_fields_success(tmp_path, monkeypatch):
     monkeypatch.setattr(voice, "get_client", lambda: fake)
     tracker = _tracker(tmp_path)
     out = voice.extract_setup_fields("斜坡長一公尺高三十公分，擋片放開", tracker=tracker)
-    assert out == payload
+    assert out == {**payload, "source": "muse-spark-1.3"}
     assert fake.responses.calls[0]["text"]["type"] == "json_schema"
     assert tracker.total_usd() > 0
 

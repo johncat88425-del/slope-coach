@@ -66,6 +66,7 @@ def test_choose_intervention_success(tmp_path, monkeypatch):
     out = agent.choose_intervention(COMPARISON, tracker=tracker)
     assert out["choice"] == "release_check"
     assert "不一致" in out["rationale"]
+    assert out["source"] == "muse-spark-1.3"
     first = fake.responses.calls[0]
     assert first["tools"][0]["name"] == "get_evidence"
     assert len(fake.responses.calls) == 2

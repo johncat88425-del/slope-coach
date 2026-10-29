@@ -33,7 +33,8 @@ def test_headline_success_fills_slots(tmp_path, monkeypatch):
     fake = _setup(monkeypatch, tmp_path, [payload])
     tracker = _tracker(tmp_path)
     out = headline.write_headline(_audit(), tracker=tracker)
-    assert out == "這顆球落得像在月球上：表觀重力只有地球的0.01倍"
+    assert out == {"headline": "這顆球落得像在月球上：表觀重力只有地球的0.01倍",
+                     "source": "muse-spark-1.3"}
     assert fake.responses.calls[0]["text"]["name"] == "headline"
     assert tracker.total_usd() > 0
 
