@@ -221,10 +221,31 @@ class AuditInterview(BaseModel):
     note: str | None = None
 
 
+class ObjectSuggestion(BaseModel):
+    """Muse Spark's guess from the first frames (T108/T147). Only a prefill: the user confirms or edits it."""
+    source: str  # model id, e.g. muse-spark-1.3
+    object_name: str
+    camera_looks_static: bool | None = None
+    reason: str = ""
+
+
 class AuditDraftOut(BaseModel):
     draft_id: str
     video_url: str
     interview: AuditInterview
+    suggestion: ObjectSuggestion | None = None  # None without a model or when the guess fails the checks
+
+
+class VoiceField(BaseModel):
+    value: bool | float | str | list[float]
+    confirmed: Literal[False] = False  # never confirmed here; the user confirms each field on screen
+
+
+class VoiceAnswerOut(BaseModel):
+    """A spoken answer (T109/T147): transcript plus extracted fields, all unconfirmed."""
+    source: dict[str, str]  # {"transcript": model or "mock", "fields": model or "mock"}
+    transcript: str
+    fields: dict[str, VoiceField]
 
 
 class FlightWindow(BaseModel):
