@@ -129,7 +129,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
 - [x] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS — commit b3717c3
 - [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 041eb73
-- [ ] T153 Codex：（最優先）稽核頁的主要流程改成 Muse 偵訊：上傳影片 → 「Prepare questions」→ 回答 → 時間窗 → 檢查。偵訊區塊預設展開、放在最上面；舊的直接上傳表單收進「Advanced: check without the interview」。Offline demo（匯入 JSON）也收起來。補測試
+- [x] T153 Codex：（最優先）稽核頁的主要流程改成 Muse 偵訊：上傳影片 → 「Prepare questions」→ 回答 → 時間窗 → 檢查。偵訊區塊預設展開、放在最上面；舊的直接上傳表單收進「Advanced: check without the interview」。Offline demo（匯入 JSON）也收起來。補測試 — commit 待回填（本次程式提交）
 - [x] T143 Codex：（API v0.9）結果區和物理名片最上面顯示 `headline.text`（有的時候才顯示），旁邊標明「由 Muse Spark 撰寫」；`headline` 是 null 時照舊用程式產生的標題。不要改寫文字或數字。靜態 demo 資料裡 `headline` 一律是 null — commit a3bb60f
 - [x] T146 Codex：結果區加「這次用了哪些 Meta 模型」小面板：照實際值列出提問（`interview.source`）、追蹤（`track_source`）、說明（`explanation.source`）、標題（`headline` 有沒有）。是 mock、template、color、frame_diff 的，要寫「未使用模型」，不准寫死成已接上 — commit 9fa31c3
 - [x] T151 Codex：拒判（`insufficient_data`）時顯示「怎麼重拍」提示：用固定對照表把 `reasons` 對應到提示，例如鏡頭移動 → 用腳架、物體朝鏡頭移動 → 從側面拍、慢動作 → 用正常速度。不用模型，並補測試 — commit 791b638
@@ -562,3 +562,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T152：主動檢查發現換片時候選草稿可能晚到綁錯片；新增選取版本綁定、同片請求去重、送出／切換／匯入後失效，忽略已卸載候選回傳。另用結果ID綁定本機預覽，讀其他紀錄時不套用舊片。補慢回應、切換、消耗、重試與錯片預覽測試；npm90 pass、兩種build pass，pytest192 pass/1 fail（drawtext）。
 
 - 10/29 Codex 沒有待辦了：完成表無新增後，依 john 指示主動檢查並修正 T152 錯片競態，已推送並開 PR #56（接在 #55）。npm90 pass、標準／靜態build pass，pytest192 pass/1 fail（既有drawtext環境缺口）；再次pull main無Codex未勾項。未推main、未改後端。
+- 10/29 Codex T153：問答預設展開且放在拍攝清單之前，步驟明示上傳→提問→回答→確認時間窗→檢查；直接分析收進Advanced，JSON匯入與可選語音收合，結果留在收合區外。中英文與展開／排序回歸測試通過；npm91 pass、標準/靜態build pass，完整pytest保留drawtext環境缺口。
