@@ -10,6 +10,7 @@ export const pages = [
   {route:'wall',title:'結果牆'},
  {route:'compare',title:'雙片比較'},
  {route:'examples',title:'範例結果'},
+ {route:'how',title:'運作方式'},
 ] as const;
 export type Route = typeof pages[number]['route'];
 export type Point = {x: number; y: number};
