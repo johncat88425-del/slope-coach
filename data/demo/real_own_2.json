@@ -1,6 +1,6 @@
 {
- "audit_id": "aud_8e8f90eb27a4",
- "created_at": "2026-10-29T02:33:38.649154Z",
+ "audit_id": "aud_58aec7b072d3",
+ "created_at": "2026-10-29T03:19:55.430640Z",
  "assumed_model": "free_flight",
  "t_start": 0.2,
  "t_end": 0.8,
@@ -219,6 +219,10 @@
   "Perspective is not modelled: motion towards or away from the camera is not reliable.",
   "The time window and camera state are confirmed by the user."
  ],
+ "explanation": {
+  "source": "template",
+  "text": "Assuming free flight, the object falls with an apparent gravity of 9.8 m/s², close to Earth's 9.8 m/s². The motion is consistent with that model."
+ },
  "real_clip": true,
  "clip": "own_2_IMG_8429.mov",
  "labels_by": "john (window, camera, ball 0.11 m measured with a ruler)"
