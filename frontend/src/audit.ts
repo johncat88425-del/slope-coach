@@ -1,6 +1,6 @@
 export type AuditModel='free_flight'|'bounce'|'pendulum';
 export type AuditVerdict='consistent'|'inconsistent'|'insufficient_data';
-export type AuditOut={audit_id:string;created_at:string;object_name?:string;slow_motion?:boolean|null;assumed_model:AuditModel;t_start:number;t_end:number;camera_static:boolean;object_size_m:number|null;real_clip?:boolean;labels_by?:string;synthetic?:boolean;ghost_points?:[number,number,number][];nearest_body?:string|null;length_m?:number|null;video_url:string;overlay_url:string|null;track_source:'frame_diff'|'color'|'sam'|'manual';verdict:AuditVerdict;reasons:string[];numbers:Record<string,number>;points:[number,number,number][];events:{kind:string;t_s:number;detail:string}[];limits:string[]};
+export type AuditOut={audit_id:string;created_at:string;explanation?:{source:'template'|'model';text:string};object_name?:string;slow_motion?:boolean|null;assumed_model:AuditModel;t_start:number;t_end:number;camera_static:boolean;object_size_m:number|null;generated_clip?:boolean;source?:string;real_clip?:boolean;labels_by?:string;synthetic?:boolean;ghost_points?:[number,number,number][];nearest_body?:string|null;length_m?:number|null;video_url:string;overlay_url:string|null;track_source:'frame_diff'|'color'|'sam'|'manual';verdict:AuditVerdict;reasons:string[];numbers:Record<string,number>;points:[number,number,number][];events:{kind:string;t_s:number;detail:string}[];limits:string[]};
 export function verdictText(verdict:AuditVerdict,model:AuditModel='free_flight') {const name=model==='bounce'?'彈跳':model==='pendulum'?'單擺':'自由落體';return {consistent:`與${name}模型一致`,inconsistent:`與${name}模型不一致`,insufficient_data:`與${name}模型無法判斷`}[verdict]}
 export function validateAuditInput(start:string,end:string,size:string){const errors:string[]=[];
  if(!start.trim()||!end.trim()||!Number.isFinite(Number(start))||!Number.isFinite(Number(end))||Number(start)<0||Number(end)<=Number(start))errors.push('時間窗必須為有限秒數，且 0 ≤ 開始 < 結束。');
@@ -13,8 +13,11 @@ export function parseSavedAudit(text:string):AuditOut {
  if(!a || typeof a!=='object' || typeof a.audit_id!=='string' || typeof a.created_at!=='string'
  || !['free_flight','bounce','pendulum'].includes(a.assumed_model) || !finite(a.t_start) || !finite(a.t_end) || a.t_start<0 || a.t_end<=a.t_start
  || typeof a.camera_static!=='boolean' || !(a.object_size_m===null || finite(a.object_size_m)&&a.object_size_m>0)
+ || (a.explanation!==undefined && (!a.explanation||!['template','model'].includes(a.explanation.source)||typeof a.explanation.text!=='string'))
  || (a.slow_motion!==undefined && a.slow_motion!==null && typeof a.slow_motion!=='boolean')
  || (a.object_name!==undefined && typeof a.object_name!=='string')
+ || (a.generated_clip!==undefined && typeof a.generated_clip!=='boolean')
+ || (a.source!==undefined && typeof a.source!=='string')
  || (a.real_clip!==undefined && typeof a.real_clip!=='boolean')
  || (a.labels_by!==undefined && typeof a.labels_by!=='string')
  || (a.synthetic!==undefined && typeof a.synthetic!=='boolean')
@@ -29,3 +32,5 @@ export function parseSavedAudit(text:string):AuditOut {
  throw new Error('Invalid saved audit JSON (supported motion model required).');
  return a as AuditOut;
 }
+
+export function verdictEnglish(a:Pick<AuditOut,'verdict'|'assumed_model'>){return `${a.verdict==='consistent'?'Consistent':a.verdict==='inconsistent'?'Inconsistent':'Insufficient data'} with the assumed ${a.assumed_model.replace('_','-')} model`}

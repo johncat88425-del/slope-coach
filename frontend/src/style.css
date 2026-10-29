@@ -19,3 +19,24 @@ main>*{min-width:0}section,article,fieldset{overflow-wrap:anywhere}input,select,
 .guided-demo{position:sticky;top:0;background:#fff;border-bottom:2px solid #214f45;padding:8px 24px;z-index:20}.guided-demo p{margin:4px 0;max-width:1000px}.guided-demo button{margin:4px 8px 4px 0}.guided-demo~main [data-testid]{scroll-margin-top:180px}
 
 .source-label{display:inline-block;padding:6px 10px;border:1px solid #a8bbb1;border-radius:6px;background:#f3f5f1;color:#213c3b;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+
+.results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px}.results-grid>article{border:1px solid #a8bbb1;padding:16px;min-width:0;overflow-wrap:anywhere}
+/* Narrow audit pages: allow shrinking of nested evidence, never clip controls. */
+article,figure,details,.results-grid,.demo-grid{min-width:0;max-width:100%}h1,h2,h3,figcaption,blockquote{overflow-wrap:anywhere}blockquote{margin:12px 0;padding-left:12px;border-left:3px solid #a8bbb1}input[type=range],progress{width:100%}.results-grid details>article{padding:0}summary:focus-visible{outline:3px solid #007e91;outline-offset:2px}
+@media(max-width:390px){header b{font-size:20px}header span{width:100%}main{padding:0 8px}.guided-demo{padding:8px 12px}section{padding:12px}fieldset{padding:10px}.language-switch label{flex-wrap:wrap}.demo-grid,.results-grid{grid-template-columns:minmax(0,1fr)}button{white-space:normal;overflow-wrap:anywhere}}
+@media(prefers-reduced-motion:reduce){html:focus-within{scroll-behavior:auto}}
+
+.pair-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.pair-grid>div{min-width:0}.pair-grid section{padding:12px}@media(max-width:900px){.pair-grid{grid-template-columns:minmax(0,1fr)}}
+
+.print-report,#audit-print-root{display:none}
+@media print{
+ @page{size:A4 portrait;margin:12mm}
+ body:has(#audit-print-root)>*:not(#audit-print-root){display:none!important}
+ #audit-print-root{display:block!important;color:#000;background:#fff;font:9pt/1.25 system-ui}
+ #audit-print-root h1{font-size:17pt;margin:0 0 4mm}#audit-print-root h2{font-size:12pt;margin:3mm 0}
+ #audit-print-root p{font-size:9pt;line-height:1.25;margin:2mm 0;color:#000}
+ #audit-print-root svg{max-height:48mm;width:100%}#audit-print-root figure{margin:2mm 0;break-inside:avoid}
+ #audit-print-root .print-numbers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2mm}
+ #audit-print-root dt,#audit-print-root dd{margin:0;overflow-wrap:anywhere}#audit-print-root li{margin:1mm 0}
+ #audit-print-root .source-label{padding:1mm;background:#fff;color:#000}
+}

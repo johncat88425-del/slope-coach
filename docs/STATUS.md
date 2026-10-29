@@ -75,23 +75,23 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T81 Codex：**demo 導覽模式**。加一個「Guided demo」按鈕，按照順序帶評審看：首頁說明（能判斷什麼、不能判斷什麼）→ Muse 偵訊 → 結果與鬼影對照 → 物理名片 → 三種結果並排。每一步用一句英文說明，加上「Next」按鈕，並標明哪些內容由 Muse Spark 產生。只用已經有的畫面，不新增假資料 — commit c4b1481
 - [x] T82 Codex：英文介面文字總檢查，給評審看的。統一用語（consistent / inconsistent / insufficient data with the assumed model），刪掉內部用語（例如 fixture、draft id），按鈕文字要短。不准出現 real、fake、AI-generated、detect — commit 6b73368
 - [x] T85 Codex：「檢查影片」和 Muse 偵訊加一個「物體名稱」欄位，送 `object_name`（給 SAM 的文字提示，預設 ball）。結果區要依照 `track_source` 標明「由 SAM 3.1 追蹤」或「frame differencing（未使用模型）」，物理名片和匯出也要寫（API v0.5） — commit 8a7bd26
-- [ ] T101 Codex：「結果牆」頁：讀 `data/demo/real_own_*.json` 和 `data/demo/generated_*.json`（`generated_clip: true`，`source` 是 meta_ai 或 manus），每支一張卡：來源、判定、`explanation.text`、最接近的星球、追蹤來源。全部列出，不挑片；資料不足的也要放，並顯示原因。頁首一句話：「同一套規則跑過每一支影片；結果只說和假設的運動模型是否一致」。不准寫「偵測」「假影片」
-- [ ] T102 Codex：鬼影球播放：結果頁加「播放」按鈕，用 `points` 和 `ghost_points` 依時間同步動畫兩顆點（實際的球和照地球重力的球），沒有影片也能播。只用後端給的座標，不自己算物理
-- [ ] T103 Codex：重力刻度尺：在結果頁畫一條對數刻度（冥王星 0.62、月球 1.62、火星 3.71、地球 9.81、木星 24.79），標出 `g_apparent_m_s2` 和 `g_apparent_low/high` 的範圍。星球數值直接寫在前端常數，量測值只用後端數字
-- [ ] T104 Codex：上傳頁加「拍攝檢查清單」：鏡頭固定、側面拍、只有一個物體、顏色鮮明（例如橘色）的球、不要慢動作、球不要朝鏡頭飛。附一句：「不符合時系統會拒判，不會硬給答案」
-- [ ] T105 Codex：手機版與無障礙檢查：稽核首頁、結果頁、結果牆在 390 px 寬不能橫向捲動；按鈕可用鍵盤操作；圖表有文字替代
-- [ ] T100 Codex：（T92 之後做）結果區最上面顯示 `explanation.text`，旁邊標明來源：`template` →「固定模板（未使用模型）」，`model` →「由 Muse Spark 產生」。名片和匯出也要放。不要改寫文字或數字
+- [x] T101 Codex：「結果牆」頁：讀 `data/demo/real_own_*.json` 和 `data/demo/generated_*.json`（`generated_clip: true`，`source` 是 meta_ai 或 manus），每支一張卡：來源、判定、`explanation.text`、最接近的星球、追蹤來源。全部列出，不挑片；資料不足的也要放，並顯示原因。頁首一句話：「同一套規則跑過每一支影片；結果只說和假設的運動模型是否一致」。不准寫「偵測」「假影片」 — commit 4d85fad
+- [x] T102 Codex：鬼影球播放：結果頁加「播放」按鈕，用 `points` 和 `ghost_points` 依時間同步動畫兩顆點（實際的球和照地球重力的球），沒有影片也能播。只用後端給的座標，不自己算物理 — commit 9a68187
+- [x] T103 Codex：重力刻度尺：在結果頁畫一條對數刻度（冥王星 0.62、月球 1.62、火星 3.71、地球 9.81、木星 24.79），標出 `g_apparent_m_s2` 和 `g_apparent_low/high` 的範圍。星球數值直接寫在前端常數，量測值只用後端數字 — commit ddf0f3c
+- [x] T104 Codex：上傳頁加「拍攝檢查清單」：鏡頭固定、側面拍、只有一個物體、顏色鮮明（例如橘色）的球、不要慢動作、球不要朝鏡頭飛。附一句：「不符合時系統會拒判，不會硬給答案」 — commit 883190a
+- [x] T105 Codex：手機版與無障礙檢查：稽核首頁、結果頁、結果牆在 390 px 寬不能橫向捲動；按鈕可用鍵盤操作；圖表有文字替代 — commit d3afe11
+- [x] T100 Codex：（T92 之後做）結果區最上面顯示 `explanation.text`，旁邊標明來源：`template` →「固定模板（未使用模型）」，`model` →「由 Muse Spark 產生」。名片和匯出也要放。不要改寫文字或數字 — commit c2fdeaf
 - [x] T92 Codex：（T89、T90 之後做）稽核變成網站首頁：打開網站先看到「檢查影片」與 demo 導覽；斜坡教練移到第二個分頁「實驗教練」，功能不刪。首頁一句話說明：「檢查影片中的運動是否符合你假設的物理模型」，不准出現「AI 偵測」「抓假影片」等字 — commit c0c6758
 - [x] T89 Codex：檢查並修飾 Claude 在 T88 對前端的最小改動（`track_source: "color"` → 「顏色＋移動追蹤（未使用模型）」），樣式和其他來源標籤一致，補一個測試 — commit 46fccb8
 - [x] T90 Codex：demo 導覽加「真實影片」一段，讀 `data/demo/real_own_1.json` 到 `real_own_3.json`（`real_clip: true`）。要標明「john 自己拍的影片、標註由 john 確認」，並把 own_1、own_2 的「一致、最接近地球」和 own_3 的「不一致、原因不明」放在一起，不挑片。這些紀錄沒有影片（`video_url` 是空字串，john 的家不放上公開 repo），要能正常顯示軌跡、鬼影和數字 — commit f5103e9
 - [x] T86 Codex：結果、名片和匯出都要顯示使用者回答的 `slow_motion`。如果是因為慢動作被拒判，要用一句話說明原因（直接照後端的 reason，不要自己改寫） — commit d560608
 
-- [ ] T113 Codex：稽核執行中的進度提示（上傳中、追蹤中、計算中），稽核可能要 10 秒以上；失敗時顯示後端的錯誤原因，不要只寫「失敗」
-- [ ] T114 Codex：真實 vs 生成並排比較頁：選兩筆紀錄（例如 `real_own_2` 和 `generated_meta_clip2`），左右並排顯示軌跡、鬼影、重力刻度和說明。標題寫「同一套規則，兩支影片」，不准寫「真假」
-- [ ] T115 Codex：稽核報告列印版（CSS print stylesheet），一頁 A4 放：判定、說明、數字、軌跡圖、限制、追蹤來源與模型來源標示
-- [ ] T116 Codex：Muse 語音回答的介面（配合 Muse T109）：錄音按鈕 → 顯示轉出的文字和抽出的欄位 → 使用者逐欄確認後才送出。沒接上時按鈕顯示「需要 Meta API」
-- [ ] T117 Codex：英文介面全面檢查（評審看英文）：所有新頁面都要有英文，用詞照 AGENTS 規則（consistent／inconsistent／insufficient data with the assumed model）
-- [ ] T118 Codex：首頁 30 秒自動導覽模式（給 demo 錄影用）：依序顯示 real_own_2 → generated_meta_clip2 → generated_meta_clip4（拒判），每步有一句英文說明，可暫停
+- [x] T113 Codex：稽核執行中的進度提示（上傳中、追蹤中、計算中），稽核可能要 10 秒以上；失敗時顯示後端的錯誤原因，不要只寫「失敗」 — commit 31543d9
+- [x] T114 Codex：真實 vs 生成並排比較頁：選兩筆紀錄（例如 `real_own_2` 和 `generated_meta_clip2`），左右並排顯示軌跡、鬼影、重力刻度和說明。標題寫「同一套規則，兩支影片」，不准寫「真假」 — commit 843d762
+- [x] T115 Codex：稽核報告列印版（CSS print stylesheet），一頁 A4 放：判定、說明、數字、軌跡圖、限制、追蹤來源與模型來源標示 — commit 9e810e1
+- [x] T116 Codex：Muse 語音回答的介面（配合 Muse T109）：錄音按鈕 → 顯示轉出的文字和抽出的欄位 → 使用者逐欄確認後才送出。沒接上時按鈕顯示「需要 Meta API」 — commit 3f85efa
+- [x] T117 Codex：英文介面全面檢查（評審看英文）：所有新頁面都要有英文，用詞照 AGENTS 規則（consistent／inconsistent／insufficient data with the assumed model） — commit fa18e96
+- [x] T118 Codex：首頁 30 秒自動導覽模式（給 demo 錄影用）：依序顯示 real_own_2 → generated_meta_clip2 → generated_meta_clip4（拒判），每步有一句英文說明，可暫停 — commit 9428051
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -313,6 +313,12 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 待 john 決定
 
+- T116 Codex：docs/API.md 尚無 T109 錄音轉寫／欄位抽取端點與來源驗證契約；目前按鈕停用「需要 Meta API」，不請求麥克風。逐欄編輯／確認元件已備妥，但端到端錄音送出待 Muse／Claude 提供契約後再接。
+
+- T113 Codex：同步 POST /api/audits 不提供追蹤／計算分階段狀態；本次只呈現已知 upload bytes 與合併處理中。若要真實分階段進度，請 Claude 設計工作狀態端點；前端不以計時偽造階段。
+
+- T105 Codex：先前本機瀏覽器 origin 授權被拒，本次不繞過；已補 390px 收縮與語意測試，但實際 viewport／鍵盤／螢幕閱讀器驗收仍需 Antigravity（T120）。
+
 - Codex 10/28：本機 ffmpeg 缺 drawtext filter，pytest tests/scripts/test_gate_prepare.py::test_prepare_writes_sheet_and_blank_labels 失敗（其餘 75 pass）。請 Claude／Antigravity 確認具 drawtext 的 ffmpeg；本次不改後端／部署或跳過測試掩蓋。T89 npm 59 pass、build pass，但 pytest 全綠受此環境缺口阻擋。
 
 - （無）
@@ -435,3 +441,17 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T92：空網址與未知路由預設開稽核，主分頁為 Check video／Experiment coach；首頁說明限定為與假設模型核對，保留 demo 導覽、範圍說明與全部斜坡子路由。testid nav-audit/nav-coach，舊 nav-setup 等仍在教練內。npm 60 pass、build pass；pytest 76 pass/1 fail（既有 ffmpeg 無 drawtext），未宣稱全綠。
 
 - 10/28 Codex 工作總結：T89→T90→T92 已各自提交與推送，PR #42 待審；再次 pull main 後沒有 Codex 未勾項。前端 npm 60 pass、build pass；pytest 76 pass/1 fail，drawtext 缺口已列待 john 決定，不修改角色外的程式或掩蓋測試。未推 main。
+- 10/28 Codex T100：結果最上方、PNG 與 Markdown 加 explanation 原文與 template/model 來源，不改數字；離線 parser 驗證。npm/build 通過；pytest 的 drawtext 環境缺口仍列待決定。
+- 10/28 Codex T101：#wall 全列 real_own 與 generated 儲存結果，不挑片；來源、判定、說明、星球與追蹤標示、資料不足原因均顯示，無網路取片。npm/build 通過；pytest 全跑，drawtext 環境失敗仍待協調者處理。
+- 10/28 Codex T102：無影片時可播放／暫停、拖曳後端 points 與 ghost_points，缺口不插值。時鐘只控制顯示，不算物理；testid points-play/points-scrubber。npm/build 通過；pytest drawtext 缺口維持紀錄。
+- 10/28 Codex T103：新增對數重力刻度、五個固定參考星球、後端 g 與 low/high 範圍；缺正有限數不畫量測標記。文字替代與單測；npm/build 通過，pytest drawtext 環境缺口未變。
+- 10/28 Codex T104：上傳區新增英／繁中六項拍攝檢查與拒判原則，不替使用者確認條件；testid capture-checklist。npm/build 通過；pytest drawtext 缺口已知。
+- 10/28 Codex T105：390px 巢狀卡片收縮、長文字換行、range 控制與圖表文字替代補強；npm/build 通過。實際瀏覽器 viewport／鍵盤驗收受先前 origin 拒絕所限，已列待決定並交 Antigravity；不宣稱實測通過。pytest drawtext 失敗未隱藏。
+- 10/28 Codex T113：上傳 bytes 百分比與伺服器追蹤／計算合併等待狀態，無假計時或階段百分比；錯誤仍保留後端 reason。真實階段端點缺口列待決定；npm/build 通過，pytest drawtext 已知失敗。
+- 10/28 Codex T114：#compare 可選任意兩份紀錄，左右完整顯示說明、實測／鬼影、重力刻度與來源；小螢幕改上下，來源不作判定。npm/build 通過，pytest drawtext 已知失敗。
+- 10/28 Codex T115：選定單筆稽核列印，A4 stylesheet 包含判定／說明／數字／軌跡／限制及來源，不列印其他頁面紀錄；保留全部內容不截斷。npm/build 通過，瀏覽器一頁視覺驗收仍待 Antigravity；pytest drawtext 已知失敗。
+- 10/28 Codex T116：語音按鈕停用並標 Requires Meta API（沒有端點），不錄音；已提供轉寫文字與欄位編輯、逐欄勾選後才可送出的本地介面。契約缺口已列待決定，不虛構模型結果。npm/build 通過；pytest drawtext 缺口。
+- 10/28 Codex T117：新結果牆、比較、列印與名片統一 assumed-model 英文判定，來源用可讀名稱；後端原文與數字不改寫。測試遍歷三模型三判定；npm/build 通過，pytest drawtext 環境缺口仍列明。
+- 10/28 Codex T118：首頁可啟動 30 秒導覽，固定 own_2→meta_clip2→meta_clip4，各 10 秒、可暫停續播，只讀儲存結果。補三判定順序與全部 10 份結果 schema 測試；npm 69 pass、build pass；pytest 78 pass/1 fail（drawtext 已列待決定）。
+
+- 10/28 Codex 工作總結：順序表 T100→T101→T102→T103→T104→T105→T113→T114→T115→T116→T117→T118 的前端實作已各分支提交，PR #46 待審；再次 pull main 無新增 Codex 待辦。npm 69 pass、build pass；pytest 78 pass/1 fail（ffmpeg drawtext 缺口）。T105 實際 viewport／鍵盤、T115 列印視覺驗收未完成；T113 細分階段 API、T116 語音 API 尚缺，按誠實降級實作並列待決定。未推 main。
