@@ -96,7 +96,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T142 Codex：（T133 之後做）時間窗選擇器加「建議的時間窗」按鈕：呼叫 `POST /api/audit-drafts/{id}/windows`，把候選畫成時間軸上的色塊，點一下就把把手移過去，使用者還是要按「確認時間窗」。標明「由程式建議（未使用模型）」 — commit 593ecf8
 - [x] T133 Codex：上傳後可以在瀏覽器預覽影片，拖動兩個把手選 `t_start`、`t_end`（顯示到 0.01 秒），使用者按「確認時間窗」才送出。時間只來自使用者操作，前端不猜 — commit 66249bc
 - [ ] T135 Codex：「How it works」頁（英文為主）：流程圖 Muse 問問題 → SAM 3.1／顏色追蹤 → physics 擬合 → 判定 → 說明，每一步標明「Meta model」或「deterministic code」，並標出目前哪些是 mock（照 `track_source`、`explanation.source` 的實際值，不要寫死成已接上）
-- [ ] T136 Codex：首頁給評審的開場區：一句話說明 + 三張卡片（real_own_2 一致、generated_meta_clip2 不一致、generated_meta_clip4 資料不足），點下去開那筆紀錄
+- [x] T136 Codex：首頁給評審的開場區：一句話說明 + 三張卡片（real_own_2 一致、generated_meta_clip2 不一致、generated_meta_clip4 資料不足），點下去開那筆紀錄 — commit 待回填（本次程式提交）
 - [ ] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤
 - [ ] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS
 - [ ] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS
@@ -492,3 +492,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex 工作總結：順序表 T100→T101→T102→T103→T104→T105→T113→T114→T115→T116→T117→T118 的前端實作已各分支提交，PR #46 待審；再次 pull main 無新增 Codex 待辦。npm 69 pass、build pass；pytest 78 pass/1 fail（ffmpeg drawtext 缺口）。T105 實際 viewport／鍵盤、T115 列印視覺驗收未完成；T113 細分階段 API、T116 語音 API 尚缺，按誠實降級實作並列待決定。未推 main。
 - 10/29 Codex T133：一般稽核與偵訊共享本機影片預覽、兩個鍵盤可用時間把手與 0.01 秒輸入；必須確認時間窗才能送出，改界線／重選片即失效。不自動猜起終點。npm/build 通過；pytest drawtext 環境缺口仍列待決定。
 - 10/29 Codex T142：接 POST draft/windows，候選以時間軸色塊與鍵盤按鈕顯示；選取只移把手，不自動確認。標示程式建議未使用模型，一般稽核重用該草稿送出，不重複傳影片。補端點測試，測試環境補既定 SDK。
+- 10/29 Codex T136：稽核首頁加入指定三筆結果卡與一句話開場，點擊 #examples/key 開對應儲存證據，不把範例 key 當後端 ID。npm 72 pass、build pass；pytest 187 pass/4 fail（本機缺 meta-sam-parser、drawtext）。
