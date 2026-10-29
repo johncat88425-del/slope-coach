@@ -58,7 +58,7 @@
 
 
 **Codex**（照順序做）
-- [x] T167 Codex：已檢查線上 Pages 在 1440／390px 的 demo、wall、audit、compare、how、home（12 張不同截圖，未 commit）；六個頁面／圖片與全部導覽均可用，console 無錯誤。修正 Guided demo 在長頁面看不到下一步、一般導覽被拉回、跨頁焦點遺失；本機 Pages 子路徑版以鍵盤完成六步、固定面板保持可見、結束回到啟動按鈕。npm 118 pass、pytest 224 pass、一般與 Pages build pass；修補待 PR 合併後部署。
+- [x] T167 Codex：已檢查線上 Pages 在 1440／390px 的 demo、wall、audit、compare、how、home（12 張不同截圖，未 commit）；六個頁面／圖片與全部導覽均可用，console 無錯誤。修正 Guided demo 在長頁面看不到下一步、一般導覽被拉回、跨頁焦點遺失；本機 Pages 子路徑版以鍵盤完成六步、固定面板保持可見、結束回到啟動按鈕。npm 118 pass、pytest 224 pass、一般與 Pages build pass；修補待 PR 合併後部署。 — commit 9889f77，PR #97（目標 main）。
 - [ ] T165 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ — frontend commit a624494；同步 main 7e2c8bf，PR #87（目標 main）；本任務原暫編 T164，同步 main 後避開 Manus 的 T164 改為 T165。
 - [x] T157 Codex：依 Claude「demo 資料已定版」公告，靜態展示與結果牆共用 T118 的完整 10 筆 SAM 紀錄；移除 own_3 舊判定文案，補模型標題、原始原因，展示／導覽／比較共用三種結果入口，程式測試範例另列。npm 114 pass、普通／靜態 build pass、pytest 222 pass；只改 frontend 與 STATUS。 — commit 82f90f9，PR #88（目標 main）。
 
