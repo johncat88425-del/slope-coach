@@ -60,7 +60,7 @@
 
 
 **Antigravity**（照順序做）
-- [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
+- [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過）— commit 38c3570
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
 - [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
 - [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
