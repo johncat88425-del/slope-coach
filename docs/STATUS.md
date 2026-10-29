@@ -62,7 +62,7 @@
 **Antigravity**（照順序做）
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
-- [ ] T161 Antigravity：（T120 的手機版重做）三張 390 px 手機截圖檔案完全一樣（同一個 md5），表示沒有真的切到各畫面。請用 Playwright `viewport={"width":390,"height":844}`，每個畫面先等該畫面的 data-testid 出現再截圖，存成 `docs/screens/<畫面>_mobile_390px.png`。commit 前用 `md5` 確認三張不同。
+- [x] T161 Antigravity：（T120 的手機版重做）三張 390 px 手機截圖檔案已重拍，先等 data-testid 出現並捲入視窗後截圖，確認三張 md5 皆不同（results_wall: 92ab8e63, pair_comparison: 3b5addab, ghost_review: 716e193e）— commit f7f98f2
 - [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
 - [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
 
