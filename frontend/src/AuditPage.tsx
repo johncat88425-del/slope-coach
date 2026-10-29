@@ -1,3 +1,4 @@
+import {AuditProgress} from './AuditProgress.js';
 import {GravityRuler} from './GravityRuler.js';
 import {InterviewPanel} from './InterviewPanel.js';
 import {BounceChart} from './BounceChart.js';
@@ -88,6 +89,6 @@ export function AuditPage({ api, auditId = null }: {
         return; void run(() => api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined,objectName,slowMotion?slowMotion==='yes':undefined)); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input data-testid="audit-id" value={id} onChange={e => setId(e.target.value)}/></label><button data-testid="audit-load" disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
- </fieldset><div aria-live="polite">{busy && <div data-testid="audit-progress" role="status">{uploadPercent===100 ? <p>Upload complete. Waiting for backend analysis; analysis progress is unavailable.</p> : uploadPercent!==null ? <><label>Upload progress<progress max="100" value={uploadPercent}/></label><p>{uploadPercent}%</p></> : <p>Request in progress. Please wait; no automatic retry will be made.</p>}</div>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult key={audit.audit_id} audit={audit} replay={replay} videoUrl={preview || undefined}/>}
+ </fieldset><div aria-live="polite">{busy && <AuditProgress percent={uploadPercent}/>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult key={audit.audit_id} audit={audit} replay={replay} videoUrl={preview || undefined}/>}
  </section>}</Localize>;
 }
