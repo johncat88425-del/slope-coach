@@ -206,21 +206,46 @@ class PersistenceEventOut(BaseModel):
     detail: str
 
 
+QuestionField = Literal["camera_static", "slow_motion", "object_size_m", "time_window", "assumed_model", "length_m"]
+
+
+class AuditQuestion(BaseModel):
+    """A question the model asks the user before an audit. The answer, not the model, sets the input."""
+    field: QuestionField
+    text: str = Field(max_length=200)
+
+
+class AuditInterview(BaseModel):
+    source: Literal["model", "mock"]
+    questions: list[AuditQuestion]
+    note: str | None = None
+
+
+class AuditDraftOut(BaseModel):
+    draft_id: str
+    video_url: str
+    interview: AuditInterview
+
+
 class AuditOut(BaseModel):
     """Video physics audit. verdict is relative to assumed_model only; never real vs generated."""
     audit_id: str
     created_at: datetime
-    assumed_model: Literal["free_flight", "bounce"]
+    assumed_model: Literal["free_flight", "bounce", "pendulum"]
     t_start: float
     t_end: float
     camera_static: bool
     object_size_m: float | None
+    length_m: float | None = None  # pendulum only, user-measured
+    slow_motion: bool | None = None  # user's answer; True refuses the timing-based checks
     video_url: str
     overlay_url: str | None
-    track_source: Literal["frame_diff", "sam", "manual"]
+    track_source: Literal["frame_diff", "color", "sam", "manual"]
     verdict: Literal["consistent", "inconsistent", "insufficient_data"]
     reasons: list[str]
     numbers: dict[str, float]
     points: list[tuple[float, float, float]]  # [t_s, x_px, y_px] at 480 px frame width
+    ghost_points: list[tuple[float, float, float]] = []  # same start and velocity, falling at 9.81; needs object_size_m
+    nearest_body: str | None = None  # body whose surface gravity is closest to the apparent g
     events: list[PersistenceEventOut]
     limits: list[str]

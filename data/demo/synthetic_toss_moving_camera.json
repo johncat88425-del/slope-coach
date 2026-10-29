@@ -1,0 +1,29 @@
+{
+ "audit_id": "aud_557e2e4fe813",
+ "created_at": "2026-10-28T02:53:31.864797Z",
+ "assumed_model": "free_flight",
+ "t_start": 0.0,
+ "t_end": 0.6,
+ "camera_static": false,
+ "object_size_m": 0.06,
+ "length_m": null,
+ "video_url": "/media/audits/aud_557e2e4fe813/video.mp4",
+ "overlay_url": null,
+ "track_source": "frame_diff",
+ "verdict": "insufficient_data",
+ "reasons": [
+  "camera is not static; this check needs a fixed camera"
+ ],
+ "numbers": {},
+ "points": [],
+ "ghost_points": [],
+ "nearest_body": null,
+ "events": [],
+ "limits": [
+  "Tracking uses frame differencing, not a model; motion blur inflates the object size.",
+  "Perspective is not modelled: motion towards or away from the camera is not reliable.",
+  "The time window and camera state are confirmed by the user."
+ ],
+ "synthetic": true,
+ "synthetic_case": "toss_moving_camera"
+}

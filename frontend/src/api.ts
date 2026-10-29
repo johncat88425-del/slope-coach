@@ -1,0 +1,80 @@
+import type {AuditModel,AuditOut} from './audit';
+export type InterviewField='camera_static'|'slow_motion'|'object_size_m'|'time_window'|'assumed_model'|'length_m';
+export type AuditDraft={draft_id:string;video_url:string;interview:{source:'model'|'mock';note?:string|null;questions:{field:InterviewField;text:string}[]}};
+export type InterviewAnswers={object_name?:string;t_start:number;t_end:number;camera_static:boolean;slow_motion:boolean;assumed_model:AuditModel;object_size_m?:number;length_m?:number};
+export type Pixel = [number, number];
+export type ScenePhoto = {photo_id: string; photo_url?: string|null; scene_check: {source: 'model'|'mock'; needs_retake: boolean; retake_reasons: string[]}};
+export type CalibrationInput = {ruler_px: [Pixel,Pixel]; ruler_length_m: number; path_start_px: Pixel; path_end_px: Pixel; slope_length_m: number; slope_height_m: number; reason?: string};
+export type Calibration = CalibrationInput & {version:number; m_per_px:number; angle_deg:number; created_at:string};
+export type Detection = {t_s:number; centroid_px:Pixel|null; area_px?:number; source:'sam'|'manual'};
+export type Sample = {t_s:number; s_m:number|null; quality:string; source:string};
+export type TrialKind = 'baseline'|'test'|'intervention';
+export type Trial = {trial_id:string; kind:TrialKind; calibration_version:number; uploaded_at:string; video_url:string|null; t0_s:number|null; t0_source:'user'|null; samples:Sample[]; usable_fraction:number; manual_frames:number};
+export type Baseline = {version:number; calibration_version:number; trial_ids:string[]; mu_eff:number; mu_spread:number; accel_mean_m_s2:number; accel_spread_m_s2:number; created_at:string};
+export type Prediction = {prediction_id:string; calibration_version:number; baseline_version:number; created_at:string; locked:true; params:Record<string,number>; assumptions:string[]; curve:[number,number][]; overlay_px:[number,number,number][]};
+export type Evidence = {candidate:'dimension_check'|'release_check'; finding:string; numbers:Record<string,number>; cannot_distinguish:string};
+export type Comparison = {comparison_id:string; prediction_id:string; trial_id:string; verdict:'consistent'|'discrepancy'|'insufficient_data'; checks:{name:string;passed:boolean;detail:string;blocking:boolean}[]; fit:Record<string,number>|null; predicted_arrival_s:number|null; observed_arrival_s:number|null; arrival_error_rel:number|null; tolerance_rel:number; residuals:[number,number][]; can_still_say:string[]; evidence:Evidence[];created_at:string};
+export type Intervention = {intervention_id:string;comparison_id:string;check_type:string;instructions:Record<string,string|string[]>;chosen_by:string;model_rationale:string|null;result_trial_id:string|null;created_at:string};
+export type ExperimentRecord = {experiment_id:string;title:string;created_at:string;scene_photos:ScenePhoto[];calibrations:Calibration[];trials:Trial[];baselines:Baseline[];predictions:Prediction[];comparisons:Comparison[];interventions:Intervention[]};
+export class ApiError extends Error {
+  constructor(public status:number, message:string) {super(message); this.name='ApiError'}
+}
+export function friendlyApiError(error:unknown):string {
+ if(error instanceof ApiError){const prefix=error.status===404?'Result not found. Check the ID or load a saved JSON.':error.status===422?'Please check the submitted settings.':'The backend could not complete this request.';return prefix+' Backend reason: '+error.message}
+ return error instanceof Error ? error.message : String(error);
+}
+function backendError(status:number,raw:string){let message=raw;try{const body=JSON.parse(raw);message=typeof body.detail==='string'?body.detail:JSON.stringify(body.detail??body)}catch{}return new ApiError(status,message||'Request failed')}
+export type UploadProgress=(percent:number|null)=>void;
+export function uploadAudit(url:string,data:FormData,progress:UploadProgress,makeXhr:()=>XMLHttpRequest=()=>new XMLHttpRequest()):Promise<AuditOut>{
+ return new Promise((resolve,reject)=>{const xhr=makeXhr();xhr.open('POST',url);xhr.timeout=120000;
+ xhr.upload.onprogress=e=>progress(e.lengthComputable&&e.total>0?Math.min(100,Math.round(e.loaded/e.total*100)):null);
+ xhr.upload.onload=()=>progress(100);
+ xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){reject(backendError(xhr.status,xhr.responseText));return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(new Error('The backend returned an unreadable result. Load the record before submitting again.'))}};
+ xhr.onerror=()=>reject(new Error('Cannot connect to the backend. Check your connection and try loading the record before submitting again.'));
+ xhr.ontimeout=()=>reject(new Error('Request timed out. Processing may have completed; load the record before submitting again.'));
+ xhr.onabort=()=>reject(new Error('Upload was interrupted. No automatic retry was made.'));
+ progress(0);xhr.send(data);
+ });
+}
+export function createApi(base='', transport:typeof fetch=fetch) {
+  const root=base.replace(/\/$/,'');
+  async function request<T>(path:string, init:RequestInit={}, text=false):Promise<T> {
+    const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),120000);
+    try {
+      const response=await transport(root+'/api'+path,{...init,signal:controller.signal});
+      if(!response.ok) {
+        const raw=await response.text(); let message=raw;
+        try {const body=JSON.parse(raw); message=typeof body.detail==='string'?body.detail:JSON.stringify(body.detail??body)} catch { /* retain server error text */ }
+        throw new ApiError(response.status,message||response.statusText);
+      }
+      return (text?await response.text():await response.json()) as T;
+    } catch(error) {
+      if(error instanceof ApiError) throw error;
+      if(error instanceof Error && error.name==='AbortError') throw new Error('請求逾時。操作可能已在伺服器完成，請先重新讀取紀錄，不會自動重送。');
+      throw new Error('Cannot connect to the backend. Check your connection and try loading the record before submitting again.');
+    } finally {clearTimeout(timer)}
+  }
+  function json<T>(method:string,path:string,body:unknown) {return request<T>(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
+  const e=(id:string)=>'/experiments/'+encodeURIComponent(id), t=(id:string)=>'/trials/'+encodeURIComponent(id);
+  return {
+    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight',onProgress?:UploadProgress,length_m?:number,object_name='ball',slow_motion?:boolean)=>{const data=new FormData();data.append('file',file);data.append('object_name',object_name.trim()||'ball');if(slow_motion!==undefined)data.append('slow_motion',String(slow_motion));data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));if(length_m!==undefined)data.append('length_m',String(length_m));return onProgress?uploadAudit(root+'/api/audits',data,onProgress):request<AuditOut>('/audits',{method:'POST',body:data})},
+    auditDraft:(file:File)=>{const data=new FormData();data.append('file',file);return request<AuditDraft>('/audit-drafts',{method:'POST',body:data})},
+    auditFromDraft:(id:string,answers:InterviewAnswers)=>{const data=new FormData();data.append('draft_id',id);for(const [k,v] of Object.entries(answers))if(v!==undefined)data.append(k,String(v));return request<AuditOut>('/audits',{method:'POST',body:data})},
+    getAudit:(id:string)=>request<AuditOut>('/audits/'+encodeURIComponent(id)),
+    create:(title:string)=>json<ExperimentRecord>('POST','/experiments',{title}),
+    get:(id:string)=>request<ExperimentRecord>(e(id)),
+    photo:(id:string,file:File)=>{const data=new FormData();data.append('file',file);return request<ScenePhoto>(e(id)+'/scene-photo',{method:'POST',body:data})},
+    calibration:(id:string,body:CalibrationInput)=>json<Calibration>('POST',e(id)+'/calibrations',body),
+    trial:(id:string,kind:TrialKind,version:number,file:File)=>{const data=new FormData();data.append('kind',kind);data.append('calibration_version',String(version));data.append('file',file);return request<Trial>(e(id)+'/trials',{method:'POST',body:data})},
+    track:(id:string)=>request<Trial>(t(id)+'/track?text_prompt='+encodeURIComponent('sliding block'),{method:'POST'}),
+    detections:(id:string,detections:Detection[])=>json<Trial>('PUT',t(id)+'/detections',{detections}),
+    releaseSuggestion:(id:string)=>request<{source:'model'|'mock';candidate_t0_s:number|null;reason:string}>(t(id)+'/release-suggestion'),
+    release:(id:string,t0_s:number)=>json<Trial>('PUT',t(id)+'/release-time',{t0_s}),
+    baseline:(id:string,trial_ids:string[],calibration_version:number)=>json<Baseline>('POST',e(id)+'/baselines',{trial_ids,calibration_version}),
+    predict:(id:string,calibration_version:number,baseline_version:number,distance_m:number)=>json<Prediction>('POST',e(id)+'/predictions',{calibration_version,baseline_version,distance_m}),
+    compare:(id:string,prediction_id:string,trial_id:string)=>json<Comparison>('POST',e(id)+'/comparisons',{prediction_id,trial_id}),
+    intervene:(id:string,comparison_id:string,check_type:Evidence['candidate'])=>json<Intervention>('POST',e(id)+'/interventions',{comparison_id,check_type,chosen_by:'user'}),
+    link:(id:string,result_trial_id:string)=>json<Intervention>('PATCH','/interventions/'+encodeURIComponent(id),{result_trial_id}),
+    report:(id:string,format:'md'|'csv')=>request<string>(e(id)+'/report.'+format,{},true),
+  };
+}

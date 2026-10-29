@@ -47,9 +47,13 @@
 - `reasons[]`：判定的原因，或拒判的原因。
 - `numbers{}`：程式算出的數字。可能有 `g_apparent_m_s2`、`implied_time_factor`、`implied_object_size_m`、`tilt_deg`、`rms_over_travel`、`tracked_fraction`、`n_points`。沒算出來的就不會出現。
 - `points[]`：`[t, x_px, y_px]`，座標以寬 480 px 的畫面為準。
+- `assumed_model=pendulum`（v0.3）：單擺。可另外送 `length_m`（使用者自己量的擺長，公尺）。`numbers` 會有 `period_s`、`period_spread`（各次擺動週期的差異比例）、`implied_length_m`（由週期推算的擺長），有給 `length_m` 時還有 `predicted_period_s`。週期只用水平位置算，不需要尺寸。
+- `ghost_points[]`（v0.3）：「鬼影軌跡」。物體從同一點、用同樣的初速度出發，但以 9.81 m/s² 往畫面正下方落下時，每個時間點應該在的位置。只有填了 `object_size_m` 才會有。前端畫成虛線，和實測點並排。
+- `nearest_body`（v0.3）：表觀重力最接近的星球（Pluto、Moon、Mars、Earth、Jupiter），搭配 `numbers.g_vs_earth`（表觀 g 是地球的幾倍）。只是幫助理解的比喻，不是判定。
+- `numbers.g_apparent_low`、`g_apparent_high`、`g_verdict_robust`（v0.3）：物體像素大小估錯 ±30% 時，表觀 g 的範圍。`g_verdict_robust` 為 1 表示判定在這個範圍內都不變，0 表示判定會因尺寸誤差翻轉，畫面要提醒使用者。
 - `overlay_url`：軌跡疊加圖，給使用者確認追蹤點有落在物體上。
 - `events[]`：物體持續性事件（消失、大小跳動、位置跳動），附發生時間。
-- `track_source`：目前是 `frame_diff`。接上 SAM 後是 `sam`，畫面要標明「由 SAM 3.1 產生」。
+- `track_source`：`sam`（畫面要標明「由 SAM 3.1 追蹤」）、`color`（v0.6：沒接 SAM、而且 `object_name` 含顏色時，例如 `orange ball`，用顏色＋移動追蹤，未使用模型）、`frame_diff`（其他情況）、`manual`。
 - `limits[]`：已知限制，畫面要顯示。
 - 物體大小沿軌跡變化超過 30%（`numbers.size_trend`），表示物體朝鏡頭或遠離鏡頭移動，結果會是 `insufficient_data`。
 - `bounce` 模式會回傳 `rebound_ratio_k`，代表第 k 次反彈高度除以前一次高度。大於 1 加上容差就判不一致。
@@ -65,4 +69,17 @@
 
 ## Meta 模型接入點（給 Muse Code）
 
-`backend/model_hooks.py` 定義了 `ModelHooks` 介面，共三個方法：`check_scene`、`track_slider`、`suggest_release_time`。預設的 `MockHooks` 不連網路。`meta_client` 寫好後，在啟動時呼叫 `set_hooks(MetaHooks())` 替換掉它。選下一次驗證的代理（T11）只能從 `ComparisonOut.evidence` 的候選中挑一個，並把理由放進 `model_rationale`。
+`backend/model_hooks.py` 定義了 `ModelHooks` 介面，共五個方法：`check_scene`、`track_slider`、`suggest_release_time`、`interview_audit`（v0.4）、`track_object`（v0.5，給稽核用的 SAM 3.1 追蹤：座標要正規化到 0..1，面積是佔整個畫面的比例，每一格一筆，找不到物體時 centroid 為 null；沒接上時丟出 `TrackingUnavailable`，後端會改用 frame differencing）。`POST /api/audits` 新增 `object_name`（給 SAM 的文字提示，預設 "ball"），結果裡的 `track_source` 會標明是 `sam` 還是 `frame_diff`。預設的 `MockHooks` 不連網路。`meta_client` 寫好後，在啟動時呼叫 `set_hooks(MetaHooks())` 替換掉它。選下一次驗證的代理（T11）只能從 `ComparisonOut.evidence` 的候選中挑一個，並把理由放進 `model_rationale`。
+
+### Muse 偵訊（v0.4，T78）
+
+兩個步驟，舊的單一步驟 `POST /api/audits`（直接送 file）仍然可用。
+
+1. `POST /api/audit-drafts`（multipart：`file`）→ `201 {draft_id, video_url, interview}`
+    - `interview.source`：`model`（由 Muse Spark 提問）或 `mock`（固定問題）。模型沒接上、失敗，或問題沒通過檢查時，都會是 `mock`，原因寫在 `interview.note`。
+    - `interview.questions[]`：最多 3 題，每題是 `{field, text}`。`field` 是 `camera_static`、`slow_motion`、`object_size_m`、`time_window`、`assumed_model` 或 `length_m`，代表這題的答案要填到哪個欄位。`text` 不准含數字（10 以下的整數除外），也不准有真偽、因果字眼。
+2. 使用者回答後，呼叫 `POST /api/audits`，用 `draft_id` 取代 `file`，再加上使用者確認過的欄位。新欄位 `slow_motion`（布林）：使用者說是慢動作時，`free_flight` 和 `pendulum` 會回 `insufficient_data`，因為時間不是真實時間。
+    - 一個 `draft_id` 只能用一次，再用會回 404。`file` 和 `draft_id` 必須剛好送一個，否則回 422。
+- 前端顯示問題時要標明「由 Muse Spark 提問」（`source=model`）或「固定問題」（`source=mock`）。
+- 模型只負責提問，答案（數字、是否固定、是否慢動作）一律由使用者輸入。
+
