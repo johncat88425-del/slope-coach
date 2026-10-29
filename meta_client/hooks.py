@@ -15,8 +15,15 @@ from __future__ import annotations
 from pathlib import Path
 
 from backend.model_hooks import ModelHooks, TrackingUnavailable
-from backend.schemas import DetectionIn, ReleaseSuggestion, SceneCheck
+from backend.schemas import (
+    AuditInterview,
+    AuditQuestion,
+    DetectionIn,
+    ReleaseSuggestion,
+    SceneCheck,
+)
 
+from . import interview as _interview
 from . import sam as _sam
 from . import spark as _spark
 from .exceptions import MetaClientError
@@ -74,3 +81,11 @@ class MetaHooks(ModelHooks):
     def suggest_release_time(self, video_path: Path) -> ReleaseSuggestion:
         result = _spark.suggest_release_time(video_path)
         return ReleaseSuggestion(source="model", **result)
+
+    def interview_audit(self, video_path: Path) -> AuditInterview:
+        result = _interview.interview_audit(video_path)
+        return AuditInterview(
+            source="model",
+            questions=[AuditQuestion(**q) for q in result["questions"]],
+            note=None,
+        )
