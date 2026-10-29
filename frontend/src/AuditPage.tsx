@@ -1,3 +1,4 @@
+import {PrintReport} from './PrintReport.js';
 import {AuditProgress} from './AuditProgress.js';
 import {GravityRuler} from './GravityRuler.js';
 import {InterviewPanel} from './InterviewPanel.js';
@@ -31,7 +32,7 @@ export function AuditResult({ audit, replay = false, videoUrl }: {
  {audit.assumed_model==='bounce'&&<BounceChart numbers={audit.numbers}/>}
  {audit.assumed_model==='bounce' && <p>Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.</p>}<EventTimeline events={audit.events}/>
  {audit.verdict==='insufficient_data' && audit.numbers.size_trend!==undefined && <aside data-testid="audit-size-trend" aria-label="Size trend limitation"><h3>Size trend limitation</h3><p>size_trend: <span title={String(audit.numbers.size_trend)}>{formatNumber(audit.numbers.size_trend)}</span></p><p>A changing apparent size can make the 2D motion check unreliable. The backend rejects changes beyond its quality threshold. Review the backend reasons above; this value alone does not establish a cause.</p></aside>}
- <PhysicsCard audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/><button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json", "application/json;charset=utf-8")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}>{r}</li>)}</ul>
+ <PrintReport audit={audit}/><PhysicsCard audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/><button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json", "application/json;charset=utf-8")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}>{r}</li>)}</ul>
  </article>}</Localize>;
 }
 export function AuditPage({ api, auditId = null }: {
