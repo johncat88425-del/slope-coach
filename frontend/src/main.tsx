@@ -2,7 +2,7 @@ import { Localize, LanguageRoot } from './i18n.js';
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { createRoot } from 'react-dom/client';
-import { auditIdFromHash, createExperiment, imagePoint, pages, replacePhoto, resolveRoute, updateDraft, validateDraft } from './experiment';
+import { exampleKeyFromHash, auditIdFromHash, createExperiment, imagePoint, pages, replacePhoto, resolveRoute, updateDraft, validateDraft } from './experiment';
 import type { Draft, Point } from './experiment';
 import { createApi, friendlyApiError } from './api';
 import type { ExperimentRecord, TrialKind, ScenePhoto } from './api';
@@ -11,6 +11,7 @@ import { CurveChart } from './CurveChart';
 import { mediaUrl } from './media';
 import { ModelSource } from './ModelSource';
 import { AuditPage } from './AuditPage';
+import {OpeningCards,SavedExample} from './OpeningCards';
 import {AutoTour} from './AutoTour';
 import {PairComparison} from './PairComparison';
 import {ResultsWall} from './ResultsWall';
@@ -28,6 +29,7 @@ catch {
     return '';
 } }
 function App() {
+    const [exampleKey,setExampleKey]=useState(()=>exampleKeyFromHash(location.hash));
     const [auditRouteId, setAuditRouteId] = useState(()=>auditIdFromHash(location.hash));
     const [route, setRoute] = useState(() => resolveRoute(location.hash));
     const [local, setLocal] = useState(() => createExperiment('local-draft'));
@@ -45,7 +47,7 @@ function App() {
     const image = useRef<HTMLImageElement>(null);
     const allocatedUrls = useRef<string[]>([]);
     const { draft } = local;
-    const isCoach = !['audit','home','demo','wall','compare'].includes(route);
+    const isCoach = !['audit','home','demo','wall','compare','examples'].includes(route);
     const active = pages.find(page => page.route === route)!;
     const calibration = record?.calibrations.find(c => c.version === calVersion);
     const prediction = record?.predictions.find(p => p.prediction_id === predictionId);
@@ -78,12 +80,12 @@ function App() {
         const c = value.calibrations.at(-1);
         setLocal(current => ({ ...current, draft: { ...current.draft, photo: { name: photo!.photo_id, url: photoUrl }, size: { width: 0, height: 0 }, points: c ? [...c.ruler_px, c.path_start_px, c.path_end_px].map(([x, y]) => ({ x, y })) : [], length: c ? String(c.slope_length_m) : '', height: c ? String(c.slope_height_m) : '', rulerLength: c ? String(c.ruler_length_m) : '', captureConfirmed: false } }));
     } adopt(value); setScene(value.scene_photos.at(-1) ?? null); setCalVersion(value.calibrations.at(-1)?.version ?? 0); setBaseVersion(value.baselines.at(-1)?.version ?? 0); setPredictionId(value.predictions.at(-1)?.prediction_id ?? ''); setTrialId(value.trials.at(-1)?.trial_id ?? ''); setComparisonId(value.comparisons.at(-1)?.comparison_id ?? ''); setInterventionId(value.interventions.at(-1)?.intervention_id ?? ''); setBaselineIds([]); }
-    useEffect(() => { const update = () => {setRoute(resolveRoute(location.hash));setAuditRouteId(auditIdFromHash(location.hash));}; window.addEventListener('hashchange', update); return () => window.removeEventListener('hashchange', update); }, []);
+    useEffect(() => { const update = () => {setRoute(resolveRoute(location.hash));setAuditRouteId(auditIdFromHash(location.hash));setExampleKey(exampleKeyFromHash(location.hash));}; window.addEventListener('hashchange', update); return () => window.removeEventListener('hashchange', update); }, []);
     useEffect(() => { document.title = active.title + ' · Motion Audit'; }, [active.title]);
     useEffect(() => { setRestConfirmed(false); setTrialFile(null); setTrialPreview(''); }, [predictionId, calVersion]);
     useEffect(() => () => allocatedUrls.current.forEach(value => URL.revokeObjectURL(value)), []);
     // Read-only resume: never auto-create or repeat a mutation after refresh.
-    useEffect(() => { if (['home','audit','demo','wall','compare'].includes(resolveRoute(location.hash))) return; const id = rememberedId(); if (!id)
+    useEffect(() => { if (['home','audit','demo','wall','compare','examples'].includes(resolveRoute(location.hash))) return; const id = rememberedId(); if (!id)
         return; let cancelled = false; setBusy(true); api.get(id).then(value => { if (!cancelled)
         selectRecord(value); }).catch(e => { if (!cancelled)
         setError(friendlyApiError(e)); }).finally(() => { if (!cancelled)
@@ -101,10 +103,10 @@ function App() {
         throw new Error('請先選取此校準版本的已鎖定預測，並確認本次從靜止釋放。'); const t = await api.trial(record.experiment_id, trialKind, calVersion, trialFile); setVideos(old => ({ ...old, [t.trial_id]: trialPreview })); setTrialId(t.trial_id); setTrialFile(null); setTrialPreview(''); await refresh(); setMessage('影片已上傳。請自動追蹤或手動標記，再確認起滑時刻。'); }
     async function download(format: 'md' | 'csv') { if (!record)
         return; const content = await api.report(record.experiment_id, format); const href = URL.createObjectURL(new Blob([content], { type: format === 'csv' ? 'text/csv;charset=utf-8' : 'text/markdown;charset=utf-8' })); const anchor = document.createElement('a'); anchor.href = href; anchor.download = record.experiment_id + '.' + format; anchor.click(); setTimeout(() => URL.revokeObjectURL(href), 1000); }
-    return <Localize>{<><GuidedDemo route={route}/><a className="skip-link" href="#workspace">Skip to workspace</a><header><b>Motion Audit</b><span>Check motion against your assumed physical model.</span></header><main><aside><p className="eyebrow">Video physics audit</p><h1>{isCoach?'Experiment coach':'Check whether motion in a video fits your assumed physical model.'}</h1><nav aria-label="Main sections"><a data-testid="nav-audit" href="#audit" aria-current={!isCoach?'page':undefined}>Check video</a><a data-testid="nav-coach" href="#setup" aria-current={isCoach?'page':undefined}>Experiment coach</a></nav>{isCoach?<nav aria-label="實驗步驟">{pages.filter(p=>!['home','audit','demo','wall','compare'].includes(p.route)).map((p,i)=><a data-testid={'nav-'+p.route} href={'#'+p.route} key={p.route} aria-current={route===p.route?'page':undefined}>{i+1}　{p.title}</a>)}</nav>:<nav aria-label="Review resources"><a data-testid="nav-home" href="#home">Scope and limitations</a><a href="#compare">Compare two clips</a><a href="#wall" data-testid="nav-wall">Results wall</a><a data-testid="nav-demo" href="#demo">Compare outcomes</a></nav>}<p>{isCoach?'Fixed camera · Approximately side-on · One straight slope · One slider':'Fixed camera · Supported motion models · Explicit insufficient-data outcomes'}</p></aside><section data-testid="workspace" id="workspace" tabIndex={-1} aria-label={active.title}>{route==='audit'&&<AutoTour/>}
+    return <Localize>{<><GuidedDemo route={route}/><a className="skip-link" href="#workspace">Skip to workspace</a><header><b>Motion Audit</b><span>Check motion against your assumed physical model.</span></header><main><aside><p className="eyebrow">Video physics audit</p><h1>{isCoach?'Experiment coach':'Check whether motion in a video fits your assumed physical model.'}</h1><nav aria-label="Main sections"><a data-testid="nav-audit" href="#audit" aria-current={!isCoach?'page':undefined}>Check video</a><a data-testid="nav-coach" href="#setup" aria-current={isCoach?'page':undefined}>Experiment coach</a></nav>{isCoach?<nav aria-label="實驗步驟">{pages.filter(p=>!['home','audit','demo','wall','compare','examples'].includes(p.route)).map((p,i)=><a data-testid={'nav-'+p.route} href={'#'+p.route} key={p.route} aria-current={route===p.route?'page':undefined}>{i+1}　{p.title}</a>)}</nav>:<nav aria-label="Review resources"><a data-testid="nav-home" href="#home">Scope and limitations</a><a href="#compare">Compare two clips</a><a href="#wall" data-testid="nav-wall">Results wall</a><a data-testid="nav-demo" href="#demo">Compare outcomes</a></nav>}<p>{isCoach?'Fixed camera · Approximately side-on · One straight slope · One slider':'Fixed camera · Supported motion models · Explicit insufficient-data outcomes'}</p></aside><section data-testid="workspace" id="workspace" tabIndex={-1} aria-label={active.title}>{route==='audit'&&<><OpeningCards/><AutoTour/></>}
  <div className="notice">照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。</div>
  <div aria-live="polite">{busy && <p role="status">處理中，請勿重複提交…</p>}{error && <p data-testid="workspace-error" role="alert">{error}</p>}{message && <p role="status">{message}</p>}</div>
- {route !== 'audit' && route !== 'home' && route !== 'demo' && route !== 'wall' && route !== 'compare' && <fieldset disabled={busy}><legend>實驗紀錄</legend>
+ {route !== 'audit' && route !== 'home' && route !== 'demo' && route !== 'wall' && route !== 'compare' && route !== 'examples' && <fieldset disabled={busy}><legend>實驗紀錄</legend>
  {!record && <><label>實驗名稱<input value={title} onChange={e => setTitle(e.target.value)}/></label><button data-testid="experiment-create" onClick={() => void run(async () => { selectRecord(await api.create(title)); setLocal(createExperiment('local-draft')); setPhotoFile(null); })}>建立實驗</button></>}
  <label>讀取實驗 ID<input value={loadId} onChange={e => setLoadId(e.target.value)}/></label><button data-testid="experiment-load" disabled={!loadId.trim()} onClick={() => void run(async () => { if (record && record.experiment_id !== loadId) {
             setLocal(createExperiment('local-draft'));
@@ -117,7 +119,7 @@ function App() {
         }
         catch { /* optional storage */ } }}>開始另一個實驗（保留舊紀錄）</button><button onClick={() => void run(refresh)}>重新讀取後端</button><label>校準版本<select value={calVersion} onChange={e => { setCalVersion(Number(e.target.value)); setBaselineIds([]); }}><option value="0">尚未選取／草稿未保存</option>{record.calibrations.map(c => <option value={c.version} key={c.version}>v{c.version} · L {c.slope_length_m} m / h {c.slope_height_m} m（使用者）</option>)}</select></label></>}
  </fieldset>}
- {route === 'compare' ? <PairComparison/> : route === 'wall' ? <ResultsWall/> : route === 'demo' ? <DemoPage/> : route === 'home' ? <Home/> : route === 'audit' ? <AuditPage api={api} auditId={auditRouteId}/> : <fieldset disabled={busy || !record}><legend>{active.title}</legend>
+ {route === 'examples' ? <SavedExample name={exampleKey}/> : route === 'compare' ? <PairComparison/> : route === 'wall' ? <ResultsWall/> : route === 'demo' ? <DemoPage/> : route === 'home' ? <Home/> : route === 'audit' ? <AuditPage api={api} auditId={auditRouteId}/> : <fieldset disabled={busy || !record}><legend>{active.title}</legend>
  {route === 'setup' && <><h2>確認實拍照片與尺寸</h2><p>尺的兩端、滑塊（作為路徑起點）與坡底終點須由你確認；共四個標記。</p>
  <label className="upload">上傳實驗照片<input type="file" accept="image/*" onChange={event => { const file = event.target.files?.[0]; if (!file)
                 return; setCalVersion(0); setScene(null); setPhotoFile(file); setLocal(current => replacePhoto(current, { name: file.name, url: url(file) })); if (record)
