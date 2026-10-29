@@ -9,6 +9,7 @@ export const pages = [
   {route:'demo',title:'對照展示'},
   {route:'wall',title:'結果牆'},
  {route:'compare',title:'雙片比較'},
+ {route:'examples',title:'範例結果'},
 ] as const;
 export type Route = typeof pages[number]['route'];
 export type Point = {x: number; y: number};
@@ -47,7 +48,9 @@ export function auditIdFromHash(hash:string):string|null {
  try {return decodeURIComponent(match[1]) || null} catch{return null}
 }
 export function auditHash(id:string){return '#/audits/'+encodeURIComponent(id)}
+export function exampleKeyFromHash(hash:string){const m=/^#examples\/([^/?#]+)$/.exec(hash);try{return m?decodeURIComponent(m[1]):null}catch{return null}}
 export function resolveRoute(hash: string): Route {
+ if(exampleKeyFromHash(hash))return 'examples';
   if(auditIdFromHash(hash)!==null)return 'audit';
   const route = hash.replace(/^#\/?/, '');
   return pages.find(page => page.route === route)?.route ?? 'audit';
