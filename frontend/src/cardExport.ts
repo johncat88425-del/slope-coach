@@ -7,7 +7,7 @@ export function physicsCardLines(a:AuditOut){
  const labels:Record<string,string>={g_vs_earth:'Apparent gravity / Earth gravity',implied_time_factor:'Implied time factor (model-dependent)',implied_object_size_m:'Implied object size under model assumptions (m)',period_s:'Observed period (s)',implied_length_m:'Implied pendulum length (m)',predicted_period_s:'Predicted period (s)'};
  for(const [key,label] of Object.entries(labels))if(a.numbers[key]!==undefined)lines.push(`${label}: ${formatNumber(a.numbers[key],key)}`);
  if(a.numbers.g_verdict_robust===0)lines.push('CAUTION: the gravity verdict changes within the backend size-error range. Check the measured size.');
- lines.push(`Tracking: ${{frame_diff:'frame comparison',sam:'SAM 3.1',manual:'manual observations'}[a.track_source]}`,'Backend reasons:',...a.reasons,'Known limitations:',...a.limits,'Model-relative result only. This card does not establish provenance or cause.');return lines;
+ lines.push(`Tracking: ${{frame_diff:'frame differencing (no model used)',sam:'Tracked by SAM 3.1',manual:'manual observations'}[a.track_source]}`,'Backend reasons:',...a.reasons,'Known limitations:',...a.limits,'Model-relative result only. This card does not establish provenance or cause.');return lines;
 }
 export async function downloadPhysicsCard(a:AuditOut,overlay?:string){
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');if(!ctx)throw new Error('PNG export is unavailable in this browser.');
