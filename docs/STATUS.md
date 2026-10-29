@@ -115,7 +115,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T149 Codex：T133–T142 的新元件補齊繁中和英文切換，加測試確認沒有漏翻的字串 — commit f53db34
 - [x] T150 Codex：時間窗選擇器的鍵盤操作（方向鍵移動把手、Enter 確認）和螢幕閱讀器標籤，補測試 — commit 381df65
 
-- [x] T152 Codex：依 john「發現待辦就做」指示，修正時間窗候選請求途中換片／送出時，舊草稿晚到可能綁到新片的競態；補測試。 — commit 待回填（本次程式提交）
+- [x] T152 Codex：依 john「發現待辦就做」指示，修正時間窗候選請求途中換片／送出時，舊草稿晚到可能綁到新片的競態；補測試。 — commit f50a4d1
 
 **Antigravity**（照順序做）
 - [x] T02 Antigravity→Claude：（10/29 06:40 Antigravity 整晚沒有 push，改由 Claude 做）`requirements.txt`、`scripts/dev.sh`（檢查 ffmpeg／python3／npm，缺什麼就列出 brew 指令；後端 8000、前端 5173；沒有金鑰時用 mock） — 見 PR T02
