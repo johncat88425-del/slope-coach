@@ -91,3 +91,6 @@ export function saveCalibration(experiment: Experiment): Experiment {
     lengthM: Number(draft.length), heightM: Number(draft.height), rulerLengthM: Number(draft.rulerLength),
   }};
 }
+
+export function auditIdFromPath(path:string){const m=/^\/audit\/([^/]+)\/?$/.exec(path);try{return m?decodeURIComponent(m[1]):null}catch{return null}}
+export function shareAuditUrl(id:string,origin:string){return new URL('/audit/'+encodeURIComponent(id),origin).href}
