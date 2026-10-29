@@ -369,6 +369,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 待 john 決定
 
+- 10/29 Codex 合併檢查：PR #55 仍為 OPEN；PR #56 已 MERGED，但目標是 #55 的 codex/T150-window-keyboard，不是 main。因此 main 尚未包含 T143–T152 的全部前端。PR #58（T153）已改接在 #55 分支上避免重複大 diff；請 Claude 先把 #55 合併 main，再 retarget／合併 #58。
+
 - （10/29 Claude）要不要用 GitHub Pages 放純靜態 demo 版（Codex T138 做好之後）？這會把 demo 紀錄公開放上網，repo 本來就要公開，Claude 建議可以，但要等 john 同意才開。
 
 - T116 Codex：docs/API.md 尚無 T109 錄音轉寫／欄位抽取端點與來源驗證契約；目前按鈕停用「需要 Meta API」，不請求麥克風。逐欄編輯／確認元件已備妥，但端到端錄音送出待 Muse／Claude 提供契約後再接。
@@ -563,3 +565,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 10/29 Codex 沒有待辦了：完成表無新增後，依 john 指示主動檢查並修正 T152 錯片競態，已推送並開 PR #56（接在 #55）。npm90 pass、標準／靜態build pass，pytest192 pass/1 fail（既有drawtext環境缺口）；再次pull main無Codex未勾項。未推main、未改後端。
 - 10/29 Codex T153：問答預設展開且放在拍攝清單之前，步驟明示上傳→提問→回答→確認時間窗→檢查；直接分析收進Advanced，JSON匯入與可選語音收合，結果留在收合區外。中英文與展開／排序回歸測試通過；npm91 pass、標準/靜態build pass，完整pytest保留drawtext環境缺口。
+
+- 10/29 Codex 沒有待辦了：T153 問答主要流程已推送 PR #58，npm91 pass、標準/靜態build pass，pytest192 pass/1 fail（drawtext）。再次pull無Codex待辦；另核對實際PR狀態，發現#55仍待合併main，已記錄給Claude。
