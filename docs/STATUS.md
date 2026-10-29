@@ -53,7 +53,7 @@
 
 
 **Codex**（照順序做）
-- [x] T162 Codex：評審用鍵盤和手機看的品質檢查（只改 `frontend/`）。(1) 只用鍵盤（Tab、Enter、空白鍵）從上傳影片走到看到結果，記下卡住或看不到焦點的地方並修好；(2) 檢查文字和背景的對比至少 4.5:1，不夠的改顏色 token；(3) 390 px 寬時沒有橫向捲動；(4) 每個由模型產生的區塊都有「由 Muse Spark／SAM 3.1 產生」標示，沒有的補上。補測試，`npm test` 和 `npm run build` 都要過，push 分支 `codex/T162-a11y`。 — commit 待回填（T162 程式提交）
+- [x] T162 Codex：評審用鍵盤和手機看的品質檢查（只改 `frontend/`）。(1) 只用鍵盤（Tab、Enter、空白鍵）從上傳影片走到看到結果，記下卡住或看不到焦點的地方並修好；(2) 檢查文字和背景的對比至少 4.5:1，不夠的改顏色 token；(3) 390 px 寬時沒有橫向捲動；(4) 每個由模型產生的區塊都有「由 Muse Spark／SAM 3.1 產生」標示，沒有的補上。補測試，`npm test` 和 `npm run build` 都要過，push 分支 `codex/T162-a11y`。 — commit be58457
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
 
 
