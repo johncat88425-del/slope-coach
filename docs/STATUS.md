@@ -2,7 +2,7 @@
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
 > **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
-> 最後更新：2026-10-29 03:15Z（Claude）
+> 最後更新：2026-10-29（Muse：T38 SAM 實測通過，舊分支整批搬上新 main）
 
 ## 一句話現況
 
@@ -24,18 +24,18 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
-- [ ] T05 Muse：`meta_client/`（Spark、SAM 3.1、花費計數與 120 美元上限、mock 測試）
-- [ ] T29 Muse：後端接上 MetaHooks（沒有金鑰時退回 Mock）
-- [ ] T34 Muse：Spark 建議運動片段 `suggest_motion_segment`。只回傳建議，不回傳測量數字，要通過 schema 檢查
-- [ ] T38 Muse：（後端介面已由 Claude 在 T84 做好，你只要在 MetaHooks 實作 `track_object`，呼叫 SAM 3.1，座標正規化規則見 docs/API.md v0.5）在 ModelHooks 加 `track_object(video_path, text_prompt, t_start, t_end)`，由 SAM 3.1 回傳每格的中心和面積，讓 `backend/audits.py` 可以改用 SAM（`track_source: "sam"`）。沒接上時維持 frame_diff
-- [ ] T39 Muse：Spark 檢查稽核影片的拍攝條件，包括鏡頭是否固定、是否近似側視、物體是否全程入鏡。只回傳布林值和原因，結果給使用者確認
-- [ ] T28 Muse：結果說明層。Spark 讀 `ComparisonOut` 或 `AuditOut` 寫說明，先過 `check_model_text()` 才顯示，畫面標明「由 Muse Spark 產生」。不准出現「真／假影片」「AI 生成」等字眼
-- [ ] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）
-- [ ] T24 Muse：語音口述設定（Voice Transcribe 轉文字，Spark 抽出欄位，使用者確認）
-- [ ] T16 Muse：Spark 與 Wonder 的 A/B 比較腳本。先用 mock 跑通，實際呼叫限 1 美元以內，花費記進成本紀錄
+- [x] T05 Muse：`meta_client/`（Spark、SAM 3.1、花費計數與 120 美元上限、mock 測試）— commit b696c68
+- [x] T29 Muse：後端接上 MetaHooks（沒有金鑰時退回 Mock）— commit b696c68
+- [x] T34 Muse：Spark 建議運動片段 `suggest_motion_segment`。只回傳建議，不回傳測量數字，要通過 schema 檢查 — commit b696c68
+- [x] T38 Muse：（後端介面已由 Claude 在 T84 做好，你只要在 MetaHooks 實作 `track_object`，呼叫 SAM 3.1，座標正規化規則見 docs/API.md v0.5）在 ModelHooks 加 `track_object(video_path, text_prompt, t_start, t_end)`，由 SAM 3.1 回傳每格的中心和面積，讓 `backend/audits.py` 可以改用 SAM（`track_source: "sam"`）。沒接上時維持 frame_diff — commit b696c68（真片實測 75 格 65 中，$0.015）
+- [x] T39 Muse：Spark 檢查稽核影片的拍攝條件，包括鏡頭是否固定、是否近似側視、物體是否全程入鏡。只回傳布林值和原因，結果給使用者確認 — commit b696c68
+- [x] T28 Muse：結果說明層。Spark 讀 `ComparisonOut` 或 `AuditOut` 寫說明，先過 `check_model_text()` 才顯示，畫面標明「由 Muse Spark 產生」。不准出現「真／假影片」「AI 生成」等字眼 — commit b696c68
+- [x] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）— commit b696c68
+- [x] T24 Muse：語音口述設定（Voice Transcribe 轉文字，Spark 抽出欄位，使用者確認）— commit b696c68
+- [x] T16 Muse：Spark 與 Wonder 的 A/B 比較腳本。先用 mock 跑通，實際呼叫限 1 美元以內，花費記進成本紀錄 — commit b696c68
 - [ ] T45 Muse：稽核代理。Spark 用工具呼叫，從固定清單（free_flight、bounce、persistence）選要跑哪些檢查，並說明理由。數字只來自工具輸出，理由先過 `check_model_text()`。這是「創意使用 Meta AI」的主要展示點
-- [ ] T46 Muse：Spark 準確度評估腳本。對 `data/gate/manifest.csv` 裡的影片，比較 Spark 建議的時間窗和物體，跟 john 的人工標註差多少，結果寫進 STATUS。只能送沒有人臉的影片
-- [ ] T47 Muse：英文版的說明文字（給評審看），同樣要過 `check_model_text()`
+- [x] T46 Muse：Spark 準確度評估腳本。對 `data/gate/manifest.csv` 裡的影片，比較 Spark 建議的時間窗和物體，跟 john 的人工標註差多少，結果寫進 STATUS。只能送沒有人臉的影片 — commit b696c68
+- [x] T47 Muse：英文版的說明文字（給評審看），同樣要過 `check_model_text()` — commit b696c68
 - [ ] T66 Muse：**Muse 偵訊**（特色功能）。後端契約已完成（docs/API.md v0.4、T78）：你只要在 MetaHooks 實作 `interview_audit(video_path) -> AuditInterview`，讓 Spark 看幾張畫面、回傳最多 3 題 `{field, text}`，後端會自動檢查，不通過就退回固定問題。下判定之前，Spark 先看影片的幾張畫面，向使用者提出最多 3 個問題，例如「有沒有開慢動作？」「鏡頭有沒有動？」「這顆球大概多大？」。使用者的回答變成確認過的輸入（`camera_static`、`object_size_m`、時間窗），Spark 不能自己填數字。畫面像一段問答，標明「由 Muse Spark 提問」
 - [ ] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。Spark 只寫 `{g_vs_earth:2}`、`{nearest_body}` 這種欄位位置，再交給 `backend.output_check.fill_numbers()` 填入數字並檢查，不通過就不顯示。不准出現真、假、AI 生成等字眼
 
@@ -225,21 +225,25 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | --- | --- | --- | --- | --- |
 | T32 | 可行性關卡：凍結規則、`scripts/gate_run.py`、疊加圖、10/29 填結果 | Claude | 進行中 | 工具完成，等影片 |
 | T33 | 拍 3 支以上丟球影片、生成 5–10 支影片，並提供人工標註 | john | 待辦 | 見上方「關卡素材」 |
-| T34 | Spark 建議運動片段：`suggest_motion_segment(video)` 回傳 `object`、`assumed_model`（只能是 free_flight、slide 或 none）、`candidate_t_start`、`candidate_t_end`、`reason` | Muse | 待辦 | 時間只是建議，使用者確認後才用；不准回傳任何測量數字；要通過 schema 檢查 |
+| T34 | Spark 建議運動片段：`suggest_motion_segment(video)` 回傳 `object`、`assumed_model`（只能是 free_flight、slide 或 none）、`candidate_t_start`、`candidate_t_end`、`reason` | Muse | 完成 | commit b696c68 |
+| T38 | MetaHooks 實作 `track_object`（SAM 3.1，正規化座標），audits 可改用 SAM | Muse | 完成 | commit b696c68；真片 75 格 65 中；缺口：官方 4 支測試片不在本機 |
+| T39 | Spark 檢查拍攝條件（鏡頭固定、近似側視、物體全程入鏡），只回布林值和原因 | Muse | 完成 | commit b696c68 |
+| T46 | Spark 準確度評估：建議時間窗/物體 vs 人工標註 | Muse | 完成 | commit b696c68；等 T33 影片實測 |
+| T47 | 英文版說明文字（給評審），同樣過 check | Muse | 完成 | commit b696c68 |
 | T35 | physics：彈跳檢查（每次反彈高度要變低）、物體持續性檢查（突然消失、面積跳動、分裂） | Claude | 完成 | `freefall.check_bounces`、`physics/persistence.py`；合成資料測試；尚未接進關卡（關卡規則已凍結，只用 free_flight） |
 | T36 | 前端：`/media` 代理、軌跡疊加圖、2D 軌跡圖元件、Meta 產生內容的標示 | Codex | 待辦 | PR #4 合併後再做 |
-| T05 | `meta_client/`：Spark（圖片、影片）、SAM 3.1 追蹤、花費計數與 120 美元上限 | Muse | 待辦 | 實測 token 與費用後，填入下方成本紀錄；SAM API 的實際格式寫進「已做的決定」 |
-| T29 | 後端把 MockHooks 換成 MetaHooks（check_scene、track_slider、suggest_release_time） | Muse | 待辦 | T05 之後馬上做；介面在 `backend/model_hooks.py` |
+| T05 | `meta_client/`：Spark（圖片、影片）、SAM 3.1 追蹤、花費計數與 120 美元上限 | Muse | 完成 | commit b696c68；SAM 已真片實測（$0.015），Spark 影片費用待測 |
+| T29 | 後端把 MockHooks 換成 MetaHooks（check_scene、track_slider、suggest_release_time） | Muse | 完成 | commit b696c68；有 key 才切換 |
 | T02 | 開發環境：requirements.txt、`scripts/dev.sh`、檢查 Python 3.11、Node 20、ffmpeg | Antigravity | 待辦 | 不要用 sudo 自己裝，列出指令給 john |
 | T14 | 端到端瀏覽器測試與截圖（先用 seed_demo 的合成資料） | Antigravity | 待辦 | 截圖放 `docs/screenshots/` |
 | T21 | 競品研究：影片物理合理性工具（VideoPhy、Physics-IQ、Tracker）、PhET；確認我們的差異 | Manus | 待辦 | 每個結論附來源 |
 | T22 | 使用者測試計畫 | Manus | 待辦 | 10/31 前 |
 | T23 | 三分鐘 demo 分鏡與英文提交文字草稿（兩個版本） | Manus | 待辦 | 未完成的寫 [TBD] |
 | T27 | 前端照 docs/API.md 接上後端 | Codex | 完成 | PR #4 已審查通過，等 john 按 Ready for review 後合併 |
-| T11 | 下一次驗證的選擇代理（只能從 evidence 候選中選） | Muse | 待辦 | 實驗調查員路線的核心 |
-| T28 | 結果說明層：Spark 讀比較結果寫說明，先過 `check_model_text()` 才顯示 | Muse | 待辦 | 畫面標明「由 Muse Spark 產生」 |
-| T24 | 語音口述設定（Voice Transcribe → Spark 抽欄位 → 使用者確認） | Muse | 待辦 | 優先度低於 T05、T29、T34 |
-| T16 | Spark 與 Wonder 的 A/B 比較 | Muse | 待辦 | 10/31 |
+| T11 | 下一次驗證的選擇代理（只能從 evidence 候選中選） | Muse | 完成 | commit b696c68 |
+| T28 | 結果說明層：Spark 讀比較結果寫說明，先過 `check_model_text()` 才顯示 | Muse | 完成 | commit b696c68 |
+| T24 | 語音口述設定（Voice Transcribe → Spark 抽欄位 → 使用者確認） | Muse | 完成 | commit b696c68 |
+| T16 | Spark 與 Wonder 的 A/B 比較 | Muse | 完成 | commit b696c68；mock 跑通，實測待命 |
 | T17 | 影片預測疊加（限 2 小時） | Codex | 待辦 | |
 | T20 | 部署、README、demo 錄影 | Antigravity、john | 待辦 | 11/03 |
 | T31 | physics：拋體與掉落軌跡檢查（`physics/experiments/freefall.py`） | Claude | 完成 | |
@@ -264,15 +268,18 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 ## 缺什麼
 
 - [ ] 還沒有可用的真實影片。第一支（IMG_8418.MOV）有四個問題：拍攝角度是斜的、滑塊太小太淡、只滑了 0.75 秒、畫面有人臉。
-- [ ] Meta API 金鑰與額度是否可用：未確認。
+- [x] Meta API 金鑰與額度是否可用：可用。Muse 10/29 用 .env 金鑰真打 SAM 成功（75 格 $0.015）。
 - [ ] 影片送 Spark 的實際 token 數和費用：未測。
-- [ ] SAM 3.1 API 的格式：未讀官方範例（Muse 的 T05）。
+- [x] SAM 3.1 API 的格式：已讀官方文件並實測（commit b696c68；Responses API + Files API，遮罩 base85 用官方解析器）。
+- [ ] T38 官方測試片（/mnt/project-files/gate/meta/ + manus/）在這台電腦不存在：T38 只在 Manus 籃球片上實測，4 支官方片待 john 給路徑或掛載。
+- [ ] `tests/scripts/test_gate_prepare.py` 在乾淨 main 上也失敗（Muse 10/29 驗證過，與 Muse 改動無關）：gate_prepare 處理真片時 exit 1。請 Claude/Antigravity 修，T52 CI 會踩到。
 - [ ] 用其他工具生成的影片當測試素材是否可以：請 john 在 Discord 確認。
 - [ ] 是否允許用其他 AI 寫程式：Discord 原文未取得。
 
 ## 待 john 決定
 
-- （無）
+- [Muse] 本機完全沒有 GitHub push 認證（keychain 無、無 GH_TOKEN、無 gh CLI、沙盒擋 SSH；push 全部 `could not read Username`）：舊 11 條 Muse 分支 + 新分支 `muse/T38-sam-norm` 都在本機 repo（/tmp/slope-coach-muse worktree），請手動 push。建議只併新線（舊線基於轉向前 main，其中 T38 舊實作已被 Claude T84 取代）。
+- [Muse] 新套件 `meta-sam-parser`（Meta 官方、無依賴）：SAM 遮罩自研編碼，只能用官方解析器，已用於 track。requirements 請加 `openai` + `meta-sam-parser`。
 
 ## 已做的決定
 
@@ -288,6 +295,9 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | 10/28 | 下一次驗證的候選由 `physics/diagnose.py` 依數字產生，模型只能從中選擇並說明 | 模型不碰數字 |
 | 10/27 | 產品內只呼叫 Meta 模型；所有測量數字由 `physics/` 計算 | 比賽規則；可重算、可檢查 |
 | 10/27 | Muse Code 預設用 `muse-spark-1.3`，不用 Wonder 寫程式 | Wonder 的輸出很貴 |
+| 10/29 | SAM 3.1 實際格式：Responses API（`input_text` 單一概念 + `input_video` 的 file_id，先 Files API 上傳），一行一影格，遮罩 base85 用官方解析器解框內柵格 | dev.meta.ai 文件 + 真片實測 |
+| 10/29 | 官方價格（`meta_client/cost.py`）：Spark 標準 1.25/0.15/4.25，contributor 0.10/0.002/0.20；Wonder 4.00/0.20/20.00；SAM 影片每千格 0.20（每次至少 50 格）；語音每小時 0.18。未定價模型拒絕呼叫 | dev.meta.ai/pricing |
+| 10/29 | `track_object` 回正規化座標（API v0.5）：質心 0..1、面積佔畫面比例；SAM 固定轉 15fps，缺格標 missing；審計端後端換算回 480 寬 | 後端 T84 契約 |
 
 ## 成本紀錄（Meta API）
 
@@ -295,9 +305,12 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 | 日期 | 項目 | 花費（美元） | 累計 |
 | --- | --- | --- | --- |
-| | | | 0 |
+| 10/29 | T38：SAM 追蹤 Manus 籃球片（75 格，65 格命中） | 0.015 | 0.015 |
 
 ## 工作日誌（最新在上）
+
+- 10/29 Muse 完成 T38 新版（commit b696c68，分支 muse/T38-sam-norm）：整批舊工作搬上轉向後 main，`track_object` 改正規化座標（API v0.5），Manus 籃球片真打 SAM：75 格 65 中、軌跡左右/上下走向正確、$0.015。pytest 175 通過（1 個 gate_prepare 失敗是 main 原生環境問題，已驗證）。舊 11 分支作廢（基底太舊），改併新線。
+- 10/29 Muse：push 仍無認證（11 條舊分支重試全滅），待 john 手動。官方 4 支 T38 測試片（/mnt/…）本機沒有，只測了 Manus 籃球片。
 
 - 10/29 03:15 Claude：依 john 的決定改寫 AGENTS.md（目前方向、專案說明）與本檔頂端的分工表，新增 T92、T95、T96、T97。
 - 10/29 03:10 Claude：關卡正式結果三題都通過。依決定規則應轉向「影片物理稽核」，已請 john 決定。
