@@ -35,6 +35,9 @@ input[type=range] { accent-color:var(--color-action); }
 .site-tools .guided-demo { position:static;padding:0;border:0;background:transparent;font-size:14px;max-width:100%; }
 .site-tools .guided-demo button { min-height:36px;padding:6px 12px;margin:0;font-size:14px; }
 .site-tools .guided-demo p { max-width:60ch; }
+.site-tools .guided-demo.is-active { position:fixed;z-index:100;top:auto;right:24px;bottom:24px;width:min(440px,calc(100vw - 48px));max-height:40dvh;overflow:auto;padding:16px 24px;border:1px solid var(--color-border);background:var(--color-surface);box-shadow:0 8px 24px #243b5320; }
+.site-tools .guided-demo.is-active button { min-height:44px; }
+[data-testid=recorded-demo],[data-testid=ghost-review],[data-testid=physics-card],[data-testid=demo-comparison],[data-testid=interview-panel],[aria-label="Tool scope"] { scroll-margin-top:24px; }
 .utility-navigation { justify-content:flex-end;padding:4px max(24px,calc((100% - 1200px)/2));gap:24px;border-bottom:1px solid var(--color-border); }
 .utility-navigation a { font-size:13px;min-height:36px;padding:6px 0; }
 main.audit-layout { display:block;max-width:1248px;margin:40px auto 0;padding:0 24px; }

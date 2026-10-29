@@ -1,5 +1,5 @@
 import {Localize} from './i18n.js';
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 export const demoSteps=[
  {route:'home',target:'[aria-label="Tool scope"]',text:'See the supported motion models and the limits of this check.'},
  {route:'audit',target:'[data-testid="interview-panel"]',text:'Upload a clip to answer capture questions; Muse Spark is credited only when the returned source is model, otherwise fixed questions are labeled mock.'},
@@ -10,14 +10,20 @@ export const demoSteps=[
 ] as const;
 export function GuidedDemo({route}:{route:string}){
  const [step,setStep]=useState<number|null>(null);
+ const previousStep=useRef<number|null>(null);
+ const panel=useRef<HTMLElement>(null),launchButton=useRef<HTMLButtonElement>(null),nextButton=useRef<HTMLButtonElement>(null);
  useEffect(()=>{
-  if(step===null)return;const s=demoSteps[step];
-  if(route!==s.route){location.hash=s.route;return}
+  if(step===null){if(previousStep.current!==null)launchButton.current?.focus();previousStep.current=null;return}
+  const changedStep=previousStep.current!==step;previousStep.current=step;
+  const s=demoSteps[step];
+  if(route!==s.route){if(changedStep)location.hash=s.route;else {previousStep.current=null;setStep(null)}return}
   const reveal=()=>{
    const target=document.querySelector<HTMLElement>(s.target);if(!target)return false;
    for(let parent=target.parentElement;parent;parent=parent.parentElement){if(parent instanceof HTMLDetailsElement)parent.open=true}
    if(target instanceof HTMLDetailsElement)target.open=true;
-   target.scrollIntoView({block:'center',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});return true;
+   target.scrollIntoView({block:'start',behavior:'auto'});
+   if(!panel.current?.contains(document.activeElement))nextButton.current?.focus({preventScroll:true});
+   return true;
   };
   if(reveal())return;
   // Route content is lazy-loaded; reveal evidence only after its view mounts.
@@ -25,5 +31,5 @@ export function GuidedDemo({route}:{route:string}){
   observer.observe(document.getElementById('workspace')??document.body,{childList:true,subtree:true});
   return()=>observer.disconnect();
  },[step,route]);
- return <Localize><aside className="guided-demo" aria-label="Guided demo" data-testid="guided-demo">{step===null?<button onClick={()=>setStep(0)}>Guided demo</button>:<><p role="status">{step+1} / {demoSteps.length} · {demoSteps[step].text}</p><button disabled={step===0} onClick={()=>setStep(s=>s===null?0:Math.max(0,s-1))}>Back</button><button data-testid="guided-next" onClick={()=>setStep(s=>s===null||s===demoSteps.length-1?null:s+1)}>{step===demoSteps.length-1?'Finish':'Next'}</button><button onClick={()=>setStep(null)}>Exit demo</button></>}</aside></Localize>
+ return <Localize><aside ref={panel} className={'guided-demo'+(step===null?'':' is-active')} aria-label="Guided demo" data-testid="guided-demo">{step===null?<button ref={launchButton} onClick={()=>setStep(0)}>Guided demo</button>:<><p role="status">{step+1} / {demoSteps.length} · {demoSteps[step].text}</p><button disabled={step===0} onClick={()=>setStep(s=>s===null?0:Math.max(0,s-1))}>Back</button><button ref={nextButton} data-testid="guided-next" onClick={()=>setStep(s=>s===null||s===demoSteps.length-1?null:s+1)}>{step===demoSteps.length-1?'Finish':'Next'}</button><button onClick={()=>setStep(null)}>Exit demo</button></>}</aside></Localize>
 }
