@@ -2,24 +2,22 @@
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
 > **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
-> 最後更新：2026-10-28 01:30Z（Claude）
+> 最後更新：2026-10-29 01:50Z（Claude）
 
 ## 一句話現況
 
-斜坡閉環已經可以用合成資料跑通（後端、physics、前端）。**10/28 john 決定先驗證縮小版的「影片物理稽核」**：檢查影片中物體的運動，是否違反這次假設的運動模型。10/29 晚上依照下方「可行性關卡」的結果，決定轉向或回到「實驗調查員」。沒有影片也能先做的工作，見下一段。
+**10/29 01:40 john 拍好 3 支真實丟球影片**（放在 `/mnt/project-files/gate/`，橘色球，直徑 0.05 m）。Claude 第一次試跑發現：**frame differencing 在真實影片上抓到的是手臂和背景，抓不到球**。所以真實追蹤（SAM 3.1）現在是整個專案最關鍵的缺口。Claude 先加一個不用模型的顏色追蹤當備案，並記進「規則變更紀錄」。10/29 晚上依照「可行性關卡」決定方向。
 
-## 現在每個工具要做什麼（沒有影片也能做）
-
-下面每一項，在兩條路（轉向或不轉向）上都用得到，現在就可以開工。只有「要不要轉向」這個決定需要等 john 的影片。
+## 現在每個工具要做什麼（10/29 Claude 指示，照順序做，做完一件就接下一件）
 
 | 誰 | 現在做 | 細節 |
 | --- | --- | --- |
-| **Muse** | T05 → T29 → T34 | T05：`meta_client/`，包括 Spark、SAM 3.1、花費計數與 120 美元上限。T29：把後端 MockHooks 換成 MetaHooks。T34：Spark 建議運動片段（見任務表）。測試素材可以用合成影片，或 john 的 `IMG_8418.MOV`。這支畫面有人臉，**只能送標準版 `muse-spark-1.3`，不能送 contributor 版**。 |
-| **Claude** | T32、審查 PR | 關卡工具、彈跳檢查、物體持續性檢查都已完成。等影片跑關卡；審查 Muse、Codex、Antigravity 的 PR。 |
-| **Codex** | 先等 john 合併 PR #4，再做 T36 | `vite.config.ts` 加上 `/media` 代理；做軌跡疊加圖和 2D 軌跡圖元件；所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」。 |
-| **Antigravity** | T02 → T14 | 建立開發環境（requirements.txt、`scripts/dev.sh`）。用 `python -m scripts.seed_demo --case pushed` 建立合成實驗，跑一次斜坡流程的端到端測試並截圖。 |
-| **Manus** | T21（改題）→ T23 | 競品研究改查「影片物理合理性」：VideoPhy、Physics-IQ、Tracker，以及有沒有一般人可用的工具，確認我們的差異。demo 草稿要寫兩個版本（轉向或不轉向），未完成的部分寫 [TBD]。 |
-| **john** | T33、合併 PR #4、Discord 確認 | 拍片和生成影片（見下方關卡素材）；到 https://github.com/johncat88425-del/slope-coach/pull/4 按「Ready for review」再按「Merge」；在 Discord 問「用其他工具生成的影片當測試素材可不可以」。 |
+| **Muse**（最優先） | push T05、T29 → **T38 SAM** → T66 → T34 | 你做好的 T05、T29 一直沒 push，**先 commit 並 push 到 `muse/T05-meta-client`**。接著做 T38：在 MetaHooks 實作 `track_object(video_path, text_prompt, t_start, t_end)`，呼叫 `sam-3.1`，回傳格式見 docs/API.md v0.5（座標正規化到 0..1）。後端已經接好，你只要回傳 detections，稽核就會自動改用 SAM。測試影片可以用 `/mnt/project-files/gate/own_*.mov`（只有手入鏡，沒有臉），提示文字用 `orange ball`。再來做 T66：`interview_audit`。 |
+| **Codex** | T85 → T86 | 物體名稱欄位、標明 `track_source`（SAM 3.1 或 frame differencing）、顯示 `slow_motion`。細節見完成表。 |
+| **Antigravity** | T02 → T52 → T42 | requirements.txt 與 `scripts/dev.sh`；GitHub Actions 跑 pytest 和 npm test（要裝 ffmpeg）；稽核流程的端到端測試與截圖。 |
+| **Manus** | T23 → T22 | demo 分鏡加一段「真實影片上誠實拒判／換追蹤方法」的故事。成功和拒判要放在同一段 demo。 |
+| **Claude** | T32 關卡、T87 顏色追蹤、審查 PR | 跑關卡、填結果、決定方向。 |
+| **john** | 確認 3 支影片的時間標註 | 生成 5 到 10 支 Meta AI 影片（提示詞見[拍攝指南](https://claude.ai/artifact/1cdG746WgaGRbe6KzyZYFj)）；看追蹤疊加圖並回答紅點有沒有落在球上。 |
 
 ## 完成表（每做完一件就打勾，附 commit；Claude 每隔一段時間來看）
 
