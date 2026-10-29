@@ -180,6 +180,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T144 Claude：生成影片（Meta 6 支、Manus 1 支，共 11 MB，沒有個人隱私）放進 `data/gate/clips/`。`audit_batch --clips` 預設讀這裡，找不到的影片列成 missing。john 自己拍的影片不進 git — 見 PR T144
 - [x] T146 Claude：修 SAM 追蹤比例的分母（Muse T107 發現的）：改用 SAM 的取樣時間算追到的比例和缺格事件。新增 15 fps SAM 對 60 fps 影片的測試 — 見 PR
 - [x] T147 Claude：把 Muse 的 T108（建議物體名稱）和 T109（語音回答）接到 API（v1.0）：`audit-drafts` 回傳 `suggestion`，新增 `POST /api/audit-drafts/{id}/voice`。後端會檢查型別和範圍，名稱不能有數字，所有欄位都是未確認 — 見 PR
+- [x] T148 Claude：比賽硬規則自動檢查 `tests/test_submission_rules.py`，每次 CI 都會跑：程式只呼叫 Meta 模型、git 裡沒有金鑰也沒有 .env、README 和畫面上沒有「偵測 AI／抓假影片」這類說法。另外修好 CI：requirements 改成最低版本，Python 3.11 才裝得起來（PR #68），現在 main 的 CI 是綠的 — 見 PR
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [x] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
 - [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
