@@ -4,7 +4,7 @@ export type Language='en'|'zh';
 const Context=createContext<Language>('en');
 export const LanguageProvider=Context.Provider;
 export const dictionary:Record<string,string>={
-'由 SAM 3.1 追蹤':'Tracked by SAM 3.1','frame differencing（未使用模型）':'frame differencing (no model used)',
+'由 SAM 3.1 追蹤':'Tracked by SAM 3.1','frame differencing（未使用模型）':'frame differencing (no model used)','顏色＋移動追蹤（未使用模型）':'colour + motion tracking (no model used)',
 '對照展示':'Compare outcomes',
 '與單擺模型一致':'Consistent with the assumed pendulum model','與單擺模型不一致':'Inconsistent with the assumed pendulum model','與單擺模型無法判斷':'Insufficient data with the assumed pendulum model',
 '與彈跳模型一致':'Consistent with the assumed bounce model','與彈跳模型不一致':'Inconsistent with the assumed bounce model','與彈跳模型無法判斷':'Insufficient data with the assumed bounce model',
