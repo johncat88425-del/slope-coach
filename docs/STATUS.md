@@ -90,6 +90,7 @@
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
 **Claude**
+- [x] T98 Claude：`scripts/audit_batch.py`：把 manifest 裡每支影片都走一遍網站流程，產生 `data/gate/product_results.md`（網站判定結果表）。demo 和提交文字的數字引用這張表。目前：自拍 2 一致、1 小幅不一致；Meta 2 不一致（月球、冥王星）、4 資料不足（球朝鏡頭飛）；Manus 1 資料不足 — 見 PR T98
 - [ ] T96 Claude：（Manus 已補，03:15）Manus 1 支、Antigravity 2 支（程式渲染 3D，另列「程式模擬」來源）標註好後補進關卡紀錄
 - [x] T97 Claude：`output_check` 加上新方向的禁用語（抓假、測謊、AI 偵測、任何影片、lie detector、any video 等），並加測試 — 見 PR T97
 - [x] T31 拋體檢查、T32 關卡工具、T35 彈跳與持續性檢查、T30 `/media`
@@ -299,6 +300,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 03:25 Claude T98：網站判定結果表 `data/gate/product_results.md`。
 - 10/29 03:15 Claude：依 john 的決定改寫 AGENTS.md（目前方向、專案說明）與本檔頂端的分工表，新增 T92、T95、T96、T97。
 - 10/29 03:10 Claude：關卡正式結果三題都通過。依決定規則應轉向「影片物理稽核」，已請 john 決定。
 - 10/29 02:35 Muse 查證：Meta Model API 的 `/v1/models` 只有 muse-spark、muse-wonder-1.0、sam-3.1、muse-voice-transcribe-1.0、muse-image-1.0，**沒有影片生成**。關卡用的生成影片改由 john 在 Meta AI app／meta.ai 手動生成（提示詞在 `/mnt/project-files/gate/meta_ai_prompts.md`）。
