@@ -51,3 +51,21 @@ article,figure,details,.results-grid,.demo-grid{min-width:0;max-width:100%}h1,h2
 .model-headline{display:block;padding:12px 0;border:0;background:transparent}.model-headline h2{overflow-wrap:anywhere}.model-headline span{display:block;font-size:14px;line-height:1.5}
 
 .verdict-banner{padding:18px 20px;border-radius:8px;color:#fff;margin-bottom:16px}.verdict-banner h2{margin:0;font-size:clamp(22px,3vw,32px);line-height:1.3;color:inherit}.verdict-consistent{background:#185b3a}.verdict-inconsistent{background:#8b3e0b}.verdict-insufficient_data{background:#4e5960}
+
+/* Audit controls shrink at their actual container width; no page-wide clipping. */
+.audit-flow,.audit-flow fieldset,.audit-flow details,.window-editor,.window-suggestions,.request-feedback{min-width:0;max-width:100%}
+.audit-flow input,.audit-flow select,.audit-flow video,.audit-flow progress{min-width:0;max-width:100%;box-sizing:border-box}
+.audit-flow video{display:block;width:100%;height:auto;object-fit:contain}
+.audit-flow input[type=file]{width:100%;font-size:16px}
+.audit-flow .table-wrap{min-width:0;max-width:100%}
+.audit-flow table{table-layout:fixed;width:100%}
+.audit-flow th,.audit-flow td{overflow-wrap:anywhere}
+@media(max-width:390px){
+ .audit-flow{padding:12px}.audit-flow section,.audit-flow fieldset{padding:10px}
+ .audit-flow .fields{display:grid;grid-template-columns:minmax(0,1fr)}
+ .audit-flow .fields>div,.audit-flow .fields label{min-width:0;width:100%}
+ .audit-flow button,.audit-flow summary{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+ .window-suggestions ul{padding-left:18px}.request-feedback p{overflow-wrap:anywhere}
+ .audit-flow .candidate-timeline{width:100%;box-sizing:border-box}
+ .verdict-banner{padding:14px}.audit-flow .print-numbers{min-width:0}
+}
