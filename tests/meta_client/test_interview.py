@@ -39,7 +39,7 @@ def test_interview_success(tmp_path, monkeypatch):
     clip, fake = _setup(monkeypatch, tmp_path, payload)
     tracker = _tracker(tmp_path)
     out = interview.interview_audit(clip, tracker=tracker)
-    assert out == payload
+    assert out == {**payload, "source": "muse-spark-1.3"}
     parts = fake.responses.calls[0]["input"][0]["content"]
     assert parts[0]["type"] == "input_text"
     assert sum(p["type"] == "input_image" for p in parts) == 3
@@ -73,7 +73,7 @@ def test_interview_accepts_question_alias(tmp_path, monkeypatch):
     out = interview.interview_audit(clip)
     assert out == {"questions": [
         {"field": "slow_motion", "text": "Was this slow motion?"},
-    ]}
+    ], "source": "muse-spark-1.3"}
 
 
 def test_interview_accepts_bare_array(tmp_path, monkeypatch):
@@ -86,7 +86,7 @@ def test_interview_accepts_bare_array(tmp_path, monkeypatch):
     assert out == {"questions": [
         {"field": "slow_motion", "text": "Was this slow motion?"},
         {"field": "camera_static", "text": "Did the camera stay still?"},
-    ]}
+    ], "source": "muse-spark-1.3"}
 
 
 def test_interview_missing_file(tmp_path, monkeypatch):

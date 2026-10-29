@@ -58,6 +58,7 @@ def test_track_success(tmp_path, monkeypatch):
     # box-local raster 60x27 maps 1:1 onto the 60x27 source box here
     assert det.area_px == pytest.approx(1539.0)
     assert result.billed_frames == 150
+    assert result.source == "sam-3.1"
     assert result.cost_usd == pytest.approx(150 * 0.20 / 1000)
     assert tracker.total_usd() == pytest.approx(result.cost_usd)
 

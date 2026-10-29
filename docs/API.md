@@ -34,6 +34,7 @@
 | 選下一次驗證 | `POST /api/experiments/{eid}/interventions` | `{comparison_id, check_type, model_rationale?}` | `InterventionOut`（含固定的操作說明）；`check_type` 不在 `evidence` 候選內時回 422 |
 | 連結驗證結果 | `PATCH /api/interventions/{iid}` | `{result_trial_id}` | `InterventionOut` |
 | 報告 | `GET /api/experiments/{eid}/report.md`、`report.csv` | | 文字檔 |
+| 花費顯示 | `GET /api/spend` | | `{spent_usd, limit_usd, at_limit}`（T110；累計花費、上限 120 美元、是否已達上限；達上限時所有付費呼叫拒絕） |
 
 ## 影片物理稽核（T37，v0.2 新增）
 

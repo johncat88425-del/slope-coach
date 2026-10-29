@@ -12,10 +12,14 @@ from __future__ import annotations
 import base64
 import json
 import re
+import tempfile
 from pathlib import Path
 from typing import Any
 
+from backend.output_check import check_model_text
+
 from . import client as _client
+from . import sam as _sam
 from .client import MAX_RETRIES, SPARK_MODEL, call_with_retry, get_client
 from .cost import TOKEN_PRICES, CostTracker, get_tracker
 from .exceptions import MediaError, ModelOutputError
@@ -315,7 +319,9 @@ def describe_scene(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_scene(json.loads(response.output_text or ""))
+            out = _validate_scene(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"scene check failed validation: {last_error}")
@@ -372,7 +378,9 @@ def suggest_release_time(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_release(json.loads(response.output_text or ""))
+            out = _validate_release(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"release suggestion failed validation: {last_error}")
@@ -430,7 +438,9 @@ def suggest_motion_segment(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_segment(json.loads(response.output_text or ""))
+            out = _validate_segment(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"motion segment failed validation: {last_error}")
@@ -551,7 +561,148 @@ def check_capture_conditions(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_capture(json.loads(response.output_text or ""))
+            out = _validate_capture(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"capture check failed validation: {last_error}")
+
+
+OBJECT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "object_name": {"type": "string"},
+        "camera_looks_static": {"type": "boolean"},
+        "reason": {"type": "string"},
+    },
+    "required": ["object_name", "camera_looks_static", "reason"],
+    "additionalProperties": False,
+}
+
+OBJECT_PROMPT = (
+    "You see two stills from the start of a clip: the very first frame, then "
+    "one frame about a second later. Answer with JSON only, matching the "
+    "schema. object_name names the one main moving object from the FIRST "
+    "frame as a short lowercase English noun phrase (colour + kind, e.g. "
+    "orange basketball); camera_looks_static is true when the background and "
+    "frame edges look the same in both stills. reason is one short English "
+    "phrase saying what you saw. Describe only what is visible; do not claim "
+    "proof or causes (no 'proves', 'confirms', 'must be'). Do not output any "
+    "numbers at all: no times, no frame numbers, no coordinates, no sizes. "
+    "Use exactly these JSON keys: object_name, camera_looks_static, reason."
+)
+
+MAX_OBJECT_REASON_CHARS = 200
+
+
+def _start_stills(video: Path, duration_s: float) -> list[Path]:
+    """First frame plus one ~1s later; camera motion needs two views."""
+    tmpdir = Path(tempfile.mkdtemp(prefix="object_stills_"))
+    second = 1.0 if duration_s > 1.5 else duration_s / 2
+    paths = []
+    for i, stamp in enumerate((0.0, second)):
+        dst = tmpdir / f"still{i}.jpg"
+        proc = _sam._run_cmd(
+            ["ffmpeg", "-y", "-v", "error", "-ss", str(stamp),
+             "-i", str(video), "-frames:v", "1", "-q:v", "4", str(dst)],
+            _client.UPLOAD_TIMEOUT_S,
+        )
+        if proc.returncode != 0 or not dst.is_file():
+            raise MediaError(f"frame extraction failed: {proc.stderr.strip()[-200:]}")
+        paths.append(dst)
+    return paths
+
+
+def _validate_object(data: Any) -> dict[str, Any]:
+    if isinstance(data, dict) and set(data) != {"object_name", "camera_looks_static", "reason"}:
+        inner = data.get("suggestion", data.get("object_suggestion"))
+        data = inner if isinstance(inner, dict) else data
+    if not isinstance(data, dict):
+        raise ModelOutputError("object suggestion must be a JSON object")
+    name = data.get("object_name")
+    if not isinstance(name, str) or not name.strip() or len(name) > 100:
+        raise ModelOutputError("object_name must be a non-empty string under 100 characters")
+    static = data.get("camera_looks_static")
+    if type(static) is not bool:
+        raise ModelOutputError("camera_looks_static must be boolean")
+    reason = data.get("reason")
+    if not isinstance(reason, str) or not reason.strip() or len(reason) > MAX_OBJECT_REASON_CHARS:
+        raise ModelOutputError("reason must be a non-empty string under 200 characters")
+    for label, text in (("object_name", name), ("reason", reason)):
+        checked = check_model_text(text, [])
+        if not checked.ok:
+            raise ModelOutputError(f"{label} failed checks: " + "; ".join(checked.problems))
+    return {"object_name": name.strip(), "camera_looks_static": static, "reason": reason.strip()}
+
+
+def suggest_object(
+    video: Path | str,
+    *,
+    model: str | None = None,
+    timeout: float = _client.SPARK_TIMEOUT_S,
+    tracker: CostTracker | None = None,
+) -> dict[str, Any]:
+    """Suggest an object name and whether the camera looks static (T108).
+
+    Spark names the main moving object from the first frame and judges the
+    camera by comparing it with a frame ~1s later (one still cannot show
+    motion). Suggestions only; the user confirms before anything is used.
+    """
+    resolved = model or SPARK_MODEL
+    _check_priced(resolved)
+    path = Path(video)
+    if not path.is_file():
+        raise MediaError(f"video file not found: {path}")
+    tracker = tracker or get_tracker()
+    tracker.check()
+    info = _sam._probe_clip(path)
+    if info["fps"] <= 0 or info["n_frames"] <= 0:
+        raise MediaError(f"could not read video info from {path.name}")
+    duration_s = info["n_frames"] / info["fps"]
+    stills = _start_stills(path, duration_s)
+    try:
+        images = [
+            {"type": "input_image",
+             "image_url": "data:image/jpeg;base64,"
+             + base64.b64encode(p.read_bytes()).decode("ascii")}
+            for p in stills
+        ]
+    finally:
+        for p in stills:
+            p.unlink(missing_ok=True)
+        try:
+            stills[0].parent.rmdir()
+        except OSError:
+            pass
+    sdk = get_client()
+    last_error: Exception | None = None
+    for _ in range(MAX_RETRIES + 1):
+        response = call_with_retry(
+            lambda: sdk.responses.create(
+                model=resolved,
+                input=[{
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": OBJECT_PROMPT}, *images],
+                }],
+                text=_text_format("object_suggestion", OBJECT_SCHEMA),
+                timeout=timeout,
+            ),
+            op="spark.suggest_object",
+        )
+        usage = _usage_to_dict(getattr(response, "usage", None))
+        tracker.record(
+            resolved,
+            "spark.suggest_object",
+            input_tokens=usage["input_tokens"],
+            cached_tokens=usage["cached_tokens"],
+            output_tokens=usage["output_tokens"],
+        )
+        try:
+            out = _validate_object(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
+        except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
+            last_error = exc
+    raise ModelOutputError(f"object suggestion failed validation: {last_error}")

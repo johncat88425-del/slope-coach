@@ -23,10 +23,12 @@ from backend.schemas import (
     SceneCheck,
 )
 
+from . import explain as _explain
+from . import headline as _headline
 from . import interview as _interview
 from . import sam as _sam
 from . import spark as _spark
-from .exceptions import MetaClientError
+from .exceptions import MetaClientError, ModelOutputError
 
 
 def _dense_detections(
@@ -60,7 +62,8 @@ def _dense_detections(
 class MetaHooks(ModelHooks):
     def check_scene(self, photo_path: Path) -> SceneCheck:
         result = _spark.describe_scene(photo_path)
-        return SceneCheck(source="model", **result)
+        fields = {k: v for k, v in result.items() if k != "source"}
+        return SceneCheck(source="model", **fields)
 
     def track_slider(self, video_path: Path, text_prompt: str) -> list[DetectionIn]:
         try:
@@ -80,7 +83,8 @@ class MetaHooks(ModelHooks):
 
     def suggest_release_time(self, video_path: Path) -> ReleaseSuggestion:
         result = _spark.suggest_release_time(video_path)
-        return ReleaseSuggestion(source="model", **result)
+        fields = {k: v for k, v in result.items() if k != "source"}
+        return ReleaseSuggestion(source="model", **fields)
 
     def interview_audit(self, video_path: Path) -> AuditInterview:
         result = _interview.interview_audit(video_path)
@@ -89,3 +93,15 @@ class MetaHooks(ModelHooks):
             questions=[AuditQuestion(**q) for q in result["questions"]],
             note=None,
         )
+
+    def explain_audit(self, audit: dict) -> str | None:
+        """Plain-language explanation via Spark (T112); None keeps the fixed template."""
+        try:
+            return _explain.explain_result(audit, kind="audit")["explanation"]
+        except ModelOutputError:
+            return None
+
+    def headline_audit(self, audit: dict) -> str | None:
+        """One-line headline via Spark (T112); None shows no headline."""
+        result = _headline.write_headline(audit)
+        return result["headline"] if result else None

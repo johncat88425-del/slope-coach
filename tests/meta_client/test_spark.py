@@ -32,7 +32,7 @@ def test_describe_scene_success_and_cost(tmp_path, monkeypatch):
     monkeypatch.setattr(spark, "get_tracker", lambda: tracker)
 
     out = spark.describe_scene(photo, tracker=tracker)
-    assert out == SCENE_OK
+    assert out == {**SCENE_OK, "source": "muse-spark-1.3"}
 
     call = fake.responses.calls[0]
     assert call["model"] == "muse-spark-1.3"
@@ -126,7 +126,8 @@ def test_suggest_release_time_success(tmp_path, monkeypatch):
     monkeypatch.setattr("meta_client.client.upload_file", lambda p, **k: "file-9")
     tracker = _tracker(tmp_path)
     out = spark.suggest_release_time(clip, tracker=tracker)
-    assert out == {"candidate_t0_s": 1.5, "reason": payload["reason"]}
+    assert out == {"candidate_t0_s": 1.5, "reason": payload["reason"],
+                     "source": "muse-spark-1.3"}
     parts = fake.responses.calls[0]["input"][0]["content"]
     assert parts[1] == {"type": "input_file", "file_id": "file-9"}
     assert tracker.total_usd() > 0
@@ -190,7 +191,7 @@ def test_suggest_motion_segment_success(tmp_path, monkeypatch):
     clip, fake = _segment_setup(tmp_path, monkeypatch, payload)
     tracker = _tracker(tmp_path)
     out = spark.suggest_motion_segment(clip, tracker=tracker)
-    assert out == payload
+    assert out == {**payload, "source": "muse-spark-1.3"}
     call = fake.responses.calls[0]
     assert call["model"] == "muse-spark-1.3"
     assert call["text"]["type"] == "json_schema"
@@ -289,7 +290,7 @@ def test_check_capture_conditions_success(tmp_path, monkeypatch):
     clip, fake = _capture_setup(tmp_path, monkeypatch, payload)
     tracker = _tracker(tmp_path)
     out = spark.check_capture_conditions(clip, tracker=tracker)
-    assert out == payload
+    assert out == {**payload, "source": "muse-spark-1.3"}
     assert fake.responses.calls[0]["text"]["type"] == "json_schema"
     assert tracker.total_usd() > 0
 
@@ -335,3 +336,63 @@ def test_check_capture_conditions_missing_file(tmp_path, monkeypatch):
     monkeypatch.setattr(spark, "get_tracker", lambda: _tracker(tmp_path))
     with pytest.raises(MediaError, match="not found"):
         spark.check_capture_conditions(tmp_path / "missing.mp4")
+
+
+def _object_setup(tmp_path, monkeypatch, payloads):
+    clip = tmp_path / "obj.mp4"
+    clip.write_bytes(b"v")
+    stills = []
+    for i in range(2):
+        p = tmp_path / f"s{i}.jpg"
+        p.write_bytes(b"fake-jpeg")
+        stills.append(p)
+    monkeypatch.setattr(spark._sam, "_probe_clip",
+                        lambda path: {"fps": 30.0, "n_frames": 300,
+                                      "width": 640, "height": 480})
+    monkeypatch.setattr(spark, "_start_stills", lambda video, dur: stills)
+    fake = FakeClient([fake_response(json.dumps(p), fake_usage()) for p in payloads])
+    monkeypatch.setattr(spark, "get_client", lambda: fake)
+    monkeypatch.setattr(spark, "get_tracker", lambda: _tracker(tmp_path))
+    return clip, fake
+
+
+def test_suggest_object_success(tmp_path, monkeypatch):
+    payload = {"object_name": "orange basketball",
+               "camera_looks_static": True,
+               "reason": "ball on the floor, background identical in both stills"}
+    clip, fake = _object_setup(tmp_path, monkeypatch, [payload])
+    tracker = _tracker(tmp_path)
+    out = spark.suggest_object(clip, tracker=tracker)
+    assert out == {**payload, "source": "muse-spark-1.3"}
+    parts = fake.responses.calls[0]["input"][0]["content"]
+    assert parts[0]["type"] == "input_text"
+    assert sum(p["type"] == "input_image" for p in parts) == 2
+    assert tracker.total_usd() > 0
+
+
+def test_suggest_object_rejects(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    good = {"object_name": "orange basketball", "camera_looks_static": True,
+            "reason": "background identical in both stills"}
+    cases = [
+        ({**good, "camera_looks_static": "yes"}, "boolean"),
+        ({**good, "object_name": "ball number 42"}, "failed checks"),
+        ({**good, "reason": "moved 30 meters"}, "failed checks"),
+        ({**good, "reason": "this proves a tripod"}, "failed checks"),
+        ({**good, "reason": "x" * 201}, "200 characters"),
+        ({"suggestion": good}, None),  # envelope alias accepted
+    ]
+    n_calls = spark.MAX_RETRIES + 1 if hasattr(spark, "MAX_RETRIES") else 3
+    for payload, match in cases:
+        clip, fake = _object_setup(tmp_path, monkeypatch, [payload] * n_calls)
+        if match is None:
+            assert spark.suggest_object(clip) == {**good, "source": "muse-spark-1.3"}
+        else:
+            with pytest.raises(ModelOutputError, match=match):
+                spark.suggest_object(clip)
+
+
+def test_suggest_object_missing_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(spark, "get_tracker", lambda: _tracker(tmp_path))
+    with pytest.raises(MediaError, match="not found"):
+        spark.suggest_object(tmp_path / "missing.mp4")

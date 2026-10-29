@@ -68,7 +68,8 @@ _PROMPTS = {
 
 _RULES = (
     "Rules. Use only numbers that appear in the payload below; never invent, "
-    "round beyond what is shown, or convert units. Say 與假設一致 or 目前無法"
+    "convert units, or add precision. Quote each number rounded to at most 2 "
+    "decimal places (e.g. 9.81, not 9.810179). Say 與假設一致 or 目前無法"
     "區分 where appropriate; never claim proof or causes (no 證實, 真因, "
     "一定是, proves, confirms, must be). Never frame this as real-vs-"
     "generated video detection: do not write 真影片, 假影片, AI生成, or any "
@@ -94,7 +95,8 @@ _PROMPTS_EN = {
 
 _RULES_EN = (
     "Rules. Use only numbers that appear in the payload below; never invent, "
-    "round beyond what is shown, or convert units. Say consistent with the "
+    "convert units, or add precision. Quote each number rounded to at most 2 "
+    "decimal places (e.g. 9.81, not 9.810179). Say consistent with the "
     "assumption or cannot yet distinguish where appropriate; never claim "
     "proof or causes (no proves, confirms, must be, caused by). Never frame "
     "this as real-vs-generated video detection: do not write real video, "
@@ -125,7 +127,7 @@ def explain_result(
 ) -> dict[str, str]:
     """Explain a comparison or audit result (T28 Chinese, T47 English).
 
-    Returns {"explanation": str}. Raises ModelOutputError when the text does
+    Returns {"explanation", "source"}. Raises ModelOutputError when the text does
     not pass the output checks after retries; raises ValueError for a bad
     kind or lang without calling the API.
     """
@@ -177,7 +179,7 @@ def explain_result(
                 raise ModelOutputError(
                     "forbidden authenticity language: " + ", ".join(bad_words)
                 )
-            return {"explanation": text}
+            return {"explanation": text, "source": resolved}
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"explanation failed validation: {last_error}")
