@@ -22,7 +22,7 @@ export class ApiError extends Error {
   constructor(public status:number, message:string) {super(message); this.name='ApiError'}
 }
 export function friendlyApiError(error:unknown):string {
- if(error instanceof ApiError){const prefix=error.status===404?'Result not found. Check the ID or load a saved JSON.':error.status===422?'Please check the submitted settings.':'The backend could not complete this request.';return prefix+' Backend reason: '+error.message}
+ if(error instanceof ApiError){const prefix=error.status===404?'Result not found. Check the ID or load a saved JSON.':error.status===422?'Please check the submitted settings.':'The backend could not complete this request.';return prefix+' Reason: '+error.message}
  return error instanceof Error ? error.message : String(error);
 }
 function backendError(status:number,raw:string){let message=raw;try{const body=JSON.parse(raw);message=typeof body.detail==='string'?body.detail:JSON.stringify(body.detail??body)}catch{}return new ApiError(status,message||'Request failed')}
