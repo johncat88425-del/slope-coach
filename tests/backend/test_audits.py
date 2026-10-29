@@ -315,3 +315,13 @@ def test_object_suggestion_and_voice_answers_are_checked_and_never_confirmed(tmp
     assert v["fields"] == {"slow_motion": {"value": False, "confirmed": False},
                            "object_size_m": {"value": 0.11, "confirmed": False}}  # wrong types and unknown fields dropped
     assert c.post("/api/audit-drafts/nope/voice", files={"audio": ("a.webm", b"x", "audio/webm")}).status_code == 404
+
+
+def test_model_text_may_quote_numbers_from_the_programs_own_reasons():
+    from backend.audits import _number_sources
+    from backend.output_check import check_model_text
+
+    view = {"verdict": "inconsistent", "numbers": {"g_apparent_m_s2": 1.705},
+            "reasons": ["apparent g 1.71 m/s^2 is outside 8.34-11.28"]}
+    assert check_model_text("1.71 m/s² is outside the 8.34 to 11.28 range.", _number_sources(view)).ok
+    assert not check_model_text("1.71 m/s² is far below 9.5.", _number_sources(view)).ok  # invented number
