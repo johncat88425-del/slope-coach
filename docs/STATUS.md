@@ -100,7 +100,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤 — commit a25a94b
 - [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
 - [ ] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS
-- [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 待回填（本次程式提交）
+- [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 041eb73
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
