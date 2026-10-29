@@ -18,7 +18,7 @@ test('workflow guide reports one current step and works in both languages',()=>{
 test('the primary entry exposes the upload before the saved image and keeps advanced tools collapsed',()=>{
  const html=render(h(AuditPage,{api}));assert.match(html,/<h1>Check the physics in your video\.<\/h1>/);assert.ok(html.indexOf('data-testid="interview-video"')<html.indexOf('<img'));assert.match(html,/data-testid="interview-prepare" hidden="" disabled=""/);assert.match(html,/aria-label="Interview video"/);
  for(const id of ['advanced-audit','offline-import'])assert.doesNotMatch(html.match(new RegExp('<details[^>]*data-testid="'+id+'"[^>]*>'))[0],/\bopen/);
- assert.match(html,/A saved motion study/);assert.doesNotMatch(html,/\b(?:fake|detect AI)\b/i);
+ assert.match(html,/A frame from one of our Meta AI test clips/);assert.doesNotMatch(html,/\b(?:fake|detect AI)\b/i);
 });
 test('navigation preserves existing destinations and marks the active route',()=>{
  const html=render(h(SiteHeader,{api,route:'wall'}));for(const route of ['audit','wall','compare','how','home','demo','setup'])assert.ok(html.includes('href="#'+route+'"'));
