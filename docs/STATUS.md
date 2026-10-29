@@ -69,7 +69,7 @@
 - [x] T85 Codex：「檢查影片」和 Muse 偵訊加一個「物體名稱」欄位，送 `object_name`（給 SAM 的文字提示，預設 ball）。結果區要依照 `track_source` 標明「由 SAM 3.1 追蹤」或「frame differencing（未使用模型）」，物理名片和匯出也要寫（API v0.5） — commit 8a7bd26
 - [ ] T92 Codex：（T89、T90 之後做）稽核變成網站首頁：打開網站先看到「檢查影片」與 demo 導覽；斜坡教練移到第二個分頁「實驗教練」，功能不刪。首頁一句話說明：「檢查影片中的運動是否符合你假設的物理模型」，不准出現「AI 偵測」「抓假影片」等字
 - [x] T89 Codex：檢查並修飾 Claude 在 T88 對前端的最小改動（`track_source: "color"` → 「顏色＋移動追蹤（未使用模型）」），樣式和其他來源標籤一致，補一個測試 — commit 46fccb8
-- [ ] T90 Codex：demo 導覽加「真實影片」一段，讀 `data/demo/real_own_1.json` 到 `real_own_3.json`（`real_clip: true`）。要標明「john 自己拍的影片、標註由 john 確認」，並把 own_1、own_2 的「一致、最接近地球」和 own_3 的「不一致、原因不明」放在一起，不挑片。這些紀錄沒有影片（`video_url` 是空字串，john 的家不放上公開 repo），要能正常顯示軌跡、鬼影和數字
+- [x] T90 Codex：demo 導覽加「真實影片」一段，讀 `data/demo/real_own_1.json` 到 `real_own_3.json`（`real_clip: true`）。要標明「john 自己拍的影片、標註由 john 確認」，並把 own_1、own_2 的「一致、最接近地球」和 own_3 的「不一致、原因不明」放在一起，不挑片。這些紀錄沒有影片（`video_url` 是空字串，john 的家不放上公開 repo），要能正常顯示軌跡、鬼影和數字 — commit 待回填（本次程式提交）
 - [x] T86 Codex：結果、名片和匯出都要顯示使用者回答的 `slow_motion`。如果是因為慢動作被拒判，要用一句話說明原因（直接照後端的 reason，不要自己改寫） — commit d560608
 
 **Antigravity**（照順序做）
@@ -272,6 +272,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 待 john 決定
 
+- Codex 10/28：本機 ffmpeg 缺 drawtext filter，pytest tests/scripts/test_gate_prepare.py::test_prepare_writes_sheet_and_blank_labels 失敗（其餘 75 pass）。請 Claude／Antigravity 確認具 drawtext 的 ffmpeg；本次不改後端／部署或跳過測試掩蓋。T89 npm 59 pass、build pass，但 pytest 全綠受此環境缺口阻擋。
+
 - （無）
 
 ## 已做的決定
@@ -383,3 +385,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 10/28 Codex 工作總結：T85／T86 已推送，PR #32 待審；pull main 後沒有新增 Codex 未勾項。npm 58 pass、build pass、pytest 56 pass/13 skip（環境依賴）。追蹤來源與慢動作回答全流程保留，未推 main；瀏覽器端到端待驗收。
 - 10/28 Codex T89：審核 color 型別、離線 parser、來源與匯出標籤均保留；統一來源 badge 樣式，補英／繁中測試，明示未使用模型。npm 59 pass、build pass；pytest 結果見本次驗證，環境跳過項仍保留。
+- 10/28 Codex T90：demo／導覽加入 john 三份實拍結果，兩份一致與一份原因不明的不一致全部呈現；標明 john 拍攝與確認標註。保留空 video_url，無公開住家影片；顯示已存軌跡、鬼影、原始數字。npm 60 pass、build pass；pytest 75 pass/1 fail，仍為已記錄的 drawtext 環境缺口。

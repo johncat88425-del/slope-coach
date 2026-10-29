@@ -2,6 +2,7 @@ import {useEffect,useState} from 'react';
 export const demoSteps=[
  {route:'home',target:'[aria-label="Tool scope"]',text:'See the supported motion models and the limits of this check.'},
  {route:'audit',target:'[data-testid="interview-panel"]',text:'Upload a clip to answer capture questions; Muse Spark is credited only when the returned source is model, otherwise fixed questions are labeled mock.'},
+ {route:'demo',target:'[data-testid="recorded-demo"]',text:'See all three experiments filmed and annotated by john: two consistent results near Earth gravity and one inconsistent result with an unknown cause; private videos are withheld.'},
  {route:'demo',target:'[data-testid="ghost-review"]',text:'Inspect saved SYNTHETIC results and compare backend ghost positions with recorded observations; this step makes no model call.'},
  {route:'demo',target:'[data-testid="physics-card"]',text:'Download an evidence card with assumptions and limitations; the Muse Spark headline remains pending until validated text is available.'},
  {route:'demo',target:'[data-testid="demo-comparison"]',text:'Compare consistent, inconsistent and insufficient-data outcomes together, using the same rules and clearly labeled SYNTHETIC examples.'},
