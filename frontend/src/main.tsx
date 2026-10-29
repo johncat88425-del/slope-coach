@@ -1,3 +1,4 @@
+import {DEMO_ONLY,demoUploadMessage} from './mode';
 import { Localize, LanguageRoot } from './i18n.js';
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
@@ -85,7 +86,7 @@ function App() {
     useEffect(() => { setRestConfirmed(false); setTrialFile(null); setTrialPreview(''); }, [predictionId, calVersion]);
     useEffect(() => () => allocatedUrls.current.forEach(value => URL.revokeObjectURL(value)), []);
     // Read-only resume: never auto-create or repeat a mutation after refresh.
-    useEffect(() => { if (['home','audit','demo','wall','compare','examples'].includes((location.hash?resolveRoute(location.hash):auditIdFromPath(location.pathname)?'audit':resolveRoute('')))) return; const id = rememberedId(); if (!id)
+    useEffect(() => { if(DEMO_ONLY)return; if (['home','audit','demo','wall','compare','examples'].includes((location.hash?resolveRoute(location.hash):auditIdFromPath(location.pathname)?'audit':resolveRoute('')))) return; const id = rememberedId(); if (!id)
         return; let cancelled = false; setBusy(true); api.get(id).then(value => { if (!cancelled)
         selectRecord(value); }).catch(e => { if (!cancelled)
         setError(friendlyApiError(e)); }).finally(() => { if (!cancelled)
@@ -106,7 +107,7 @@ function App() {
     return <Localize>{<><GuidedDemo route={route}/><a className="skip-link" href="#workspace">Skip to workspace</a><header><b>Motion Audit</b><span>Check motion against your assumed physical model.</span></header><main><aside><p className="eyebrow">Video physics audit</p><h1>{isCoach?'Experiment coach':'Check whether motion in a video fits your assumed physical model.'}</h1><nav aria-label="Main sections"><a data-testid="nav-audit" href="#audit" aria-current={!isCoach?'page':undefined}>Check video</a><a data-testid="nav-coach" href="#setup" aria-current={isCoach?'page':undefined}>Experiment coach</a></nav>{isCoach?<nav aria-label="實驗步驟">{pages.filter(p=>!['home','audit','demo','wall','compare','examples'].includes(p.route)).map((p,i)=><a data-testid={'nav-'+p.route} href={'#'+p.route} key={p.route} aria-current={route===p.route?'page':undefined}>{i+1}　{p.title}</a>)}</nav>:<nav aria-label="Review resources"><a data-testid="nav-home" href="#home">Scope and limitations</a><a href="#compare">Compare two clips</a><a href="#wall" data-testid="nav-wall">Results wall</a><a data-testid="nav-demo" href="#demo">Compare outcomes</a></nav>}<p>{isCoach?'Fixed camera · Approximately side-on · One straight slope · One slider':'Fixed camera · Supported motion models · Explicit insufficient-data outcomes'}</p></aside><section data-testid="workspace" id="workspace" tabIndex={-1} aria-label={active.title}>{route==='audit'&&<><OpeningCards/><AutoTour/></>}
  <div className="notice">照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。</div>
  <div aria-live="polite">{busy && <p role="status">處理中，請勿重複提交…</p>}{error && <p data-testid="workspace-error" role="alert">{error}</p>}{message && <p role="status">{message}</p>}</div>
- {route !== 'audit' && route !== 'home' && route !== 'demo' && route !== 'wall' && route !== 'compare' && route !== 'examples' && <fieldset disabled={busy}><legend>實驗紀錄</legend>
+ {route !== 'audit' && route !== 'home' && route !== 'demo' && route !== 'wall' && route !== 'compare' && route !== 'examples' && <fieldset disabled={busy||DEMO_ONLY}><legend>實驗紀錄</legend>
  {!record && <><label>實驗名稱<input value={title} onChange={e => setTitle(e.target.value)}/></label><button data-testid="experiment-create" onClick={() => void run(async () => { selectRecord(await api.create(title)); setLocal(createExperiment('local-draft')); setPhotoFile(null); })}>建立實驗</button></>}
  <label>讀取實驗 ID<input value={loadId} onChange={e => setLoadId(e.target.value)}/></label><button data-testid="experiment-load" disabled={!loadId.trim()} onClick={() => void run(async () => { if (record && record.experiment_id !== loadId) {
             setLocal(createExperiment('local-draft'));
@@ -119,7 +120,7 @@ function App() {
         }
         catch { /* optional storage */ } }}>開始另一個實驗（保留舊紀錄）</button><button onClick={() => void run(refresh)}>重新讀取後端</button><label>校準版本<select value={calVersion} onChange={e => { setCalVersion(Number(e.target.value)); setBaselineIds([]); }}><option value="0">尚未選取／草稿未保存</option>{record.calibrations.map(c => <option value={c.version} key={c.version}>v{c.version} · L {c.slope_length_m} m / h {c.slope_height_m} m（使用者）</option>)}</select></label></>}
  </fieldset>}
- {route === 'examples' ? <SavedExample name={exampleKey}/> : route === 'compare' ? <PairComparison/> : route === 'wall' ? <ResultsWall/> : route === 'demo' ? <DemoPage/> : route === 'home' ? <Home/> : route === 'audit' ? <AuditPage api={api} auditId={auditRouteId}/> : <fieldset disabled={busy || !record}><legend>{active.title}</legend>
+ {DEMO_ONLY&&isCoach ? <p role="status">{demoUploadMessage}</p> : route === 'examples' ? <SavedExample name={exampleKey}/> : route === 'compare' ? <PairComparison/> : route === 'wall' ? <ResultsWall/> : route === 'demo' ? <DemoPage/> : route === 'home' ? <Home/> : route === 'audit' ? <AuditPage api={api} auditId={auditRouteId}/> : <fieldset disabled={busy || !record || DEMO_ONLY}><legend>{active.title}</legend>
  {route === 'setup' && <><h2>確認實拍照片與尺寸</h2><p>尺的兩端、滑塊（作為路徑起點）與坡底終點須由你確認；共四個標記。</p>
  <label className="upload">上傳實驗照片<input type="file" accept="image/*" onChange={event => { const file = event.target.files?.[0]; if (!file)
                 return; setCalVersion(0); setScene(null); setPhotoFile(file); setLocal(current => replacePhoto(current, { name: file.name, url: url(file) })); if (record)
