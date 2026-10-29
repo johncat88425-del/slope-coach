@@ -103,7 +103,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS — commit b3717c3
 - [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 041eb73
 - [x] T143 Codex：（API v0.9）結果區和物理名片最上面顯示 `headline.text`（有的時候才顯示），旁邊標明「由 Muse Spark 撰寫」；`headline` 是 null 時照舊用程式產生的標題。不要改寫文字或數字。靜態 demo 資料裡 `headline` 一律是 null — commit a3bb60f
-- [ ] T146 Codex：結果區加「這次用了哪些 Meta 模型」小面板：照實際值列出提問（`interview.source`）、追蹤（`track_source`）、說明（`explanation.source`）、標題（`headline` 有沒有）。是 mock、template、color、frame_diff 的，要寫「未使用模型」，不准寫死成已接上
+- [x] T146 Codex：結果區加「這次用了哪些 Meta 模型」小面板：照實際值列出提問（`interview.source`）、追蹤（`track_source`）、說明（`explanation.source`）、標題（`headline` 有沒有）。是 mock、template、color、frame_diff 的，要寫「未使用模型」，不准寫死成已接上 — commit 待回填（本次程式提交）
 - [ ] T151 Codex：拒判（`insufficient_data`）時顯示「怎麼重拍」提示：用固定對照表把 `reasons` 對應到提示，例如鏡頭移動 → 用腳架、物體朝鏡頭移動 → 從側面拍、慢動作 → 用正常速度。不用模型，並補測試
 - [ ] T145 Codex：右上角顯示 Meta API 花費（配合 Muse T110 的 `GET /api/spend`）。端點還不存在（404）時就不顯示，不要放假數字
 - [ ] T149 Codex：T133–T142 的新元件補齊繁中和英文切換，加測試確認沒有漏翻的字串
@@ -515,3 +515,6 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 10/29 Codex 工作總結：T133→T142→T136→T137→T138→T135→T140→T139 已各分支完成並推送；最新 pull 無 Codex 未勾項。最終 npm76 pass，標準 build entry64,514bytes、demo build entry64,182bytes（均gzip前），React另222.29kB。範例強制 replay，靜態模式不取後端媒體。依 Muse 已合併的需求在 /tmp 測試環境安裝 meta-sam-parser 後 SAM 三測試通過，完整 pytest190 pass/1 fail，只剩 ffmpeg缺drawtext；未略過測試、不改後端。未公開部署、瀏覽器視覺驗收仍待 Antigravity。
 - 10/29 Codex T143：結果與名片／PNG／Markdown／列印支援 headline 原文及 Muse 撰寫標示；null／舊紀錄維持程式標題並移除假待生成文案。原文不經介面翻譯且HTML安全轉義。npm77 pass、build pass；pytest191 pass/1 fail（drawtext）。
+
+- T146 資料限制：AuditOut 尚不保存 interview.source；當次偵訊結果由本地上下文顯示，重載／靜態舊紀錄只能顯示「未記錄」，不推斷為已使用或未使用模型。跨載入保存需後端契約。
+- 10/29 Codex T146：提問／追蹤／說明／標題四項實際來源面板；mock/template/color/frame_diff 均明示未使用模型。未保存的問答來源顯示未記錄；當次偵訊保留上下文。npm/build 通過；pytest drawtext 缺口仍列明。
