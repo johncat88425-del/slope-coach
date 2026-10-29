@@ -1,3 +1,4 @@
+import {WindowSelector} from './WindowSelector.js';
 import {PrintReport} from './PrintReport.js';
 import {AuditProgress} from './AuditProgress.js';
 import {GravityRuler} from './GravityRuler.js';
@@ -38,6 +39,7 @@ export function AuditResult({ audit, replay = false, videoUrl }: {
 export function AuditPage({ api, auditId = null }: {
     api: ReturnType<typeof createApi>; auditId?: string|null;
 }) {
+    const [windowConfirmed,setWindowConfirmed]=useState(false);
     const [file, setFile] = useState<File | null>(null), [preview, setPreview] = useState('');
     const [start, setStart] = useState(''), [end, setEnd] = useState(''), [size, setSize] = useState(''), [length,setLength]=useState(''), [fixed, setFixed] = useState(false);
     const [busy, setBusy] = useState(false), [error, setError] = useState(''), [attempted, setAttempted] = useState(false);
@@ -74,19 +76,15 @@ export function AuditPage({ api, auditId = null }: {
  <aside data-testid="capture-checklist"><h3>Before recording</h3><ul><li>Keep the camera fixed on a tripod.</li><li>Film from the side.</li><li>Keep one moving object in frame.</li><li>Use a clearly coloured ball, such as orange.</li><li>Use normal speed, without slow motion or retiming.</li><li>Keep motion parallel to the image plane, away from the camera direction.</li></ul><p>When capture conditions or evidence fail the quality checks, the system returns insufficient data rather than forcing an answer.</p></aside><InterviewPanel api={api} disabled={busy} onBusyChange={setInterviewBusy} onResult={value=>{setAudit(value);setReplay(false);setId(value.audit_id);setPreview('');setFile(null);setError('')}}/>
  <fieldset disabled={busy||interviewBusy}><legend>Offline demo</legend><p>Load a previously saved result. No network connection or tracking is needed.</p><label>Saved audit JSON<input data-testid="audit-import-json" type="file" accept=".json,application/json" onChange={async e => { const saved = e.target.files?.[0]; if (!saved) return; setError(''); try { if(saved.size > 5 * 1024 * 1024) throw new Error('Saved JSON must be under 5 MB.'); const result = parseSavedAudit(await saved.text()); setAudit(result); setReplay(true); setPreview(''); setFile(null); } catch(e) {setError(friendlyApiError(e));} }}/></label></fieldset>
  <fieldset disabled={busy||interviewBusy}><legend>使用者確認的設定</legend><label>Object name<input data-testid="audit-object-name" value={objectName} onChange={e=>setObjectName(e.target.value)}/></label><label>Slow motion or retimed playback<select data-testid="audit-slow-motion" value={slowMotion} onChange={e=>setSlowMotion(e.target.value)}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></select></label><label>Motion model<select data-testid="audit-model" value={model} onChange={e=>setModel(e.target.value as AuditModel)}><option value="free_flight">Free flight</option><option value="bounce">Bounce</option><option value="pendulum">Pendulum</option></select></label><label>上傳影片<input data-testid="audit-video-input" type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) {
-        setFile(f);
+        setFile(f);setStart('');setEnd('');setWindowConfirmed(false);
         setPreview(URL.createObjectURL(f));
         setAudit(null);
         setAttempted(false);
     } }}/></label>
- {!audit && preview && <video ref={video} controls src={preview} onError={() => setError('影片無法播放，請確認編碼或重新選擇原片。')}/>}
- <div className="fields"><label>片段開始（秒）<input type="number" min="0" step="any" value={start} onChange={e => setStart(e.target.value)}/></label><label>片段結束（秒）<input type="number" min="0" step="any" value={end} onChange={e => setEnd(e.target.value)}/></label></div>
- <button disabled={!preview} onClick={() => { if (video.current)
-        setStart(String(video.current.currentTime)); }}>用播放位置設定開始</button><button disabled={!preview} onClick={() => { if (video.current)
-        setEnd(String(video.current.currentTime)); }}>用播放位置設定結束</button>
+ {preview&&<WindowSelector key={preview} url={preview} start={start} end={end} confirmed={windowConfirmed} onChange={(s,e)=>{setStart(s);setEnd(e);setWindowConfirmed(false)}} onConfirm={()=>setWindowConfirmed(true)}/>}
  {model==='pendulum'&&<label>Pendulum length (metres, optional)<input data-testid="pendulum-length" type="number" min="0" step="any" value={length} onChange={e=>setLength(e.target.value)}/></label>}<label>物體尺寸（米，選填）<input type="number" min="0" step="any" value={size} onChange={e => setSize(e.target.value)}/></label><p>尺寸由使用者量測；未知請留空，不從物體名稱猜測。</p>
  <label><input type="checkbox" checked={fixed} onChange={e => setFixed(e.target.checked)}/> 我確認鏡頭固定</label><p>未勾選會將 camera_static=false 送至後端，由後端保留無法判斷結果。</p>
- <button data-testid="audit-submit" onClick={() => { setAttempted(true); if (!file || errors.length)
+ <button data-testid="audit-submit" disabled={!windowConfirmed} onClick={() => { setAttempted(true); if (!file || !windowConfirmed || errors.length)
         return; void run(() => api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined,objectName,slowMotion?slowMotion==='yes':undefined)); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input data-testid="audit-id" value={id} onChange={e => setId(e.target.value)}/></label><button data-testid="audit-load" disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
