@@ -227,6 +227,11 @@ class AuditDraftOut(BaseModel):
     interview: AuditInterview
 
 
+class AuditExplanation(BaseModel):
+    source: Literal["template", "model"]  # "model" = Muse Spark (T45); numbers are always filled by the program
+    text: str
+
+
 class AuditOut(BaseModel):
     """Video physics audit. verdict is relative to assumed_model only; never real vs generated."""
     audit_id: str
@@ -249,3 +254,4 @@ class AuditOut(BaseModel):
     nearest_body: str | None = None  # body whose surface gravity is closest to the apparent g
     events: list[PersistenceEventOut]
     limits: list[str]
+    explanation: AuditExplanation | None = None
