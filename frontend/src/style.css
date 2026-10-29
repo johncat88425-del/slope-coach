@@ -42,3 +42,5 @@ article,figure,details,.results-grid,.demo-grid{min-width:0;max-width:100%}h1,h2
 }
 
 .candidate-timeline{height:60px;position:relative;background:#eef2ef;border:1px solid #a8bbb1;overflow:hidden}.candidate-timeline button{position:absolute;top:0;background:#007e91;color:white;padding:2px;margin:0;min-width:0}.candidate-timeline button:focus{z-index:2;outline-offset:-3px}
+
+.opening-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.opening-cards a{display:block;padding:16px;border:1px solid #a8bbb1;border-radius:8px;overflow-wrap:anywhere;text-decoration:none}.opening-cards a:focus-visible{outline:3px solid #007e91}@media(max-width:800px){.opening-cards{grid-template-columns:1fr}}
