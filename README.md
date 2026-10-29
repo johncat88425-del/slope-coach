@@ -21,15 +21,15 @@ Every model output is validated (JSON schema, value ranges, banned phrases) and 
 
 ## Results on our test set (one frozen rule set, no per-clip tuning)
 
-From `data/gate/product_results.md` (colour tracking). Rules were frozen in `scripts/gate_run.py` before any clip was run; later rule changes are logged with old and new results in `docs/STATUS.md`.
+Main results use SAM 3.1 tracking (`data/gate/product_results_sam_v4.md`); colour tracking (`data/gate/product_results.md`) is shown for comparison. Rules were frozen in `scripts/gate_run.py` before any clip was run; later changes (all bug fixes, no threshold changes) are logged with old and new results in `docs/STATUS.md`.
 
-| Clips | Consistent | Inconsistent | Insufficient data |
-| --- | --- | --- | --- |
-| 3 own clips of a thrown ball (phone, fixed camera) | 2 (g = 9.62, 9.81 m/s²) | 1 (g = 8.15 m/s²) | 0 |
-| 6 clips made with the Meta AI app | 0 | 2 (g = 1.71, 0.26 m/s²; acceleration not pointing down) | 4 (object size changes 30–79%, so it moves toward/away from the camera) |
-| 1 clip made with Manus | 0 | 0 | 1 (object tracked in only 55% of frames) |
+| Clips | SAM 3.1 tracking | Colour tracking (comparison) |
+| --- | --- | --- |
+| 3 own clips of a thrown ball (phone, fixed camera) | 3 consistent (g = 9.30, 9.46, 8.68 m/s²) | 2 consistent (9.62, 9.81), 1 inconsistent (8.15) |
+| 6 clips made with the Meta AI app | 3 inconsistent (g = 0.25, 0.14, 1.80 m/s²), 3 insufficient data (object size changes 34–48%) | 2 inconsistent, 4 insufficient data |
+| 1 clip made with Manus | 1 inconsistent (g = 2.63 m/s²) | 1 insufficient data (tracked in 55% of frames) |
 
-This is a small feasibility set, not a reliability benchmark. The own clips are not committed (privacy); the generated clips are in `data/gate/clips/`.
+The two trackers do not always agree on which clips can be judged; both are reported. This is a small feasibility set, not a reliability benchmark. The own clips are not committed (privacy); the generated clips are in `data/gate/clips/`.
 
 ---
 

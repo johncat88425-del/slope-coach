@@ -217,3 +217,33 @@ def test_transcode_window_uses_seek_and_duration(tmp_path, monkeypatch):
         assert cmds[0][cmds[0].index("-t") + 1] == "1.5"
     finally:
         dst.unlink(missing_ok=True)
+
+
+def test_transcoded_frame_n_is_at_window_start_plus_n_over_15(tmp_path):
+    """Real ffmpeg: a 30 fps clip whose bright column moves 4 px per source frame encodes time in x.
+    Frame N of the 15 fps window copy must show source frame 30 * (t_start + N / 15)."""
+    import shutil
+    import subprocess
+
+    import numpy as np
+
+    if not shutil.which("ffmpeg"):
+        pytest.skip("ffmpeg not installed")
+    w, h, n = 480, 64, 90
+    frames = np.zeros((n, h, w, 3), np.uint8)
+    for i in range(n):
+        frames[i, :, 4 * i:4 * i + 4] = 255
+    clip = tmp_path / "ramp.mp4"
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{w}x{h}",
+                    "-r", "30", "-i", "-", "-c:v", "libx264", "-qp", "0", "-pix_fmt", "yuv444p", str(clip)],
+                   input=frames.tobytes(), check=True)
+    dst = sam._transcode_to_15fps(clip, 1.0, 2.0)
+    try:
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(dst), "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+                             capture_output=True, check=True).stdout
+    finally:
+        dst.unlink(missing_ok=True)
+    out = np.frombuffer(raw, np.uint8).reshape(-1, h, w)
+    shown = [int(round(np.argmax(f.mean(0) > 128) / 4)) for f in out]
+    assert len(shown) >= 14
+    assert shown == [30 + 2 * k for k in range(len(shown))]

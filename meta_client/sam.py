@@ -146,7 +146,9 @@ def _transcode_to_15fps(
     else:
         cmd += ["-i", str(src)]
     cmd += [
-        "-r", "15", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        # fps filter, not -r: after -ss, -r dropped frames unevenly at the window start, so frame N was
+        # not at t_start + N/15 and every real throw came out tilted about 24 degrees (found 10/29, T114).
+        "-vf", "fps=15", "-c:v", "libx264", "-pix_fmt", "yuv420p",
         "-movflags", "+faststart", str(dst),
     ]
     proc = _run_cmd(cmd, _FFMPEG_TIMEOUT_S)
