@@ -1,27 +1,28 @@
-import {HowItWorks} from './HowItWorks';
 import {DEMO_ONLY,demoUploadMessage} from './mode';
 import { Localize, LanguageRoot } from './i18n.js';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { auditIdFromPath, exampleKeyFromHash, auditIdFromHash, createExperiment, imagePoint, pages, replacePhoto, resolveRoute, updateDraft, validateDraft } from './experiment';
 import type { Draft, Point } from './experiment';
 import { createApi, friendlyApiError } from './api';
 import type { ExperimentRecord, TrialKind, ScenePhoto } from './api';
-import { TrialEditor } from './TrialEditor';
-import { CurveChart } from './CurveChart';
 import { mediaUrl } from './media';
 import { ModelSource } from './ModelSource';
-import { AuditPage } from './AuditPage';
-import {OpeningCards,SavedExample} from './OpeningCards';
-import {AutoTour} from './AutoTour';
-import {PairComparison} from './PairComparison';
-import {ResultsWall} from './ResultsWall';
 import {GuidedDemo} from './GuidedDemo';
-import {DemoPage} from './DemoPage';
-import {Home} from './Home';
-import { VideoOverlay } from './VideoOverlay';
 import './style.css';
+const HowItWorks=lazy(()=>import('./HowItWorks').then(m=>({default:m.HowItWorks})));
+const TrialEditor=lazy(()=>import('./TrialEditor').then(m=>({default:m.TrialEditor})));
+const CurveChart=lazy(()=>import('./CurveChart').then(m=>({default:m.CurveChart})));
+const AuditPage=lazy(()=>import('./AuditPage').then(m=>({default:m.AuditPage})));
+const OpeningCards=lazy(()=>import('./OpeningCards').then(m=>({default:m.OpeningCards})));
+const SavedExample=lazy(()=>import('./OpeningCards').then(m=>({default:m.SavedExample})));
+const AutoTour=lazy(()=>import('./AutoTour').then(m=>({default:m.AutoTour})));
+const PairComparison=lazy(()=>import('./PairComparison').then(m=>({default:m.PairComparison})));
+const ResultsWall=lazy(()=>import('./ResultsWall').then(m=>({default:m.ResultsWall})));
+const DemoPage=lazy(()=>import('./DemoPage').then(m=>({default:m.DemoPage})));
+const Home=lazy(()=>import('./Home').then(m=>({default:m.Home})));
+const VideoOverlay=lazy(()=>import('./VideoOverlay').then(m=>({default:m.VideoOverlay})));
 const api = createApi(import.meta.env.VITE_API_BASE_URL ?? '');
 const markerNames = ['尺的第一端', '尺的第二端', '滑塊位置（路徑起點）', '路徑終點（坡底）'];
 function rememberedId() { try {
@@ -184,4 +185,4 @@ function ComparisonSelect({ record, value, onChange }: {
     value: string;
     onChange: (id: string) => void;
 }) { return <Localize>{<label>比較紀錄<select value={value} onChange={e => onChange(e.target.value)}><option value="">請選擇</option>{record?.comparisons.map(c => <option key={c.comparison_id} value={c.comparison_id}>{c.comparison_id} · {c.verdict}</option>)}</select></label>}</Localize>; }
-createRoot(document.getElementById('root')!).render(<LanguageRoot><App /></LanguageRoot>);
+createRoot(document.getElementById('root')!).render(<LanguageRoot><Suspense fallback={<p role="status">Loading view…</p>}><App /></Suspense></LanguageRoot>);

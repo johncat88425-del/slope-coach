@@ -99,7 +99,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T136 Codex：首頁給評審的開場區：一句話說明 + 三張卡片（real_own_2 一致、generated_meta_clip2 不一致、generated_meta_clip4 資料不足），點下去開那筆紀錄 — commit cc65c0a
 - [x] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤 — commit a25a94b
 - [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
-- [ ] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS
+- [x] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS — commit 待回填（本次程式提交）
 - [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 041eb73
 
 **Antigravity**（照順序做）
@@ -501,3 +501,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T138：VITE_DEMO_ONLY=1 建置只用保存紀錄，停用上傳與教練操作、抑制自動讀取；API 層 read/upload/XHR 全阻擋。分享 ID 僅查本地 catalog。標準／靜態 build 均通過，npm74 pass；完整 pytest4項環境失敗。build指令與SPA要求已寫STATUS。
 - 10/29 Codex T135：#how 五步流程以 Meta model／deterministic code／user input 分清來源；可選紀錄查看實際 track_source、explanation.source。問答來源未保存在紀錄時明示未知，不宣稱已啟用模型。npm/build 通過；pytest4項環境失敗。
 - 10/29 Codex T140：七個結果元件在三模型下遍歷空 points、稀疏 numbers、缺 explanation、nearest_body=null；不崩潰、不產生 NaN／假數字、不修改輸入。npm76 pass、build pass；完整 pytest4項環境失敗。
+- 10/29 Codex T139：大頁面與範例資料按需載入，React 共用chunk可快取。production entry 64,514 bytes（gzip前），React另222.29 kB；原主入口約426.87 kB。靜態entry64,182 bytes。build加入250000bytes自動門檻；npm76 pass，標準／demo build pass，pytest187 pass/4 fail（本機缺SAM解碼套件與drawtext）。
