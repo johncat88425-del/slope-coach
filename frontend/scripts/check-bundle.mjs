@@ -1,0 +1,2 @@
+import {readFile,stat} from 'node:fs/promises';
+const html=await readFile(new URL('../dist/index.html',import.meta.url),'utf8');const entry=html.match(/<script[^>]*src="([^"]+\.js)"/);if(!entry)throw Error('No production entry script found');const path=entry[1].replace(/^\//,'');const bytes=(await stat(new URL('../dist/'+path,import.meta.url))).size;console.log(`Production entry: ${bytes} bytes before gzip (limit 250000)`);if(bytes>=250000)process.exitCode=1;
