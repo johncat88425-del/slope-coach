@@ -5,3 +5,6 @@ export function mediaUrl(path:string|null|undefined,apiBase=''):string|undefined
   if(!apiBase)return path;
   try {const base=new URL(apiBase);if(!['http:','https:'].includes(base.protocol))return undefined;return new URL(path,base.origin).href}catch{return undefined}
 }
+
+/** Local upload preview is usable only for the exact result produced from that upload. */
+export function matchingAuditPreview(auditId:string,previewAuditId:string|null,preview:string){return preview&&auditId===previewAuditId?preview:undefined}
