@@ -12,7 +12,7 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from backend.output_check import check_model_text
+from backend.output_check import check_model_text, extract_numbers
 
 from . import client as _client
 from .client import MAX_RETRIES, SPARK_MODEL, call_with_retry, get_client
@@ -67,9 +67,11 @@ _PROMPTS = {
 }
 
 _RULES = (
-    "Rules. Use only numbers that appear in the payload below; never invent, "
+    "Rules. Use only numbers that appear in the payload below, including "
+    "numbers inside its reason sentences (such as thresholds); never invent, "
     "convert units, or add precision. Quote each number rounded to at most 2 "
-    "decimal places (e.g. 9.81, not 9.810179). Say 與假設一致 or 目前無法"
+    "decimal places (e.g. 1.71, not 1.705999). Never write frame rates, "
+    "frame counts, or percentages you compute yourself. Say 與假設一致 or 目前無法"
     "區分 where appropriate; never claim proof or causes (no 證實, 真因, "
     "一定是, proves, confirms, must be). Never frame this as real-vs-"
     "generated video detection: do not write 真影片, 假影片, AI生成, or any "
@@ -94,9 +96,11 @@ _PROMPTS_EN = {
 }
 
 _RULES_EN = (
-    "Rules. Use only numbers that appear in the payload below; never invent, "
+    "Rules. Use only numbers that appear in the payload below, including "
+    "numbers inside its reason sentences (such as thresholds); never invent, "
     "convert units, or add precision. Quote each number rounded to at most 2 "
-    "decimal places (e.g. 9.81, not 9.810179). Say consistent with the "
+    "decimal places (e.g. 1.71, not 1.705999). Never write frame rates, "
+    "frame counts, or percentages you compute yourself. Say consistent with the "
     "assumption or cannot yet distinguish where appropriate; never claim "
     "proof or causes (no proves, confirms, must be, caused by). Never frame "
     "this as real-vs-generated video detection: do not write real video, "
@@ -109,6 +113,30 @@ def _summary_view(result: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(result, Mapping):
         raise ModelOutputError("result must be a mapping")
     return {k: v for k, v in result.items() if k not in _DROPPED_KEYS}
+
+
+def _string_numbers(view: Mapping[str, Any]) -> list[float]:
+    """Numbers inside the payload's own sentences (T115).
+
+    Thresholds such as 8.34-11.28 live in reason strings, not numeric
+    fields. The prompt allows quoting payload numbers, so the check must
+    accept them too. Parsed deterministically by the program; the backend
+    checker itself is untouched.
+    """
+    out: list[float] = []
+
+    def walk(node: Any) -> None:
+        if isinstance(node, str):
+            out.extend(value for _, value, _ in extract_numbers(node))
+        elif isinstance(node, Mapping):
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, (list, tuple)):
+            for value in node:
+                walk(value)
+
+    walk(view)
+    return out
 
 
 def _find_authenticity_words(text: str) -> list[str]:
@@ -171,7 +199,9 @@ def explain_result(
             text = data["explanation"].strip()
             if not text:
                 raise ModelOutputError("explanation must be non-empty")
-            checked = check_model_text(text, [view])
+            checked = check_model_text(
+                text, [view, {"payload_sentence_numbers": _string_numbers(view)}]
+            )
             if not checked.ok:
                 raise ModelOutputError("output check failed: " + "; ".join(checked.problems))
             bad_words = _find_authenticity_words(text)
