@@ -692,7 +692,9 @@ def suggest_object(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_object(json.loads(response.output_text or ""))
+            out = _validate_object(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"object suggestion failed validation: {last_error}")
