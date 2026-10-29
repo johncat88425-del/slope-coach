@@ -15,6 +15,8 @@ from typing import Any
 
 from backend.interventions import CATALOG
 from backend.output_check import check_choice, check_model_text, fill_numbers
+
+from .headline import rounded_number_sources
 from physics.errors import PhysicsInputError
 from physics.experiments.freefall import check_bounces, check_flight, fit_flight
 from physics.persistence import persistence_events
@@ -425,7 +427,10 @@ def plan_audit_checks(
                                 "rationale slots failed: " + "; ".join(fill_check.problems)
                             )
                         assert filled is not None
-                        text_check = check_model_text(filled, [audit, *tool_outputs])
+                        text_check = check_model_text(
+                            filled,
+                            [audit, *tool_outputs, rounded_number_sources(slots)],
+                        )
                         if not text_check.ok:
                             raise ModelOutputError(
                                 "output check failed: " + "; ".join(text_check.problems)
