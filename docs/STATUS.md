@@ -15,13 +15,34 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 | 誰 | 照這個順序做 | 重點 |
 | --- | --- | --- |
 | **Muse**（最優先） | （T05–T67 已合併）→ **T107 SAM 全部重跑** → **T112 說明與標題接上稽核** → T108 → T109 → T110 → T111 | SAM 是最大的缺口：顏色追蹤在 Meta clip1、4、5 和 Manus 那支失敗，測試影片在 repo 的 `data/gate/clips/`（之前寫的 /mnt/ 路徑只在 Claude 的雲端電腦上，你那邊沒有，是 Claude 的錯）。所有用到模型的輸出都要標來源；數字只能由 physics 產生。花費超過 10 美元先停，寫進 STATUS。 |
-| **Codex** | T143 → T146 → T151 → T145 → T149 → T150（T100–T142 已完成並合併） | demo 用的資料都在 `data/demo/`（`real_own_*`、`generated_*`）。不准出現「偵測 AI」「假影片」「真假」。 |
+| **Codex** | **T153** →（T143–T152 已合併）之後等 Claude 補任務 | demo 用的資料都在 `data/demo/`（`real_own_*`、`generated_*`）。不准出現「偵測 AI」「假影片」「真假」。 |
 | **Antigravity** | （T02 已由 Claude 做完）T52 → T42 → T119 → T120 → T121 → T122 → T54 → T53 | **10/29 john 已在 Mac 設好 `gh auth login`，現在 push 得上去了**（之前 Muse 推不上去就是這個原因）。不要再做 3D 渲染影片。部署帳號等 john 決定。 |
 | **Manus** | T23 → T95 → T123 → T124 → T125 → T126 | 只寫文件，交給 john 轉給 Claude。數字只用 `data/gate/product_results.md`。 |
 | **Claude** | T127 → T129 → T128 → T130 → T131 | 每 2 小時巡查、審查合併。 |
 | **john**（明天） | 把 Manus 的文件傳給 Claude；看 demo 導覽；可選：Kling／Luma 各生成 1 支 | 錄 demo 前先讓 Claude 確認數字。 |
 
 **重要（10/29 09:00 Claude）：做完一件不要結束對話。** 昨晚大家做完手上的任務就停了，因為沒有人叫你們再看一次 STATUS。規則是：做完一件 → push → `git pull origin main` → 重讀這份 → 接下一個 `[ ]`，一直做到你那一區沒有 `[ ]` 為止。只有全部做完才結束，結束前在工作日誌寫一行「XX 沒有待辦了」。卡住（缺檔案、缺權限）就寫進「待 john 決定」，然後跳下一件，不要停在那裡等。
+
+## 提交前路線圖（10/29 09:30 Claude，john 要求一次列完；截止 11/04 21:00 ET，我們目標 11/03 交）
+
+**A. 產品做完（10/29–10/31，11/01 功能凍結）**
+1. Muse T107：SAM 重跑全部影片，和顏色追蹤並排 → 決定 demo 用哪一版追蹤
+2. Muse T112：稽核說明、標題改由 Muse Spark 寫（後端 T143 已備好）
+3. Muse T108–T111：建議物體名稱、語音回答、花費顯示、來源標示
+4. Codex T153：Muse 偵訊改成主要流程（現在藏在收合的區塊裡，評審看不到）；直接上傳變成「進階」
+5. Claude：每次合併後用瀏覽器從上傳跑到結果，抓到問題就修（10/29 已修好時間窗建議太慢的問題）
+6. Antigravity T52、T119、T120：CI、docker 一鍵啟動、端到端截圖
+
+**B. demo 證據（10/31 前）**
+7. Claude：用最終版本重跑所有影片，產生 `product_results`（顏色版＋SAM 版都放）與 demo 紀錄
+8. john（可選）：拍 1 支彈跳球，讓 demo 多一種模型
+
+**C. 提交材料（11/01–11/03）**
+9. Antigravity T44／Claude：英文 README（安裝、怎麼用、限制、Meta 模型用在哪）
+10. Manus：用最終數字更新提交文字和三分鐘旁白（Claude 檢查數字）
+11. Claude：提交前檢查（沒有金鑰、只呼叫 Meta、沒有「偵測 AI」字眼、只算 10/26 之後的工作、repo 公開）
+12. john：錄三分鐘 demo（真實一致 → 生成不一致 → 拒判 → Muse 問問題與說明），上傳 YouTube 不公開連結
+13. john：在 Cerebral Valley 送出（repo 連結＋影片＋文字）
 
 ## 完成表（每做完一件就打勾，附 commit；Claude 每隔一段時間來看）
 
@@ -108,6 +129,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
 - [x] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS — commit b3717c3
 - [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 041eb73
+- [ ] T153 Codex：（最優先）稽核頁的主要流程改成 Muse 偵訊：上傳影片 → 「Prepare questions」→ 回答 → 時間窗 → 檢查。偵訊區塊預設展開、放在最上面；舊的直接上傳表單收進「Advanced: check without the interview」。Offline demo（匯入 JSON）也收起來。補測試
 - [ ] T143 Codex：（API v0.9）結果區和物理名片最上面顯示 `headline.text`（有的時候才顯示），旁邊標明「由 Muse Spark 撰寫」；`headline` 是 null 時照舊用程式產生的標題。不要改寫文字或數字。靜態 demo 資料裡 `headline` 一律是 null
 - [ ] T146 Codex：結果區加「這次用了哪些 Meta 模型」小面板：照實際值列出提問（`interview.source`）、追蹤（`track_source`）、說明（`explanation.source`）、標題（`headline` 有沒有）。是 mock、template、color、frame_diff 的，要寫「未使用模型」，不准寫死成已接上
 - [ ] T151 Codex：拒判（`insufficient_data`）時顯示「怎麼重拍」提示：用固定對照表把 `reasons` 對應到提示，例如鏡頭移動 → 用腳架、物體朝鏡頭移動 → 從側面拍、慢動作 → 用正常速度。不用模型，並補測試

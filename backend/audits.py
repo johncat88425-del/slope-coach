@@ -22,7 +22,7 @@ from .explain import explain_audit
 from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
 from .output_check import check_model_text
 from .store import UPLOAD_ROOT, new_id, now, store
-from .video import color_for, read_frames, read_frames_rgb, save_overlay, track_color, track_with_sizes
+from .video import color_for, probe_fps, read_frames, read_frames_rgb, save_overlay, track_color, track_with_sizes
 
 router = APIRouter()
 
@@ -157,15 +157,13 @@ def suggest_windows(did: str, object_name: str = Form("ball", max_length=60)):
     if did not in store.audit_drafts:
         raise HTTPException(404, f"draft {did} not found")
     video = store.audit_drafts[did]
+    color = color_for(object_name)
     try:
-        frames, fps = read_frames(video, 0.0, SCAN_LIMIT_S)
+        frames, fps = ((read_frames_rgb(str(video), 0.0, SCAN_LIMIT_S), probe_fps(str(video))) if color
+                       else read_frames(video, 0.0, SCAN_LIMIT_S))
     except Exception:
         raise HTTPException(422, "could not read video frames")
-    color = color_for(object_name)
-    if color:
-        pts, _ = track_color(read_frames_rgb(video, 0.0, SCAN_LIMIT_S), fps, 0.0, color)
-    else:
-        pts, _ = track_with_sizes(frames, fps, 0.0)
+    pts, _ = track_color(frames, fps, 0.0, color) if color else track_with_sizes(frames, fps, 0.0)
     wins = suggest_flight_windows(pts)
     return {"draft_id": did, "track_source": "color" if color else "frame_diff",
             "windows": [{"t_start": a, "t_end": b} for a, b in wins],
