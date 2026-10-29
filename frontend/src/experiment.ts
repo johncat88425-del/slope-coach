@@ -48,7 +48,7 @@ export function auditHash(id:string){return '#/audits/'+encodeURIComponent(id)}
 export function resolveRoute(hash: string): Route {
   if(auditIdFromHash(hash)!==null)return 'audit';
   const route = hash.replace(/^#\/?/, '');
-  return pages.find(page => page.route === route)?.route ?? 'home';
+  return pages.find(page => page.route === route)?.route ?? 'audit';
 }
 export function validateDraft(draft: Draft): string[] {
   const errors: string[] = [];

@@ -34,6 +34,7 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Motion Audit':'影片物理稽核','Video physics audit':'影片物理稽核','Check motion against your assumed physical model.':'檢查影片中的運動是否符合你假設的物理模型。','Check whether motion in a video fits your assumed physical model.':'檢查影片中的運動是否符合你假設的物理模型','Experiment coach':'實驗教練','Check video':'檢查影片','Main sections':'主要分頁','Review resources':'參考內容','Scope and limitations':'支援範圍與限制','Compare outcomes':'結果對照','Fixed camera · Supported motion models · Explicit insufficient-data outcomes':'固定鏡頭・支援限定模型・明確呈現無法判斷','Fixed camera · Approximately side-on · One straight slope · One slider':'固定鏡頭・近似側視・單一直線斜坡・單一滑塊',
 'John’s recorded experiments':'john 的實拍實驗','Videos filmed by john; annotations confirmed by john. All three records are shown, including the inconsistent result whose cause remains unknown.':'影片由 john 自己拍攝、標註由 john 確認。完整呈現三份紀錄，包括原因未明的不一致結果。','Original videos are withheld for household privacy. These saved records show trajectories and measurements without loading video.':'為保護住家隱私，不公開原片；只顯示保存的軌跡與量測結果。','Inconsistent with the assumed model; cause unknown. This result does not establish a cause.':'與假設模型不一致，原因不明；此結果不能確定原因。',
 'Slow motion or retimed playback (user):':'慢動作或變速播放（使用者）：','Not provided':'未提供','Reported limitations':'後端回報的限制',
 'Object name':'物體名稱',
