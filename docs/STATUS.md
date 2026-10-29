@@ -283,6 +283,25 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - Q3 同一套規則、拒判不超過一半：**pass**（0/3 拒判）。
 - own_3 是自拍影片上的誤報，要說明：它的 g 只差 17%，沒有到「明確異常」（差 50%）的程度。一開始猜是球朝鏡頭移動，但網站稽核量到的球大小沿軌跡只變 -3%，不支持這個猜測，**原因目前不明**。用 ±30% 尺寸誤差算，這個判斷不穩健（`g_verdict_robust` = 0），所以不算明確異常。沒有調參。
 
+### SAM 對照（10/29 Muse T107：同一 manifest 用 SAM 3.1 重跑，`data/gate/product_results_sam.md`）
+
+| clip | source | verdict | g_apparent_m_s2 | nearest_body | size_trend | track_source | reason |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| own_1_IMG_8426.mov | own | missing |  |  |  |  | not found in data/gate/clips |
+| own_2_IMG_8429.mov | own | missing |  |  |  |  | not found in data/gate/clips |
+| own_3_IMG_8434.mov | own | missing |  |  |  |  | not found in data/gate/clips |
+| meta_clip1.mp4 | meta_ai | insufficient_data |  |  |  | sam | object tracked in only 62% of frames |
+| meta_clip2.mp4 | meta_ai | insufficient_data |  |  |  | sam | object tracked in only 63% of frames |
+| meta_clip3.mp4 | meta_ai | insufficient_data |  |  |  | sam | object tracked in only 62% of frames |
+| meta_clip4.mp4 | meta_ai | insufficient_data |  |  |  | sam | object tracked in only 63% of frames |
+| meta_clip5.mp4 | meta_ai | insufficient_data |  |  |  | sam | object tracked in only 61% of frames |
+| meta_clip6.mp4 | meta_ai | insufficient_data |  |  |  | sam | object tracked in only 62% of frames |
+| manus_clip1.mp4 | manus | insufficient_data |  |  |  | sam | object tracked in only 61% of frames |
+
+和顏色追蹤版（`data/gate/product_results.md`）並排：顏色版 meta 是 2 不一致（clip2 g=1.71 像月球、clip3 g=0.26 像冥王星）＋4 資料不足（透視拒判），Manus 那支 55% 拒判；SAM 版 7 支全部因「只追到六成格數」拒判，**目前 SAM 版一個數字都算不出來**。兩版都照實報告，不只放好看的；manifest 沒動。
+
+**原因（不是追蹤品質，是分母算錯）**：7 支的 61–63% 完全一致，因為這是 15/24 = 62.5%。SAM 照 T05 規格先降到 15fps 再追，後端 `audits.py` 的覆蓋率卻用來源片格數（24fps）當分母（`frac = len(pts)/len(frames)`，門檻 0.8）。SAM 在 24fps 片子上天花板就是 62.5%，永遠過不了。修法在後端（Claude 的範圍）：分母改用追蹤器的預期格數；另外 `by_t` 用時間戳精確對齊，15fps 的時間戳很少落在 24fps 格點上，下游的 events／鬼影對齊也要一起修。修好之前 SAM 版數字不能引用。own_3 支不在 git 裡所以是 missing（預期內）。
+
 ## 任務表
 
 狀態：待辦、進行中、完成、卡住。
@@ -359,6 +378,10 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - [Muse] 新套件 `meta-sam-parser`（Meta 官方、無依賴）：SAM 遮罩自研編碼，只能用官方解析器，已用於 track。requirements 請加 `openai` + `meta-sam-parser`。
 
+- [Muse T107] SAM 覆蓋率分母 bug（需 Claude 修後端）：`audits.py` 用來源片格數（24fps）當分母，SAM 只出 15fps，天花板 62.5% 永遠低於門檻 0.8，所以 7 支全拒判。另 `by_t` 時間戳精確對齊在 15fps/24fps 混用下幾乎對不上，下游 events／鬼影也要修。Muse 不碰後端規則，等修好後重跑 T107 才有數字。
+
+- [Muse] 主 checkout（/Users/aacc/Documents/slope-coach，切在 antigravity/T44-readme）有未解決的 `docs/STATUS.md` 衝突，`git pull origin main` 被擋下。Muse 沒碰它，在 worktree 照 origin/main 繼續做；請 Antigravity 或 john 解掉。
+
 ## 已做的決定
 
 - 10/29 john：關卡三題通過後，主方向轉向「影片物理稽核」；斜坡教練保留為第二條路，只做維護。
@@ -387,9 +410,11 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | --- | --- | --- | --- |
 | 10/29 | T38：SAM 追蹤 Manus 籃球片（75 格，65 格命中） | 0.015 | 0.015 |
 | 10/29 | T66：Spark 偵訊實測＋除錯（含 5 次失敗嘗試） | 0.075 | 0.090 |
+| 10/29 | T107：SAM 重跑 7 支（6 meta＋1 manus，每支 $0.010–0.014） | 0.077 | 0.167 |
 
 ## 工作日誌（最新在上）
 
+- 10/29 Muse 完成 T107（分支 muse/T107-sam-rerun）：audit_batch 跑 data/gate/clips 7 支，track_source 全是 sam，但 7 支全因「只追到 61–63%」拒判——查出是後端覆蓋率分母用 24fps 來源格數、SAM 只出 15fps（天花板 62.5% < 門檻 0.8），修法在後端已寫進待 john 決定。SAM 對照表和兩版比較已貼進關卡結果。花費 $0.077，累計 $0.167。pip install 用「逐一確認 requirements 可 import＋ffmpeg＋meta-sam-parser 存在」代替（venv 本來就齊，避免重裝弄壞環境）。
 - 10/29 09:00 Claude：查出昨晚工具停下來的原因。(1) 各工具把當時看到的任務做完就結束了，Claude 後來加的任務沒有人去讀。(2) Muse 的 T107 要用 `/mnt/project-files/gate/`，但那個路徑只在 Claude 的雲端電腦上，Muse 早就回報找不到。已把生成影片放進 `data/gate/clips/`（T144），`audit_batch` 預設讀那裡，找不到的影片列為 missing，T107 也改成一步一步的指令。頂端加了「做完一件不要結束對話」。
 - 10/29 06:40 Claude：巡查時發現 04:37 之後沒有任何工具 push 新東西（john 睡了，工具可能停了）。Claude 代做 T02。**Antigravity 下一件改成 T52（CI）**。
 - 10/29 04:45 Claude：合併 Codex T133–T142（PR #51，npm 76、build 通過、主 bundle 64 kB）。做了 T143：說明和標題可以由 Muse Spark 寫，但要通過後端檢查才用。給 Muse 加 T112（在 MetaHooks 接上），給 Codex 加 T143、T145、T146、T149、T150、T151。Antigravity 到現在什麼都沒推，可能也是 GitHub 登入的問題，已在頂端寫明現在能 push。
