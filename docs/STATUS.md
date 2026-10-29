@@ -12,8 +12,8 @@
 
 | 誰 | 現在做 | 細節 |
 | --- | --- | --- |
-| **Muse**（最優先） | push T05、T29 → **T38 SAM** → T66 → T45 | 先 commit 並 push 你本機做好的 T05、T29 到 `muse/T05-meta-client`。T38：在 MetaHooks 實作 `track_object`，呼叫 `sam-3.1`（格式見 docs/API.md v0.6）。測試影片：`/mnt/project-files/gate/meta/meta_clip1.mp4`、`meta_clip4.mp4`、`meta_clip5.mp4`（不用模型的追蹤在這 3 支失敗），以及 `manus/manus_clip1.mp4`（咖啡色的球）。這些是生成影片，沒有真人臉，可以用 contributor 模型開發。T66：`interview_audit`。T45：稽核代理，Spark 選要跑哪些檢查，並用 `fill_numbers` 寫說明。 |
-| **Codex** | T89 → T90 → T92 | T92：稽核變成網站首頁和主流程，斜坡教練移到第二個分頁「實驗教練」。細節見完成表。 |
+| **Muse**（最優先） | push T05、T29 → **T38 SAM** → T66 → T45 | 先 commit 並 push 你本機做好的 T05、T29 到 `muse/T05-meta-client`。T38：在 MetaHooks 實作 `track_object`，呼叫 `sam-3.1`（格式見 docs/API.md v0.6）。測試影片：`/mnt/project-files/gate/meta/meta_clip1.mp4`、`meta_clip4.mp4`、`meta_clip5.mp4`（不用模型的追蹤在這 3 支失敗），以及 `manus/manus_clip1.mp4`（咖啡色的球）。這些是生成影片，沒有真人臉，可以用 contributor 模型開發。T66：`interview_audit`。T45：稽核代理，Spark 選要跑哪些檢查，並用 `fill_numbers` 寫說明，放進結果的 `explanation`（`source: model`，模板見 `backend/explain.py`）。 |
+| **Codex** | T89 → T90 → T92 → T100 | T92：稽核變成網站首頁和主流程，斜坡教練移到第二個分頁「實驗教練」。細節見完成表。 |
 | **Antigravity** | T02 → T52 → T42 | requirements.txt 與 `scripts/dev.sh`；GitHub Actions 跑 pytest 和 npm test（要裝 ffmpeg）；用 `data/demo/real_own_*.json` 跑稽核流程的端到端測試與截圖。**不要再做 3D 渲染影片**，那不是這次要的測試資料。 |
 | **Manus** | T23 → T95 | T23：依照新方向重寫三分鐘 demo 分鏡（真實影片一致 → Meta 影片不一致 → 拒判例子 → Muse 問問題與說明）。T95：提交頁文字草稿。只寫文件，放 `docs/research/`。 |
 | **Claude** | 審查 PR、T96、T97 | T96：Manus／Antigravity 影片標註好後補進關卡紀錄。T97：把 AGENTS 新方向的用語檢查加進 `output_check`（例如「抓假影片」「AI 偵測」）。 |
@@ -67,6 +67,7 @@
 - [x] T81 Codex：**demo 導覽模式**。加一個「Guided demo」按鈕，按照順序帶評審看：首頁說明（能判斷什麼、不能判斷什麼）→ Muse 偵訊 → 結果與鬼影對照 → 物理名片 → 三種結果並排。每一步用一句英文說明，加上「Next」按鈕，並標明哪些內容由 Muse Spark 產生。只用已經有的畫面，不新增假資料 — commit c4b1481
 - [x] T82 Codex：英文介面文字總檢查，給評審看的。統一用語（consistent / inconsistent / insufficient data with the assumed model），刪掉內部用語（例如 fixture、draft id），按鈕文字要短。不准出現 real、fake、AI-generated、detect — commit 6b73368
 - [x] T85 Codex：「檢查影片」和 Muse 偵訊加一個「物體名稱」欄位，送 `object_name`（給 SAM 的文字提示，預設 ball）。結果區要依照 `track_source` 標明「由 SAM 3.1 追蹤」或「frame differencing（未使用模型）」，物理名片和匯出也要寫（API v0.5） — commit 8a7bd26
+- [ ] T100 Codex：（T92 之後做）結果區最上面顯示 `explanation.text`，旁邊標明來源：`template` →「固定模板（未使用模型）」，`model` →「由 Muse Spark 產生」。名片和匯出也要放。不要改寫文字或數字
 - [ ] T92 Codex：（T89、T90 之後做）稽核變成網站首頁：打開網站先看到「檢查影片」與 demo 導覽；斜坡教練移到第二個分頁「實驗教練」，功能不刪。首頁一句話說明：「檢查影片中的運動是否符合你假設的物理模型」，不准出現「AI 偵測」「抓假影片」等字
 - [ ] T89 Codex：檢查並修飾 Claude 在 T88 對前端的最小改動（`track_source: "color"` → 「顏色＋移動追蹤（未使用模型）」），樣式和其他來源標籤一致，補一個測試
 - [ ] T90 Codex：demo 導覽加「真實影片」一段，讀 `data/demo/real_own_1.json` 到 `real_own_3.json`（`real_clip: true`）。要標明「john 自己拍的影片、標註由 john 確認」，並把 own_1、own_2 的「一致、最接近地球」和 own_3 的「不一致、原因不明」放在一起，不挑片。這些紀錄沒有影片（`video_url` 是空字串，john 的家不放上公開 repo），要能正常顯示軌跡、鬼影和數字
@@ -90,6 +91,7 @@
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
 **Claude**
+- [x] T99 Claude：稽核結果新增 `explanation`（API v0.7），先用固定模板寫一般人看得懂的說明，數字由 `fill_numbers` 填入，例如「the object falls as if gravity were 1.71 m/s², 0.17 times Earth's, closest to Moon」。Muse T45 接上後改成 `source: model`。`data/demo/real_own_*.json` 已重新產生，含說明 — 見 PR T99
 - [x] T98 Claude：`scripts/audit_batch.py`：把 manifest 裡每支影片都走一遍網站流程，產生 `data/gate/product_results.md`（網站判定結果表）。demo 和提交文字的數字引用這張表。目前：自拍 2 一致、1 小幅不一致；Meta 2 不一致（月球、冥王星）、4 資料不足（球朝鏡頭飛）；Manus 1 資料不足 — 見 PR T98
 - [ ] T96 Claude：（Manus 已補，03:15）Manus 1 支、Antigravity 2 支（程式渲染 3D，另列「程式模擬」來源）標註好後補進關卡紀錄
 - [x] T97 Claude：`output_check` 加上新方向的禁用語（抓假、測謊、AI 偵測、任何影片、lie detector、any video 等），並加測試 — 見 PR T97
@@ -300,6 +302,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 03:35 Claude T99：稽核結果加上用一般人的話寫的說明（固定模板，API v0.7），新增 Codex T100。
 - 10/29 03:25 Claude T98：網站判定結果表 `data/gate/product_results.md`。
 - 10/29 03:15 Claude：依 john 的決定改寫 AGENTS.md（目前方向、專案說明）與本檔頂端的分工表，新增 T92、T95、T96、T97。
 - 10/29 03:10 Claude：關卡正式結果三題都通過。依決定規則應轉向「影片物理稽核」，已請 john 決定。

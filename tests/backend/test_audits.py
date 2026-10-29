@@ -160,3 +160,20 @@ def test_colour_named_object_uses_colour_tracker_when_sam_is_absent(tmp_path):
     assert r["track_source"] == "color" and r["verdict"] == "consistent", r
     plain = post(tmp_path / "ball.mp4", object_name="ball").json()
     assert plain["track_source"] == "frame_diff"
+
+
+def test_template_explanation_quotes_program_numbers_only(tmp_path):
+    from backend.output_check import find_banned_phrases
+
+    write_clip(tmp_path / "real.mp4", 9.81)
+    write_clip(tmp_path / "slow.mp4", 9.81 / 4)
+    real = post(tmp_path / "real.mp4").json()
+    slow = post(tmp_path / "slow.mp4").json()
+    assert real["explanation"]["source"] == "template"
+    assert "consistent with that model" in real["explanation"]["text"]
+    assert f"{real['numbers']['g_apparent_m_s2']:.1f}" in real["explanation"]["text"]
+    s = slow["explanation"]["text"]
+    assert f"{slow['numbers']['g_apparent_m_s2']:.2f}" in s and slow["nearest_body"] in s
+    assert not find_banned_phrases(s) and not find_banned_phrases(real["explanation"]["text"])
+    refused = post(tmp_path / "real.mp4", camera_static="false").json()
+    assert refused["explanation"]["text"].startswith("This clip cannot be judged")
