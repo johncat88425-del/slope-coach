@@ -16,7 +16,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | T166（修語音 502） |
-| **Codex** | T157（demo 資料 10/29 13:15 已定版，現在就做；T165 前端已合併，Figma 收尾不急） |
+| **Codex** | T157、T165 已合併；Figma 收尾等配額恢復，不急 |
 | **Antigravity** | T53 → T68（T121、T122 已合併） |
 | **Manus** | T163 → T164 → T22 |
 | **Claude** | 審查合併 PR；README 與提交前檢查 |
@@ -58,7 +58,7 @@
 
 **Codex**（照順序做）
 - [ ] T165 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ — frontend commit a624494；同步 main 7e2c8bf，PR #87（目標 main）；本任務原暫編 T164，同步 main 後避開 Manus 的 T164 改為 T165。
-- [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
+- [x] T157 Codex：依 Claude「demo 資料已定版」公告，靜態展示與結果牆共用 T118 的完整 10 筆 SAM 紀錄；移除 own_3 舊判定文案，補模型標題、原始原因，展示／導覽／比較共用三種結果入口，程式測試範例另列。npm 114 pass、普通／靜態 build pass、pytest 222 pass；只改 frontend 與 STATUS。 — commit 82f90f9，PR #88（目標 main）。
 
 
 **Antigravity**（照順序做）
@@ -233,7 +233,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
-- T165 Codex：Figma Starter MCP 配額用完。14 個 editable 狀態與元件已建立，桌面高度修正已核對；手機 Field 內框待恢復 48px、上傳 CTA 待移到照片之前，待清理暫存 capture 5:2／照片節點 10:2，並核對 SAM Source instance 的文字 property（Label#9:21）。未經核對不宣稱 Figma 最終完成。前端這些修正均已完成並實測；不升級方案、不換管道繞過配額。
+- T165 Codex：Figma Starter MCP 配額用完。14 個 editable 狀態與元件已建立，桌面高度修正已核對；手機 Field 內框待恢復 48px、上傳 CTA 待移到照片之前，待清理暫存 capture 5:2／照片節點 10:2，並核對 SAM Source instance 的文字 property（Label#9:21）。另需同步首頁影格來源說明（main 已標示生成測試影格）。未經核對不宣稱 Figma 最終完成。前端這些修正均已完成並實測；不升級方案、不換管道繞過配額。
 
 - [T122 Antigravity 乾淨環境安裝驗證] 在 `/tmp/slope-coach-clean-test` 依照 README 完整測試安裝：
   1. Frontend：`cd frontend && npm install && npm test` 111 項測試全數 PASS。
@@ -303,6 +303,14 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T119：live smoke 4 步（偵訊 $0.012＋物體建議 $0.006＋SAM $0.010＋解說 $0.017；語音 502 未計費） | 0.046 | 1.732 |
 
 ## 工作日誌（最新在上）
+
+- 10/29 Codex T157 最終同步：保留 main 的協調者範例圖片來源說明與回歸測試，後續整合改由 PR #88 交付（PR #87 的 809f3df 已合併）。重跑 npm 118 pass、標準／靜態 build pass（入口 85,160／84,058 bytes）；同一後端版本 pytest 222 pass。Figma 待配額恢復，前端與 T157 已完成並提交審查。
+
+- 10/29 Codex 本輪可執行前端待辦已完成：主改版 PR #87 已由 Claude 合併；T157（82f90f9）與後續整合修整交付 PR #88（目標 main）。已保留 Claude 在 main 補的範例來源文案與測試。Figma 手機收尾仍受 Starter MCP 配額阻擋，T165 保留未勾及明確續接項目。
+
+- 10/29 Codex T165 整合驗證：把已獨立推送的 T157 合入設計分支供整體審查，PR #87 的先前版本已由 Claude 合併；後續 T157 整合與標題微調由 PR #88（目標 main）交付。保留新版導覽、48px 控制項與原文保護，合併 demo 入口／最終資料、雙語字典及測試；模型標題改為直向排列來源，結果牆判定優先，完整展示使用兩欄／手機單欄。npm 118 pass，普通／靜態 build pass（入口 85,075／83,973 bytes），同一 main 的 pytest 222 pass。以最終 SAM 結果實測 390px 結果與 1440px 並排，Details 收合、無橫向溢出、文字最低對比 5.51:1；Figma 配額收尾仍未完成。
+
+- 10/29 Codex T157：從最新 origin/main 獨立開 codex/T157-final-demo（PR 目標 main）。靜態 demo 和結果牆共用 DemoCatalog 全 10 筆最終紀錄，完整保留 3 筆實拍一致、4 筆生成不一致、3 筆資料不足；不再把 own_3 寫成不一致，也不把透視拒判寫成追蹤不足。沒有複製／改寫 JSON，headline／explanation／reasons 均用原文，空 headline 不補；結果牆補七筆已提供的模型標題與原始原因。首頁、30秒導覽與預設並排共用 entry keys（own_2／meta4／meta2），仍可選所有 10 筆，程式繪製案例移到獨立收合區。導覽等待 lazy view 掛載並展開證據祖先，實際鬼影／名片步驟可見，支援 reduced motion；拒判字幕依實際 verdict 引導讀原始原因。靜態模式的全站提示改為只重播儲存結果，避免誤稱媒體會上傳。瀏覽器驗證 10 筆／七個標題、390px 無橫向溢出、預設並排一致與不一致、繁中仍保留英文模型原文。新增完整紀錄與內容不變、三結果入口、雙語及開發範例分離測試；npm 114 pass、普通／靜態 build pass（入口 83,634／82,531 bytes，gzip 前），pytest 222 pass。未改後端、API、數字或資料檔，未打付費模型。
 
 - 10/29 14:55 Claude：合併 Muse T119 和 Codex T165（前端改版）。T165 的上傳頁大圖其實是 Meta AI 生成影片 meta_clip4 的影格，原本寫「保存的運動範例」容易讓人以為是真實影片，Claude 改成標明是 Meta AI 測試影片（中英文案與測試一起改）。npm 115、build、pytest 222 都過。新增 Muse T166 修語音 502。
 - 10/29 Muse 完成 T119（分支 muse/T119-live-smoke，只改 STATUS＋cost_log）：4 步 3 過。(1) drafts 201／13 秒／interview.source=model、3 題英文、suggestion 有（orange basketball／static，source muse-spark-1.3）；(2) windows 200／1.5 秒／source=physics、10 個窗、$0；(3) voice **502**「voice model unavailable: ModelOutputError」——根因在我方 `meta_client/voice.py`：ASR API 回 400「You must specify the 'audioEncoding' field」，我方 request 只有 model 沒帶該欄（T24 真打時不用，API 變嚴了；送的是 24kHz 單聲道 PCM）；修法是下個 Muse 任務補 audioEncoding＋測試，後端不用動；(4) audits 201／22.5 秒／insufficient_data（跟 v4 一致）、track_source=sam、解說 model、無標題（拒判本來就沒有）。$0.046，累計 $1.732。環境偏離兩處：沙盒禁所有監聽 socket（TCP＋unix 都 EPERM），改 TestClient 跑同一個 ASGI app＋真 API（秒數不含 TCP）；`say` 在沙盒吐空檔，語音改送 own_1 的真實環境音（4 秒）。
