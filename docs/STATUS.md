@@ -537,3 +537,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 10/29 Codex 沒有待辦了：T143→T146→T151→T145→T149→T150 已依序測試、各自分支推送並回填commit；再次pull main確認Codex區沒有[ ]。npm85 pass、標準/靜態build pass（entry約72kB），pytest192 pass/1 fail（ffmpeg缺drawtext，未略過）。interview來源跨載入與spend回傳契約待後端確認，已列待決定；未呼叫付費模型、未推main或部署，瀏覽器視覺/鍵盤實測仍待Antigravity。
 - 10/29 Codex T152：主動檢查發現換片時候選草稿可能晚到綁錯片；新增選取版本綁定、同片請求去重、送出／切換／匯入後失效，忽略已卸載候選回傳。另用結果ID綁定本機預覽，讀其他紀錄時不套用舊片。補慢回應、切換、消耗、重試與錯片預覽測試；npm90 pass、兩種build pass，pytest192 pass/1 fail（drawtext）。
+
+- 10/29 Codex 沒有待辦了：完成表無新增後，依 john 指示主動檢查並修正 T152 錯片競態，已推送並開 PR #56（接在 #55）。npm90 pass、標準／靜態build pass，pytest192 pass/1 fail（既有drawtext環境缺口）；再次pull main無Codex未勾項。未推main、未改後端。
