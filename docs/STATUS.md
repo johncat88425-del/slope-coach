@@ -113,7 +113,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T151 Codex：拒判（`insufficient_data`）時顯示「怎麼重拍」提示：用固定對照表把 `reasons` 對應到提示，例如鏡頭移動 → 用腳架、物體朝鏡頭移動 → 從側面拍、慢動作 → 用正常速度。不用模型，並補測試 — commit 791b638
 - [x] T145 Codex：右上角顯示 Meta API 花費（配合 Muse T110 的 `GET /api/spend`）。端點還不存在（404）時就不顯示，不要放假數字 — commit 97b5d85
 - [x] T149 Codex：T133–T142 的新元件補齊繁中和英文切換，加測試確認沒有漏翻的字串 — commit f53db34
-- [ ] T150 Codex：時間窗選擇器的鍵盤操作（方向鍵移動把手、Enter 確認）和螢幕閱讀器標籤，補測試
+- [x] T150 Codex：時間窗選擇器的鍵盤操作（方向鍵移動把手、Enter 確認）和螢幕閱讀器標籤，補測試 — commit 待回填（本次程式提交）
 
 **Antigravity**（照順序做）
 - [x] T02 Antigravity→Claude：（10/29 06:40 Antigravity 整晚沒有 push，改由 Claude 做）`requirements.txt`、`scripts/dev.sh`（檢查 ffmpeg／python3／npm，缺什麼就列出 brew 指令；後端 8000、前端 5173；沒有金鑰時用 mock） — 見 PR T02
@@ -531,3 +531,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T151：insufficient_data 顯示固定 reason→重拍提示對照：腳架／側視／正常速度／追蹤可見性／完整時間窗。保留原 reason，不用模型、不作因果歸因；未知原因回一般清單。npm79 pass、build pass；pytest191 pass/1 fail（drawtext）。
 - 10/29 Codex T145：頁首讀取真實 /api/spend；404、網路失敗或未知schema均隱藏，不補假額度。total_usd/limit_usd 待後端確認，防禦性接受明確USD有限數；focus與稽核完成後刷新，demo完全不查。npm81 pass、build pass；pytest192 pass/1 fail。
 - 10/29 Codex T149：時間窗、候選、首頁卡片、How it works與分享／demo文案補齊繁中與英文。後端標題／說明以原文元件保留。測試逐一解析新元件所有靜態文字與讀屏標籤，並核對兩語言數字不變；npm83 pass、build pass，pytest192 pass/1 fail（drawtext）。
+- 10/29 Codex T150：把手方向鍵精確0.01秒、Home/End有界移動，Enter僅在時間輸入且有效未確認時確認；數字欄與把手分開label、讀屏秒數與雙語操作說明。鍵盤邏輯與SSR語意測試通過；npm85 pass、標準/靜態build pass（主入口約72kB），pytest192 pass/1 fail（drawtext）。

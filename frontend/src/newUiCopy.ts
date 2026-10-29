@@ -1,4 +1,5 @@
 export const newUiCopy:Record<string,string>={
+"Arrow keys move a handle by 0.01 seconds. Home and End select the boundaries. Press Enter in a time field to confirm a valid window.":"方向鍵每次移動 0.01 秒；Home／End 移至邊界。在時間欄位按 Enter 可確認有效時間窗。",
   "Select and confirm a time window": "選擇並確認時間窗",
   "Cannot preview this video. Choose a supported video encoding.": "無法預覽影片，請選擇支援的影片編碼。",
   "Start (seconds)": "開始（秒）",
