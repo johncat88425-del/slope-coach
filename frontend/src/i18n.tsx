@@ -4,6 +4,7 @@ export type Language='en'|'zh';
 const Context=createContext<Language>('en');
 export const LanguageProvider=Context.Provider;
 export const dictionary:Record<string,string>={
+'由 SAM 3.1 追蹤':'Tracked by SAM 3.1','frame differencing（未使用模型）':'frame differencing (no model used)',
 '對照展示':'Compare outcomes',
 '與單擺模型一致':'Consistent with the assumed pendulum model','與單擺模型不一致':'Inconsistent with the assumed pendulum model','與單擺模型無法判斷':'Insufficient data with the assumed pendulum model',
 '與彈跳模型一致':'Consistent with the assumed bounce model','與彈跳模型不一致':'Inconsistent with the assumed bounce model','與彈跳模型無法判斷':'Insufficient data with the assumed bounce model',
@@ -33,6 +34,7 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Object name':'物體名稱',
 'Muse interview — confirm before checking':'Muse 偵訊：檢查前先確認','Questions by Muse Spark':'由 Muse Spark 提問','Fixed questions (mock)':'固定問題（mock，未呼叫模型）','Prepare questions':'準備問題','Confirm and check':'確認答案並檢查','Interview video':'偵訊影片','Camera remained fixed':'鏡頭全程固定','Slow motion or retimed playback':'慢動作或變速播放','Choose…':'請選擇…','Yes':'是','No':'否','Measured object size (metres, optional)':'使用者量測的物體尺寸（公尺，選填）','Questions guide your review. Only your confirmed answers are sent as measurements and capture conditions.':'問題協助核對；量測與拍攝條件只送出你確認的答案。','Answer the questions using the matching fields below. All values remain yours to confirm.':'請用下方對應欄位回答問題；所有數值仍需由你確認。','Segment start (seconds)':'片段開始（秒）','Segment end (seconds)':'片段結束（秒）','Confirm camera, playback speed and motion model.':'請確認鏡頭、播放速度與運動模型。',
 'Rebound height ratios':'反彈高度比例','Rebound ratio data':'反彈比例資料','No backend rebound ratios are available.':'後端尚未提供反彈比例。','A ratio above 1 means a higher rebound than the preceding one. The backend applies its tolerance before deciding consistency; the chart does not issue a separate verdict.':'比例大於 1 表示比上次反彈得高。後端會套用容差後才判定是否一致；此圖不另外判定。',
 'Three outcomes, one set of rules':'同一套規則，三種結果','Compare three outcomes →':'比較三種結果 →','SYNTHETIC — test examples made from program-drawn moving squares. Performance on recorded experiments remains unverified.':'SYNTHETIC：程式繪製移動方塊的開發測試素材，並非實拍實驗或真實影片準確度的證據。','Consistent, inconsistent and insufficient-data results are shown together. Saved backend results are replayed without network calls or a new analysis.':'一致、不一致與無法判斷一起展示；離線重播後端結果，不呼叫網路或重新分析。',
