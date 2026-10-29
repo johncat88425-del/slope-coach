@@ -1,6 +1,8 @@
 import json
 import time
 
+import pytest
+
 from meta_client import headline
 from meta_client.client import MAX_RETRIES
 from meta_client.cost import CostTracker
@@ -68,3 +70,30 @@ def test_rounded_number_sources_cover_display_rounding():
     sources = headline.rounded_number_sources({"g_vs_earth": 0.0122})
     assert sources["g_vs_earth_r2"] == 0.01
     assert sources["g_vs_earth_r0"] == 0.0
+
+
+def test_headline_english_keeps_english_body(tmp_path, monkeypatch):
+    payload = {"headline_template":
+               "This ball falls as if on {nearest_body}, at {g_vs_earth:2} times Earth's gravity"}
+    fake = _setup(monkeypatch, tmp_path, [payload])
+    out = headline.write_headline(_audit(), lang="en", tracker=_tracker(tmp_path))
+    assert out == {"headline": "This ball falls as if on Moon, at 0.01 times Earth's gravity",
+                   "source": "muse-spark-1.3"}
+    sent = fake.responses.calls[0]["input"][0]["content"][0]["text"]
+    assert "in English" in sent
+
+
+def test_headline_english_rejects(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    bad_cases = [
+        "This ball proves it is on {nearest_body} at {g_vs_earth:2} times gravity",
+        "This fake video shows {nearest_body} gravity at {g_vs_earth:2} times",
+    ]
+    for template in bad_cases:
+        fake = _setup(monkeypatch, tmp_path, [{"headline_template": template}] * (MAX_RETRIES + 1))
+        assert headline.write_headline(_audit(), lang="en") is None
+        assert len(fake.responses.calls) == MAX_RETRIES + 1
+    fake = _setup(monkeypatch, tmp_path, [])
+    with pytest.raises(ValueError, match="lang must be"):
+        headline.write_headline(_audit(), lang="fr")
+    assert fake.responses.calls == []

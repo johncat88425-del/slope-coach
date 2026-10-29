@@ -109,12 +109,13 @@ def test_track_object_failure_becomes_501_signal(tmp_path, monkeypatch):
 
 def test_explain_audit_extracts_text_and_none_on_failure(monkeypatch):
     seen = {}
-    def fake_explain(result, *, kind="comparison", **kwargs):
+    def fake_explain(result, *, kind="comparison", lang="zh", **kwargs):
         seen["kind"] = kind
+        seen["lang"] = lang
         return {"explanation": "motion matches"}
     monkeypatch.setattr(explain, "explain_result", fake_explain)
     assert hooks.MetaHooks().explain_audit({"verdict": "consistent"}) == "motion matches"
-    assert seen == {"kind": "audit"}
+    assert seen == {"kind": "audit", "lang": "en"}
     def boom(result, **kwargs):
         raise ModelOutputError("bad")
     monkeypatch.setattr(explain, "explain_result", boom)
@@ -122,9 +123,12 @@ def test_explain_audit_extracts_text_and_none_on_failure(monkeypatch):
 
 
 def test_headline_audit_passes_through(monkeypatch):
-    monkeypatch.setattr(headline, "write_headline",
-                        lambda audit, **kw: {"headline": "falls like the Moon",
-                                             "source": "muse-spark-1.3"})
+    seen = {}
+    def fake_headline(audit, **kw):
+        seen.update(kw)
+        return {"headline": "falls like the Moon", "source": "muse-spark-1.3"}
+    monkeypatch.setattr(headline, "write_headline", fake_headline)
     assert hooks.MetaHooks().headline_audit({}) == "falls like the Moon"
+    assert seen.get("lang") == "en"
     monkeypatch.setattr(headline, "write_headline", lambda audit, **kw: None)
     assert hooks.MetaHooks().headline_audit({}) is None

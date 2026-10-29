@@ -29,7 +29,7 @@ Main results use SAM 3.1 tracking (`data/gate/product_results_sam_v4.md`); colou
 | 6 clips made with the Meta AI app | 3 inconsistent (g = 0.25, 0.14, 1.80 m/s²), 3 insufficient data (object size changes 34–48%) | 2 inconsistent, 4 insufficient data |
 | 1 clip made with Manus | 1 inconsistent (g = 2.63 m/s²) | 1 insufficient data (tracked in 55% of frames) |
 
-The two trackers do not always agree on which clips can be judged; both are reported. This is a small feasibility set, not a reliability benchmark. The own clips are not committed (privacy); the generated clips are in `data/gate/clips/`.
+The two trackers do not always agree on which clips can be judged; both are reported. SAM is not fully deterministic: re-running it moved each g by less than 0.2% (e.g. 9.30 → 9.31) and changed no verdict; the demo records come from the re-run. This is a small feasibility set, not a reliability benchmark. The own clips are not committed (privacy); the generated clips are in `data/gate/clips/`.
 
 ---
 
