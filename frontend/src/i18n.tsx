@@ -34,6 +34,7 @@ export const dictionary:Record<string,string>={
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
 const homeChinese:Record<string,string>={
+'Slow motion or retimed playback (user):':'慢動作或變速播放（使用者）：','Not provided':'未提供','Reported limitations':'後端回報的限制',
 'Object name':'物體名稱',
 'Muse interview — confirm before checking':'Muse 偵訊：檢查前先確認','Questions by Muse Spark':'由 Muse Spark 提問','Fixed questions (mock)':'固定問題（mock，未呼叫模型）','Prepare questions':'準備問題','Confirm and check':'確認答案並檢查','Interview video':'偵訊影片','Camera remained fixed':'鏡頭全程固定','Slow motion or retimed playback':'慢動作或變速播放','Choose…':'請選擇…','Yes':'是','No':'否','Measured object size (metres, optional)':'使用者量測的物體尺寸（公尺，選填）','Questions guide your review. Only your confirmed answers are sent as measurements and capture conditions.':'問題協助核對；量測與拍攝條件只送出你確認的答案。','Answer the questions using the matching fields below. All values remain yours to confirm.':'請用下方對應欄位回答問題；所有數值仍需由你確認。','Segment start (seconds)':'片段開始（秒）','Segment end (seconds)':'片段結束（秒）','Confirm camera, playback speed and motion model.':'請確認鏡頭、播放速度與運動模型。',
 'Rebound height ratios':'反彈高度比例','Rebound ratio data':'反彈比例資料','No backend rebound ratios are available.':'後端尚未提供反彈比例。','A ratio above 1 means a higher rebound than the preceding one. The backend applies its tolerance before deciding consistency; the chart does not issue a separate verdict.':'比例大於 1 表示比上次反彈得高。後端會套用容差後才判定是否一致；此圖不另外判定。',
