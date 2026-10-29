@@ -76,7 +76,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T82 Codex：英文介面文字總檢查，給評審看的。統一用語（consistent / inconsistent / insufficient data with the assumed model），刪掉內部用語（例如 fixture、draft id），按鈕文字要短。不准出現 real、fake、AI-generated、detect — commit 6b73368
 - [x] T85 Codex：「檢查影片」和 Muse 偵訊加一個「物體名稱」欄位，送 `object_name`（給 SAM 的文字提示，預設 ball）。結果區要依照 `track_source` 標明「由 SAM 3.1 追蹤」或「frame differencing（未使用模型）」，物理名片和匯出也要寫（API v0.5） — commit 8a7bd26
 - [x] T101 Codex：「結果牆」頁：讀 `data/demo/real_own_*.json` 和 `data/demo/generated_*.json`（`generated_clip: true`，`source` 是 meta_ai 或 manus），每支一張卡：來源、判定、`explanation.text`、最接近的星球、追蹤來源。全部列出，不挑片；資料不足的也要放，並顯示原因。頁首一句話：「同一套規則跑過每一支影片；結果只說和假設的運動模型是否一致」。不准寫「偵測」「假影片」 — commit 4d85fad
-- [ ] T102 Codex：鬼影球播放：結果頁加「播放」按鈕，用 `points` 和 `ghost_points` 依時間同步動畫兩顆點（實際的球和照地球重力的球），沒有影片也能播。只用後端給的座標，不自己算物理
+- [x] T102 Codex：鬼影球播放：結果頁加「播放」按鈕，用 `points` 和 `ghost_points` 依時間同步動畫兩顆點（實際的球和照地球重力的球），沒有影片也能播。只用後端給的座標，不自己算物理 — commit 待回填（本次程式提交）
 - [ ] T103 Codex：重力刻度尺：在結果頁畫一條對數刻度（冥王星 0.62、月球 1.62、火星 3.71、地球 9.81、木星 24.79），標出 `g_apparent_m_s2` 和 `g_apparent_low/high` 的範圍。星球數值直接寫在前端常數，量測值只用後端數字
 - [ ] T104 Codex：上傳頁加「拍攝檢查清單」：鏡頭固定、側面拍、只有一個物體、顏色鮮明（例如橘色）的球、不要慢動作、球不要朝鏡頭飛。附一句：「不符合時系統會拒判，不會硬給答案」
 - [ ] T105 Codex：手機版與無障礙檢查：稽核首頁、結果頁、結果牆在 390 px 寬不能橫向捲動；按鈕可用鍵盤操作；圖表有文字替代
@@ -124,7 +124,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [ ] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
 - [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
-- [ ] T130 Claude：把 Manus 交來的 T23、T95、T123–T126 檢查用詞和數字後放進 `docs/research/`
+- [x] T130 Claude：（T95 第一版已入庫並更新數字，其餘等 Manus）把 Manus 交來的 T23、T95、T123–T126 檢查用詞和數字後放進 `docs/research/`
 - [ ] T131 Claude：彈跳和單擺的真實影片流程（等 john 拍片）：準備標註表和試跑腳本
 - [x] T106 Claude：`data/demo/generated_*.json`：6 支 Meta、1 支 Manus 影片經網站流程的完整結果（含說明，不含影片），給 Codex T101 結果牆用 — 見 PR
 - [x] T99 Claude：稽核結果新增 `explanation`（API v0.7），先用固定模板寫一般人看得懂的說明，數字由 `fill_numbers` 填入，例如「the object falls as if gravity were 1.71 m/s², 0.17 times Earth's, closest to Moon」。Muse T45 接上後改成 `source: model`。`data/demo/real_own_*.json` 已重新產生，含說明 — 見 PR T99
@@ -434,3 +434,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex 工作總結：T89→T90→T92 已各自提交與推送，PR #42 待審；再次 pull main 後沒有 Codex 未勾項。前端 npm 60 pass、build pass；pytest 76 pass/1 fail，drawtext 缺口已列待 john 決定，不修改角色外的程式或掩蓋測試。未推 main。
 - 10/28 Codex T100：結果最上方、PNG 與 Markdown 加 explanation 原文與 template/model 來源，不改數字；離線 parser 驗證。npm/build 通過；pytest 的 drawtext 環境缺口仍列待決定。
 - 10/28 Codex T101：#wall 全列 real_own 與 generated 儲存結果，不挑片；來源、判定、說明、星球與追蹤標示、資料不足原因均顯示，無網路取片。npm/build 通過；pytest 全跑，drawtext 環境失敗仍待協調者處理。
+- 10/28 Codex T102：無影片時可播放／暫停、拖曳後端 points 與 ghost_points，缺口不插值。時鐘只控制顯示，不算物理；testid points-play/points-scrubber。npm/build 通過；pytest drawtext 缺口維持紀錄。
