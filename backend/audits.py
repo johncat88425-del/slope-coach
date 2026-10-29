@@ -22,7 +22,7 @@ from physics.tracking import Detection
 from . import schemas as S
 from .explain import explain_audit
 from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
-from .output_check import check_model_text
+from .output_check import check_model_text, extract_numbers
 from .store import UPLOAD_ROOT, new_id, now, store
 from .video import color_for, probe_fps, read_frames, read_frames_rgb, save_overlay, track_color, track_with_sizes
 
@@ -49,9 +49,12 @@ def _model_view(rec: dict) -> dict:
 
 
 def _number_sources(view: dict) -> list:
-    """The result plus each number rounded to 0-4 decimals, so a model sentence may quote a rounded value."""
+    """The result plus each number rounded to 0-4 decimals, so a model sentence may quote a rounded value.
+    Numbers inside the program's own sentences (e.g. the 8.34-11.28 range in a reason) count too (T115): they
+    come from physics/, not from the model."""
     rounded = {f"{k}_r{d}": round(v, d) for k, v in view.get("numbers", {}).items() for d in range(5)}
-    return [view, rounded]
+    in_text = [v for r in view.get("reasons", []) if isinstance(r, str) for _, v, _ in extract_numbers(r)]
+    return [view, rounded, {"reason_numbers": in_text}]
 
 
 def _model_text(hook_name: str, view: dict) -> str | None:
