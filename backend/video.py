@@ -51,6 +51,9 @@ def read_frames_rgb(path: str, start: float, end: float) -> np.ndarray:
 # Hue ranges in degrees for objects named by colour in the human label. Added 2026-10-29 (T87) after the
 # first real clips showed frame differencing locks onto the arm; see docs/STATUS.md 規則變更紀錄.
 COLOR_HUES = {"orange": (15.0, 45.0)}
+# Added 2026-10-29 (T128) for clips filmed after the gate; the gate results were not rerun with them.
+# A range with lo > hi wraps around 0 degrees (red).
+COLOR_HUES |= {"yellow": (45.0, 70.0), "green": (75.0, 160.0), "blue": (190.0, 250.0), "red": (345.0, 15.0)}
 MIN_SATURATION = 0.4
 MIN_VALUE = 0.4
 
@@ -90,7 +93,8 @@ def track_color(rgb_frames: np.ndarray, fps: float, start: float, color: str, th
     pts, sizes = [], []
     for i, f in enumerate(rgb_frames):
         h, s, v = _hsv(f)
-        mask = (h >= lo) & (h <= hi) & (s >= MIN_SATURATION) & (v >= MIN_VALUE)
+        in_hue = (h >= lo) & (h <= hi) if lo <= hi else (h >= lo) | (h <= hi)
+        mask = in_hue & (s >= MIN_SATURATION) & (v >= MIN_VALUE)
         mask &= np.abs(f - bg).max(-1) > thresh
         lab, n = ndimage.label(mask)
         if n == 0:
