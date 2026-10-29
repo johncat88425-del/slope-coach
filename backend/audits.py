@@ -12,11 +12,13 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from physics.errors import PhysicsInputError
 from physics.experiments.pendulum import check_pendulum
-from physics.experiments.freefall import check_bounces, check_flight, fit_flight, ghost_track, nearest_body
+from physics.experiments.freefall import (check_bounces, check_flight, fit_flight, ghost_track, nearest_body,
+                                         suggest_flight_windows)
 from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
 
 from . import schemas as S
+from .explain import explain_audit
 from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
 from .output_check import check_model_text
 from .store import UPLOAD_ROOT, new_id, now, store
@@ -37,6 +39,44 @@ LIMITS = [
 
 
 MAX_QUESTIONS = 3
+
+
+def _model_view(rec: dict) -> dict:
+    """What the model sees of a result: verdict, reasons and the program's numbers, never the raw track."""
+    return {k: v for k, v in rec.items() if k not in ("audit_id", "created_at", "points", "ghost_points", "events", "video_url", "overlay_url")}
+
+
+def _number_sources(view: dict) -> list:
+    """The result plus each number rounded to 0-4 decimals, so a model sentence may quote a rounded value."""
+    rounded = {f"{k}_r{d}": round(v, d) for k, v in view.get("numbers", {}).items() for d in range(5)}
+    return [view, rounded]
+
+
+def _model_text(hook_name: str, view: dict) -> str | None:
+    """Ask the connected Meta model (T143) for text about a finished audit. Any failure, a missing hook, or
+    text that fails the backend's own check (unfound numbers, banned wording) gives None, so the caller keeps
+    the fixed template (AGENTS.md rule 5). The verdict and numbers never come from here."""
+    hook = getattr(get_hooks(), hook_name, None)
+    if hook is None:
+        return None
+    try:
+        text = hook(dict(view))
+    except Exception:  # budget cap, network, validation: a model failure must never break the audit
+        return None
+    if not isinstance(text, str) or not text.strip() or not check_model_text(text, _number_sources(view)).ok:
+        return None
+    return text.strip()
+
+
+def _finish(rec: dict) -> dict:
+    rec["explanation"] = explain_audit(rec)
+    view = _model_view(rec)
+    text = _model_text("explain_audit", view)
+    if text:
+        rec["explanation"] = {"source": "model", "text": text}
+    headline = _model_text("headline_audit", view)
+    rec["headline"] = {"source": "model", "text": headline} if headline else None
+    return rec
 
 
 def _save_upload(file: UploadFile, d: Path) -> Path:
@@ -107,6 +147,31 @@ def create_draft(file: UploadFile = File(...)):
     return {"draft_id": did, "video_url": f"/media/audits/{did}/{video.name}", "interview": iv}
 
 
+SCAN_LIMIT_S = 15.0  # window suggestions look at the first 15 s only
+
+
+@router.post("/api/audit-drafts/{did}/windows", response_model=S.FlightWindowsOut)
+def suggest_windows(did: str, object_name: str = Form("ball", max_length=60)):
+    """Candidate flight windows for the user to pick from (T141). Model-free; the audit still uses only
+    the window the user confirms."""
+    if did not in store.audit_drafts:
+        raise HTTPException(404, f"draft {did} not found")
+    video = store.audit_drafts[did]
+    try:
+        frames, fps = read_frames(video, 0.0, SCAN_LIMIT_S)
+    except Exception:
+        raise HTTPException(422, "could not read video frames")
+    color = color_for(object_name)
+    if color:
+        pts, _ = track_color(read_frames_rgb(video, 0.0, SCAN_LIMIT_S), fps, 0.0, color)
+    else:
+        pts, _ = track_with_sizes(frames, fps, 0.0)
+    wins = suggest_flight_windows(pts)
+    return {"draft_id": did, "track_source": "color" if color else "frame_diff",
+            "windows": [{"t_start": a, "t_end": b} for a, b in wins],
+            "scanned_until_s": min(SCAN_LIMIT_S, len(frames) / fps)}
+
+
 @router.post("/api/audits", response_model=S.AuditOut, status_code=201)
 def create_audit(
     file: UploadFile | None = File(None),
@@ -153,7 +218,7 @@ def create_audit(
     }
     if not camera_static:
         rec["reasons"] = ["camera is not static; this check needs a fixed camera"]
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     try:
@@ -173,7 +238,7 @@ def create_audit(
     rec["numbers"]["tracked_fraction"] = frac
     if frac < MIN_TRACKED_FRACTION:
         rec["reasons"] = [f"object tracked in only {frac:.0%} of frames"]
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     trend = size_trend([p[0] for p in pts], sizes)
@@ -182,13 +247,13 @@ def create_audit(
         if abs(trend) > MAX_SIZE_TREND:
             rec["reasons"] = [f"object size changes {trend:+.0%} along the track; it moves towards or away "
                               "from the camera, which this 2D check cannot judge"]
-            store.audits[aid] = rec
+            store.audits[aid] = _finish(rec)
             return rec
 
     if slow_motion and assumed_model in ("free_flight", "pendulum"):
         rec["reasons"] = ["the user says the clip is slow motion, so its timing is not real time and "
                           f"the {assumed_model} timing check cannot be judged"]
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     if assumed_model == "pendulum":
@@ -196,13 +261,13 @@ def create_audit(
             p = check_pendulum([q[0] for q in pts], [q[1] for q in pts], length_m=length_m)
         except PhysicsInputError as e:
             rec["reasons"] = [str(e)]
-            store.audits[aid] = rec
+            store.audits[aid] = _finish(rec)
             return rec
         rec["verdict"], rec["reasons"] = p.verdict, list(p.reasons)
         rec["numbers"] |= {"period_s": p.period_s, "period_spread": p.period_spread,
                            "implied_length_m": p.implied_length_m, "predicted_period_s": p.predicted_period_s}
         rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v is not None}
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     if assumed_model == "bounce":
@@ -210,7 +275,7 @@ def create_audit(
         rec["verdict"], rec["reasons"] = b.verdict, list(b.reasons)
         rec["numbers"] |= {f"rebound_ratio_{i + 1}": e * e for i, e in enumerate(b.restitution)}
         rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v == v and abs(v) != float("inf")}
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
 
     m_per_px = object_size_m / size_px if object_size_m and size_px else None
@@ -219,7 +284,7 @@ def create_audit(
         chk = check_flight(fit, m_per_px=m_per_px, object_size_px=size_px)
     except PhysicsInputError as e:
         rec["reasons"] = [str(e)]
-        store.audits[aid] = rec
+        store.audits[aid] = _finish(rec)
         return rec
     rec["verdict"] = chk.verdict
     rec["reasons"] = list(chk.reasons)
@@ -238,7 +303,7 @@ def create_audit(
         "implied_object_size_m": chk.implied_object_size_m, "n_points": fit.n,
     }
     rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v is not None and v == v and abs(v) != float("inf")}
-    store.audits[aid] = rec
+    store.audits[aid] = _finish(rec)
     return rec
 
 

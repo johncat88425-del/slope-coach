@@ -19,3 +19,13 @@ def test_batch_reports_website_verdicts_and_unlabelled_rows(tmp_path):
     assert blank["verdict"] == "unlabelled"
     md = to_markdown([good, blank])
     assert "ball.mp4" in md and "x.mp4" in md and "unlabelled" in md
+    missing = audit_row(c, row("not_here.mp4"), tmp_path)
+    assert missing["verdict"] == "missing"
+
+
+def test_generated_gate_clips_are_in_the_repo():
+    from pathlib import Path
+
+    names = {p.name for p in Path("data/gate/clips").glob("*.mp4")}
+    assert {f"meta_clip{i}.mp4" for i in range(1, 7)} | {"manus_clip1.mp4"} <= names
+    assert not any(n.startswith("own_") for n in names)  # john's own clips never go in git

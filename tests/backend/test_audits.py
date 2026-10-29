@@ -160,3 +160,64 @@ def test_colour_named_object_uses_colour_tracker_when_sam_is_absent(tmp_path):
     assert r["track_source"] == "color" and r["verdict"] == "consistent", r
     plain = post(tmp_path / "ball.mp4", object_name="ball").json()
     assert plain["track_source"] == "frame_diff"
+
+
+def test_template_explanation_quotes_program_numbers_only(tmp_path):
+    from backend.output_check import find_banned_phrases
+
+    write_clip(tmp_path / "real.mp4", 9.81)
+    write_clip(tmp_path / "slow.mp4", 9.81 / 4)
+    real = post(tmp_path / "real.mp4").json()
+    slow = post(tmp_path / "slow.mp4").json()
+    assert real["explanation"]["source"] == "template"
+    assert "consistent with that model" in real["explanation"]["text"]
+    assert f"{real['numbers']['g_apparent_m_s2']:.1f}" in real["explanation"]["text"]
+    s = slow["explanation"]["text"]
+    assert f"{slow['numbers']['g_apparent_m_s2']:.2f}" in s and slow["nearest_body"] in s
+    assert not find_banned_phrases(s) and not find_banned_phrases(real["explanation"]["text"])
+    refused = post(tmp_path / "real.mp4", camera_static="false").json()
+    assert refused["explanation"]["text"].startswith("This clip cannot be judged")
+
+
+def test_window_suggestions_for_a_draft(tmp_path):
+    from tests.scripts.test_gate_run import write_orange_clip
+
+    write_orange_clip(tmp_path / "ball.mp4", 9.81)
+    with open(tmp_path / "ball.mp4", "rb") as f:
+        d = client.post("/api/audit-drafts", files={"file": ("ball.mp4", f, "video/mp4")}).json()
+    r = client.post(f"/api/audit-drafts/{d['draft_id']}/windows", data={"object_name": "orange ball"}).json()
+    assert r["source"] == "physics" and r["track_source"] == "color"
+    assert r["windows"] and r["windows"][0]["t_start"] < 0.1 and r["windows"][0]["t_end"] > 0.5
+    assert client.post("/api/audit-drafts/drf_nope/windows").status_code == 404
+
+
+def test_model_explanation_and_headline_used_only_when_they_pass_checks(tmp_path):
+    from backend.model_hooks import MockHooks, get_hooks, set_hooks
+
+    class FakeSpark(MockHooks):
+        def __init__(self, explanation, headline):
+            self.explanation, self.headline = explanation, headline
+
+        def explain_audit(self, audit):
+            assert "points" not in audit and "numbers" in audit  # the model never gets the raw track
+            return self.explanation.format(g=audit["numbers"]["g_apparent_m_s2"])
+
+        def headline_audit(self, audit):
+            if self.headline is None:
+                raise RuntimeError("spend cap reached")
+            return self.headline
+
+    write_clip(tmp_path / "slow.mp4", 9.81 / 4)
+    old = get_hooks()
+    try:
+        set_hooks(FakeSpark("The ball falls at {g:.2f} m/s², consistent with nothing on Earth.", "Falls like on Mars"))
+        good = post(tmp_path / "slow.mp4").json()
+        set_hooks(FakeSpark("The ball falls at 3.33 m/s², so this is a fake video.", None))
+        bad = post(tmp_path / "slow.mp4").json()
+    finally:
+        set_hooks(old)
+    assert good["explanation"]["source"] == "model"
+    assert good["headline"] == {"source": "model", "text": "Falls like on Mars"}
+    assert bad["explanation"]["source"] == "template"  # unfound number and banned wording -> fixed template
+    assert bad["headline"] is None  # a failing model call never breaks the audit
+    assert good["verdict"] == bad["verdict"]
