@@ -15,11 +15,11 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T113（SAM 重跑 v2） |
+| **Muse** | T114（自拍影片也用 SAM 跑）→ T115（解說常驗證失敗的原因） |
 | **Codex** | T159 → T160 →（等 Claude 寫「demo 資料已定版」）T157 |
 | **Antigravity** | T161 → T121 → T122 → T53 → T68 |
 | **Manus** | T22，以及用最終數字更新提交文字和旁白 |
-| **Claude** | 審查合併 PR；T113 合併後產生最終結果表與 demo 資料；README 與提交前檢查 |
+| **Claude** | 審查合併 PR；T114 合併後產生最終結果表與 demo 資料；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
 
 ## 提交前路線圖（10/29 09:30 Claude，john 要求一次列完；截止 11/04 21:00 ET，我們目標 11/03 交）
@@ -48,7 +48,8 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
-- [ ] T113 Muse：（最優先，T146 修好之後）用同一個指令重跑 SAM：`set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --out data/gate/product_results_sam_v2.md`。把表格貼進「SAM 對照」，放在舊表下面，標題寫「v2（T146 修正分母後）」。舊表不要刪。如果有影片從拒判變成可以判，就在 `/api/audits` 回傳的 overlay 上確認紅點真的在球上，結果寫進 STATUS。花費記進成本紀錄
+- [ ] T114 Muse：自拍影片也用 SAM 跑（demo 要「同一種追蹤」下真實一致、生成不一致、拒判三種都有）。步驟：(1) 請 john 把 3 支自拍影片 IMG_8426.mov、IMG_8429.mov、IMG_8434.mov 放進 repo 外的資料夾 `~/slope-own-clips`，檔名改成 manifest 的名字 `own_1_IMG_8426.mov`、`own_2_IMG_8429.mov`、`own_3_IMG_8434.mov`（**不准放進 repo、不准 commit**）；(2) `cp data/gate/clips/*.mp4 ~/slope-own-clips/`；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v3.md`（現在批次預設不呼叫解說和標題，只花 SAM 的錢，約 $0.12）；(4) 表格貼進「SAM 對照」v2 下面，標題「v3（加入自拍影片）」；(5) 每支自拍影片看 overlay 確認紅點在球上，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T114-sam-own`。
+- [ ] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。
 
 
 **Codex**（PR #4 合併後才開始，照順序做）
@@ -156,6 +157,25 @@
 
 **原因（不是追蹤品質，是分母算錯）**：7 支的 61–63% 完全一致，因為這是 15/24 = 62.5%。SAM 照 T05 規格先降到 15fps 再追，後端 `audits.py` 的覆蓋率卻用來源片格數（24fps）當分母（`frac = len(pts)/len(frames)`，門檻 0.8）。SAM 在 24fps 片子上天花板就是 62.5%，永遠過不了。修法在後端（Claude 的範圍）：分母改用追蹤器的預期格數；另外 `by_t` 用時間戳精確對齊，15fps 的時間戳很少落在 24fps 格點上，下游的 events／鬼影對齊也要一起修。修好之前 SAM 版數字不能引用。own_3 支不在 git 裡所以是 missing（預期內）。
 
+#### v2（T146 修正分母後，`data/gate/product_results_sam_v2.md`）
+
+| clip | source | verdict | g_apparent_m_s2 | nearest_body | size_trend | track_source | reason |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| own_1_IMG_8426.mov | own | missing |  |  |  |  | not found in data/gate/clips |
+| own_2_IMG_8429.mov | own | missing |  |  |  |  | not found in data/gate/clips |
+| own_3_IMG_8434.mov | own | missing |  |  |  |  | not found in data/gate/clips |
+| meta_clip1.mp4 | meta_ai | inconsistent | 0.24 | Pluto | -0.18 | sam | apparent g 0.24 m/s^2 is outside 8.34-11.28 |
+| meta_clip2.mp4 | meta_ai | insufficient_data |  |  | -0.49 | sam | object size changes -49% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| meta_clip3.mp4 | meta_ai | insufficient_data |  |  | -0.34 | sam | object size changes -34% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| meta_clip4.mp4 | meta_ai | inconsistent | 0.15 | Pluto | 0.15 | sam | apparent g 0.15 m/s^2 is outside 8.34-11.28 |
+| meta_clip5.mp4 | meta_ai | inconsistent | 1.41 | Moon | -0.23 | sam | acceleration points -178 deg away from image-down |
+| meta_clip6.mp4 | meta_ai | insufficient_data |  |  | -0.42 | sam | object size changes -42% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| manus_clip1.mp4 | manus | inconsistent | 2.50 | Mars | 0.14 | sam | apparent g 2.50 m/s^2 is outside 8.34-11.28 |
+
+v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=0.15 冥王星、clip5 g=1.41 月球、manus g=2.50 火星），3 支仍因透視（size_trend -34%～-49%）拒判。跟顏色版對照：兩種追蹤判出來的不是同一批——顏色版判 clip2／clip3 不一致，SAM 版這兩支因透視拒判；反之 clip1／clip4／clip5 顏色版拒判、SAM 版判不一致。兩版都列，demo 選哪版由 john／Claude 決定。
+
+**overlay 紅點確認**（4 支新判出的）：clip1 紅點沿客廳拋物線走、在球上；clip5 紅點在桌緣的球上；manus 紅點沿體育館拋物線走、在球上——這 3 支確認通過。manus 的 g=2.50 跟之前 frame_diff 試跑的 2.55 接近，互相印證。clip4 該格只有左緣大片深色物體、紅點沿其邊緣走，看起來有跟上但單格無法確定是球心，請 john 再看一眼。另 clip5 的理由是加速度方向偏 -178 度（幾乎朝上），數字是程式算的照實列，判讀請 Claude 看。
+
 ## 怎麼跑（給所有工具）
 
 - 後端：`uvicorn backend.main:app --reload`，網址 http://localhost:8000，互動文件在 `/docs`。API 契約見 `docs/API.md`。
@@ -196,6 +216,7 @@
 
 ## 已做的決定
 
+- 10/29 12:30 Claude：demo 主表暫用**顏色追蹤版**（目前唯一在同一種追蹤下有「真實一致、生成不一致、拒判」三種結果的版本），SAM 版並排顯示。T114 自拍影片跑完 SAM 後再決定：若 SAM 版三種結果都有，demo 改以 SAM 版為主（Muse 優先），顏色版當對照。兩版的不同照實寫，不挑對自己有利的。
 - 10/29 john：關卡三題通過後，主方向轉向「影片物理稽核」；斜坡教練保留為第二條路，只做維護。
 
 | 日期 | 決定 | 原因 |
@@ -226,9 +247,12 @@
 | 10/29 | T108：suggest_object 真打 clip2 一次 | 0.008 | 0.271（含未合併 T107 0.077、T112 0.096） |
 | 10/29 | T109：抽欄位真打 7 次（2 輪驗證修正＋重試；單次約 $0.02，輸出 token 異常多） | 0.164 | 0.435（含未合併 T107 0.077、T112 0.096、T108 0.008） |
 | 10/29 | T112：explain＋headline 真打 own_2、clip2 各兩種（7 次呼叫含 1 次驗證重試） | 0.096 | 0.263（含未合併 T107 的 0.077） |
+| 10/29 | T113：SAM v2 重跑 7 支（SAM 7 次 $0.077＋explain 15 次 $0.244 含 8 次重試＋headline 4 次 $0.038） | 0.360 | 0.794 |
 
 ## 工作日誌（最新在上）
 
+- 10/29 12:30 Claude：合併 Muse T113（SAM v2）。兩種追蹤判出的不是同一批（尺寸變化估計不同：clip4 顏色 +79%、SAM +15%），兩版都保留。`scripts/audit_batch.py` 改成預設不呼叫解說和標題（`--explain` 才呼叫），因為 T113 光解說就花了 0.24 美元。新增 Muse T114（自拍影片跑 SAM）、T115（解說驗證失敗原因）。
+- 10/29 Muse 完成 T113（分支 muse/T113-sam-v2）：T146 修好後重跑，4 支判出數字、3 支透視拒判；overlay 確認 3 支紅點在球上、clip4 請 john 複看。注意：合併後每次稽核自動跑解說＋標題，本次 explain 重試 8 次（驗證偏嚴？請 Claude 看），單次重跑成本升到 $0.36。$0.360，累計 $0.794。
 - 10/29 12:45 Claude：README 補上提交需要的段落（路線圖第 9 步初稿）：「不是什麼」聲明、Meta 模型用在哪（表格）、測試集結果（顏色版，SAM v2 等 T113 後補）、限制；彈跳與單擺註明「只在合成資料測過」。新增 MIT `LICENSE`（README 原本就寫 MIT 但沒有檔案）。合併 Antigravity T120 桌機截圖；三張手機截圖完全相同，已拿掉並開 T161 重做。
 - 10/29 12:20 Claude：STATUS 瘦身（john 要求省 token）。上半部只留現況、路線圖、待辦、關卡結果、規則與最近日誌，約 27 KB（原本 105 KB）。打勾的任務、舊任務表、舊日誌、T63 testid 清單搬到最下面「封存」，內容一行都沒刪。之後各工具只要讀到「## 封存」為止；Claude 合併時會把打勾的行搬去封存。
 - 10/29 10:40 Claude：審查並合併 Muse 的 T107–T112（重跑 SAM、建議物體名稱、語音回答、花費端點、來源標示、MetaHooks 的說明和標題）。修好 Muse 回報的 SAM 分母 bug（T146），新增 Muse T113 重跑。
@@ -244,6 +268,7 @@
 
 ### 已完成的任務（從完成表搬來）
 
+- [x] T113 Muse：（最優先，T146 修好之後）用同一個指令重跑 SAM：`set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --out data/gate/product_results_sam_v2.md`。把表格貼進「SAM 對照」，放在舊表下面，標題寫「v2（T146 修正分母後）」。舊表不要刪。如果有影片從拒判變成可以判，就在 `/api/audits` 回傳的 overlay 上確認紅點真的在球上，結果寫進 STATUS。花費記進成本紀錄 — commit 18d0202（v2：4 支判不一致＋3 支透視拒判；overlay 確認 clip1/clip5/manus 紅點在球上，clip4 待 john 複看。$0.360，累計 $0.794） — commit 18d0202
 - [x] T120 Antigravity：桌機三張截圖（結果牆、鬼影球、並排比較）— commit 853ec74（手機版重做見 T161）
 
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。

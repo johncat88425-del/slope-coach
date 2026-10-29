@@ -6,6 +6,8 @@ differencing until SAM is wired in; all numbers come from physics/.
 """
 from __future__ import annotations
 
+import os
+
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -57,7 +59,7 @@ def _model_text(hook_name: str, view: dict) -> str | None:
     text that fails the backend's own check (unfound numbers, banned wording) gives None, so the caller keeps
     the fixed template (AGENTS.md rule 5). The verdict and numbers never come from here."""
     hook = getattr(get_hooks(), hook_name, None)
-    if hook is None:
+    if hook is None or os.environ.get("SLOPE_MODEL_TEXT") == "0":  # batch runs skip paid text calls
         return None
     try:
         text = hook(dict(view))
