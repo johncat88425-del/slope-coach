@@ -22,7 +22,7 @@ export function AuditResult({ audit, replay = false, videoUrl }: {
     audit: AuditOut; replay?: boolean; videoUrl?:string;
 }) {
     return <Localize>{<article data-testid="audit-result" aria-label="稽核結果">{replay && <p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">SYNTHETIC test example — program-drawn motion.</p>}<h2 data-testid="audit-verdict">{verdictText(audit.verdict,audit.assumed_model)}</h2><p>稽核 {audit.audit_id} · 假設：{audit.assumed_model} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
- {!replay && <p><a href={auditHash(audit.audit_id)}>Open result link</a></p>}<h3>原因</h3><ul>{audit.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+ {!replay && <p><a href={auditHash(audit.audit_id)}>Open result link</a></p>}<p data-testid="audit-slow-answer">Slow motion or retimed playback (user): {audit.slow_motion===true?'Yes':audit.slow_motion===false?'No':'Not provided'}</p>{audit.slow_motion===true&&audit.verdict==='insufficient_data'&&<aside data-testid="audit-timing-limit"><h3>Reported limitations</h3>{audit.reasons.map((r,i)=><blockquote key={i}>{r}</blockquote>)}</aside>}<h3>原因</h3><ul>{audit.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
  <h3>後端計算數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <GhostReview audit={audit} url={replay ? undefined : videoUrl??mediaUrl(audit.video_url, import.meta.env?.VITE_API_BASE_URL)}/><Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
@@ -42,6 +42,8 @@ export function AuditPage({ api, auditId = null }: {
     const [interviewBusy,setInterviewBusy]=useState(false);
     const [uploadPercent,setUploadPercent]=useState<number|null>(null);
     const [replay, setReplay] = useState(false);
+    const [slowMotion,setSlowMotion]=useState('');
+    const [objectName,setObjectName]=useState('ball');
     const [model, setModel] = useState<AuditModel>('free_flight');
     useEffect(()=>{
         if(!auditId){setBusy(false);return;}let cancelled=false;setBusy(true);setError('');setAudit(null);setPreview('');setReplay(false);setId(auditId);
@@ -68,7 +70,7 @@ export function AuditPage({ api, auditId = null }: {
     return <Localize>{<section aria-label="檢查影片"><h2>檢查影片</h2><p>Check the selected segment against the chosen motion model. Confirm capture conditions and the time window; insufficient evidence remains an explicit outcome.</p>
  <InterviewPanel api={api} disabled={busy} onBusyChange={setInterviewBusy} onResult={value=>{setAudit(value);setReplay(false);setId(value.audit_id);setPreview('');setFile(null);setError('')}}/>
  <fieldset disabled={busy||interviewBusy}><legend>Offline demo</legend><p>Load a previously saved result. No network connection or tracking is needed.</p><label>Saved audit JSON<input data-testid="audit-import-json" type="file" accept=".json,application/json" onChange={async e => { const saved = e.target.files?.[0]; if (!saved) return; setError(''); try { if(saved.size > 5 * 1024 * 1024) throw new Error('Saved JSON must be under 5 MB.'); const result = parseSavedAudit(await saved.text()); setAudit(result); setReplay(true); setPreview(''); setFile(null); } catch(e) {setError(friendlyApiError(e));} }}/></label></fieldset>
- <fieldset disabled={busy||interviewBusy}><legend>使用者確認的設定</legend><label>Motion model<select data-testid="audit-model" value={model} onChange={e=>setModel(e.target.value as AuditModel)}><option value="free_flight">Free flight</option><option value="bounce">Bounce</option><option value="pendulum">Pendulum</option></select></label><label>上傳影片<input data-testid="audit-video-input" type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) {
+ <fieldset disabled={busy||interviewBusy}><legend>使用者確認的設定</legend><label>Object name<input data-testid="audit-object-name" value={objectName} onChange={e=>setObjectName(e.target.value)}/></label><label>Slow motion or retimed playback<select data-testid="audit-slow-motion" value={slowMotion} onChange={e=>setSlowMotion(e.target.value)}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></select></label><label>Motion model<select data-testid="audit-model" value={model} onChange={e=>setModel(e.target.value as AuditModel)}><option value="free_flight">Free flight</option><option value="bounce">Bounce</option><option value="pendulum">Pendulum</option></select></label><label>上傳影片<input data-testid="audit-video-input" type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) {
         setFile(f);
         setPreview(URL.createObjectURL(f));
         setAudit(null);
@@ -82,7 +84,7 @@ export function AuditPage({ api, auditId = null }: {
  {model==='pendulum'&&<label>Pendulum length (metres, optional)<input data-testid="pendulum-length" type="number" min="0" step="any" value={length} onChange={e=>setLength(e.target.value)}/></label>}<label>物體尺寸（米，選填）<input type="number" min="0" step="any" value={size} onChange={e => setSize(e.target.value)}/></label><p>尺寸由使用者量測；未知請留空，不從物體名稱猜測。</p>
  <label><input type="checkbox" checked={fixed} onChange={e => setFixed(e.target.checked)}/> 我確認鏡頭固定</label><p>未勾選會將 camera_static=false 送至後端，由後端保留無法判斷結果。</p>
  <button data-testid="audit-submit" onClick={() => { setAttempted(true); if (!file || errors.length)
-        return; void run(() => api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined)); }}>提交片段檢查</button>
+        return; void run(() => api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined,objectName,slowMotion?slowMotion==='yes':undefined)); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input data-testid="audit-id" value={id} onChange={e => setId(e.target.value)}/></label><button data-testid="audit-load" disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
  </fieldset><div aria-live="polite">{busy && <div data-testid="audit-progress" role="status">{uploadPercent===100 ? <p>Upload complete. Waiting for backend analysis; analysis progress is unavailable.</p> : uploadPercent!==null ? <><label>Upload progress<progress max="100" value={uploadPercent}/></label><p>{uploadPercent}%</p></> : <p>Request in progress. Please wait; no automatic retry will be made.</p>}</div>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult key={audit.audit_id} audit={audit} replay={replay} videoUrl={preview || undefined}/>}
