@@ -578,3 +578,6 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T155：掃描／準備提問／檢查／讀取時顯示實際經過秒數，不把計時當完成百分比；保留已知upload bytes進度。請求鎖防重送，失敗保留原答案與問題，草稿失效僅要求重備草稿，不清欄位。npm94 pass、build pass。
 - 10/29 Codex T156：390px主流程加容器縮小hook，影片等比例、欄位單欄、檔案輸入與表格限寬換行，不用全頁overflow-x:hidden掩蓋。新增主元件class與390px CSS規則測試；npm95 pass、build pass。實機瀏覽器驗收仍待Antigravity。
 - 10/29 Codex T158：判定色帶、結果牆、首頁卡、名片、報告、列印共享白話判定；追蹤來源改motion-based tracking(no model)等易懂標籤，繁中同步。分析原文用Verbatim保留，JSON／量測值不變；數據與圖只換說明文字。新增全模型三判定一致性、禁用詞與原文／數字不變測試。npm99 pass、標準/靜態build pass；pytest192 pass/1既有drawtext環境失敗。
+
+- 10/29 Codex 沒有待辦了。
+- 10/29 Codex 本次完成 T154、T155、T156、T158，各自測試與build通過後提交推送；PR #61／#62／#63／#64 的目標均為 main。npm99 pass、標準／靜態build pass；未改後端、資料集或量測值。pytest192 pass/1 fail（既有ffmpeg無drawtext）。T157 尚無 Claude 定版通知，依 john 指示跳過，保留未勾。手機與鍵盤的實機瀏覽器驗收仍待 Antigravity。
