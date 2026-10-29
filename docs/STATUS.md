@@ -15,7 +15,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 | 誰 | 照這個順序做 | 重點 |
 | --- | --- | --- |
 | **Muse**（最優先） | （T05–T67 已合併）→ **T107 SAM 全部重跑** → **T112 說明與標題接上稽核** → T108 → T109 → T110 → T111 | SAM 是最大的缺口：顏色追蹤在 Meta clip1、4、5 和 Manus 那支失敗，測試影片在 repo 的 `data/gate/clips/`（之前寫的 /mnt/ 路徑只在 Claude 的雲端電腦上，你那邊沒有，是 Claude 的錯）。所有用到模型的輸出都要標來源；數字只能由 physics 產生。花費超過 10 美元先停，寫進 STATUS。 |
-| **Codex** | **T153** → T154 → T155 → T156 → T158 →（等通知）T157 | demo 用的資料都在 `data/demo/`（`real_own_*`、`generated_*`）。不准出現「偵測 AI」「假影片」「真假」。 |
+| **Codex** | T159 → T160 →（等通知）T157 | demo 用的資料都在 `data/demo/`（`real_own_*`、`generated_*`）。不准出現「偵測 AI」「假影片」「真假」。 |
 | **Antigravity** | （T02 已由 Claude 做完）T52 → T42 → T119 → T120 → T121 → T122 → T54 → T53 | **10/29 john 已在 Mac 設好 `gh auth login`，現在 push 得上去了**（之前 Muse 推不上去就是這個原因）。不要再做 3D 渲染影片。部署帳號等 john 決定。 |
 | **Manus** | T23 → T95 → T123 → T124 → T125 → T126 | 只寫文件，交給 john 轉給 Claude。數字只用 `data/gate/product_results.md`。 |
 | **Claude** | T127 → T129 → T128 → T130 → T131 | 每 2 小時巡查、審查合併。 |
@@ -144,6 +144,8 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T156 Codex：手機版（390 px 寬）主要流程不能左右捲動：上傳 → 問題 → 時間窗 → 結果。修好溢出的元件（影片、時間軸、表格），補測試檢查 class 或樣式 — commit 5f50f91
 - [x] T158 Codex：稽核流程所有使用者看得到的英文字句做一次白話整理：不用術語（例如「frame differencing」改成「motion-based tracking (no model)」），同一種判定全站用同一個說法，繁中翻譯同步更新。加測試確認沒有 fake、detect AI、real or fake 這類字 — commit 689eec5
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
+- [ ] T159 Codex：（API v1.0）偵訊畫面用 `draft.suggestion` 預填「Object name」，旁邊寫「Suggested by Muse Spark — please check」，使用者改了就用使用者的。`camera_looks_static` 只顯示成提示文字，**不准自動勾選**「鏡頭固定」。`suggestion` 是 null 時什麼都不顯示。補測試
+- [ ] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch）
 
 **Antigravity**（照順序做）
 - [x] T02 Antigravity→Claude：（10/29 06:40 Antigravity 整晚沒有 push，改由 Claude 做）`requirements.txt`、`scripts/dev.sh`（檢查 ffmpeg／python3／npm，缺什麼就列出 brew 指令；後端 8000、前端 5173；沒有金鑰時用 mock） — 見 PR T02
@@ -177,6 +179,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T143 Claude：稽核結果接上 Muse 的說明和標題（API v0.9）：後端呼叫 hook `explain_audit`、`headline_audit`，模型的文字要再過一次 `check_model_text`（數字要能在結果裡找到，四捨五入後也算；不能有禁用字）才會用，否則退回固定模板。模型看不到原始軌跡，判定和數字都不經過模型；模型失敗也不會讓稽核壞掉 — 見 PR T143
 - [x] T144 Claude：生成影片（Meta 6 支、Manus 1 支，共 11 MB，沒有個人隱私）放進 `data/gate/clips/`。`audit_batch --clips` 預設讀這裡，找不到的影片列成 missing。john 自己拍的影片不進 git — 見 PR T144
 - [x] T146 Claude：修 SAM 追蹤比例的分母（Muse T107 發現的）：改用 SAM 的取樣時間算追到的比例和缺格事件。新增 15 fps SAM 對 60 fps 影片的測試 — 見 PR
+- [x] T147 Claude：把 Muse 的 T108（建議物體名稱）和 T109（語音回答）接到 API（v1.0）：`audit-drafts` 回傳 `suggestion`，新增 `POST /api/audit-drafts/{id}/voice`。後端會檢查型別和範圍，名稱不能有數字，所有欄位都是未確認 — 見 PR
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [x] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
 - [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
