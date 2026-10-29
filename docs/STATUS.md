@@ -16,7 +16,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | T114（自拍影片也用 SAM 跑）→ T115（解說常驗證失敗的原因） |
-| **Codex** | T159 → T160 →（等 Claude 寫「demo 資料已定版」）T157 |
+| **Codex** |（等 Claude 寫「demo 資料已定版」）T157 |
 | **Antigravity** | T161 → T121 → T122 → T53 → T68 |
 | **Manus** | T22，以及用最終數字更新提交文字和旁白 |
 | **Claude** | 審查合併 PR；T114 合併後產生最終結果表與 demo 資料；README 與提交前檢查 |
@@ -54,8 +54,6 @@
 
 **Codex**（PR #4 合併後才開始，照順序做）
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
-- [ ] T159 Codex：（API v1.0）偵訊畫面用 `draft.suggestion` 預填「Object name」，旁邊寫「Suggested by Muse Spark — please check」，使用者改了就用使用者的。`camera_looks_static` 只顯示成提示文字，**不准自動勾選**「鏡頭固定」。`suggestion` 是 null 時什麼都不顯示。補測試
-- [ ] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch）
 
 
 **Antigravity**（照順序做）
@@ -201,7 +199,6 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 - （10/29 Claude）要不要用 GitHub Pages 放純靜態 demo 版（Codex T138 做好之後）？這會把 demo 紀錄公開放上網，repo 本來就要公開，Claude 建議可以，但要等 john 同意才開。
 
-- T116 Codex：docs/API.md 尚無 T109 錄音轉寫／欄位抽取端點與來源驗證契約；目前按鈕停用「需要 Meta API」，不請求麥克風。逐欄編輯／確認元件已備妥，但端到端錄音送出待 Muse／Claude 提供契約後再接。
 
 - T113 Codex：同步 POST /api/audits 不提供追蹤／計算分階段狀態；本次只呈現已知 upload bytes 與合併處理中。若要真實分階段進度，請 Claude 設計工作狀態端點；前端不以計時偽造階段。
 
@@ -251,6 +248,10 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 10/29 12:40 Claude：審查並合併 Codex T159（物體名稱預填，鏡頭建議只顯示文字）與 T160（語音回答逐欄按 Use this 才填入）。
+- 10/29 Codex 沒有待辦了。T159／T160 已完成並推送 PR #70／#74，目標都是 main，兩者已同步最新 main 且可合併。T157 仍待 Claude 資料定版通知，依規則保留未勾；無其他可執行的 Codex 待辦。npm108 pass、標準／靜態 build pass；pytest213 pass／1既有drawtext環境失敗。
+- 10/29 Codex T160：接 API v1.0 錄音→預聽→明確送出→逐字稿／欄位預覽，每欄 Use this 才填一般表單，不自動提交稽核；語音時間窗仍需影片確認。來源標示 Voice Transcribe／Spark；mock 停用錄音。錄音超過10MB／錯誤／卸載均釋放麥克風，送出防重複、失敗保留答案與錄音，換草稿忽略晚到回應；未加套件、未呼叫付費模型。新增假的 fetch、錄音器、逐欄、精度、mock、錯誤及雙語測試；npm108 pass、標準與靜態build pass（入口79,345／78,456 bytes）；pytest213 pass/1既有drawtext失敗。實機端到端待Antigravity。
+- 10/29 Codex T159：接 API v1.0 的 suggestion 預填物體名；手動改名優先，換片重設。鏡頭建議只顯示文字，從不填確認欄位；null 不顯示提示。原因保留原文，中英文同步；npm101 pass、build pass。pytest213 pass/1 fail，仍為既有 ffmpeg drawtext 缺口。未改後端或量測值。
 - 10/29 12:30 Claude：合併 Muse T113（SAM v2）。兩種追蹤判出的不是同一批（尺寸變化估計不同：clip4 顏色 +79%、SAM +15%），兩版都保留。`scripts/audit_batch.py` 改成預設不呼叫解說和標題（`--explain` 才呼叫），因為 T113 光解說就花了 0.24 美元。新增 Muse T114（自拍影片跑 SAM）、T115（解說驗證失敗原因）。
 - 10/29 Muse 完成 T113（分支 muse/T113-sam-v2）：T146 修好後重跑，4 支判出數字、3 支透視拒判；overlay 確認 3 支紅點在球上、clip4 請 john 複看。注意：合併後每次稽核自動跑解說＋標題，本次 explain 重試 8 次（驗證偏嚴？請 Claude 看），單次重跑成本升到 $0.36。$0.360，累計 $0.794。
 - 10/29 12:45 Claude：README 補上提交需要的段落（路線圖第 9 步初稿）：「不是什麼」聲明、Meta 模型用在哪（表格）、測試集結果（顏色版，SAM v2 等 T113 後補）、限制；彈跳與單擺註明「只在合成資料測過」。新增 MIT `LICENSE`（README 原本就寫 MIT 但沒有檔案）。合併 Antigravity T120 桌機截圖；三張手機截圖完全相同，已拿掉並開 T161 重做。
@@ -268,6 +269,9 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ### 已完成的任務（從完成表搬來）
 
+- [x] T159 Codex：（API v1.0）偵訊畫面用 `draft.suggestion` 預填「Object name」，旁邊寫「Suggested by Muse Spark — please check」，使用者改了就用使用者的。`camera_looks_static` 只顯示成提示文字，**不准自動勾選**「鏡頭固定」。`suggestion` 是 null 時什麼都不顯示。補測試 — commit 585c561
+- [x] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch） — commit 3c69d20
+- [x] T116／T160 Codex：原語音端點缺口已由 API v1.0 補齊，前端已接 draft voice 上傳與逐欄 Use this。mock 不請求麥克風；模型來源依回傳顯示。實機麥克風／Meta API 端到端驗收仍待 Antigravity，本次只用假的 fetch 與錄音器測試，未產生模型花費。
 - [x] T113 Muse：（最優先，T146 修好之後）用同一個指令重跑 SAM：`set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --out data/gate/product_results_sam_v2.md`。把表格貼進「SAM 對照」，放在舊表下面，標題寫「v2（T146 修正分母後）」。舊表不要刪。如果有影片從拒判變成可以判，就在 `/api/audits` 回傳的 overlay 上確認紅點真的在球上，結果寫進 STATUS。花費記進成本紀錄 — commit 18d0202（v2：4 支判不一致＋3 支透視拒判；overlay 確認 clip1/clip5/manus 紅點在球上，clip4 待 john 複看。$0.360，累計 $0.794） — commit 18d0202
 - [x] T120 Antigravity：桌機三張截圖（結果牆、鬼影球、並排比較）— commit 853ec74（手機版重做見 T161）
 
