@@ -17,10 +17,10 @@
 | --- | --- |
 | **Muse** | T166（修語音 502） |
 | **Codex** | T157、T165 已合併；Figma 收尾等配額恢復，不急 |
-| **Antigravity** | T53 → T68（T121、T122 已合併） |
+| **Antigravity** | T53 → T68 → T167（T167 等靜態網站上線） |
 | **Manus** | T163 → T164 → T22 |
-| **Claude** | 審查合併 PR；README 與提交前檢查 |
-| **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
+| **Claude** | 審查合併 PR；核對 Manus 文字；彈跳球片到了就跑 |
+| **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
 
 ## 提交前路線圖（10/29 09:30 Claude，john 要求一次列完；截止 11/04 21:00 ET，我們目標 11/03 交）
 
@@ -62,6 +62,7 @@
 
 
 **Antigravity**（照順序做）
+- [ ] T167 Antigravity：（等 john 打開 GitHub Pages、網址能開之後做）打開 https://johncat88425-del.github.io/slope-coach/ ，在 1440px 和 390px 各截 `#demo`、`#wall`、`#audit`、`#compare` 四頁，點一遍所有導覽連結和「Guided demo」。壞掉的連結、空白頁、console 錯誤寫進 STATUS。截圖不 commit，只寫文字結果。push 分支 `antigravity/T167-pages-check`。
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
 - [x] T121 Antigravity：效能量測：10 秒 1080p 影片 `/api/audits` 跑完耗時：顏色追蹤 1.13s、frame differencing 0.36s（目標 < 20s，通過；Claude 在雲端重跑 6.65s／1.53s，也通過。註：腳本只量 0–5 秒的時間窗）— commit b83b4d1
@@ -82,6 +83,9 @@
 
 
 **john**
+- [ ] T168 john：打開靜態 demo 網站（只要點一次）：GitHub repo → Settings → Pages → Build and deployment 的 Source 選「GitHub Actions」。之後每次合併到 main 都會自動更新 https://johncat88425-del.github.io/slope-coach/
+- [ ] T169 john：拍 1 支彈跳球（可選，讓 demo 多一種模型）：腳架固定、正側面、橘色球從約 1 公尺高放手讓它自己彈 3 次以上、10 秒內、畫面裡沒有人臉、正常速度不要慢動作。拍完放在 repo 外的 `~/slope-own-clips/own_4_bounce.mov`，不要 commit，跟 Claude 說一聲。
+- [ ] T170 john：在 Discord 貼這段問題（可選）：Hi! For the Indie track, can we use clips generated with other tools (e.g. Manus) as *test inputs* for our app? The app itself only calls Meta models at runtime. Thanks!
 - [ ] T33 拍片並生成影片，提供標註
 - [ ] 在 Discord 問：用其他工具生成的影片當測試素材可不可以
 
@@ -304,6 +308,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 10/29 17:50 Claude：**提交前檢查（第一輪）**。(1) 金鑰：repo 和 git 歷史都沒有金鑰，只有 `.env.example`；(2) 產品程式只呼叫 Meta：`meta_client/client.py` 指向 `api.meta.ai/v1`，backend／meta_client 只出現 muse-spark、sam-3.1、muse-voice-transcribe，沒有其他廠商；contributor 版只出現在價目表，產品不會呼叫；(3) 禁用字眼：README、前端、demo 資料都沒有「偵測 AI／假影片／任何影片」的宣稱，出現的地方都是禁用清單或「不判斷」的說明；(4) 第一個 commit 是 10/27，都在 10/26 之後；(5) repo 公開、MIT；(6) git 裡沒有 john 的自拍影片，demo JSON 只有檔名；(7) README 的 SAM 數字和 demo JSON 對得上。**新增**：GitHub Pages 靜態 demo（`.github/workflows/pages.yml`，用 `VITE_DEMO_ONLY=1`，不呼叫後端或模型），README 加網址；john 要在 Settings 打開一次（T168）。排了 T167、T169、T170。
 - 10/29 Codex T157 最終同步：保留 main 的協調者範例圖片來源說明與回歸測試，後續整合改由 PR #88 交付（PR #87 的 809f3df 已合併）。重跑 npm 118 pass、標準／靜態 build pass（入口 85,160／84,058 bytes）；同一後端版本 pytest 222 pass。Figma 待配額恢復，前端與 T157 已完成並提交審查。
 
 - 10/29 Codex 本輪可執行前端待辦已完成：主改版 PR #87 已由 Claude 合併；T157（82f90f9）與後續整合修整交付 PR #88（目標 main）。已保留 Claude 在 main 補的範例來源文案與測試。Figma 手機收尾仍受 Starter MCP 配額阻擋，T165 保留未勾及明確續接項目。
