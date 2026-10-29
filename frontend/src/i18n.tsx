@@ -1,3 +1,4 @@
+import {newUiCopy} from './newUiCopy.js';
 import {Children,cloneElement,createContext,isValidElement,useContext,useEffect,useState} from 'react';
 import type {ReactNode,ReactElement} from 'react';
 export type Language='en'|'zh';
@@ -34,7 +35,8 @@ export const dictionary:Record<string,string>={
 '預設關閉。青色虛線框：事前預測；橘色實線圓：實測在已確認路徑上的投影，並非物體輪廓。只取相鄰記錄影格（相差不超過 0.05 秒），缺失時隱藏實測，不補點。':'Disabled by default. Cyan dashed box: saved prediction. Orange solid circle: observed path projection, not an object contour. Only nearby recorded samples within 0.05 s are shown; missing observations stay hidden.',
 '目前時間或校準／起滑條件不符合，隱藏疊加；預測到達終點後也停止顯示。':'Overlay hidden: current time, calibration or release requirements are not met. Prediction also stops at the path endpoint.'
 };
-const homeChinese:Record<string,string>={
+const homeChinese:Record<string,string>={...newUiCopy,
+'Written by Muse Spark':'由 Muse Spark 撰寫',
 'Before recording':'拍攝檢查清單','Keep the camera fixed on a tripod.':'鏡頭固定在腳架上。','Film from the side.':'從側面拍攝。','Keep one moving object in frame.':'畫面中只有一個移動物體。','Use a clearly coloured ball, such as orange.':'使用橘色等顏色鮮明的球。','Use normal speed, without slow motion or retiming.':'正常速度，不用慢動作或變速。','Keep motion parallel to the image plane, away from the camera direction.':'運動平行於影像平面，不要朝鏡頭飛。','When capture conditions or evidence fail the quality checks, the system returns insufficient data rather than forcing an answer.':'拍攝條件或證據未通過品質檢查時，系統會拒判，不會硬給答案。',
 'Motion Audit':'影片物理稽核','Video physics audit':'影片物理稽核','Check motion against your assumed physical model.':'檢查影片中的運動是否符合你假設的物理模型。','Check whether motion in a video fits your assumed physical model.':'檢查影片中的運動是否符合你假設的物理模型','Experiment coach':'實驗教練','Check video':'檢查影片','Main sections':'主要分頁','Review resources':'參考內容','Scope and limitations':'支援範圍與限制','Compare outcomes':'結果對照','Fixed camera · Supported motion models · Explicit insufficient-data outcomes':'固定鏡頭・支援限定模型・明確呈現無法判斷','Fixed camera · Approximately side-on · One straight slope · One slider':'固定鏡頭・近似側視・單一直線斜坡・單一滑塊',
 'John’s recorded experiments':'john 的實拍實驗','Videos filmed by john; annotations confirmed by john. All three records are shown, including the inconsistent result whose cause remains unknown.':'影片由 john 自己拍攝、標註由 john 確認。完整呈現三份紀錄，包括原因未明的不一致結果。','Original videos are withheld for household privacy. These saved records show trajectories and measurements without loading video.':'為保護住家隱私，不公開原片；只顯示保存的軌跡與量測結果。','Inconsistent with the assumed model; cause unknown. This result does not establish a cause.':'與假設模型不一致，原因不明；此結果不能確定原因。',
@@ -63,7 +65,7 @@ const homeChinese:Record<string,string>={
 'A user-selected free-flight segment under a fixed, approximately side-on camera.':'使用者選定、固定鏡頭近似側視的自由飛行片段。','Observed motion against the stated model, with reasons, backend numbers, tracking overlays and known limitations.':'對照所假設的模型，顯示原因、後端數字、追蹤疊加圖與限制。','Evidence quality: missing observations can lead to an insufficient-data outcome.':'核對證據品質：觀測缺失可能導致無法判斷。','It does not establish a clip’s provenance or authenticity.':'不據此判定影片來源或可靠性。','It does not support arbitrary camera motion, perspective changes or every physical situation.':'不支援任意鏡頭運動、透視變化或所有物理情境。','It does not directly measure hidden forces or internal material stresses.':'不直接量測不可見的力或材料內部應力。',
 'Use a fixed camera, keep the object visible, select the relevant movement, and enter only dimensions you have measured. Leave unknown dimensions blank. Replayed, retimed or perspective-distorted footage may not meet the assumptions.':'固定鏡頭、讓物體保持可見，選定相關運動，只輸入實際量測的尺寸；未知留空。經重播、變速或透視扭曲的片段可能不符合假設。','Measurements and checks come from deterministic backend physics. Muse Spark and SAM 3.1 outputs are identified when the backend actually uses them. Mock or manual results keep their own labels.':'數值與檢查來自確定性後端 physics；實際使用 Muse Spark／SAM 3.1 的輸出才標示模型來源，mock 與人工資料維持各自標示。','This check supports a limited set of capture conditions and motion models. Performance on recorded experiments remains under evaluation.':'這是受限制的稽核流程，不宣稱發明新的量測方法。真實影片表現仍待驗證。'};
 
-export function translateText(text:string,language:Language){if(language==='zh'){const k=text.trim();return homeChinese[k]?text.replace(k,homeChinese[k]):text;}const key=text.trim();if(dictionary[key])return text.replace(key,dictionary[key]);return text}
+export function translateText(text:string,language:Language){if(language==='zh'){const k=text.trim();return (newUiCopy[k]??homeChinese[k])?text.replace(k,newUiCopy[k]??homeChinese[k]):text;}const key=text.trim();if(dictionary[key])return text.replace(key,dictionary[key]);return text}
 function localize(node:ReactNode,language:Language):ReactNode{
  if(typeof node==='string')return translateText(node,language);
  if(!isValidElement(node))return node;
@@ -78,3 +80,5 @@ export function LanguageRoot({children}:{children:ReactNode}){
  useEffect(()=>{document.documentElement.lang=language==='en'?'en':'zh-Hant';try{localStorage.setItem('slope-language',language)}catch{}},[language]);
  return <LanguageProvider value={language}><div className="language-switch"><label>Language / 語言 <select value={language} onChange={e=>setLanguage(e.target.value as Language)}><option value="en">English</option><option value="zh">繁體中文</option></select></label></div>{children}</LanguageProvider>;
 }
+
+export function useTranslation(){const language=useContext(Context);return (text:string)=>translateText(text,language)}
