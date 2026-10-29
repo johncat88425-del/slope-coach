@@ -1,0 +1,33 @@
+# Secrets and environment files (STRICTLY FORBIDDEN IN IMAGES)
+.env
+.env.*
+*.key
+*.pem
+
+# Git and dev artifacts
+.git
+.github
+.gitignore
+.DS_Store
+
+# Python
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+
+# Node
+frontend/node_modules
+frontend/dist
+frontend/.vite
+frontend/.test-dist
+
+# Videos & Heavy files
+data/videos
+data/gate/*.mp4
+data/gate/*.MOV
+data/cost_log.csv
+data/store.pkl
