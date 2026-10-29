@@ -145,7 +145,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T158 Codex：稽核流程所有使用者看得到的英文字句做一次白話整理：不用術語（例如「frame differencing」改成「motion-based tracking (no model)」），同一種判定全站用同一個說法，繁中翻譯同步更新。加測試確認沒有 fake、detect AI、real or fake 這類字 — commit 689eec5
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
 - [x] T159 Codex：（API v1.0）偵訊畫面用 `draft.suggestion` 預填「Object name」，旁邊寫「Suggested by Muse Spark — please check」，使用者改了就用使用者的。`camera_looks_static` 只顯示成提示文字，**不准自動勾選**「鏡頭固定」。`suggestion` 是 null 時什麼都不顯示。補測試 — commit 585c561
-- [ ] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch）
+- [x] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch） — commit 待回填（本次程式提交）
 
 **Antigravity**（照順序做）
 - [x] T02 Antigravity→Claude：（10/29 06:40 Antigravity 整晚沒有 push，改由 Claude 做）`requirements.txt`、`scripts/dev.sh`（檢查 ffmpeg／python3／npm，缺什麼就列出 brew 指令；後端 8000、前端 5173；沒有金鑰時用 mock） — 見 PR T02
@@ -409,7 +409,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - （10/29 Claude）要不要用 GitHub Pages 放純靜態 demo 版（Codex T138 做好之後）？這會把 demo 紀錄公開放上網，repo 本來就要公開，Claude 建議可以，但要等 john 同意才開。
 
-- T116 Codex：docs/API.md 尚無 T109 錄音轉寫／欄位抽取端點與來源驗證契約；目前按鈕停用「需要 Meta API」，不請求麥克風。逐欄編輯／確認元件已備妥，但端到端錄音送出待 Muse／Claude 提供契約後再接。
+- [x] T116／T160 Codex：原語音端點缺口已由 API v1.0 補齊，前端已接 draft voice 上傳與逐欄 Use this。mock 不請求麥克風；模型來源依回傳顯示。實機麥克風／Meta API 端到端驗收仍待 Antigravity，本次只用假的 fetch 與錄音器測試，未產生模型花費。
 
 - T113 Codex：同步 POST /api/audits 不提供追蹤／計算分階段狀態；本次只呈現已知 upload bytes 與合併處理中。若要真實分階段進度，請 Claude 設計工作狀態端點；前端不以計時偽造階段。
 
@@ -627,3 +627,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex 沒有待辦了。
 - 10/29 Codex 本次完成 T154、T155、T156、T158，各自測試與build通過後提交推送；PR #61／#62／#63／#64 的目標均為 main。npm99 pass、標準／靜態build pass；未改後端、資料集或量測值。pytest192 pass/1 fail（既有ffmpeg無drawtext）。T157 尚無 Claude 定版通知，依 john 指示跳過，保留未勾。手機與鍵盤的實機瀏覽器驗收仍待 Antigravity。
 - 10/29 Codex T159：接 API v1.0 的 suggestion 預填物體名；手動改名優先，換片重設。鏡頭建議只顯示文字，從不填確認欄位；null 不顯示提示。原因保留原文，中英文同步；npm101 pass、build pass。pytest213 pass/1 fail，仍為既有 ffmpeg drawtext 缺口。未改後端或量測值。
+- 10/29 Codex T160：接 API v1.0 錄音→預聽→明確送出→逐字稿／欄位預覽，每欄 Use this 才填一般表單，不自動提交稽核；語音時間窗仍需影片確認。來源標示 Voice Transcribe／Spark；mock 停用錄音。錄音超過10MB／錯誤／卸載均釋放麥克風，送出防重複、失敗保留答案與錄音，換草稿忽略晚到回應；未加套件、未呼叫付費模型。新增假的 fetch、錄音器、逐欄、精度、mock、錯誤及雙語測試；npm108 pass、標準與靜態build pass（入口79,345／78,456 bytes）；pytest213 pass/1既有drawtext失敗。實機端到端待Antigravity。
