@@ -225,6 +225,7 @@
  "video_url": "",
  "overlay_url": null,
  "clip": "meta_clip2.mp4",
- "real_clip": false,
- "labels_by": "john (window, camera, object size)"
+ "labels_by": "john (window, camera, object size)",
+ "generated_clip": true,
+ "source": "meta_ai"
 }
