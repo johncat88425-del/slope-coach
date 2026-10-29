@@ -74,7 +74,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T109 Muse：語音回答偵訊問題：`muse-voice-transcribe-1.0` 把使用者說的話轉成文字，Spark 抽出欄位（例如物體大小），**數字一定要使用者在畫面上確認**才送出。沒有金鑰時用 mock — commit 72dff6d（voice.answer_interview_voice：轉錄→extract_interview_fields→每欄 {value, confirmed: False}；尺寸回原文 value+unit、程式換算成米；無 key 回 mock。4 mock 測試。抽欄位真打 7 次（含 2 輪形狀修正：尺寸字串／window 陣列寬容＋口語數字轉阿拉伯數字範例）後完整抽出；注意模型從動詞 flies 推得 assumed_model，照樣待確認。$0.164，累計 $0.435）
 - [x] T112 Muse：（後端已由 Claude T143 做好）在 `MetaHooks` 加兩個方法：`explain_audit(audit: dict) -> str | None` 呼叫 `explain.explain_result(audit, kind="audit")`，`headline_audit(audit: dict) -> str | None` 呼叫 `headline.write_headline(audit)`。失敗就回 None 或丟例外，後端會退回固定模板，也會再檢查一次數字和禁用字。用 john 的 own_2 和 meta clip2 真打各一次，結果和花費寫進 STATUS — commit f54000e（explain_audit 取 ["explanation"]、失敗回 None；headline_audit 直通。clip2 標題「落下節奏宛如置身月球，表觀重力約為地球的0.17倍」；附帶修了解說數字只引 2 位小數、標題天體名轉中文。$0.096，累計 $0.263）
 - [x] T111 Muse：每一個用到 Meta 模型的回傳都帶 `source`（model 名稱與版本），讓畫面能標示「由 Muse Spark 1.3 產生」「由 SAM 3.1 追蹤」 — commit 6f7d198（spark×4、interview、explain、voice×2、agent×2 回傳加實際 model id；TrackResult.source 預設 sam-3.1；write_headline 改回 {headline, source}；hooks 兩處展開先濾掉 source（後端 schema 只要 model/mock）；沒打模型的 early return 不帶 source。T108/T109/T112 三條未合併分支另補同改。$0，累計 $0.435）
-- [ ] T113 Muse：（最優先，T146 修好之後）用同一個指令重跑 SAM：`set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --out data/gate/product_results_sam_v2.md`。把表格貼進「SAM 對照」，放在舊表下面，標題寫「v2（T146 修正分母後）」。舊表不要刪。如果有影片從拒判變成可以判，就在 `/api/audits` 回傳的 overlay 上確認紅點真的在球上，結果寫進 STATUS。花費記進成本紀錄
+- [x] T113 Muse：（最優先，T146 修好之後）用同一個指令重跑 SAM：`set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --out data/gate/product_results_sam_v2.md`。把表格貼進「SAM 對照」，放在舊表下面，標題寫「v2（T146 修正分母後）」。舊表不要刪。如果有影片從拒判變成可以判，就在 `/api/audits` 回傳的 overlay 上確認紅點真的在球上，結果寫進 STATUS。花費記進成本紀錄 — commit TBD（v2：4 支判不一致＋3 支透視拒判；overlay 確認 clip1/clip5/manus 紅點在球上，clip4 待 john 複看。$0.360，累計 $0.794）
 
 **Codex**（PR #4 合併後才開始，照順序做）
 - [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
@@ -338,6 +338,25 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 **原因（不是追蹤品質，是分母算錯）**：7 支的 61–63% 完全一致，因為這是 15/24 = 62.5%。SAM 照 T05 規格先降到 15fps 再追，後端 `audits.py` 的覆蓋率卻用來源片格數（24fps）當分母（`frac = len(pts)/len(frames)`，門檻 0.8）。SAM 在 24fps 片子上天花板就是 62.5%，永遠過不了。修法在後端（Claude 的範圍）：分母改用追蹤器的預期格數；另外 `by_t` 用時間戳精確對齊，15fps 的時間戳很少落在 24fps 格點上，下游的 events／鬼影對齊也要一起修。修好之前 SAM 版數字不能引用。own_3 支不在 git 裡所以是 missing（預期內）。
 
+#### v2（T146 修正分母後，`data/gate/product_results_sam_v2.md`）
+
+| clip | source | verdict | g_apparent_m_s2 | nearest_body | size_trend | track_source | reason |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| own_1_IMG_8426.mov | own | missing |  |  |  |  | not found in data/gate/clips |
+| own_2_IMG_8429.mov | own | missing |  |  |  |  | not found in data/gate/clips |
+| own_3_IMG_8434.mov | own | missing |  |  |  |  | not found in data/gate/clips |
+| meta_clip1.mp4 | meta_ai | inconsistent | 0.24 | Pluto | -0.18 | sam | apparent g 0.24 m/s^2 is outside 8.34-11.28 |
+| meta_clip2.mp4 | meta_ai | insufficient_data |  |  | -0.49 | sam | object size changes -49% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| meta_clip3.mp4 | meta_ai | insufficient_data |  |  | -0.34 | sam | object size changes -34% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| meta_clip4.mp4 | meta_ai | inconsistent | 0.15 | Pluto | 0.15 | sam | apparent g 0.15 m/s^2 is outside 8.34-11.28 |
+| meta_clip5.mp4 | meta_ai | inconsistent | 1.41 | Moon | -0.23 | sam | acceleration points -178 deg away from image-down |
+| meta_clip6.mp4 | meta_ai | insufficient_data |  |  | -0.42 | sam | object size changes -42% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| manus_clip1.mp4 | manus | inconsistent | 2.50 | Mars | 0.14 | sam | apparent g 2.50 m/s^2 is outside 8.34-11.28 |
+
+v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=0.15 冥王星、clip5 g=1.41 月球、manus g=2.50 火星），3 支仍因透視（size_trend -34%～-49%）拒判。跟顏色版對照：兩種追蹤判出來的不是同一批——顏色版判 clip2／clip3 不一致，SAM 版這兩支因透視拒判；反之 clip1／clip4／clip5 顏色版拒判、SAM 版判不一致。兩版都列，demo 選哪版由 john／Claude 決定。
+
+**overlay 紅點確認**（4 支新判出的）：clip1 紅點沿客廳拋物線走、在球上；clip5 紅點在桌緣的球上；manus 紅點沿體育館拋物線走、在球上——這 3 支確認通過。manus 的 g=2.50 跟之前 frame_diff 試跑的 2.55 接近，互相印證。clip4 該格只有左緣大片深色物體、紅點沿其邊緣走，看起來有跟上但單格無法確定是球心，請 john 再看一眼。另 clip5 的理由是加速度方向偏 -178 度（幾乎朝上），數字是程式算的照實列，判讀請 Claude 看。
+
 ## 任務表
 
 狀態：待辦、進行中、完成、卡住。
@@ -455,6 +474,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 Muse 完成 T113（分支 muse/T113-sam-v2）：T146 修好後重跑，4 支判出數字、3 支透視拒判；overlay 確認 3 支紅點在球上、clip4 請 john 複看。注意：合併後每次稽核自動跑解說＋標題，本次 explain 重試 8 次（驗證偏嚴？請 Claude 看），單次重跑成本升到 $0.36。$0.360，累計 $0.794。
 - 10/29 10:40 Claude：審查並合併 Muse 的 T107–T112（重跑 SAM、建議物體名稱、語音回答、花費端點、來源標示、MetaHooks 的說明和標題）。修好 Muse 回報的 SAM 分母 bug（T146），新增 Muse T113 重跑。
 - 10/29 Muse 完成 T107（分支 muse/T107-sam-rerun）：audit_batch 跑 data/gate/clips 7 支，track_source 全是 sam，但 7 支全因「只追到 61–63%」拒判——查出是後端覆蓋率分母用 24fps 來源格數、SAM 只出 15fps（天花板 62.5% < 門檻 0.8），修法在後端已寫進待 john 決定。SAM 對照表和兩版比較已貼進關卡結果。花費 $0.077，累計 $0.167。pip install 用「逐一確認 requirements 可 import＋ffmpeg＋meta-sam-parser 存在」代替（venv 本來就齊，避免重裝弄壞環境）。
 - 10/29 Muse 完成 T110（分支 muse/T110-spend）：GET /api/spend＋API.md 一行契約＋tests/backend/test_spend.py（4 測試，全套件 196 pass）。$0，累計 $0.435。
@@ -463,6 +483,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | 10/29 | T109：抽欄位真打 7 次（2 輪驗證修正＋重試；單次約 $0.02，輸出 token 異常多） | 0.164 | 0.435（含未合併 T107 0.077、T112 0.096、T108 0.008） |
 - 10/29 Muse 完成 T109（分支 muse/T109-voice-answer）：answer_interview_voice 回 {transcript, fields, mock}，欄位全標 confirmed: False；驗證接受尺寸物件／"11 cm" 字串（程式 parse）、window 物件／二元陣列；單位換算由程式做。4 mock 測試，全套件 197 pass。真打抽欄位 7 次：首輪尺寸形狀錯→修寬容；次輪只抽出 bool→prompt 加口語數字範例後全抽出。單次約 $0.02（輸出 token 3–10k，異常多，原因不明但按表計費）。$0.164，累計 $0.435。轉錄本體沿用 T24（已真打過），本次無麥克風只真打抽欄位。
 | 10/29 | T112：explain＋headline 真打 own_2、clip2 各兩種（7 次呼叫含 1 次驗證重試） | 0.096 | 0.263（含未合併 T107 的 0.077） |
+| 10/29 | T113：SAM v2 重跑 7 支（SAM 7 次 $0.077＋explain 15 次 $0.244 含 8 次重試＋headline 4 次 $0.038） | 0.360 | 0.794 |
 - 10/29 Muse 完成 T112（分支 muse/T112-hooks-explain）：MetaHooks 加 explain_audit／headline_audit（2 mock 測試；全套件 194 pass，gate_prepare 仍原生失敗）。真打 own_2＋clip2 各兩種共 7 次呼叫：clip2 標題「落下節奏宛如置身月球，表觀重力約為地球的0.17倍」；第一次真打發現解說引 16 位小數、標題夾英文天體名，已修（prompt 限 2 位小數、BODY_ZH 對照表）並重打驗證通過，其中 1 次驗證失敗自動重試成功。$0.096，累計 $0.263。
 - 10/29 Muse 沒有待辦了。（T107–T112 全在分支上做完並 push，等 Claude 合併；重驗過 6 條分支都在 origin 上且內容完整，未重跑任何付費呼叫，累計維持 $0.435）
 - 10/29 Muse 完成 T111（分支 muse/T111-source＋三條分支的同改補丁）：全部模型回傳帶精確 model id；headline 改 dict；hooks 濾鍵不斷言；agent 無呼叫 early return 不帶 source（有測試鎖住）。全套件 192 pass（gate_prepare 原生失敗之外）。$0，累計 $0.435。Muse 這區沒有 [ ] 了。
