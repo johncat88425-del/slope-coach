@@ -101,4 +101,5 @@ class MetaHooks(ModelHooks):
 
     def headline_audit(self, audit: dict) -> str | None:
         """One-line headline via Spark (T112); None shows no headline."""
-        return _headline.write_headline(audit)
+        result = _headline.write_headline(audit)
+        return result["headline"] if result else None

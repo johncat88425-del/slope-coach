@@ -122,7 +122,9 @@ def test_explain_audit_extracts_text_and_none_on_failure(monkeypatch):
 
 
 def test_headline_audit_passes_through(monkeypatch):
-    monkeypatch.setattr(headline, "write_headline", lambda audit, **kw: "falls like the Moon")
+    monkeypatch.setattr(headline, "write_headline",
+                        lambda audit, **kw: {"headline": "falls like the Moon",
+                                             "source": "muse-spark-1.3"})
     assert hooks.MetaHooks().headline_audit({}) == "falls like the Moon"
     monkeypatch.setattr(headline, "write_headline", lambda audit, **kw: None)
     assert hooks.MetaHooks().headline_audit({}) is None
