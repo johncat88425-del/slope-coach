@@ -1,0 +1,75 @@
+import {LanguageProvider} from '../.test-dist/i18n.js';
+import test from 'node:test';import assert from 'node:assert/strict';import {createElement} from 'react';import {renderToStaticMarkup as rawRender} from 'react-dom/server';
+import {AuditPage,AuditResult,EventTimeline} from '../.test-dist/AuditPage.js';import {createApi} from '../.test-dist/api.js';import {parseSavedAudit,validateAuditInput} from '../.test-dist/audit.js';
+const fixture=verdict=>({audit_id:'ui-fixture',created_at:'2026-10-27',assumed_model:'free_flight',t_start:0,t_end:1,camera_static:true,object_size_m:null,video_url:'/media/test/clip.mp4',overlay_url:null,track_source:'frame_diff',verdict,reasons:['fixture reason'],numbers:{sentinel:123.456789},points:[],events:[],limits:['fixture limitation']});
+test('all three verdicts render as model-relative outcomes with evidence and limits',()=>{
+ const labels={consistent:'與自由落體模型一致',inconsistent:'與自由落體模型不一致',insufficient_data:'與自由落體模型無法判斷'};
+ for(const v of Object.keys(labels)){const html=render(createElement(AuditResult,{audit:fixture(v)}));assert.ok(html.includes(labels[v]));for(const s of ['fixture reason','fixture limitation','123.456789'])assert.ok(html.includes(s));assert.ok(!html.includes('role="alert"'))}
+});
+test('audit form and each outcome avoid provenance claims and render unknown numbers as absent',()=>{
+ const form=render(createElement(AuditPage,{api:createApi('',async()=>Response.json({}))}));
+ for(const html of [form,...['consistent','inconsistent','insufficient_data'].map(v=>render(createElement(AuditResult,{audit:{...fixture(v),numbers:{}}})) )])assert.doesNotMatch(html,/真影片|假影片|AI 生成|AI影片|第一個|偵測真假/);
+ assert.match(render(createElement(AuditResult,{audit:{...fixture('insufficient_data'),numbers:{}}})),/尚無可提供的數值/);
+});
+test('audit upload sends explicit window/model/camera and does not invent size',async()=>{
+ let body,path;const api=createApi('',async(url,init)=>{path=url;body=init.body;return Response.json(fixture('insufficient_data'))});
+ await api.audit(new File(['fixture'],'test.mp4'),0,2,false);
+ assert.equal(path,'/api/audits');assert.equal(body.get('assumed_model'),'free_flight');assert.equal(body.get('camera_static'),'false');assert.equal(body.get('t_start'),'0');assert.equal(body.get('t_end'),'2');assert.equal(body.has('object_size_m'),false);
+});
+test('window and optional dimension validation rejects missing or non-finite inputs',()=>{assert.deepEqual(validateAuditInput('0','2',''),[]);for(const args of [['','2',''],['1','1',''],['-1','2',''],['0','Infinity',''],['0','2','0'],['0','2','NaN']])assert.ok(validateAuditInput(...args).length)});
+
+function render(node){return rawRender(createElement(LanguageProvider,{value:'zh'},node))}
+
+test('saved audit validation preserves numbers and rejects malformed or unsupported results',()=>{
+ const a=fixture('consistent'); assert.deepEqual(parseSavedAudit(JSON.stringify(a)),a);
+ for(const bad of [{...a,assumed_model:'unknown'},{...a,verdict:'authentic'},{...a,numbers:{x:'9'}},{...a,points:[[0,1]]},{...a,events:[{kind:'x',t_s:null,detail:'x'}]}])assert.throws(()=>parseSavedAudit(JSON.stringify(bad)));
+ assert.throws(()=>parseSavedAudit('not json'));
+});
+test('offline replay explicitly labels saved output and never requests remote media',()=>{
+ const html=render(createElement(AuditResult,{audit:{...fixture('consistent'),overlay_url:'/media/test/overlay.svg'},replay:true}));
+ assert.match(html,/已儲存結果重播/);assert.doesNotMatch(html,/<img|<video/);assert.match(html,/123.456789/);
+});
+
+test('bounce upload, saved replay and verdicts use the selected model with raw rebound ratios',async()=>{
+ let body;const api=createApi('',async(url,init)=>{body=init.body;return Response.json({...fixture('consistent'),assumed_model:'bounce'})});
+ await api.audit(new File(['fixture'],'bounce.mp4'),0,2,true,undefined,'bounce');assert.equal(body.get('assumed_model'),'bounce');
+ for(const v of ['consistent','inconsistent','insufficient_data']){const a={...fixture(v),assumed_model:'bounce',numbers:{rebound_ratio_1:0.7654321}};assert.deepEqual(parseSavedAudit(JSON.stringify(a)),a);const html=render(createElement(AuditResult,{audit:a,replay:true}));assert.match(html,/彈跳模型/);assert.match(html,/rebound_ratio_1/);assert.match(html,/0.7654321/);assert.doesNotMatch(html,/自由落體模型/)}
+});
+
+test('event timeline sorts exact timestamps, keeps backend details and labels all event types',()=>{
+ const events=[{kind:'position_jump',t_s:2,detail:'raw position detail'},{kind:'vanished',t_s:0.123456,detail:'raw missing detail'},{kind:'size_jump',t_s:1,detail:'raw size detail'}];
+ const html=rawRender(createElement(EventTimeline,{events}));assert.ok(html.indexOf('0.123456')<html.indexOf('2 s'));for(const label of ['Disappearance','Size jump','Position jump','raw missing detail'])assert.ok(html.includes(label));assert.equal(events[0].t_s,2);
+});
+test('size-trend refusal shows the exact backend value and retains backend reasons',()=>{
+ const html=rawRender(createElement(AuditResult,{audit:{...fixture('insufficient_data'),numbers:{size_trend:-0.456789}}}));assert.match(html,/Size trend limitation/);assert.match(html,/-0.456789/);assert.match(html,/fixture reason/);assert.match(html,/does not establish a cause/);
+});
+
+test('audit links round-trip encoded IDs, resolve audit route and use read-only GET',async()=>{
+ const {auditHash,auditIdFromHash,resolveRoute}=await import('../.test-dist/experiment.js');
+ for(const id of ['audit-123','id with space','id/slash']){assert.equal(auditIdFromHash(auditHash(id)),id);assert.equal(resolveRoute(auditHash(id)),'audit')}
+ for(const hash of ['#/audits/','#/audits/%ZZ','#setup'])assert.equal(auditIdFromHash(hash),null);
+ let path,init;await createApi('',async(p,i)=>{path=p;init=i;return Response.json(fixture('consistent'))}).getAudit('id/slash');assert.equal(path,'/api/audits/id%2Fslash');assert.equal(init.method,undefined);
+ const html=rawRender(createElement(AuditResult,{audit:fixture('consistent')}));assert.match(html,/href="#\/audits\/ui-fixture"/);
+ assert.doesNotMatch(rawRender(createElement(AuditResult,{audit:fixture('consistent'),replay:true})),/Open result link/);
+});
+
+test('stable test selectors survive language switching and identify audit controls and result blocks',()=>{
+ for(const lang of ['en','zh']){const page=rawRender(createElement(LanguageProvider,{value:lang},createElement(AuditPage,{api:createApi('',async()=>Response.json({}))})));for(const id of ['audit-submit','audit-load','audit-import-json','audit-video-input','audit-model','audit-id'])assert.match(page,new RegExp('data-testid="'+id+'"'));
+ const result=rawRender(createElement(LanguageProvider,{value:lang},createElement(AuditResult,{audit:fixture('consistent')})));for(const id of ['audit-result','audit-verdict','audit-events','audit-export-json','audit-export-markdown'])assert.match(result,new RegExp('data-testid="'+id+'"'));}
+});
+
+test('pendulum uses optional user length and preserves backend periods in saved replay',async()=>{
+let body;const api=createApi('',async(u,i)=>{body=i.body;return Response.json({})});await api.audit(new File(['fixture'],'p.mp4'),0,5,true,undefined,'pendulum',undefined,0.7);assert.equal(body.get('length_m'),'0.7');assert.equal(body.get('assumed_model'),'pendulum');
+const a={...fixture('consistent'),assumed_model:'pendulum',length_m:0.7,numbers:{period_s:1.23456,implied_length_m:0.76543,predicted_period_s:1.54321}};assert.deepEqual(parseSavedAudit(JSON.stringify(a)),a);const html=render(createElement(AuditResult,{audit:a,replay:true}));for(const t of ['單擺模型','1.23456','0.76543','1.54321'])assert.ok(html.includes(t));assert.throws(()=>parseSavedAudit(JSON.stringify({...a,length_m:-1})));
+});
+
+test('bounce chart sorts backend ratio indices and renders a reference and accessible data',async()=>{const {BounceChart}=await import('../.test-dist/BounceChart.js');const html=rawRender(createElement(BounceChart,{numbers:{rebound_ratio_2:1.23456,rebound_ratio_1:.654321,other:99}}));assert.match(html,/Rebound height ratios/);assert.match(html,/1.0/);assert.ok(html.indexOf('rebound_ratio_1')<html.indexOf('rebound_ratio_2'));assert.match(html,/title="1.23456"/);assert.doesNotMatch(html,/other/);assert.match(html,/tolerance/)});
+
+test('interview source labels distinguish real model questions from fixed mock questions',async()=>{const {InterviewQuestions}=await import('../.test-dist/InterviewPanel.js');for(const source of ['mock','model']){const html=rawRender(createElement(InterviewQuestions,{draft:{draft_id:'fixture',video_url:'',interview:{source,note:'fixture note',questions:[{field:'camera_static',text:'fixture question'}]}}}));assert.match(html,/fixture question/);assert.match(html,/fixture note/);assert.match(html,source==='mock'?/Fixed questions \(mock\)/:/Questions by Muse Spark/);if(source==='mock')assert.doesNotMatch(html,/Questions by Muse Spark/)}});
+
+test('reviewer-facing English copy avoids provenance labels and internal test terminology',async()=>{
+ const {Home}=await import('../.test-dist/Home.js');const a={...fixture('consistent'),audit_id:'example',reasons:['Observed motion fits the assumed model.'],limits:['Fixed camera required.'],synthetic:true};
+ const html=rawRender(createElement(AuditResult,{audit:a,replay:true}))+rawRender(createElement(Home));assert.doesNotMatch(html,/\b(real|fake|detect|fixture)\b|AI-generated|draft id/i);assert.match(html,/Consistent with the assumed free-flight model/);assert.match(html,/SYNTHETIC/);
+});
+
+test('slow-motion answers preserve yes, no and unknown with verbatim backend refusal',async()=>{const {auditMarkdown}=await import('../.test-dist/auditReport.js');const {physicsCardLines}=await import('../.test-dist/cardExport.js');for(const value of [true,false,null,undefined]){const a={...fixture('insufficient_data'),slow_motion:value,reasons:['slow motion: timing cannot be checked at 0.123456 s']};const html=rawRender(createElement(AuditResult,{audit:a,replay:true}));const label=value===true?'Yes':value===false?'No':'Not provided';assert.ok(html.includes(label));assert.ok(physicsCardLines(a).join(' ').includes(label));assert.match(auditMarkdown(a),/Slow motion/);assert.match(html,/slow motion: timing cannot be checked at 0.123456 s/);assert.equal(parseSavedAudit(JSON.stringify(a)).slow_motion,value)}assert.throws(()=>parseSavedAudit(JSON.stringify({...fixture('consistent'),slow_motion:'true'})))});
