@@ -7,3 +7,10 @@ timestamp_utc,model,operation,input_tokens,cached_tokens,output_tokens,images,fr
 2026-10-29T03:34:41.530690+00:00,muse-spark-1.3,spark.interview_audit,4084,0,1219,0,0,0.0,0.010286
 2026-10-29T03:34:47.890204+00:00,muse-spark-1.3,spark.interview_audit,4084,0,1447,0,0,0.0,0.011255
 2026-10-29T03:37:03.011235+00:00,muse-spark-1.3,spark.interview_audit,4084,4067,1651,0,0,0.0,0.007648
+2026-10-29T09:17:20.649944+00:00,muse-spark-1.3,spark.explain_result,1160,0,3634,0,0,0.0,0.016894
+2026-10-29T09:17:27.723293+00:00,muse-spark-1.3,spark.write_headline,194,0,1851,0,0,0.0,0.008109
+2026-10-29T09:17:54.861029+00:00,muse-spark-1.3,spark.explain_result,2347,0,3397,0,0,0.0,0.017371
+2026-10-29T09:18:06.002850+00:00,muse-spark-1.3,spark.write_headline,194,0,2473,0,0,0.0,0.010753
+2026-10-29T09:19:26.639802+00:00,muse-spark-1.3,spark.explain_result,2371,0,3966,0,0,0.0,0.019819
+2026-10-29T09:19:38.082828+00:00,muse-spark-1.3,spark.explain_result,2371,0,2690,0,0,0.0,0.014396
+2026-10-29T09:19:46.298348+00:00,muse-spark-1.3,spark.write_headline,194,0,1876,0,0,0.0,0.008216
