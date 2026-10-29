@@ -249,6 +249,31 @@ def test_model_explanation_and_headline_used_only_when_they_pass_checks(tmp_path
     assert good["verdict"] == bad["verdict"]
 
 
+def test_batch_switch_skips_paid_model_text(tmp_path, monkeypatch):
+    from backend.model_hooks import MockHooks, get_hooks, set_hooks
+
+    calls = []
+
+    class CountingSpark(MockHooks):
+        def explain_audit(self, audit):
+            calls.append("explain")
+            return "unused"
+
+        def headline_audit(self, audit):
+            calls.append("headline")
+            return "unused"
+
+    write_clip(tmp_path / "real.mp4", 9.81)
+    monkeypatch.setenv("SLOPE_MODEL_TEXT", "0")  # what scripts/audit_batch.py sets unless --explain
+    old = get_hooks()
+    try:
+        set_hooks(CountingSpark())
+        out = post(tmp_path / "real.mp4").json()
+    finally:
+        set_hooks(old)
+    assert calls == [] and out["explanation"]["source"] == "template" and out["headline"] is None
+
+
 def test_object_suggestion_and_voice_answers_are_checked_and_never_confirmed(tmp_path):
     from backend.model_hooks import MockHooks, get_hooks, set_hooks
 
