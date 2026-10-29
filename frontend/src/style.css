@@ -27,3 +27,16 @@ article,figure,details,.results-grid,.demo-grid{min-width:0;max-width:100%}h1,h2
 @media(prefers-reduced-motion:reduce){html:focus-within{scroll-behavior:auto}}
 
 .pair-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.pair-grid>div{min-width:0}.pair-grid section{padding:12px}@media(max-width:900px){.pair-grid{grid-template-columns:minmax(0,1fr)}}
+
+.print-report,#audit-print-root{display:none}
+@media print{
+ @page{size:A4 portrait;margin:12mm}
+ body:has(#audit-print-root)>*:not(#audit-print-root){display:none!important}
+ #audit-print-root{display:block!important;color:#000;background:#fff;font:9pt/1.25 system-ui}
+ #audit-print-root h1{font-size:17pt;margin:0 0 4mm}#audit-print-root h2{font-size:12pt;margin:3mm 0}
+ #audit-print-root p{font-size:9pt;line-height:1.25;margin:2mm 0;color:#000}
+ #audit-print-root svg{max-height:48mm;width:100%}#audit-print-root figure{margin:2mm 0;break-inside:avoid}
+ #audit-print-root .print-numbers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2mm}
+ #audit-print-root dt,#audit-print-root dd{margin:0;overflow-wrap:anywhere}#audit-print-root li{margin:1mm 0}
+ #audit-print-root .source-label{padding:1mm;background:#fff;color:#000}
+}
