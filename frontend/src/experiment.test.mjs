@@ -7,7 +7,7 @@ function validExperiment() {
   return e;
 }
 test('home, five coaching routes and audit resolve; unknown and empty routes open the audit', () => {
-  assert.equal(pages.length, 10);
+  assert.equal(pages.length, 12);
   for (const {route} of pages) assert.equal(resolveRoute('#' + route), route);
   assert.equal(resolveRoute('#unknown'), 'audit');
   assert.equal(resolveRoute(''), 'audit');
@@ -61,3 +61,5 @@ test('editing invalidates saved calibration; replacing media clears stale points
 });
 
 // Audit deep links retain encoded IDs and do not alter the five-step draft.
+
+test("saved example route opens without treating its key as a backend ID",()=>{assert.equal(resolveRoute("#examples/real_own_2"),"examples")});

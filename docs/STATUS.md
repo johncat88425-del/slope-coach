@@ -93,14 +93,14 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T117 Codex：英文介面全面檢查（評審看英文）：所有新頁面都要有英文，用詞照 AGENTS 規則（consistent／inconsistent／insufficient data with the assumed model） — commit fa18e96
 - [x] T118 Codex：首頁 30 秒自動導覽模式（給 demo 錄影用）：依序顯示 real_own_2 → generated_meta_clip2 → generated_meta_clip4（拒判），每步有一句英文說明，可暫停 — commit 9428051
 
-- [ ] T142 Codex：（T133 之後做）時間窗選擇器加「建議的時間窗」按鈕：呼叫 `POST /api/audit-drafts/{id}/windows`，把候選畫成時間軸上的色塊，點一下就把把手移過去，使用者還是要按「確認時間窗」。標明「由程式建議（未使用模型）」
-- [ ] T133 Codex：上傳後可以在瀏覽器預覽影片，拖動兩個把手選 `t_start`、`t_end`（顯示到 0.01 秒），使用者按「確認時間窗」才送出。時間只來自使用者操作，前端不猜
-- [ ] T135 Codex：「How it works」頁（英文為主）：流程圖 Muse 問問題 → SAM 3.1／顏色追蹤 → physics 擬合 → 判定 → 說明，每一步標明「Meta model」或「deterministic code」，並標出目前哪些是 mock（照 `track_source`、`explanation.source` 的實際值，不要寫死成已接上）
-- [ ] T136 Codex：首頁給評審的開場區：一句話說明 + 三張卡片（real_own_2 一致、generated_meta_clip2 不一致、generated_meta_clip4 資料不足），點下去開那筆紀錄
-- [ ] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤
-- [ ] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS
-- [ ] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS
-- [ ] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試
+- [x] T142 Codex：（T133 之後做）時間窗選擇器加「建議的時間窗」按鈕：呼叫 `POST /api/audit-drafts/{id}/windows`，把候選畫成時間軸上的色塊，點一下就把把手移過去，使用者還是要按「確認時間窗」。標明「由程式建議（未使用模型）」 — commit 593ecf8
+- [x] T133 Codex：上傳後可以在瀏覽器預覽影片，拖動兩個把手選 `t_start`、`t_end`（顯示到 0.01 秒），使用者按「確認時間窗」才送出。時間只來自使用者操作，前端不猜 — commit 66249bc
+- [x] T135 Codex：「How it works」頁（英文為主）：流程圖 Muse 問問題 → SAM 3.1／顏色追蹤 → physics 擬合 → 判定 → 說明，每一步標明「Meta model」或「deterministic code」，並標出目前哪些是 mock（照 `track_source`、`explanation.source` 的實際值，不要寫死成已接上） — commit 8499d85
+- [x] T136 Codex：首頁給評審的開場區：一句話說明 + 三張卡片（real_own_2 一致、generated_meta_clip2 不一致、generated_meta_clip4 資料不足），點下去開那筆紀錄 — commit cc65c0a
+- [x] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤 — commit a25a94b
+- [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
+- [x] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS — commit b3717c3
+- [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 041eb73
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -490,3 +490,17 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T118：首頁可啟動 30 秒導覽，固定 own_2→meta_clip2→meta_clip4，各 10 秒、可暫停續播，只讀儲存結果。補三判定順序與全部 10 份結果 schema 測試；npm 69 pass、build pass；pytest 78 pass/1 fail（drawtext 已列待決定）。
 
 - 10/28 Codex 工作總結：順序表 T100→T101→T102→T103→T104→T105→T113→T114→T115→T116→T117→T118 的前端實作已各分支提交，PR #46 待審；再次 pull main 無新增 Codex 待辦。npm 69 pass、build pass；pytest 78 pass/1 fail（ffmpeg drawtext 缺口）。T105 實際 viewport／鍵盤、T115 列印視覺驗收未完成；T113 細分階段 API、T116 語音 API 尚缺，按誠實降級實作並列待決定。未推 main。
+- 10/29 Codex T133：一般稽核與偵訊共享本機影片預覽、兩個鍵盤可用時間把手與 0.01 秒輸入；必須確認時間窗才能送出，改界線／重選片即失效。不自動猜起終點。npm/build 通過；pytest drawtext 環境缺口仍列待決定。
+- 10/29 Codex T142：接 POST draft/windows，候選以時間軸色塊與鍵盤按鈕顯示；選取只移把手，不自動確認。標示程式建議未使用模型，一般稽核重用該草稿送出，不重複傳影片。補端點測試，測試環境補既定 SDK。
+- 10/29 Codex T136：稽核首頁加入指定三筆結果卡與一句話開場，點擊 #examples/key 開對應儲存證據，不把範例 key 當後端 ID。npm 72 pass、build pass；pytest 187 pass/4 fail（本機缺 meta-sam-parser、drawtext）。
+
+- 10/29 Codex 測試環境：合併 Muse 後，已補專案既定 OpenAI SDK 到 /tmp 測試環境；pytest 仍有 3 項缺 meta-sam-parser、1 項 ffmpeg 無 drawtext。未改後端或跳過測試。
+- 10/29 Codex T137：支援 /audit/id 與既有 hash 連結，GET 讀取與 404 友善錯誤；結果可複製 origin+編碼ID連結。部署需 SPA fallback 到 index.html，未部署或改伺服器。npm 73 pass、build pass；pytest 環境 4 項失敗保留。
+
+- T138 靜態建置：在 repo 執行 `VITE_DEMO_ONLY=1 npm --prefix frontend run build`，輸出 frontend/dist。只打包 data/demo 紀錄，關閉上傳、教練後端操作與自動讀取；API 層亦拒絕所有網路呼叫。可用 `npm --prefix frontend run preview` 本機預覽；本次不公開部署。/audit/id 深連結仍需主機 SPA fallback。
+- 10/29 Codex T138：VITE_DEMO_ONLY=1 建置只用保存紀錄，停用上傳與教練操作、抑制自動讀取；API 層 read/upload/XHR 全阻擋。分享 ID 僅查本地 catalog。標準／靜態 build 均通過，npm74 pass；完整 pytest4項環境失敗。build指令與SPA要求已寫STATUS。
+- 10/29 Codex T135：#how 五步流程以 Meta model／deterministic code／user input 分清來源；可選紀錄查看實際 track_source、explanation.source。問答來源未保存在紀錄時明示未知，不宣稱已啟用模型。npm/build 通過；pytest4項環境失敗。
+- 10/29 Codex T140：七個結果元件在三模型下遍歷空 points、稀疏 numbers、缺 explanation、nearest_body=null；不崩潰、不產生 NaN／假數字、不修改輸入。npm76 pass、build pass；完整 pytest4項環境失敗。
+- 10/29 Codex T139：大頁面與範例資料按需載入，React 共用chunk可快取。production entry 64,514 bytes（gzip前），React另222.29 kB；原主入口約426.87 kB。靜態entry64,182 bytes。build加入250000bytes自動門檻；npm76 pass，標準／demo build pass，pytest187 pass/4 fail（本機缺SAM解碼套件與drawtext）。
+
+- 10/29 Codex 工作總結：T133→T142→T136→T137→T138→T135→T140→T139 已各分支完成並推送；最新 pull 無 Codex 未勾項。最終 npm76 pass，標準 build entry64,514bytes、demo build entry64,182bytes（均gzip前），React另222.29kB。範例強制 replay，靜態模式不取後端媒體。依 Muse 已合併的需求在 /tmp 測試環境安裝 meta-sam-parser 後 SAM 三測試通過，完整 pytest190 pass/1 fail，只剩 ffmpeg缺drawtext；未略過測試、不改後端。未公開部署、瀏覽器視覺驗收仍待 Antigravity。
