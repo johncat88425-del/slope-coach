@@ -47,7 +47,8 @@ SETUP_PROMPT = (
     "slope_height_m (vertical height in meters), release_notes (how the user "
     "says they will release the slider, as plain words). Use null for any "
     "value the speaker did not state; never guess or convert units beyond "
-    "what was said. Return JSON only."
+    "what was said. Return JSON only, with exactly these keys: "
+    '"slope_length_m", "slope_height_m", "release_notes".'
 )
 
 

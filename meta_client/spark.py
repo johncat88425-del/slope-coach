@@ -50,7 +50,9 @@ SCENE_PROMPT = (
     "heavy perspective, path cut off) and list each problem as a short phrase in "
     "retake_reasons. Describe only what is visible; do not claim proof or causes "
     "(no 'proves', 'confirms', 'must be', 'caused by'). "
-    "Do not output any measurements, coordinates, or numbers."
+    "Do not output any measurements, coordinates, or numbers. "
+    "Use exactly these JSON keys: has_ruler, has_slope, has_slider, "
+    "is_side_view, needs_retake, retake_reasons."
 )
 
 RELEASE_SCHEMA: dict[str, Any] = {
@@ -71,7 +73,8 @@ RELEASE_PROMPT = (
     "happening (for example 'hand lifts away, then the block moves') and must "
     "not contain any other numbers: no frame numbers, coordinates, distances, "
     "speeds, or time ranges. One candidate moment plus a plain-language reason. "
-    "Do not claim proof or causes (no 'proves', 'confirms', 'must be')."
+    "Do not claim proof or causes (no 'proves', 'confirms', 'must be'). "
+    'Use exactly these JSON keys: "candidate_t0_s", "reason".'
 )
 
 _MIME_BY_SUFFIX = {
@@ -221,7 +224,8 @@ SEGMENT_PROMPT = (
     "must not contain any other numbers: no frame numbers, coordinates, "
     "distances, speeds, or extra times. The times are suggestions a user must "
     "confirm, never measurements. Do not claim proof or causes "
-    "(no 'proves', 'confirms', 'must be')."
+    "(no 'proves', 'confirms', 'must be'). Use exactly these JSON keys: "
+    '"object", "assumed_model", "candidate_t_start", "candidate_t_end", "reason".'
 )
 
 
@@ -461,7 +465,8 @@ CAPTURE_PROMPT = (
     "problem as a short phrase in reasons. Describe only what is visible; do "
     "not claim proof or causes (no 'proves', 'confirms', 'must be'). Do not "
     "output any numbers at all: no times, no frame numbers, no coordinates, "
-    "no distances."
+    "no distances. Use exactly these JSON keys: object, camera_static, "
+    "is_side_view, object_visible_throughout, reasons."
 )
 
 

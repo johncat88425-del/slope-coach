@@ -72,7 +72,7 @@ _RULES = (
     "區分 where appropriate; never claim proof or causes (no 證實, 真因, "
     "一定是, proves, confirms, must be). Never frame this as real-vs-"
     "generated video detection: do not write 真影片, 假影片, AI生成, or any "
-    "equivalent. Return JSON only, matching the schema."
+    'equivalent. Return JSON only, matching the schema: exactly one key, "explanation".'
 )
 
 _PROMPTS_EN = {
@@ -99,7 +99,7 @@ _RULES_EN = (
     "proof or causes (no proves, confirms, must be, caused by). Never frame "
     "this as real-vs-generated video detection: do not write real video, "
     "fake video, AI-generated, or any equivalent. Return JSON only, matching "
-    "the schema."
+    'the schema: exactly one key, "explanation".'
 )
 
 
