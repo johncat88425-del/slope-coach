@@ -95,7 +95,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 
 - [x] T142 Codex：（T133 之後做）時間窗選擇器加「建議的時間窗」按鈕：呼叫 `POST /api/audit-drafts/{id}/windows`，把候選畫成時間軸上的色塊，點一下就把把手移過去，使用者還是要按「確認時間窗」。標明「由程式建議（未使用模型）」 — commit 593ecf8
 - [x] T133 Codex：上傳後可以在瀏覽器預覽影片，拖動兩個把手選 `t_start`、`t_end`（顯示到 0.01 秒），使用者按「確認時間窗」才送出。時間只來自使用者操作，前端不猜 — commit 66249bc
-- [x] T135 Codex：「How it works」頁（英文為主）：流程圖 Muse 問問題 → SAM 3.1／顏色追蹤 → physics 擬合 → 判定 → 說明，每一步標明「Meta model」或「deterministic code」，並標出目前哪些是 mock（照 `track_source`、`explanation.source` 的實際值，不要寫死成已接上） — commit 待回填（本次程式提交）
+- [x] T135 Codex：「How it works」頁（英文為主）：流程圖 Muse 問問題 → SAM 3.1／顏色追蹤 → physics 擬合 → 判定 → 說明，每一步標明「Meta model」或「deterministic code」，並標出目前哪些是 mock（照 `track_source`、`explanation.source` 的實際值，不要寫死成已接上） — commit 8499d85
 - [x] T136 Codex：首頁給評審的開場區：一句話說明 + 三張卡片（real_own_2 一致、generated_meta_clip2 不一致、generated_meta_clip4 資料不足），點下去開那筆紀錄 — commit cc65c0a
 - [x] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤 — commit a25a94b
 - [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
