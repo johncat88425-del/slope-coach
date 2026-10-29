@@ -14,7 +14,9 @@ from pathlib import Path
 from physics.errors import PhysicsInputError
 from physics.experiments.freefall import check_flight, fit_flight
 
-from backend.video import read_frames, save_overlay, track
+import numpy as np
+
+from backend.video import color_for, probe_fps, read_frames, read_frames_rgb, save_overlay, track, track_color
 
 # Frozen 2026-10-28 before any gate clip was seen. Do not tune per clip.
 GATE_RULES = {
@@ -23,6 +25,9 @@ GATE_RULES = {
     "g_tolerance": 0.15,  # passed to check_flight
     "max_tilt_deg": 15.0,
     "max_rms_fraction": 0.02,
+    # Added 2026-10-29 (T87, 規則變更紀錄): when the human label names a colour ("orange ball"), track
+    # colour + motion instead of plain frame differencing. --tracker frame_diff reproduces the old rule.
+    "tracker": "color_when_named",
 }
 
 COLUMNS = ["clip", "source", "assumed_model", "t_start", "t_end", "camera_static", "object", "object_size_m",
@@ -30,7 +35,7 @@ COLUMNS = ["clip", "source", "assumed_model", "t_start", "t_end", "camera_static
 RESULTS = ("consistent", "inconsistent", "insufficient_data", "refused")
 
 
-def run_clip(row: dict, clips_dir: Path, overlay_dir: Path | None = None) -> dict:
+def run_clip(row: dict, clips_dir: Path, overlay_dir: Path | None = None, tracker: str | None = None) -> dict:
     out = {k: row.get(k, "") for k in ("clip", "source", "assumed_model", "object")}
     out["track_ok"] = (row.get("track_ok") or "").strip().lower()
     missing = [k for k in ("source", "t_start", "t_end", "camera_static") if not (row.get(k) or "").strip()]
@@ -41,8 +46,18 @@ def run_clip(row: dict, clips_dir: Path, overlay_dir: Path | None = None) -> dic
     if row["camera_static"].strip().lower() not in ("yes", "y", "1", "true"):
         return out | {"result": "refused", "why": "camera not static (human label)"}
     start, end = float(row["t_start"]), float(row["t_end"])
-    frames, fps = read_frames(str(clips_dir / row["clip"]), start, end)
-    pts, size_px = track(frames, fps, start, GATE_RULES["diff_threshold"])
+    path = str(clips_dir / row["clip"])
+    color = color_for(row.get("object", "")) if (tracker or GATE_RULES["tracker"]) != "frame_diff" else None
+    if color:
+        rgb = read_frames_rgb(path, start, end)
+        fps = probe_fps(path)
+        pts, sizes = track_color(rgb, fps, start, color, GATE_RULES["diff_threshold"])
+        size_px = float(np.median(sizes)) if sizes else None
+        frames = rgb.mean(axis=-1)
+    else:
+        frames, fps = read_frames(path, start, end)
+        pts, size_px = track(frames, fps, start, GATE_RULES["diff_threshold"])
+    out["tracker"] = f"color:{color}" if color else "frame_diff"
     if overlay_dir is not None:
         overlay_dir.mkdir(parents=True, exist_ok=True)
         save_overlay(frames, pts, start, fps, str(overlay_dir / f"{Path(row['clip']).stem}_track.png"))
@@ -142,7 +157,7 @@ def summary_markdown(s: dict) -> str:
 
 def to_markdown(rows: list[dict]) -> str:
     keys = ["clip", "source", "assumed_model", "result", "why", "g_apparent", "time_factor",
-            "implied_size_m", "tilt_deg", "rms_over_travel", "tracked_fraction", "track_ok"]
+            "implied_size_m", "tilt_deg", "rms_over_travel", "tracked_fraction", "tracker", "track_ok"]
     lines = ["| " + " | ".join(keys) + " |", "|" + " --- |" * len(keys)]
     for r in rows:
         lines.append("| " + " | ".join("" if r.get(k) is None else str(r.get(k, "")) for k in keys) + " |")
@@ -157,10 +172,12 @@ def main() -> None:
     ap.add_argument("--clips", required=True)
     ap.add_argument("--out", default=None)
     ap.add_argument("--overlays", default=None, help="folder for track overlay PNGs (human check)")
+    ap.add_argument("--tracker", default=None, choices=["frame_diff", "color_when_named"],
+                    help="override GATE_RULES['tracker'], e.g. frame_diff to report the pre-T87 results")
     a = ap.parse_args()
     ov = Path(a.overlays) if a.overlays else None
     with open(a.manifest, newline="", encoding="utf-8") as f:
-        rows = [run_clip(r, Path(a.clips), ov) for r in csv.DictReader(f)]
+        rows = [run_clip(r, Path(a.clips), ov, a.tracker) for r in csv.DictReader(f)]
     md = to_markdown(rows)
     if a.out:
         Path(a.out).write_text(md, encoding="utf-8")
