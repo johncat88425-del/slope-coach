@@ -70,7 +70,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
     3. 把 `product_results_sam.md` 的表格貼到 STATUS「關卡結果」下面的新小節「SAM 對照」，和 `data/gate/product_results.md`（顏色追蹤版）並排。兩版都要報告，不准只放好看的，也不准改 manifest 的標註
     4. 花費記進成本紀錄，commit `data/gate/product_results_sam.md`＋STATUS，push 分支 `muse/T107-sam-rerun`
 - [ ] T108 Muse：Spark 看第一格畫面，建議 `object_name`（例如 orange basketball）和「鏡頭看起來固定嗎」。只是建議，要使用者確認才會用；回傳要過 schema 和 `check_model_text`
-- [x] T109 Muse：語音回答偵訊問題：`muse-voice-transcribe-1.0` 把使用者說的話轉成文字，Spark 抽出欄位（例如物體大小），**數字一定要使用者在畫面上確認**才送出。沒有金鑰時用 mock — commit TBD（voice.answer_interview_voice：轉錄→extract_interview_fields→每欄 {value, confirmed: False}；尺寸回原文 value+unit、程式換算成米；無 key 回 mock。4 mock 測試。抽欄位真打 7 次（含 2 輪形狀修正：尺寸字串／window 陣列寬容＋口語數字轉阿拉伯數字範例）後完整抽出；注意模型從動詞 flies 推得 assumed_model，照樣待確認。$0.164，累計 $0.435）
+- [x] T109 Muse：語音回答偵訊問題：`muse-voice-transcribe-1.0` 把使用者說的話轉成文字，Spark 抽出欄位（例如物體大小），**數字一定要使用者在畫面上確認**才送出。沒有金鑰時用 mock — commit 72dff6d（voice.answer_interview_voice：轉錄→extract_interview_fields→每欄 {value, confirmed: False}；尺寸回原文 value+unit、程式換算成米；無 key 回 mock。4 mock 測試。抽欄位真打 7 次（含 2 輪形狀修正：尺寸字串／window 陣列寬容＋口語數字轉阿拉伯數字範例）後完整抽出；注意模型從動詞 flies 推得 assumed_model，照樣待確認。$0.164，累計 $0.435）
 - [ ] T110 Muse：花費顯示：後端 `/api/spend` 回傳目前累計花費和 120 美元上限，給前端顯示。到上限時所有付費呼叫拒絕，並有測試
 - [ ] T111 Muse：每一個用到 Meta 模型的回傳都帶 `source`（model 名稱與版本），讓畫面能標示「由 Muse Spark 1.3 產生」「由 SAM 3.1 追蹤」
 - [ ] T112 Muse：（後端已由 Claude T143 做好）在 `MetaHooks` 加兩個方法：`explain_audit(audit: dict) -> str | None` 呼叫 `explain.explain_result(audit, kind="audit")`，`headline_audit(audit: dict) -> str | None` 呼叫 `headline.write_headline(audit)`。失敗就回 None 或丟例外，後端會退回固定模板，也會再檢查一次數字和禁用字。用 john 的 own_2 和 meta clip2 真打各一次，結果和花費寫進 STATUS
