@@ -1,5 +1,5 @@
 import {createRequestGate} from './requestFeedback.js';
-import {verdictLabel} from './verdictLabel.js';
+import {verdictLabel,motionLabel} from './verdictLabel.js';
 import {createSelectedDraft} from './selectedDraft.js';
 import {RetakeGuide} from './RetakeGuide.js';
 import {ModelUsage} from './ModelUsage.js';
@@ -41,11 +41,11 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource }
  <section data-testid="audit-reasons"><h3>原因</h3><ul>{audit.reasons.map((reason,i)=><li key={i}><Verbatim text={reason}/></li>)}</ul></section>
  <details data-testid="audit-details"><summary>Details</summary>
  {replay&&<p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">SYNTHETIC test example — program-drawn motion.</p>}
- <p>稽核 {audit.audit_id} · 假設：{audit.assumed_model} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
+ <p>稽核 {audit.audit_id} · 假設：{motionLabel(audit.assumed_model)} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
  {!replay&&<p><a href={'/audit/'+encodeURIComponent(audit.audit_id)}>Open result link</a><button data-testid="copy-audit-link" onClick={async()=>{try{await navigator.clipboard.writeText(shareAuditUrl(audit.audit_id,location.origin));setCopyStatus('Link copied.')}catch{setCopyStatus('Could not copy. Use the result link.')}}}>Copy link</button><span role="status">{copyStatus}</span></p>}
  <p data-testid="audit-slow-answer">Slow motion or retimed playback (user): {audit.slow_motion===true?'Yes':audit.slow_motion===false?'No':'Not provided'}</p>
  {audit.slow_motion===true&&audit.verdict==='insufficient_data'&&<aside data-testid="audit-timing-limit"><h3>Reported limitations</h3>{audit.reasons.map((r,i)=><blockquote key={i}><Verbatim text={r}/></blockquote>)}</aside>}
- <RetakeGuide verdict={audit.verdict} reasons={audit.reasons}/><ModelUsage audit={audit} interviewSource={interviewSource}/><GravityRuler numbers={audit.numbers}/><h3>後端計算數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
+ <RetakeGuide verdict={audit.verdict} reasons={audit.reasons}/><ModelUsage audit={audit} interviewSource={interviewSource}/><GravityRuler numbers={audit.numbers}/><h3>量測數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <GhostReview audit={audit} url={replay ? undefined : videoUrl??mediaUrl(audit.video_url, import.meta.env?.VITE_API_BASE_URL)}/><Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
  {audit.assumed_model==='bounce'&&<BounceChart numbers={audit.numbers}/>}
@@ -75,7 +75,7 @@ export function AuditPage({ api, auditId = null }: {
     const [objectName,setObjectName]=useState('ball');
     const [model, setModel] = useState<AuditModel>('free_flight');
     useEffect(()=>{
-        if(!auditId){setBusy(false);return;}let cancelled=false;setBusy(true);setError('');selectedDraft.current.clear();setAudit(null);setPreview('');setReplay(DEMO_ONLY);setInterviewSource(null);setId(auditId);
+        if(!auditId){setBusy(false);return;}let cancelled=false;setRequestPhase('loading');setBusy(true);setError('');selectedDraft.current.clear();setAudit(null);setPreview('');setReplay(DEMO_ONLY);setInterviewSource(null);setId(auditId);
         (DEMO_ONLY?import('./DemoCatalog.js').then(({demoRecords})=>{const found=demoRecords.find(r=>r.audit.audit_id===auditId||r.key===auditId);if(!found)throw new Error('Saved example not found in this demo.');return found.audit}):api.getAudit(auditId)).then(value=>{if(!cancelled)setAudit(value)}).catch(e=>{if(!cancelled)setError(friendlyApiError(e))}).finally(()=>{if(!cancelled)setBusy(false)});
         return ()=>{cancelled=true};
     },[api,auditId]);

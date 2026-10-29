@@ -1,3 +1,4 @@
+import {verdictLabel} from './verdictLabel.js';
 export type AuditModel='free_flight'|'bounce'|'pendulum';
 export type AuditVerdict='consistent'|'inconsistent'|'insufficient_data';
 export type AuditOut={audit_id:string;created_at:string;headline?:{source:'model';text:string}|null;explanation?:{source:'template'|'model';text:string};object_name?:string;slow_motion?:boolean|null;assumed_model:AuditModel;t_start:number;t_end:number;camera_static:boolean;object_size_m:number|null;generated_clip?:boolean;source?:string;real_clip?:boolean;labels_by?:string;synthetic?:boolean;ghost_points?:[number,number,number][];nearest_body?:string|null;length_m?:number|null;video_url:string;overlay_url:string|null;track_source:'frame_diff'|'color'|'sam'|'manual';verdict:AuditVerdict;reasons:string[];numbers:Record<string,number>;points:[number,number,number][];events:{kind:string;t_s:number;detail:string}[];limits:string[]};
@@ -34,4 +35,4 @@ export function parseSavedAudit(text:string):AuditOut {
  return a as AuditOut;
 }
 
-export function verdictEnglish(a:Pick<AuditOut,'verdict'|'assumed_model'>){return `${a.verdict==='consistent'?'Consistent':a.verdict==='inconsistent'?'Inconsistent':'Insufficient data'} with the assumed ${a.assumed_model.replace('_','-')} model`}
+export function verdictEnglish(a:Pick<AuditOut,'verdict'|'assumed_model'>){return verdictLabel(a.verdict,a.assumed_model)}

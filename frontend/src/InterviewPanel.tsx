@@ -9,7 +9,7 @@ import {ApiError,friendlyApiError} from './api.js';
 import type {AuditOut,AuditModel} from './audit.js';
 import {validateAuditInput} from './audit.js';
 import {Localize} from './i18n.js';
-export function InterviewQuestions({draft}:{draft:AuditDraft}){return <Localize><div data-testid="interview-questions"><p>{draft.interview.source==='model'?'Questions by Muse Spark':'Fixed questions (mock)'}</p>{draft.interview.note&&<p>{draft.interview.note}</p>}<ol>{draft.interview.questions.map(q=><li key={q.field}><strong>{q.text}</strong></li>)}</ol></div></Localize>}
+export function InterviewQuestions({draft}:{draft:AuditDraft}){return <Localize><div data-testid="interview-questions"><p>{draft.interview.source==='model'?'Questions by Muse Spark':'Prepared questions (no model)'}</p>{draft.interview.note&&<p>{draft.interview.note}</p>}<ol>{draft.interview.questions.map(q=><li key={q.field}><strong>{q.text}</strong></li>)}</ol></div></Localize>}
 export function InterviewPanel({api,onResult,disabled=false,onBusyChange}:{api:ReturnType<typeof createApi>;onResult:(audit:AuditOut,source?:'model'|'mock')=>void;disabled?:boolean;onBusyChange?:(busy:boolean)=>void}){
  const requestGate=useRef(createRequestGate());
  const [phase,setPhase]=useState<'preparing'|'checking'>('preparing'),[draftUsable,setDraftUsable]=useState(false);
