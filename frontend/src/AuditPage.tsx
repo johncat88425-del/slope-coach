@@ -17,7 +17,7 @@ import {PhysicsCard} from './PhysicsCard.js';
 import {GhostReview} from './GhostReview.js';
 import {auditHash,shareAuditUrl} from './experiment.js';
 import { Localize } from './i18n.js';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {friendlyApiError} from './api.js';
 import type { createApi } from './api';
 import type { AuditModel, AuditOut } from './audit.js';
@@ -30,12 +30,14 @@ export function EventTimeline({events}:{events:AuditOut['events']}) {
  const labels:Record<string,string>={vanished:'Disappearance',size_jump:'Size jump',position_jump:'Position jump'};
  return <Localize><section data-testid="audit-events" aria-label="Tracking event timeline"><h3>Tracking event timeline</h3><p>Events may reflect tracking or capture problems. Review the original clip; they do not establish a cause.</p>{events.length ? <ol className="event-timeline">{[...events].sort((a,b)=>a.t_s-b.t_s).map((e,i)=><li key={i}><strong>{e.t_s} s · {labels[e.kind]??e.kind}</strong><p>{e.detail}</p><small>{e.kind}</small></li>)}</ol> : <p>No tracking events were reported.</p>}</section></Localize>;
 }
-export function AuditResult({ audit, replay = false, videoUrl, interviewSource }: {
-    audit: AuditOut; replay?: boolean; videoUrl?:string;interviewSource?:'model'|'mock'|null;
+export function AuditResult({ audit, replay = false, videoUrl, interviewSource, autoFocus=false }: {
+    audit: AuditOut; replay?: boolean; videoUrl?:string;interviewSource?:'model'|'mock'|null;autoFocus?:boolean;
 }) {
     const [copyStatus,setCopyStatus]=useState('');
-    return <Localize><article data-testid="audit-result" aria-label="稽核結果">
- <div className={'verdict-banner verdict-'+audit.verdict}><h2 data-testid="audit-verdict">{verdictLabel(audit.verdict,audit.assumed_model)}</h2></div>
+    const result=useRef<HTMLElement>(null),verdictId=useId();
+    useEffect(()=>{if(autoFocus)result.current?.focus()},[autoFocus]);
+    return <Localize><article ref={result} tabIndex={-1} data-testid="audit-result" aria-label="稽核結果" aria-labelledby={verdictId}>
+ <div className={'verdict-banner verdict-'+audit.verdict}><h2 id={verdictId} data-testid="audit-verdict">{verdictLabel(audit.verdict,audit.assumed_model)}</h2></div>
  <ModelHeadline headline={audit.headline}/>
  {audit.explanation&&<section data-testid="audit-explanation"><p>{audit.explanation.source==='model'?'由 Muse Spark 產生':'固定模板（未使用模型）'}</p><p><Verbatim text={audit.explanation.text}/></p></section>}
  <section data-testid="audit-reasons"><h3>原因</h3><ul>{audit.reasons.map((reason,i)=><li key={i}><Verbatim text={reason}/></li>)}</ul></section>
@@ -113,6 +115,6 @@ export function AuditPage({ api, auditId = null }: {
         return; const savedDraft=selectedDraft.current.take();void run(() => savedDraft?api.auditFromDraft(savedDraft,{t_start:Number(start),t_end:Number(end),camera_static:fixed,slow_motion:slowMotion?slowMotion==='yes':undefined,assumed_model:model,object_name:objectName,object_size_m:size.trim()?Number(size):undefined,length_m:model==='pendulum'&&length.trim()?Number(length):undefined}):api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined,objectName,slowMotion?slowMotion==='yes':undefined),true); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input data-testid="audit-id" value={id} onChange={e => setId(e.target.value)}/></label><button data-testid="audit-load" disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
- </fieldset></details><div aria-live="polite">{busy && <AuditProgress percent={uploadPercent} phase={requestPhase}/>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult key={audit.audit_id} audit={audit} replay={replay} videoUrl={matchingAuditPreview(audit.audit_id,previewAuditId,preview)} interviewSource={interviewSource}/>}
+ </fieldset></details><div aria-live="polite">{busy && <AuditProgress percent={uploadPercent} phase={requestPhase}/>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult autoFocus key={audit.audit_id} audit={audit} replay={replay} videoUrl={matchingAuditPreview(audit.audit_id,previewAuditId,preview)} interviewSource={interviewSource}/>}
  </section>}</Localize>;
 }

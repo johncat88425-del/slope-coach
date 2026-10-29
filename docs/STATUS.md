@@ -53,7 +53,7 @@
 
 
 **Codex**（照順序做）
-- [ ] T162 Codex：評審用鍵盤和手機看的品質檢查（只改 `frontend/`）。(1) 只用鍵盤（Tab、Enter、空白鍵）從上傳影片走到看到結果，記下卡住或看不到焦點的地方並修好；(2) 檢查文字和背景的對比至少 4.5:1，不夠的改顏色 token；(3) 390 px 寬時沒有橫向捲動；(4) 每個由模型產生的區塊都有「由 Muse Spark／SAM 3.1 產生」標示，沒有的補上。補測試，`npm test` 和 `npm run build` 都要過，push 分支 `codex/T162-a11y`。
+- [x] T162 Codex：評審用鍵盤和手機看的品質檢查（只改 `frontend/`）。(1) 只用鍵盤（Tab、Enter、空白鍵）從上傳影片走到看到結果，記下卡住或看不到焦點的地方並修好；(2) 檢查文字和背景的對比至少 4.5:1，不夠的改顏色 token；(3) 390 px 寬時沒有橫向捲動；(4) 每個由模型產生的區塊都有「由 Muse Spark／SAM 3.1 產生」標示，沒有的補上。補測試，`npm test` 和 `npm run build` 都要過，push 分支 `codex/T162-a11y`。 — commit 待回填（T162 程式提交）
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
 
 
@@ -249,6 +249,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T113：SAM v2 重跑 7 支（SAM 7 次 $0.077＋explain 15 次 $0.244 含 8 次重試＋headline 4 次 $0.038） | 0.360 | 0.794 |
 
 ## 工作日誌（最新在上）
+
+- 10/29 Codex T162：已用瀏覽器以 Tab／Enter／空白鍵從選片、準備問題、回答、確認時間窗到結果；素材為 repo 既有 meta_clip2，輸入照 manifest，獨立 mock 後端無金鑰、無付費呼叫。發現準備後焦點掉到 BODY，已改交接到物體名；等待提示、漏答錯誤與新結果都有焦點位置及深色焦點框。結果 aria-labelledby 指向各自判定，並排不重複 ID。小標原對比4.48:1，改為顏色 token；移除停用控制項的透明度、保留可讀文字。390×844 實測表單、收合／展開結果、結果牆及並排頁沒有橫向溢出（scrollWidth375≤innerWidth390）；受檢頁面最低文字對比5.49:1，1280px並排亦通過。首頁卡片／結果牆補說明來源徽章；模型、模板／mock 依實際值，既有問題／標題／追蹤／語音來源標示已核對。新增對比、唯一結果標籤、雙語來源測試；npm111 pass、一般與靜態build pass（入口79,391／78,502 bytes）。pytest214 pass／1既有ffmpeg drawtext失敗。只改frontend與本STATUS，資料／後端未改。
 
 - 10/29 12:40 Claude：審查並合併 Codex T159（物體名稱預填，鏡頭建議只顯示文字）與 T160（語音回答逐欄按 Use this 才填入）。
 - 10/29 Codex 沒有待辦了。T159／T160 已完成並推送 PR #70／#74，目標都是 main，兩者已同步最新 main 且可合併。T157 仍待 Claude 資料定版通知，依規則保留未勾；無其他可執行的 Codex 待辦。npm108 pass、標準／靜態 build pass；pytest213 pass／1既有drawtext環境失敗。
