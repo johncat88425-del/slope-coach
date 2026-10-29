@@ -78,3 +78,32 @@ def test_unlabelled_rows_are_not_counted(tmp_path):
     assert r["result"] == "unlabelled"
     s = gate_summary([r, _r("a", "own", "consistent", g=9.8)])
     assert s["unlabelled"] == ["x.mp4"] and s["total"] == 1 and s["refused"] == 0
+
+
+def write_orange_clip(path, g):
+    """Orange 20 px ball thrown in front of a static orange block, with a grey 'arm' moving across."""
+    yy, xx = np.mgrid[:H, :W]
+    frames = []
+    for i in range(int(0.7 * FPS)):
+        t = i / FPS
+        x = 40 + (1.0 / M_PER_PX) * t
+        y = 300 - (2.0 / M_PER_PX) * t + 0.5 * (g / M_PER_PX) * t * t
+        f = np.full((H, W, 3), 230, np.uint8)
+        f[400:470, 500:620] = (240, 140, 40)
+        f[50:250, 300 + 5 * i:360 + 5 * i] = (90, 90, 90)
+        f[(xx - x) ** 2 + (yy - y) ** 2 <= 100] = (240, 140, 40)
+        frames.append(f)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
+                    "-r", str(FPS), "-i", "-", "-pix_fmt", "yuv444p", "-c:v", "libx264", "-qp", "0", str(path)],
+                   input=b"".join(f.tobytes() for f in frames), check=True)
+
+
+def test_colour_label_switches_tracker_and_old_rule_is_reproducible(tmp_path):
+    write_orange_clip(tmp_path / "ball.mp4", 9.81)
+    r = row("ball.mp4") | {"object": "orange ball"}
+    new = run_clip(r, tmp_path, tmp_path / "ov")
+    assert new["tracker"] == "color:orange"
+    assert new["result"] == "consistent", new
+    old = run_clip(r, tmp_path, tracker="frame_diff")
+    assert old["tracker"] == "frame_diff"
+    assert old["result"] != "consistent", old

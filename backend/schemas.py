@@ -240,7 +240,7 @@ class AuditOut(BaseModel):
     slow_motion: bool | None = None  # user's answer; True refuses the timing-based checks
     video_url: str
     overlay_url: str | None
-    track_source: Literal["frame_diff", "sam", "manual"]
+    track_source: Literal["frame_diff", "color", "sam", "manual"]
     verdict: Literal["consistent", "inconsistent", "insufficient_data"]
     reasons: list[str]
     numbers: dict[str, float]
