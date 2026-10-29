@@ -452,3 +452,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T116：語音按鈕停用並標 Requires Meta API（沒有端點），不錄音；已提供轉寫文字與欄位編輯、逐欄勾選後才可送出的本地介面。契約缺口已列待決定，不虛構模型結果。npm/build 通過；pytest drawtext 缺口。
 - 10/28 Codex T117：新結果牆、比較、列印與名片統一 assumed-model 英文判定，來源用可讀名稱；後端原文與數字不改寫。測試遍歷三模型三判定；npm/build 通過，pytest drawtext 環境缺口仍列明。
 - 10/28 Codex T118：首頁可啟動 30 秒導覽，固定 own_2→meta_clip2→meta_clip4，各 10 秒、可暫停續播，只讀儲存結果。補三判定順序與全部 10 份結果 schema 測試；npm 69 pass、build pass；pytest 78 pass/1 fail（drawtext 已列待決定）。
+
+- 10/28 Codex 工作總結：順序表 T100→T101→T102→T103→T104→T105→T113→T114→T115→T116→T117→T118 的前端實作已各分支提交，PR #46 待審；再次 pull main 無新增 Codex 待辦。npm 69 pass、build pass；pytest 78 pass/1 fail（ffmpeg drawtext 缺口）。T105 實際 viewport／鍵盤、T115 列印視覺驗收未完成；T113 細分階段 API、T116 語音 API 尚缺，按誠實降級實作並列待決定。未推 main。
