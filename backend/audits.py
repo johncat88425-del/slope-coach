@@ -20,7 +20,7 @@ from . import schemas as S
 from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
 from .output_check import check_model_text
 from .store import UPLOAD_ROOT, new_id, now, store
-from .video import read_frames, save_overlay, track_with_sizes
+from .video import color_for, read_frames, read_frames_rgb, save_overlay, track_color, track_with_sizes
 
 router = APIRouter()
 
@@ -29,7 +29,8 @@ MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (p
 SIZE_ERROR = 0.3  # assumed worst-case error of the object's pixel size, same as gate question 2
 MODELS = ("free_flight", "bounce", "pendulum")
 LIMITS = [
-    "Tracking uses frame differencing, not a model; motion blur inflates the object size.",
+    "Without SAM, tracking is model-free (colour + motion when the object name gives a colour, otherwise frame "
+    "differencing); frame differencing can lock onto other moving things.",
     "Perspective is not modelled: motion towards or away from the camera is not reliable.",
     "The time window and camera state are confirmed by the user.",
 ]
@@ -63,8 +64,9 @@ def checked_interview(iv: S.AuditInterview) -> S.AuditInterview:
 
 
 def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, object_name: str):
-    """SAM 3.1 when connected, otherwise frame differencing. SAM output is normalised and converted
-    here to the same 480 px frame the rest of the audit uses; frames SAM misses stay gaps."""
+    """SAM 3.1 when connected; otherwise colour + motion when the object name gives a colour (T88, same
+    tracker as the gate), otherwise frame differencing. SAM output is normalised and converted here to the
+    same 480 px frame the rest of the audit uses; frames SAM misses stay gaps."""
     h, w = frames.shape[1], frames.shape[2]
     try:
         dets = get_hooks().track_object(video, object_name, t_start, t_end)
@@ -84,6 +86,10 @@ def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, 
             sizes.append(((d.area_px or 0) * w * h) ** 0.5)
         if pts:
             return pts, sizes, "sam"
+    color = color_for(object_name)
+    if color:
+        pts, sizes = track_color(read_frames_rgb(str(video), t_start, t_end), fps, t_start, color)
+        return pts, sizes, "color"
     pts, sizes = track_with_sizes(frames, fps, t_start)
     return pts, sizes, "frame_diff"
 

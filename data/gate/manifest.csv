@@ -1,1 +1,11 @@
 clip,source,assumed_model,t_start,t_end,camera_static,object,object_size_m,track_ok
+own_1_IMG_8426.mov,own,free_flight,1.9,2.6,yes,orange ball,0.11,yes
+own_2_IMG_8429.mov,own,free_flight,0.2,0.8,yes,orange ball,0.11,yes
+own_3_IMG_8434.mov,own,free_flight,2.0,2.4,yes,orange ball,0.11,yes
+meta_clip1.mp4,meta_ai,free_flight,1.5,3.8,yes,orange ping-pong ball,0.04,no
+meta_clip2.mp4,meta_ai,free_flight,0.5,3.0,yes,orange basketball,0.24,yes
+meta_clip3.mp4,meta_ai,free_flight,1.0,5.3,yes,orange basketball,0.24,yes
+meta_clip4.mp4,meta_ai,free_flight,0.0,2.5,yes,orange basketball,0.24,no
+meta_clip5.mp4,meta_ai,free_flight,2.6,3.9,yes,orange basketball,0.24,no
+meta_clip6.mp4,meta_ai,free_flight,1.0,5.8,yes,orange ball,0.11,yes
+manus_clip1.mp4,manus,free_flight,0.8,2.1,yes,orange basketball,0.24,
