@@ -106,7 +106,11 @@ def checked_interview(iv: S.AuditInterview) -> S.AuditInterview:
 def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, object_name: str):
     """SAM 3.1 when connected; otherwise colour + motion when the object name gives a colour (T88, same
     tracker as the gate), otherwise frame differencing. SAM output is normalised and converted here to the
-    same 480 px frame the rest of the audit uses; frames SAM misses stay gaps."""
+    same 480 px frame the rest of the audit uses; frames SAM misses stay gaps.
+
+    Also returns the sample times the tracker looked at: SAM samples at its own rate (15 fps), so the tracked
+    fraction and the gap events are counted against SAM's samples, not the video's frames (T146 fix: counting
+    against 24 or 30 fps frames capped every SAM track at 15/24 = 62% and refused every clip)."""
     h, w = frames.shape[1], frames.shape[2]
     try:
         dets = get_hooks().track_object(video, object_name, t_start, t_end)
@@ -115,9 +119,12 @@ def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, 
     except Exception:  # a model failure falls back to the model-free tracker, never blocks the audit
         dets = None
     if dets:
-        pts, sizes = [], []
+        pts, sizes, times = [], [], []
         for d in sorted(dets, key=lambda d: d.t_s):
-            if d.centroid_px is None or not t_start <= d.t_s <= t_end:
+            if not t_start <= d.t_s <= t_end:
+                continue
+            times.append(d.t_s)
+            if d.centroid_px is None:
                 continue
             x, y = d.centroid_px
             if not (0 <= x <= 1 and 0 <= y <= 1):
@@ -125,13 +132,14 @@ def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, 
             pts.append((d.t_s, x * w, y * h))
             sizes.append(((d.area_px or 0) * w * h) ** 0.5)
         if pts:
-            return pts, sizes, "sam"
+            return pts, sizes, "sam", times
+    times = [t_start + i / fps for i in range(len(frames))]
     color = color_for(object_name)
     if color:
         pts, sizes = track_color(read_frames_rgb(str(video), t_start, t_end), fps, t_start, color)
-        return pts, sizes, "color"
+        return pts, sizes, "color", times
     pts, sizes = track_with_sizes(frames, fps, t_start)
-    return pts, sizes, "frame_diff"
+    return pts, sizes, "frame_diff", times
 
 
 @router.post("/api/audit-drafts", response_model=S.AuditDraftOut, status_code=201)
@@ -223,16 +231,16 @@ def create_audit(
         frames, fps = read_frames(str(video), t_start, t_end)
     except Exception:
         raise HTTPException(422, "could not read video frames in that window")
-    pts, sizes, source = track_points(video, frames, fps, t_start, t_end, object_name)
+    pts, sizes, source, times = track_points(video, frames, fps, t_start, t_end, object_name)
     rec["track_source"] = source
     size_px = sorted(sizes)[len(sizes) // 2] if sizes else None
     save_overlay(frames, pts, t_start, fps, str(d / "overlay.png"))
     rec["overlay_url"] = f"{media}/overlay.png"
     rec["points"] = [[t, x, y] for t, x, y in pts]
     by_t = {round(t, 4): (x, y) for t, x, y in pts}
-    dets = [Detection(t_start + i / fps, by_t.get(round(t_start + i / fps, 4))) for i in range(len(frames))]
+    dets = [Detection(t, by_t.get(round(t, 4))) for t in times]
     rec["events"] = [e.__dict__ for e in persistence_events(dets)]
-    frac = len(pts) / max(len(frames), 1)
+    frac = len(pts) / max(len(times), 1)
     rec["numbers"]["tracked_fraction"] = frac
     if frac < MIN_TRACKED_FRACTION:
         rec["reasons"] = [f"object tracked in only {frac:.0%} of frames"]
