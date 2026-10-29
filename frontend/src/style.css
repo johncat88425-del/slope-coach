@@ -19,3 +19,5 @@ main>*{min-width:0}section,article,fieldset{overflow-wrap:anywhere}input,select,
 .guided-demo{position:sticky;top:0;background:#fff;border-bottom:2px solid #214f45;padding:8px 24px;z-index:20}.guided-demo p{margin:4px 0;max-width:1000px}.guided-demo button{margin:4px 8px 4px 0}.guided-demo~main [data-testid]{scroll-margin-top:180px}
 
 .source-label{display:inline-block;padding:6px 10px;border:1px solid #a8bbb1;border-radius:6px;background:#f3f5f1;color:#213c3b;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+
+.results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px}.results-grid>article{border:1px solid #a8bbb1;padding:16px;min-width:0;overflow-wrap:anywhere}
