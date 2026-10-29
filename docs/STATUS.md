@@ -63,8 +63,7 @@
 
 
 **Antigravity**（照順序做）
-- [ ] T167 Antigravity：（等 john 打開 GitHub Pages、網址能開之後做）打開 https://johncat88425-del.github.io/slope-coach/ ，在 1440px 和 390px 各截 `#demo`、`#wall`、`#audit`、`#compare` 四頁，點一遍所有導覽連結和「Guided demo」。壞掉的連結、空白頁、console 錯誤寫進 STATUS。截圖不 commit，只寫文字結果。push 分支 `antigravity/T167-pages-check`。
-- [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
+- [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
 - [x] T121 Antigravity：效能量測：10 秒 1080p 影片 `/api/audits` 跑完耗時：顏色追蹤 1.13s、frame differencing 0.36s（目標 < 20s，通過；Claude 在雲端重跑 6.65s／1.53s，也通過。註：腳本只量 0–5 秒的時間窗）— commit b83b4d1
 - [x] T122 Antigravity：照 README 在乾淨目錄從零安裝：前端 111 測試通過；後端要用 README 寫的 `python3.11`（Homebrew 預設 3.14 建 venv 會失敗）。註：STATUS 提到的 commit 9db92e3（gate_prepare 的 drawtext 退路）沒有 push 到 GitHub，main 沒有這個改動 — commit 2c4af33
