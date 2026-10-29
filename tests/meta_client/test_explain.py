@@ -56,6 +56,34 @@ def test_explain_rejects_ungrounded_number(tmp_path, monkeypatch):
     assert len(fake.responses.calls) == 3
 
 
+AUDIT_PAYLOAD = {
+    "verdict": "inconsistent",
+    "numbers": {"g_apparent_m_s2": 0.24, "g_vs_earth": 0.02},
+    "reasons": ["apparent g 0.24 m/s^2 is outside 8.34-11.28"],
+}
+
+
+def test_explain_accepts_numbers_from_reason_sentences(tmp_path, monkeypatch):
+    # T115: thresholds live in reason strings, not numeric fields; quoting
+    # them must pass because the prompt allows payload numbers.
+    fake = _setup(monkeypatch, tmp_path, "表觀重力約 0.24，低於 8.34 到 11.28，與假設不一致。")
+    out = explain.explain_result(AUDIT_PAYLOAD, kind="audit")
+    assert "不一致" in out["explanation"]
+    assert len(fake.responses.calls) == 1  # no retry
+
+
+def test_explain_still_rejects_absent_numbers(tmp_path, monkeypatch):
+    # Strictness preserved: 9.81 and frame rates appear nowhere in this
+    # payload, so quoting them still fails.
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    for text in ("表觀重力約 0.24，遠低於 9.81，與假設不一致。",
+                 "以 15 fps 追蹤，表觀重力約 0.24，與假設不一致。"):
+        fake = _setup(monkeypatch, tmp_path, text)
+        with pytest.raises(ModelOutputError, match="output check failed"):
+            explain.explain_result(AUDIT_PAYLOAD, kind="audit")
+        assert len(fake.responses.calls) == 3
+
+
 def test_explain_rejects_causal_overclaim(tmp_path, monkeypatch):
     monkeypatch.setattr(time, "sleep", lambda s: None)
     _setup(monkeypatch, tmp_path, "這證實了摩擦力是真因。")

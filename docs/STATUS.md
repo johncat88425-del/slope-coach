@@ -15,11 +15,11 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T114（自拍影片也用 SAM 跑）→ T115（解說常驗證失敗的原因） |
+| **Muse** | T117（demo 用 SAM 版紀錄） |
 | **Codex** | T162 →（等 Claude 寫「demo 資料已定版」）T157 |
 | **Antigravity** | T161 → T121 → T122 → T53 → T68 |
 | **Manus** | T163 → T22 |
-| **Claude** | 審查合併 PR；T114 合併後產生最終結果表與 demo 資料；README 與提交前檢查 |
+| **Claude** | 審查合併 PR；T117 合併後寫「demo 資料已定版」；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
 
 ## 提交前路線圖（10/29 09:30 Claude，john 要求一次列完；截止 11/04 21:00 ET，我們目標 11/03 交）
@@ -48,8 +48,10 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
-- [ ] T114 Muse：自拍影片也用 SAM 跑（demo 要「同一種追蹤」下真實一致、生成不一致、拒判三種都有）。步驟：(1) 請 john 把 3 支自拍影片 IMG_8426.mov、IMG_8429.mov、IMG_8434.mov 放進 repo 外的資料夾 `~/slope-own-clips`，檔名改成 manifest 的名字 `own_1_IMG_8426.mov`、`own_2_IMG_8429.mov`、`own_3_IMG_8434.mov`（**不准放進 repo、不准 commit**）；(2) `cp data/gate/clips/*.mp4 ~/slope-own-clips/`；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v3.md`（現在批次預設不呼叫解說和標題，只花 SAM 的錢，約 $0.12）；(4) 表格貼進「SAM 對照」v2 下面，標題「v3（加入自拍影片）」；(5) 每支自拍影片看 overlay 確認紅點在球上，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T114-sam-own`。
-- [ ] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。
+- [ ] T117 Muse：（最優先）產生 demo 用的 SAM 版紀錄（含 Muse Spark 解說）。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --json-dir data/demo --explain --out data/gate/product_results_sam_v4_demo.md`（約 $0.35；會覆蓋 `data/demo/real_own_*.json` 和 `generated_*.json`，顏色版留在 git 歷史和 `product_results.md`）；(3) 確認 10 支的 verdict 跟 v4 表一樣，不一樣就寫進 STATUS，不要挑；(4) `git status` 確認只有 `data/demo/*.json`、結果檔、STATUS、cost_log 改動，**沒有任何影片**；(5) commit，push 分支 `muse/T117-demo-sam`。
+- [x] T116 Muse：（最優先）Claude 已修好 SAM 的計時 bug（`meta_client/sam.py` 改用 `-vf fps=15`），請重跑 SAM 全部 10 支：(1) `git checkout main`、`git pull origin main`；(2) 確認 `~/slope-own-clips` 裡有 3 支自拍＋7 支生成影片；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v4.md`（約 $0.12，不會呼叫解說）；(4) 表格貼進「SAM 對照」v3 下面，標題「v4（修正 15fps 計時後）」，v2、v3 不要刪；(5) 看自拍 3 支的 overlay 紅點，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T116-sam-v4`。 — commit 61f00f2（v4：自拍 3 支全變一致 g=9.30／9.46／8.68，生成側 verdict 不變；3 張 overlay 紅點在球上。`~` 目錄仍不存在，續用 /tmp/slope-own-clips。$0.107，累計 $1.009）
+- [x] T114 Muse：自拍影片也用 SAM 跑（demo 要「同一種追蹤」下真實一致、生成不一致、拒判三種都有）。步驟：(1) 請 john 把 3 支自拍影片 IMG_8426.mov、IMG_8429.mov、IMG_8434.mov 放進 repo 外的資料夾 `~/slope-own-clips`，檔名改成 manifest 的名字 `own_1_IMG_8426.mov`、`own_2_IMG_8429.mov`、`own_3_IMG_8434.mov`（**不准放進 repo、不准 commit**）；(2) `cp data/gate/clips/*.mp4 ~/slope-own-clips/`；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v3.md`（現在批次預設不呼叫解說和標題，只花 SAM 的錢，約 $0.12）；(4) 表格貼進「SAM 對照」v2 下面，標題「v3（加入自拍影片）」；(5) 每支自拍影片看 overlay 確認紅點在球上，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T114-sam-own`。 — commit 32e8600（v3：自拍 3 支全判不一致、偏角 -22～-27 度，與顏色版矛盾；3 張 overlay 紅點都在球上。$0.107，累計 $0.902）
+- [x] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。 — commit 800f506（原因見日誌：門檻數字只在原因句裡、檢查只收數字欄，提示詞和檢查打架。修：程式 parse 原因句數字加入 allowlist＋提示詞點名陷阱；2 測試。$0 真打）
 
 
 **Codex**（照順序做）
@@ -97,6 +99,7 @@
 
 ### 規則變更紀錄
 
+- **10/29 12:50 SAM 15fps 計時 bug（看過 SAM v3 結果之後修的，屬於修 bug，不是調門檻）**：v3 裡 3 支自拍影片全部「加速度偏 -22～-27 度」不一致，但顏色版同樣 3 支是 -6、+1、+5 度。Claude 用顏色追蹤模擬 SAM 的前處理（同一個 ffmpeg 指令轉 15fps）重現出 -22.4、-23.3、-25.3 度，查出原因：`-ss` 後用 `-r 15` 轉檔，窗口開頭幾格是 30fps 間隔、之後才變 15fps，所以「第 N 格 = t_start + N/15」不成立，時間被扭曲，軌跡看起來是斜的。改用 `-vf fps=15` 後逐格對照完全吻合，並加了真的跑 ffmpeg 的測試（舊指令會失敗）。**v2、v3 的 SAM 數字都受影響**，保留原表，v4 重跑後兩版並列。門檻沒有改。
 - **10/29 T87（看過 john 的 3 支自拍影片之後改的）**：原規則用 frame differencing，在真實影片上抓到手臂和背景。新規則：人工標註的物體名稱含顏色（目前只有 orange，色相 15 到 45 度、飽和度與亮度至少 0.4）時，只取「是這個顏色而且有在動」的最大一塊；物體大小改用色塊短軸的寬度。其他門檻不變。顏色範圍是看過這 3 支影片後訂的，所以**之後的 Meta AI 影片要用同一組參數，不准再調**。
 - 新舊兩版用同一組試算標註（Claude 提議、john 尚未確認：own_1 1.9–2.6 s、own_2 0.2–0.8 s、own_3 2.0–2.4 s，球 0.05 m）的結果：
   - 舊版 frame_diff：own_1 不一致（加速度偏 -70 度、軌跡不像拋物線）、own_2 不一致（-71 度）、own_3 資料不足。原因是追到手臂，不是物理。
@@ -176,6 +179,40 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 **overlay 紅點確認**（4 支新判出的）：clip1 紅點沿客廳拋物線走、在球上；clip5 紅點在桌緣的球上；manus 紅點沿體育館拋物線走、在球上——這 3 支確認通過。manus 的 g=2.50 跟之前 frame_diff 試跑的 2.55 接近，互相印證。clip4 該格只有左緣大片深色物體、紅點沿其邊緣走，看起來有跟上但單格無法確定是球心，請 john 再看一眼。另 clip5 的理由是加速度方向偏 -178 度（幾乎朝上），數字是程式算的照實列，判讀請 Claude 看。
 
+#### v3（加入自拍影片，`data/gate/product_results_sam_v3.md`）
+
+| clip | source | verdict | g_apparent_m_s2 | nearest_body | size_trend | track_source | reason |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| own_1_IMG_8426.mov | own | inconsistent | 6.51 | Earth | -0.01 | sam | acceleration points -22 deg away from image-down |
+| own_2_IMG_8429.mov | own | inconsistent | 7.26 | Earth | 0.01 | sam | acceleration points -24 deg away from image-down |
+| own_3_IMG_8434.mov | own | inconsistent | 8.22 | Earth | -0.05 | sam | acceleration points -27 deg away from image-down |
+| meta_clip1.mp4 | meta_ai | inconsistent | 0.24 | Pluto | -0.18 | sam | apparent g 0.24 m/s^2 is outside 8.34-11.28 |
+| meta_clip2.mp4 | meta_ai | insufficient_data |  |  | -0.49 | sam | object size changes -49% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| meta_clip3.mp4 | meta_ai | insufficient_data |  |  | -0.34 | sam | object size changes -34% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| meta_clip4.mp4 | meta_ai | inconsistent | 0.15 | Pluto | 0.15 | sam | apparent g 0.15 m/s^2 is outside 8.34-11.28 |
+| meta_clip5.mp4 | meta_ai | inconsistent | 1.41 | Moon | -0.23 | sam | acceleration points -178 deg away from image-down |
+| meta_clip6.mp4 | meta_ai | insufficient_data |  |  | -0.42 | sam | object size changes -42% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| manus_clip1.mp4 | manus | inconsistent | 2.50 | Mars | 0.14 | sam | apparent g 2.50 m/s^2 is outside 8.34-11.28 |
+
+自拍 3 支用 SAM 全判不一致（偏角 -22～-27 度、g=6.51／7.26／8.22），跟顏色版（own_1／own_2 一致、g=9.62／9.82）矛盾——同一個 demo「同一種追蹤下真實一致」的目標目前達不到，選版時請正視。overlay 確認：own_1 紅點沿沙發上拋物線走、在球上；own_2 紅點聚在沙發中段球位、在球上；own_3 紅點從沙發沿掉落軌跡到地板、在球上。紅點都在球上，所以偏角不是跟丟，原因待查（請 Claude 看是追蹤偏差還是判定門檻問題）。meta／manus 7 格與 v2 一字不差（重現性通過）。自拍影片只放 /tmp（沙盒寫不到 `~`，等價做法），沒進 repo。
+
+#### v4（修正 15fps 計時後，`data/gate/product_results_sam_v4.md`）
+
+| clip | source | verdict | g_apparent_m_s2 | nearest_body | size_trend | track_source | reason |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| own_1_IMG_8426.mov | own | consistent | 9.30 | Earth | 0.04 | sam |  |
+| own_2_IMG_8429.mov | own | consistent | 9.46 | Earth | 0.10 | sam |  |
+| own_3_IMG_8434.mov | own | consistent | 8.68 | Earth | -0.01 | sam |  |
+| meta_clip1.mp4 | meta_ai | inconsistent | 0.25 | Pluto | -0.17 | sam | apparent g 0.25 m/s^2 is outside 8.34-11.28 |
+| meta_clip2.mp4 | meta_ai | insufficient_data |  |  | -0.48 | sam | object size changes -48% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| meta_clip3.mp4 | meta_ai | insufficient_data |  |  | -0.34 | sam | object size changes -34% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| meta_clip4.mp4 | meta_ai | inconsistent | 0.14 | Pluto | 0.13 | sam | apparent g 0.14 m/s^2 is outside 8.34-11.28 |
+| meta_clip5.mp4 | meta_ai | inconsistent | 1.80 | Moon | -0.19 | sam | acceleration points -171 deg away from image-down |
+| meta_clip6.mp4 | meta_ai | insufficient_data |  |  | -0.42 | sam | object size changes -42% along the track; it moves towards or away from the camera, which this 2D check cannot judge |
+| manus_clip1.mp4 | manus | inconsistent | 2.63 | Mars | 0.06 | sam | apparent g 2.63 m/s^2 is outside 8.34-11.28 |
+
+計時修好後自拍 3 支全變一致（g=9.30／9.46／8.68，偏角消失）——v3 的偏角是轉碼時間戳 bug，不是追蹤問題。demo 目標達成：同一種追蹤（SAM）下真實一致、生成不一致（4 支）、拒判（3 支透視）三種都有。生成側 verdict 與 v3 相同，數字微移（clip1 0.24→0.25、clip4 0.15→0.14、clip5 1.41→1.80、manus 2.50→2.63）。overlay：own_1 紅點沿沙發拋物線、在球上；own_2 紅點聚沙發中段球位、在球上；own_3 紅點從沙發到地板沿掉落走、在球上。
+
 ## 怎麼跑（給所有工具）
 
 - 後端：`uvicorn backend.main:app --reload`，網址 http://localhost:8000，互動文件在 `/docs`。API 契約見 `docs/API.md`。
@@ -215,6 +252,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 已做的決定
 
+- 10/29 13:05 Claude：**demo 主表改用 SAM 3.1 v4**（自拍 3 支一致、生成 4 支不一致、3 支拒判：同一種追蹤下三種結果都有，而且是 Muse 的模型）。顏色版並排當對照，兩版不同的地方照實寫（例如 own_3：SAM 8.68 一致、顏色 8.15 不一致）。README 已更新。
 - 10/29 12:30 Claude：demo 主表暫用**顏色追蹤版**（目前唯一在同一種追蹤下有「真實一致、生成不一致、拒判」三種結果的版本），SAM 版並排顯示。T114 自拍影片跑完 SAM 後再決定：若 SAM 版三種結果都有，demo 改以 SAM 版為主（Muse 優先），顏色版當對照。兩版的不同照實寫，不挑對自己有利的。
 - 10/29 john：關卡三題通過後，主方向轉向「影片物理稽核」；斜坡教練保留為第二條路，只做維護。
 
@@ -247,11 +285,19 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T109：抽欄位真打 7 次（2 輪驗證修正＋重試；單次約 $0.02，輸出 token 異常多） | 0.164 | 0.435（含未合併 T107 0.077、T112 0.096、T108 0.008） |
 | 10/29 | T112：explain＋headline 真打 own_2、clip2 各兩種（7 次呼叫含 1 次驗證重試） | 0.096 | 0.263（含未合併 T107 的 0.077） |
 | 10/29 | T113：SAM v2 重跑 7 支（SAM 7 次 $0.077＋explain 15 次 $0.244 含 8 次重試＋headline 4 次 $0.038） | 0.360 | 0.794 |
+| 10/29 | T114：SAM v3 跑 10 支（自拍 3＋生成 7，純 SAM 無解說） | 0.107 | 0.902 |
+| 10/29 | T116：SAM v4 跑 10 支（計時修好後，純 SAM） | 0.107 | 1.009 |
 
 ## 工作日誌（最新在上）
 
+- 10/29 Codex 沒有待辦了。T162 已完成並推送 codex/T162-a11y（PR #80，目標 main），已同步協調者的最新進度。T157 尚無 Claude 的資料定版公告，依 john 規則保留未勾；無其他可執行的 Codex 待辦。
 - 10/29 Codex T162：已用瀏覽器以 Tab／Enter／空白鍵從選片、準備問題、回答、確認時間窗到結果；素材為 repo 既有 meta_clip2，輸入照 manifest，獨立 mock 後端無金鑰、無付費呼叫。發現準備後焦點掉到 BODY，已改交接到物體名；等待提示、漏答錯誤與新結果都有焦點位置及深色焦點框。結果 aria-labelledby 指向各自判定，並排不重複 ID。小標原對比4.48:1，改為顏色 token；移除停用控制項的透明度、保留可讀文字。390×844 實測表單、收合／展開結果、結果牆及並排頁沒有橫向溢出（scrollWidth375≤innerWidth390）；受檢頁面最低文字對比5.49:1，1280px並排亦通過。首頁卡片／結果牆補說明來源徽章；模型、模板／mock 依實際值，既有問題／標題／追蹤／語音來源標示已核對。新增對比、唯一結果標籤、雙語來源測試；npm111 pass、一般與靜態build pass（入口79,391／78,502 bytes）。pytest214 pass／1既有ffmpeg drawtext失敗。只改frontend與本STATUS，資料／後端未改。
 
+- 10/29 13:05 Claude：合併 Muse T116（SAM v4）。修好計時後自拍 3 支 g = 9.30、9.46、8.68 全部一致；生成影片結果和 v2、v3 幾乎一樣。`audit_batch` 加 `--json-dir`，存完整稽核紀錄給 demo（不含影片連結）。README 結果表改成 SAM 為主、顏色對照。新增 Muse T117。
+- 10/29 Muse 完成 T116（分支 muse/T116-sam-v4）：計時修好後重跑 10 支，自拍 3 支全變一致（g=9.30／9.46／8.68），v3 偏角確認是轉碼 bug；生成側 verdict 不變、數字微移；3 張自拍 overlay 紅點在球上。demo「同一種追蹤三種結果」達成。$0.107，累計 $1.009。
+- 10/29 12:55 Claude：合併 Muse T114（SAM v3）、T115（解說可引用原因句裡的門檻數字）。T115 只改了 meta_client 的檢查，後端的第二道檢查會照樣擋掉，所以後端 `_number_sources` 也加上「程式自己寫的原因句裡的數字」（有測試；模型自己編的數字仍然擋）。找到並修好 SAM 15fps 計時 bug（見規則變更紀錄），v2、v3 的 SAM 數字作廢待 v4。新增 Muse T116。
+- 10/29 Muse 完成 T114（分支 muse/T114-sam-own）：自拍 3 支＋生成 7 支全用 SAM 跑（批次已默認關解說，只花 SAM 錢）。自拍全判不一致（偏角 -22～-27 度），3 張 overlay 紅點都在球上、不是跟丟；跟顏色版矛盾，「同一種追蹤下真實一致」目前達不到，請 Claude／john 決定 demo 用版。行動偏離：`~/slope-own-clips` 不存在（三支在 Downloads）、沙盒寫不到 `~`，改放 /tmp/slope-own-clips（等價，同在 repo 外、沒 commit）。$0.107，累計 $0.902。
+- 10/29 Muse 完成 T115（分支 muse/T115-explain-retries）：8 次重試全是「數字來源」沒過——模型照提示詞引用 payload 裡的門檻（8.34／11.28），但那些數字只活在原因句字串裡，檢查只收數字欄位，首輪幾乎必死一次；另 9.81／fps 也不在 payload 裡。修法（只動 meta_client）：explain 用程式 parse 原因句數字加入 allowlist（檢查本體沒動），提示詞點名禁寫 fps／自算百分比、範例 9.81 換成 1.71；2 測試鎖住（門檻引文一次過、9.81／fps 照樣擋）。$0 真打，全套件 216 pass。建議 Claude：後端 `_model_text` 的 `_number_sources` 也要加同樣的字串數字，否則修好的解說在後端門還是會被退回模板；另建議把驗證失敗的原文記下來，下次不用猜。
 - 10/29 12:40 Claude：審查並合併 Codex T159（物體名稱預填，鏡頭建議只顯示文字）與 T160（語音回答逐欄按 Use this 才填入）。
 - 10/29 Codex 沒有待辦了。T159／T160 已完成並推送 PR #70／#74，目標都是 main，兩者已同步最新 main 且可合併。T157 仍待 Claude 資料定版通知，依規則保留未勾；無其他可執行的 Codex 待辦。npm108 pass、標準／靜態 build pass；pytest213 pass／1既有drawtext環境失敗。
 - 10/29 Codex T160：接 API v1.0 錄音→預聽→明確送出→逐字稿／欄位預覽，每欄 Use this 才填一般表單，不自動提交稽核；語音時間窗仍需影片確認。來源標示 Voice Transcribe／Spark；mock 停用錄音。錄音超過10MB／錯誤／卸載均釋放麥克風，送出防重複、失敗保留答案與錄音，換草稿忽略晚到回應；未加套件、未呼叫付費模型。新增假的 fetch、錄音器、逐欄、精度、mock、錯誤及雙語測試；npm108 pass、標準與靜態build pass（入口79,345／78,456 bytes）；pytest213 pass/1既有drawtext失敗。實機端到端待Antigravity。
