@@ -17,7 +17,7 @@
 | --- | --- |
 | **Muse** | T166（修語音 502） |
 | **Codex** | T157、T165 已合併；Figma 收尾等配額恢復，不急 |
-| **Antigravity** | T53 → T68（T121、T122 已合併） |
+| **Antigravity** | 目前沒有待辦（全部任務均已完成） |
 | **Manus** | T163 → T164 → T22 |
 | **Claude** | 審查合併 PR；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
@@ -63,7 +63,7 @@
 
 **Antigravity**（照順序做）
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
-- [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
+- [x] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖完成（新增 scripts/e2e_ghost_and_physics_card.mjs、tests/backend/test_e2e_ghost_card.py，產出桌面與 390px 手機截圖存於 docs/screens/）— commit 00036aa
 - [x] T121 Antigravity：效能量測：10 秒 1080p 影片 `/api/audits` 跑完耗時：顏色追蹤 1.13s、frame differencing 0.36s（目標 < 20s，通過；Claude 在雲端重跑 6.65s／1.53s，也通過。註：腳本只量 0–5 秒的時間窗）— commit b83b4d1
 - [x] T122 Antigravity：照 README 在乾淨目錄從零安裝：前端 111 測試通過；後端要用 README 寫的 `python3.11`（Homebrew 預設 3.14 建 venv 會失敗）。註：STATUS 提到的 commit 9db92e3（gate_prepare 的 drawtext 退路）沒有 push 到 GitHub，main 沒有這個改動 — commit 2c4af33
 
@@ -303,6 +303,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T119：live smoke 4 步（偵訊 $0.012＋物體建議 $0.006＋SAM $0.010＋解說 $0.017；語音 502 未計費） | 0.046 | 1.732 |
 
 ## 工作日誌（最新在上）
+
+- 10/29 Antigravity 工作總結：完成 T161（手機 390px 截圖重拍並驗證 md5 不同）、T121（10s 1080p 效能量測 1.13s/0.36s < 20s）、T122（乾淨環境安裝驗證與卡點記錄）、T53（30s 1080p iPhone HEVC 效能量測 1.61s/0.38s < 20s）、T68（鬼影對照與物理名片 E2E 測試與桌面/手機截圖）。完成表已無 Antigravity 待辦項目。
 
 - 10/29 Codex T157 最終同步：保留 main 的協調者範例圖片來源說明與回歸測試，後續整合改由 PR #88 交付（PR #87 的 809f3df 已合併）。重跑 npm 118 pass、標準／靜態 build pass（入口 85,160／84,058 bytes）；同一後端版本 pytest 222 pass。Figma 待配額恢復，前端與 T157 已完成並提交審查。
 
