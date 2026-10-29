@@ -247,3 +247,46 @@ def test_model_explanation_and_headline_used_only_when_they_pass_checks(tmp_path
     assert bad["explanation"]["source"] == "template"  # unfound number and banned wording -> fixed template
     assert bad["headline"] is None  # a failing model call never breaks the audit
     assert good["verdict"] == bad["verdict"]
+
+
+def test_object_suggestion_and_voice_answers_are_checked_and_never_confirmed(tmp_path):
+    from backend.model_hooks import MockHooks, get_hooks, set_hooks
+
+    write_clip(tmp_path / "real.mp4", 9.81)
+    c = TestClient(app)
+
+    def draft():
+        with open(tmp_path / "real.mp4", "rb") as f:
+            return c.post("/api/audit-drafts", files={"file": ("real.mp4", f, "video/mp4")}).json()
+
+    plain = draft()
+    assert plain["suggestion"] is None  # no model connected
+    v = c.post(f"/api/audit-drafts/{plain['draft_id']}/voice", files={"audio": ("a.webm", b"x", "audio/webm")}).json()
+    assert v == {"source": {"transcript": "mock", "fields": "mock"}, "transcript": "", "fields": {}}
+
+    class FakeMuse(MockHooks):
+        def __init__(self, name):
+            self.name = name
+
+        def suggest_object(self, video_path):
+            return {"object_name": self.name, "camera_looks_static": True, "reason": "one ball moves", "source": "muse-spark-1.3"}
+
+        def answer_voice(self, audio_path):
+            return {"transcript": "no slow motion, the ball is eleven centimetres", "source": {"transcript": "muse-voice-transcribe-1.0", "fields": "muse-spark-1.3"},
+                    "fields": {"slow_motion": {"value": False, "confirmed": True}, "object_size_m": {"value": 0.11},
+                               "camera_static": {"value": "yes"}, "length_m": {"value": -1}, "bogus": {"value": 1}}}
+
+    old = get_hooks()
+    try:
+        set_hooks(FakeMuse("orange basketball"))
+        good = draft()
+        v = c.post(f"/api/audit-drafts/{good['draft_id']}/voice", files={"audio": ("a.webm", b"x", "audio/webm")}).json()
+        set_hooks(FakeMuse("ball 11 cm wide"))
+        bad = draft()
+    finally:
+        set_hooks(old)
+    assert good["suggestion"]["object_name"] == "orange basketball" and good["suggestion"]["source"] == "muse-spark-1.3"
+    assert bad["suggestion"] is None  # a size in the name would look like a measurement
+    assert v["fields"] == {"slow_motion": {"value": False, "confirmed": False},
+                           "object_size_m": {"value": 0.11, "confirmed": False}}  # wrong types and unknown fields dropped
+    assert c.post("/api/audit-drafts/nope/voice", files={"audio": ("a.webm", b"x", "audio/webm")}).status_code == 404

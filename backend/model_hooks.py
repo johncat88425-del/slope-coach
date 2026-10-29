@@ -30,6 +30,8 @@ class ModelHooks(Protocol):
     # Both get the finished audit (verdict, reasons, numbers) and return checked text or None.
     #   def explain_audit(self, audit: dict) -> str | None: ...   plain-language explanation
     #   def headline_audit(self, audit: dict) -> str | None: ...  one-line headline
+    #   def suggest_object(self, video_path: Path) -> dict: ...     {object_name, camera_looks_static, reason, source}
+    #   def answer_voice(self, audio_path: Path) -> dict: ...       {transcript, fields: {name: {value}}, source}
 
 
 # Asked when no model is connected, or when the model's questions fail the output checks.

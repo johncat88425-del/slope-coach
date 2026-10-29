@@ -152,7 +152,74 @@ def create_draft(file: UploadFile = File(...)):
         iv = checked_interview(get_hooks().interview_audit(video))
     except Exception as e:  # a model failure must not block the audit
         iv = S.AuditInterview(source="mock", questions=MOCK_QUESTIONS, note=f"model unavailable: {type(e).__name__}")
-    return {"draft_id": did, "video_url": f"/media/audits/{did}/{video.name}", "interview": iv}
+    return {"draft_id": did, "video_url": f"/media/audits/{did}/{video.name}", "interview": iv,
+            "suggestion": checked_suggestion(video)}
+
+
+def checked_suggestion(video: Path) -> S.ObjectSuggestion | None:
+    """Muse Spark's object-name guess (T147). Dropped unless it is a short name with no digits (a size in the
+    name would look like a measurement) and the reason passes the banned-phrase check."""
+    hook = getattr(get_hooks(), "suggest_object", None)
+    if hook is None:
+        return None
+    try:
+        raw = hook(video)
+        sug = S.ObjectSuggestion(**raw)
+    except Exception:
+        return None
+    name = sug.object_name.strip()
+    if not name or len(name) > 60 or any(c.isdigit() for c in name + sug.reason):
+        return None
+    if not check_model_text(f"{name}. {sug.reason}", []).ok:
+        return None
+    return sug
+
+
+VOICE_FIELDS = {"camera_static": bool, "slow_motion": bool, "object_size_m": float, "length_m": float,
+                "assumed_model": str, "time_window": list}
+MAX_AUDIO_BYTES = 10 * 1024 * 1024
+
+
+def checked_voice_fields(fields: dict) -> dict:
+    """Keep only known fields with the right type and a sane value; the user still confirms each one."""
+    out = {}
+    for name, f in (fields or {}).items():
+        kind, v = VOICE_FIELDS.get(name), (f or {}).get("value")
+        if kind is bool and isinstance(v, bool):
+            out[name] = {"value": v}
+        elif kind is float and isinstance(v, (int, float)) and not isinstance(v, bool) and 0 < v <= 100:
+            out[name] = {"value": float(v)}
+        elif kind is str and v in MODELS:
+            out[name] = {"value": v}
+        elif kind is list and isinstance(v, list) and len(v) == 2 and all(
+                isinstance(x, (int, float)) and not isinstance(x, bool) and x >= 0 for x in v) and v[0] < v[1]:
+            out[name] = {"value": [float(v[0]), float(v[1])]}
+    return out
+
+
+@router.post("/api/audit-drafts/{did}/voice", response_model=S.VoiceAnswerOut)
+def voice_answer(did: str, audio: UploadFile = File(...)):
+    """Spoken answer to the interview (T147): Voice Transcribe turns it into text, Spark pulls out fields.
+    Nothing is applied: every field comes back unconfirmed for the user to check on screen."""
+    if did not in store.audit_drafts:
+        raise HTTPException(404, f"draft {did} not found")
+    data = audio.file.read(MAX_AUDIO_BYTES + 1)
+    if len(data) > MAX_AUDIO_BYTES:
+        raise HTTPException(413, "audio is larger than 10 MB")
+    hook = getattr(get_hooks(), "answer_voice", None)
+    if hook is None:
+        return {"source": {"transcript": "mock", "fields": "mock"}, "transcript": "", "fields": {}}
+    d = Path(store.audit_drafts[did]).parent
+    suffix = "".join(c for c in (audio.filename or "").rsplit(".", 1)[-1:] if c.isalnum())[:5] or "webm"
+    path = d / f"voice.{suffix}"
+    path.write_bytes(data)
+    try:
+        raw = hook(path)
+    except Exception as e:
+        raise HTTPException(502, f"voice model unavailable: {type(e).__name__}")
+    src = raw.get("source") or {}
+    return {"source": {"transcript": str(src.get("transcript", "model")), "fields": str(src.get("fields", "model"))},
+            "transcript": str(raw.get("transcript", ""))[:2000], "fields": checked_voice_fields(raw.get("fields"))}
 
 
 SCAN_LIMIT_S = 15.0  # window suggestions look at the first 15 s only
