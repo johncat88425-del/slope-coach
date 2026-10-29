@@ -36,9 +36,13 @@ def demo_name(row: dict) -> str:
 def demo_record(row: dict, audit: dict) -> dict:
     """The full audit as the static demo shows it, without media links (john's clips never leave his Mac)."""
     rec = {k: v for k, v in audit.items() if k not in ("video_url", "overlay_url")}
-    rec |= {"video_url": "", "overlay_url": None, "clip": row["clip"], "real_clip": row.get("source") == "own",
+    rec |= {"video_url": "", "overlay_url": None, "clip": row["clip"],
             "labels_by": "john (window, camera, object size)" if (row.get("object_size_m") or "").strip()
             else "john (window, camera)"}
+    if row.get("source") == "own":
+        rec["real_clip"] = True
+    else:
+        rec |= {"generated_clip": True, "source": row.get("source", "")}
     return rec
 
 
