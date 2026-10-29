@@ -127,7 +127,7 @@ def explain_result(
 ) -> dict[str, str]:
     """Explain a comparison or audit result (T28 Chinese, T47 English).
 
-    Returns {"explanation": str}. Raises ModelOutputError when the text does
+    Returns {"explanation", "source"}. Raises ModelOutputError when the text does
     not pass the output checks after retries; raises ValueError for a bad
     kind or lang without calling the API.
     """
@@ -179,7 +179,7 @@ def explain_result(
                 raise ModelOutputError(
                     "forbidden authenticity language: " + ", ".join(bad_words)
                 )
-            return {"explanation": text}
+            return {"explanation": text, "source": resolved}
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"explanation failed validation: {last_error}")
