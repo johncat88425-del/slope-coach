@@ -398,7 +398,9 @@ def extract_interview_fields(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_answer(json.loads(response.output_text or ""))
+            out = _validate_answer(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"answer fields failed validation: {last_error}")
@@ -413,13 +415,15 @@ def answer_interview_voice(
 ) -> dict[str, Any]:
     """Transcribe a spoken interview answer and extract its fields (T109).
 
-    Returns {"transcript", "fields"} where each field is
+    Returns {"transcript", "fields", "mock", "source"} where each field is
     {"value", "confirmed": False}: the UI must show every value for
-    confirmation and only submits confirmed ones. Without MODEL_API_KEY
-    returns a mock with no fields and no API call.
+    confirmation and only submits confirmed ones. "source" names the model
+    behind each part. Without MODEL_API_KEY returns a mock with no fields
+    and no API call.
     """
     if not os.environ.get("MODEL_API_KEY"):
-        return {"transcript": MOCK_NO_KEY_TRANSCRIPT, "fields": {}, "mock": True}
+        return {"transcript": MOCK_NO_KEY_TRANSCRIPT, "fields": {}, "mock": True,
+                "source": {"transcript": "mock", "fields": "mock"}}
     spoken = transcribe(audio_path, timeout=VOICE_TIMEOUT_S, tracker=tracker)
     raw = extract_interview_fields(spoken["transcript"], model=model,
                                    timeout=timeout, tracker=tracker)
@@ -440,4 +444,6 @@ def answer_interview_voice(
         fields["time_window"] = {"value": raw["time_window"], "confirmed": False}
     if raw["assumed_model"] is not None:
         fields["assumed_model"] = {"value": raw["assumed_model"], "confirmed": False}
-    return {"transcript": spoken["transcript"], "fields": fields, "mock": False}
+    return {"transcript": spoken["transcript"], "fields": fields, "mock": False,
+            "source": {"transcript": VOICE_MODEL,
+                       "fields": model or _client.SPARK_MODEL}}
