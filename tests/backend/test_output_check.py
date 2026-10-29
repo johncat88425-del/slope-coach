@@ -50,3 +50,12 @@ def test_fill_numbers_only_from_tool_output():
     assert not fill_numbers("Gravity is 0.26 x Earth", nums)[1].ok
     assert not fill_numbers("{g_apparent} m/s2", nums)[1].ok
     assert not fill_numbers("Fake video: {g_vs_earth}", nums)[1].ok
+
+
+def test_detector_and_any_video_claims_are_banned():
+    from backend.output_check import find_banned_phrases
+
+    for text in ("這是 AI 偵測工具", "Works as a lie detector for clips", "It can check any video.",
+                 "物理測謊機", "This looks made by Sora"):
+        assert find_banned_phrases(text), text
+    assert not find_banned_phrases("The motion is inconsistent with free flight under Earth gravity.")
