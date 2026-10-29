@@ -16,8 +16,8 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | T166 已合併；可選 T171（靜音時回 200 空欄位） |
-| **Codex** | T157、T165 已合併；Figma 收尾等配額恢復，不急 |
-| **Antigravity** | T53 → T68 → T167（T167 等靜態網站上線） |
+| **Codex** | T167（檢查線上靜態網站）；Figma 收尾等配額恢復，不急 |
+| **Antigravity** | 沒有待辦（T53、T68 已合併；T167 改給 Codex） |
 | **Manus** | T163 → T164 → T22 |
 | **Claude** | 審查合併 PR；核對 Manus 文字；彈跳球片到了就跑 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -58,13 +58,14 @@
 
 
 **Codex**（照順序做）
+- [ ] T167 Codex：（網站已上線，10/29 17:55 john 確認能開）打開 https://johncat88425-del.github.io/slope-coach/ ，在 1440px 和 390px 各看 `#demo`、`#wall`、`#audit`、`#compare`、`#how`、`#home`，點一遍所有導覽連結和「Guided demo」。壞掉的連結、空白頁、圖片沒出來、console 錯誤都修掉（只改 frontend），修不了的寫進 STATUS。截圖不 commit。push 分支 `codex/T167-pages-check`。（原本給 Antigravity，john 嫌太慢改給 Codex）
 - [ ] T165 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ — frontend commit a624494；同步 main 7e2c8bf，PR #87（目標 main）；本任務原暫編 T164，同步 main 後避開 Manus 的 T164 改為 T165。
 - [x] T157 Codex：依 Claude「demo 資料已定版」公告，靜態展示與結果牆共用 T118 的完整 10 筆 SAM 紀錄；移除 own_3 舊判定文案，補模型標題、原始原因，展示／導覽／比較共用三種結果入口，程式測試範例另列。npm 114 pass、普通／靜態 build pass、pytest 222 pass；只改 frontend 與 STATUS。 — commit 82f90f9，PR #88（目標 main）。
 
 
 **Antigravity**（照順序做）
 - [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
-- [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
+- [x] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖完成（新增 scripts/e2e_ghost_and_physics_card.mjs、tests/backend/test_e2e_ghost_card.py，產出桌面與 390px 手機截圖存於 docs/screens/）— commit 00036aa
 - [x] T121 Antigravity：效能量測：10 秒 1080p 影片 `/api/audits` 跑完耗時：顏色追蹤 1.13s、frame differencing 0.36s（目標 < 20s，通過；Claude 在雲端重跑 6.65s／1.53s，也通過。註：腳本只量 0–5 秒的時間窗）— commit b83b4d1
 - [x] T122 Antigravity：照 README 在乾淨目錄從零安裝：前端 111 測試通過；後端要用 README 寫的 `python3.11`（Homebrew 預設 3.14 建 venv 會失敗）。註：STATUS 提到的 commit 9db92e3（gate_prepare 的 drawtext 退路）沒有 push 到 GitHub，main 沒有這個改動 — commit 2c4af33
 
@@ -83,7 +84,7 @@
 
 
 **john**
-- [ ] T168 john：打開靜態 demo 網站（只要點一次）：GitHub repo → Settings → Pages → Build and deployment 的 Source 選「GitHub Actions」。之後每次合併到 main 都會自動更新 https://johncat88425-del.github.io/slope-coach/
+- [x] T168 john：打開靜態 demo 網站（只要點一次）— 10/29 17:55 上線：GitHub repo → Settings → Pages → Build and deployment 的 Source 選「GitHub Actions」。之後每次合併到 main 都會自動更新 https://johncat88425-del.github.io/slope-coach/
 - [ ] T169 john：拍 1 支彈跳球（可選，讓 demo 多一種模型）：腳架固定、正側面、橘色球從約 1 公尺高放手讓它自己彈 3 次以上、10 秒內、畫面裡沒有人臉、正常速度不要慢動作。拍完放在 repo 外的 `~/slope-own-clips/own_4_bounce.mov`，不要 commit，跟 Claude 說一聲。
 - [ ] T170 john：在 Discord 貼這段問題（可選）：Hi! For the Indie track, can we use clips generated with other tools (e.g. Manus) as *test inputs* for our app? The app itself only calls Meta models at runtime. Thanks!
 - [ ] T33 拍片並生成影片，提供標註
@@ -311,6 +312,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 - 10/29 17:50 Claude：**提交前檢查（第一輪）**。(1) 金鑰：repo 和 git 歷史都沒有金鑰，只有 `.env.example`；(2) 產品程式只呼叫 Meta：`meta_client/client.py` 指向 `api.meta.ai/v1`，backend／meta_client 只出現 muse-spark、sam-3.1、muse-voice-transcribe，沒有其他廠商；contributor 版只出現在價目表，產品不會呼叫；(3) 禁用字眼：README、前端、demo 資料都沒有「偵測 AI／假影片／任何影片」的宣稱，出現的地方都是禁用清單或「不判斷」的說明；(4) 第一個 commit 是 10/27，都在 10/26 之後；(5) repo 公開、MIT；(6) git 裡沒有 john 的自拍影片，demo JSON 只有檔名；(7) README 的 SAM 數字和 demo JSON 對得上。**新增**：GitHub Pages 靜態 demo（`.github/workflows/pages.yml`，用 `VITE_DEMO_ONLY=1`，不呼叫後端或模型），README 加網址；john 要在 Settings 打開一次（T168）。排了 T167、T169、T170。
 - 10/29 Muse 完成 T166（分支 muse/T166-voice-encoding）：request 補 `audioEncoding: "WAV"`（batch 端點的值；realtime 才用 PCM_24KHZ／PCM_16KHZ）＋斷言測試；真打 voice 端點回 200、用 own_2 環境音轉出 3 秒英文口語、無答案內容故 fields 為空（沒亂猜）。pytest 222 全綠。已知殘留：純靜音轉出空稿仍走 502（合理但訊息誤導，可排下個任務改成空欄位回 200）。$0.039，累計 $1.771。
+- 10/29 Antigravity 工作總結：完成 T161（手機 390px 截圖重拍並驗證 md5 不同）、T121（10s 1080p 效能量測 1.13s/0.36s < 20s）、T122（乾淨環境安裝驗證與卡點記錄）、T53（30s 1080p iPhone HEVC 效能量測 1.61s/0.38s < 20s）、T68（鬼影對照與物理名片 E2E 測試與桌面/手機截圖）。完成表已無 Antigravity 待辦項目。
+
 - 10/29 Codex T157 最終同步：保留 main 的協調者範例圖片來源說明與回歸測試，後續整合改由 PR #88 交付（PR #87 的 809f3df 已合併）。重跑 npm 118 pass、標準／靜態 build pass（入口 85,160／84,058 bytes）；同一後端版本 pytest 222 pass。Figma 待配額恢復，前端與 T157 已完成並提交審查。
 
 - 10/29 Codex 本輪可執行前端待辦已完成：主改版 PR #87 已由 Claude 合併；T157（82f90f9）與後續整合修整交付 PR #88（目標 main）。已保留 Claude 在 main 補的範例來源文案與測試。Figma 手機收尾仍受 Starter MCP 配額阻擋，T165 保留未勾及明確續接項目。
