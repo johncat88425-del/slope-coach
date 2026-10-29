@@ -1,4 +1,7 @@
 export const newUiCopy:Record<string,string>={
+  "Suggested by Muse Spark — please check": "Muse Spark 建議，請核對",
+  "Muse Spark suggests the camera looks fixed. Please confirm it below.": "Muse Spark 認為鏡頭看起來固定，請在下方自行確認。",
+  "Muse Spark suggests the camera may be moving. Please check it below.": "Muse Spark 認為鏡頭可能移動，請在下方自行核對。",
   "Insufficient data with the assumed pendulum model": "與假設的單擺模型資料不足",
   "Inconsistent with the assumed pendulum model": "與假設的單擺模型不一致",
   "Consistent with the assumed pendulum model": "與假設的單擺模型一致",
