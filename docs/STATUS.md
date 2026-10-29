@@ -90,7 +90,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T114 Codex：真實 vs 生成並排比較頁：選兩筆紀錄（例如 `real_own_2` 和 `generated_meta_clip2`），左右並排顯示軌跡、鬼影、重力刻度和說明。標題寫「同一套規則，兩支影片」，不准寫「真假」 — commit 843d762
 - [x] T115 Codex：稽核報告列印版（CSS print stylesheet），一頁 A4 放：判定、說明、數字、軌跡圖、限制、追蹤來源與模型來源標示 — commit 9e810e1
 - [x] T116 Codex：Muse 語音回答的介面（配合 Muse T109）：錄音按鈕 → 顯示轉出的文字和抽出的欄位 → 使用者逐欄確認後才送出。沒接上時按鈕顯示「需要 Meta API」 — commit 3f85efa
-- [ ] T117 Codex：英文介面全面檢查（評審看英文）：所有新頁面都要有英文，用詞照 AGENTS 規則（consistent／inconsistent／insufficient data with the assumed model）
+- [x] T117 Codex：英文介面全面檢查（評審看英文）：所有新頁面都要有英文，用詞照 AGENTS 規則（consistent／inconsistent／insufficient data with the assumed model） — commit 待回填（本次程式提交）
 - [ ] T118 Codex：首頁 30 秒自動導覽模式（給 demo 錄影用）：依序顯示 real_own_2 → generated_meta_clip2 → generated_meta_clip4（拒判），每步有一句英文說明，可暫停
 
 **Antigravity**（照順序做）
@@ -448,3 +448,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T114：#compare 可選任意兩份紀錄，左右完整顯示說明、實測／鬼影、重力刻度與來源；小螢幕改上下，來源不作判定。npm/build 通過，pytest drawtext 已知失敗。
 - 10/28 Codex T115：選定單筆稽核列印，A4 stylesheet 包含判定／說明／數字／軌跡／限制及來源，不列印其他頁面紀錄；保留全部內容不截斷。npm/build 通過，瀏覽器一頁視覺驗收仍待 Antigravity；pytest drawtext 已知失敗。
 - 10/28 Codex T116：語音按鈕停用並標 Requires Meta API（沒有端點），不錄音；已提供轉寫文字與欄位編輯、逐欄勾選後才可送出的本地介面。契約缺口已列待決定，不虛構模型結果。npm/build 通過；pytest drawtext 缺口。
+- 10/28 Codex T117：新結果牆、比較、列印與名片統一 assumed-model 英文判定，來源用可讀名稱；後端原文與數字不改寫。測試遍歷三模型三判定；npm/build 通過，pytest drawtext 環境缺口仍列明。
