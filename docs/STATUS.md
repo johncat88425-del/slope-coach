@@ -56,7 +56,8 @@
 
 
 **Codex**（照順序做）
-- [x] T157 Codex：依 Claude「demo 資料已定版」公告，靜態展示與結果牆共用 T118 的完整 10 筆 SAM 紀錄；移除 own_3 舊判定文案，補模型標題、原始原因，展示／導覽／比較共用三種結果入口，程式測試範例另列。npm 114 pass、普通／靜態 build pass、pytest 222 pass；只改 frontend 與 STATUS。
+- [ ] T165 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ — frontend commit a624494；同步 main 7e2c8bf，PR #87（目標 main）；本任務原暫編 T164，同步 main 後避開 Manus 的 T164 改為 T165。
+- [x] T157 Codex：依 Claude「demo 資料已定版」公告，靜態展示與結果牆共用 T118 的完整 10 筆 SAM 紀錄；移除 own_3 舊判定文案，補模型標題、原始原因，展示／導覽／比較共用三種結果入口，程式測試範例另列。npm 114 pass、普通／靜態 build pass、pytest 222 pass；只改 frontend 與 STATUS。 — commit 82f90f9，PR #88（目標 main）。
 
 
 **Antigravity**（照順序做）
@@ -231,6 +232,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T165 Codex：Figma Starter MCP 配額用完。14 個 editable 狀態與元件已建立，桌面高度修正已核對；手機 Field 內框待恢復 48px、上傳 CTA 待移到照片之前，待清理暫存 capture 5:2／照片節點 10:2，並核對 SAM Source instance 的文字 property（Label#9:21）。未經核對不宣稱 Figma 最終完成。前端這些修正均已完成並實測；不升級方案、不換管道繞過配額。
+
 - [T122 Antigravity 乾淨環境安裝驗證] 在 `/tmp/slope-coach-clean-test` 依照 README 完整測試安裝：
   1. Frontend：`cd frontend && npm install && npm test` 111 項測試全數 PASS。
   2. Python Backend：macOS Homebrew 預設 Python 3.14.7 觸發 PEP 668 `externally-managed-environment`，導致 `python3 -m venv .venv` 在 ensurepip 階段失敗。解法為 README 所述安裝並指定 `python@3.11`（`brew install python@3.11` 後以 `python3.11 -m venv .venv` 建立），或在現有 Python 3.14 下使用 wheel 解包 / `--break-system-packages`。
@@ -298,6 +301,10 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T118：英文版重產 demo（SAM $0.107＋解說 10 次零重試 $0.161＋標題 7 次 $0.064） | 0.333 | 1.686 |
 
 ## 工作日誌（最新在上）
+
+- 10/29 Codex 本輪可執行前端待辦已完成：T157 已勾選並推送 PR #88；日本編輯設計改版前端在 PR #87（T165），兩份 PR 均以 main 為目標。Figma 手機收尾仍受 Starter MCP 配額阻擋，T165 依事實保留未勾及明確續接項目；不自行升級、不等待 john 回覆。
+
+- 10/29 Codex T165：依 john 指示建立 Figma Editorial Lab（上傳、確認時間窗、等待、錯誤、結果、結果牆、並排，1440／390px 各七張；Auto Layout、47 個 tokens、21 個 variants、七種文字樣式）。Figma Starter MCP 配額於手機最後修正時用完，留下的明確修正見待決定，整項保留未勾。現有 frontend 已改為米白／墨藍／朱橘、單一上傳主操作、影片＋時間窗＋欄位工作區、細分隔線與一致結果層級；Details 預設收合，來源依實際 model／mock／template／tracker 顯示，後端文字用 Verbatim 保留。配色標示為受和田三造《配色事典》啟發，未虛構原書頁碼或色碼；本地 Noto Sans TC 字型附 SIL OFL，無新套件。首頁照片取自既有公開範例的單張影格，並有範例說明。瀏覽器 1440px／390px 檢查，手機首屏上傳可見；鍵盤選片→時間窗→回答→送出→等待→結果通過，焦點分別交給時間起點／狀態／判定；結果牆與並排無橫向溢出，受檢文字最低對比 5.51:1，繁中同步。npm 115 pass，標準／demo build pass（入口 81,392／80,505 bytes）；pytest 219 pass／1 既有 ffmpeg drawtext 缺口。未改後端、API、demo JSON 或測量值，mock 測試無付費模型呼叫。同步最新 main 後重驗 npm 115 pass、pytest 222 pass（drawtext 退路已由他人合併，環境失敗解除）；普通 build 亦通過。
 
 - 10/29 Codex T157：從最新 origin/main 獨立開 codex/T157-final-demo（PR 目標 main）。靜態 demo 和結果牆共用 DemoCatalog 全 10 筆最終紀錄，完整保留 3 筆實拍一致、4 筆生成不一致、3 筆資料不足；不再把 own_3 寫成不一致，也不把透視拒判寫成追蹤不足。沒有複製／改寫 JSON，headline／explanation／reasons 均用原文，空 headline 不補；結果牆補七筆已提供的模型標題與原始原因。首頁、30秒導覽與預設並排共用 entry keys（own_2／meta4／meta2），仍可選所有 10 筆，程式繪製案例移到獨立收合區。導覽等待 lazy view 掛載並展開證據祖先，實際鬼影／名片步驟可見，支援 reduced motion；拒判字幕依實際 verdict 引導讀原始原因。靜態模式的全站提示改為只重播儲存結果，避免誤稱媒體會上傳。瀏覽器驗證 10 筆／七個標題、390px 無橫向溢出、預設並排一致與不一致、繁中仍保留英文模型原文。新增完整紀錄與內容不變、三結果入口、雙語及開發範例分離測試；npm 114 pass、普通／靜態 build pass（入口 83,634／82,531 bytes，gzip 前），pytest 222 pass。未改後端、API、數字或資料檔，未打付費模型。
 
