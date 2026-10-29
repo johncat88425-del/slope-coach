@@ -33,11 +33,11 @@
 - [x] T11 Muse：下一次驗證的選擇代理（只能從 evidence 候選中選）— commit b696c68
 - [x] T24 Muse：語音口述設定（Voice Transcribe 轉文字，Spark 抽出欄位，使用者確認）— commit b696c68
 - [x] T16 Muse：Spark 與 Wonder 的 A/B 比較腳本。先用 mock 跑通，實際呼叫限 1 美元以內，花費記進成本紀錄 — commit b696c68
-- [ ] T45 Muse：稽核代理。Spark 用工具呼叫，從固定清單（free_flight、bounce、persistence）選要跑哪些檢查，並說明理由。數字只來自工具輸出，理由先過 `check_model_text()`。這是「創意使用 Meta AI」的主要展示點
+- [x] T45 Muse：稽核代理。Spark 用工具呼叫，從固定清單（free_flight、bounce、persistence）選要跑哪些檢查，並說明理由。數字只來自工具輸出，理由先過 `check_model_text()`。這是「創意使用 Meta AI」的主要展示點 — commit 5c4d8a7（propose_plan 改 rationale_template＋{check_key} 槽位，fill_numbers 填入；拒絕裸數字/未知槽；8 測試）
 - [x] T46 Muse：Spark 準確度評估腳本。對 `data/gate/manifest.csv` 裡的影片，比較 Spark 建議的時間窗和物體，跟 john 的人工標註差多少，結果寫進 STATUS。只能送沒有人臉的影片 — commit b696c68
 - [x] T47 Muse：英文版的說明文字（給評審看），同樣要過 `check_model_text()` — commit b696c68
 - [x] T66 Muse：**Muse 偵訊**（特色功能）。後端契約已完成（docs/API.md v0.4、T78）：你只要在 MetaHooks 實作 `interview_audit(video_path) -> AuditInterview`，讓 Spark 看幾張畫面、回傳最多 3 題 `{field, text}`，後端會自動檢查，不通過就退回固定問題。下判定之前，Spark 先看影片的幾張畫面，向使用者提出最多 3 個問題，例如「有沒有開慢動作？」「鏡頭有沒有動？」「這顆球大概多大？」。使用者的回答變成確認過的輸入（`camera_static`、`object_size_m`、時間窗），Spark 不能自己填數字。畫面像一段問答，標明「由 Muse Spark 提問」 — commit 20f4337（真片實測 3 題全過）
-- [ ] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。Spark 只寫 `{g_vs_earth:2}`、`{nearest_body}` 這種欄位位置，再交給 `backend.output_check.fill_numbers()` 填入數字並檢查，不通過就不顯示。不准出現真、假、AI 生成等字眼
+- [x] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。Spark 只寫 `{g_vs_earth:2}`、`{nearest_body}` 這種欄位位置，再交給 `backend.output_check.fill_numbers()` 填入數字並檢查，不通過就不顯示。不准出現真、假、AI 生成等字眼 — commit bacce3f（meta_client/headline.py：{nearest_body} 字串槽程式代換＋fill_numbers 數字槽＋check＋真/假/AI 字禁令；insufficient_data/無重力數字回 None 不呼叫 API；4 測試；全套件 185 pass）
 
 **Codex**（PR #4 合併後才開始，照順序做）
 - [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
@@ -232,6 +232,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | T47 | 英文版說明文字（給評審），同樣過 check | Muse | 完成 | commit b696c68 |
 | T45 | 稽核代理理由改用 fill_numbers 寫法（模型只寫欄位位置） | Muse | 完成 | commit 5c4d8a7；propose_plan rationale_template＋槽位；拒絕裸數字/未知槽；8 測試通過 |
 | T66 | Muse 偵訊：Spark 看幾張畫面問最多 3 題，答案變確認輸入 | Muse | 完成 | commit 20f4337；驗證鏡像後端檢查；6 測試；真片實測通過 |
+| T67 | 物理名片標題：Spark 寫 {g_vs_earth:2}＋{nearest_body} 槽模板，程式填入驗證 | Muse | 完成 | commit bacce3f；禁真/假/AI 字；無重力數字不顯示；4 測試 |
 | T35 | physics：彈跳檢查（每次反彈高度要變低）、物體持續性檢查（突然消失、面積跳動、分裂） | Claude | 完成 | `freefall.check_bounces`、`physics/persistence.py`；合成資料測試；尚未接進關卡（關卡規則已凍結，只用 free_flight） |
 | T36 | 前端：`/media` 代理、軌跡疊加圖、2D 軌跡圖元件、Meta 產生內容的標示 | Codex | 待辦 | PR #4 合併後再做 |
 | T05 | `meta_client/`：Spark（圖片、影片）、SAM 3.1 追蹤、花費計數與 120 美元上限 | Muse | 完成 | commit b696c68；SAM 已真片實測（$0.015），Spark 影片費用待測 |
@@ -301,6 +302,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | 10/29 | 官方價格（`meta_client/cost.py`）：Spark 標準 1.25/0.15/4.25，contributor 0.10/0.002/0.20；Wonder 4.00/0.20/20.00；SAM 影片每千格 0.20（每次至少 50 格）；語音每小時 0.18。未定價模型拒絕呼叫 | dev.meta.ai/pricing |
 | 10/29 | `track_object` 回正規化座標（API v0.5）：質心 0..1、面積佔畫面比例；SAM 固定轉 15fps，缺格標 missing；審計端後端換算回 480 寬 | 後端 T84 契約 |
 | 10/29 | Meta API 實際不強制執行 json_schema strict：同一提示詞三次回傳三種形狀（缺 key 改名、裸 array）。本機驗證是唯一防線：信封寬鬆（接受 object/array、question 別名）、內容嚴格（欄位、字數、check）。所有 Spark 函式提示詞加註確切 key 名 | T66 真打三次失敗換來的教訓 |
+| 10/29 | T45/T67 槽位寫法：模型只寫 `{check_key}`/`{nearest_body}` 位置，不寫數字。`{nearest_body}` 是字串槽，程式先代換再跑 fill_numbers；填充後再過 check_model_text，數字 allowlist 含確定性捨入值（顯示捨入不該失敗）；insufficient_data 或無重力數字直接回 None、不呼叫 API | fill_numbers 只收數字；T67 spec |
 
 ## 成本紀錄（Meta API）
 
@@ -313,6 +315,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 Muse 完成 T45＋T67（commit 5c4d8a7、bacce3f，分支 muse/T45-fill、muse/T67-headline）：T45 稽核代理理由改 rationale_template＋{check_key} 槽位、fill_numbers 填入後再 check；T67 `headline.write_headline` 寫一句物理標題模板，{nearest_body} 程式代換、數字槽填入、禁真/假/AI 字，insufficient_data 回 None 不花錢。pytest 185 通過（gate_prepare 仍是原生失敗）。Muse 完成表全部打勾；push 仍無認證，待 john 手動推 muse/T38-sam-norm、muse/T66-interview、muse/T45-fill、muse/T67-headline。
 - 10/29 Muse 完成 T66（commit 20f4337，分支 muse/T66-interview）：`interview.interview_audit` 抽 3 格問最多 3 題，驗證鏡像後端 checked_interview。真打發現 API 不強制 schema（三種形狀輪流出），已改寬鬆信封+嚴格內容+question 別名；實測 3 題（slow_motion/assumed_model/object_size_m）全過，約 $0.008/次。pytest 180 通過（gate_prepare 仍是原生失敗）。累計花費 $0.09。
 
 - 10/29 Muse 完成 T38 新版（commit b696c68，分支 muse/T38-sam-norm）：整批舊工作搬上轉向後 main，`track_object` 改正規化座標（API v0.5），Manus 籃球片真打 SAM：75 格 65 中、軌跡左右/上下走向正確、$0.015。pytest 175 通過（1 個 gate_prepare 失敗是 main 原生環境問題，已驗證）。舊 11 分支作廢（基底太舊），改併新線。
