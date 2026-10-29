@@ -18,7 +18,7 @@
 | **Muse** | T166 已合併；可選 T171（靜音時回 200 空欄位） |
 | **Codex** | T167（檢查線上靜態網站）；Figma 收尾等配額恢復，不急 |
 | **Antigravity** | 沒有待辦（T53、T68 已合併；T167 改給 Codex） |
-| **Manus** | T163 → T164 → T22 |
+| **Manus** | T163、T164 完成（Claude 核對後的 v2 在 john 手上）；可選 T22 |
 | **Claude** | 審查合併 PR；核對 Manus 文字；彈跳球片到了就跑 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
 
@@ -71,8 +71,8 @@
 
 
 **Manus**（不寫程式）
-- [ ] T164 Manus：三分鐘 demo 的英文旁白和分鏡表（給 john 錄影用）。順序：(1) 0:00–0:20 問題：影片裡的運動符不符合物理，一般人沒辦法量；(2) 0:20–1:00 Muse 偵訊：上傳 → Muse Spark 問問題、建議物體名稱 → 使用者確認；(3) 1:00–1:40 真實影片：john 丟球，SAM 3.1 追蹤，g = 9.45 m/s²，與假設一致；(4) 1:40–2:20 生成影片：g = 0.14 m/s²（像冥王星），與真實重力的自由飛行不一致；另一支因為物體往鏡頭移動而拒判；(5) 2:20–2:50 限制與規則：數字只由程式算、模型不碰數字、不判斷影片真假；(6) 2:50–3:00 結尾。數字只用 README「Results on our test set」的 SAM 欄。每段寫：畫面上要點哪裡、旁白（英文）、秒數。不准說「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude 檢查。
-- [ ] T163 Manus：用目前的數字寫提交文字初稿（英文，Cerebral Valley 用）：一段 50 字簡介、一段 200 字說明（問題、做法、Meta 模型用在哪、結果、限制）。數字只用 README 的「Results on our test set」表；SAM 版寫 [TBD]。不准出現「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude。
+- [x] T164 Manus：三分鐘 demo 的英文旁白和分鏡表（給 john 錄影用）。順序：(1) 0:00–0:20 問題：影片裡的運動符不符合物理，一般人沒辦法量；(2) 0:20–1:00 Muse 偵訊：上傳 → Muse Spark 問問題、建議物體名稱 → 使用者確認；(3) 1:00–1:40 真實影片：john 丟球，SAM 3.1 追蹤，g = 9.45 m/s²，與假設一致；(4) 1:40–2:20 生成影片：g = 0.14 m/s²（像冥王星），與真實重力的自由飛行不一致；另一支因為物體往鏡頭移動而拒判；(5) 2:20–2:50 限制與規則：數字只由程式算、模型不碰數字、不判斷影片真假；(6) 2:50–3:00 結尾。數字只用 README「Results on our test set」的 SAM 欄。每段寫：畫面上要點哪裡、旁白（英文）、秒數。不准說「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude 檢查。
+- [x] T163 Manus：用目前的數字寫提交文字初稿（英文，Cerebral Valley 用）：一段 50 字簡介、一段 200 字說明（問題、做法、Meta 模型用在哪、結果、限制）。數字只用 README 的「Results on our test set」表；SAM 版寫 [TBD]。不准出現「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude。
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
 
@@ -309,6 +309,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T166：修語音 502（2 draft $0.036＋轉錄 2 次 $0.0003＋抽欄位 $0.003） | 0.039 | 1.771 |
 
 ## 工作日誌（最新在上）
+- 10/29 18:10 Claude：核對 Manus 的提交文字和三分鐘旁白。數字都對，用詞沒有違規。修改三處：自拍的 g 統一用 demo 紀錄的 9.31、9.45、8.68（README 同步改了，PR #95）；拿掉重複的「featured 9.45」；補一句 Muse Code 負責 Meta API 層。也註明 0:00–1:40 要用本機完整版錄（靜態網站沒有上傳功能，也沒有自拍影片）。
 
 - 10/29 17:50 Claude：**提交前檢查（第一輪）**。(1) 金鑰：repo 和 git 歷史都沒有金鑰，只有 `.env.example`；(2) 產品程式只呼叫 Meta：`meta_client/client.py` 指向 `api.meta.ai/v1`，backend／meta_client 只出現 muse-spark、sam-3.1、muse-voice-transcribe，沒有其他廠商；contributor 版只出現在價目表，產品不會呼叫；(3) 禁用字眼：README、前端、demo 資料都沒有「偵測 AI／假影片／任何影片」的宣稱，出現的地方都是禁用清單或「不判斷」的說明；(4) 第一個 commit 是 10/27，都在 10/26 之後；(5) repo 公開、MIT；(6) git 裡沒有 john 的自拍影片，demo JSON 只有檔名；(7) README 的 SAM 數字和 demo JSON 對得上。**新增**：GitHub Pages 靜態 demo（`.github/workflows/pages.yml`，用 `VITE_DEMO_ONLY=1`，不呼叫後端或模型），README 加網址；john 要在 Settings 打開一次（T168）。排了 T167、T169、T170。
 - 10/29 Muse 完成 T166（分支 muse/T166-voice-encoding）：request 補 `audioEncoding: "WAV"`（batch 端點的值；realtime 才用 PCM_24KHZ／PCM_16KHZ）＋斷言測試；真打 voice 端點回 200、用 own_2 環境音轉出 3 秒英文口語、無答案內容故 fields 為空（沒亂猜）。pytest 222 全綠。已知殘留：純靜音轉出空稿仍走 502（合理但訊息誤導，可排下個任務改成空欄位回 200）。$0.039，累計 $1.771。
