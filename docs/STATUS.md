@@ -80,7 +80,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [ ] T103 Codex：重力刻度尺：在結果頁畫一條對數刻度（冥王星 0.62、月球 1.62、火星 3.71、地球 9.81、木星 24.79），標出 `g_apparent_m_s2` 和 `g_apparent_low/high` 的範圍。星球數值直接寫在前端常數，量測值只用後端數字
 - [ ] T104 Codex：上傳頁加「拍攝檢查清單」：鏡頭固定、側面拍、只有一個物體、顏色鮮明（例如橘色）的球、不要慢動作、球不要朝鏡頭飛。附一句：「不符合時系統會拒判，不會硬給答案」
 - [ ] T105 Codex：手機版與無障礙檢查：稽核首頁、結果頁、結果牆在 390 px 寬不能橫向捲動；按鈕可用鍵盤操作；圖表有文字替代
-- [ ] T100 Codex：（T92 之後做）結果區最上面顯示 `explanation.text`，旁邊標明來源：`template` →「固定模板（未使用模型）」，`model` →「由 Muse Spark 產生」。名片和匯出也要放。不要改寫文字或數字
+- [x] T100 Codex：（T92 之後做）結果區最上面顯示 `explanation.text`，旁邊標明來源：`template` →「固定模板（未使用模型）」，`model` →「由 Muse Spark 產生」。名片和匯出也要放。不要改寫文字或數字 — commit 待回填（本次程式提交）
 - [x] T92 Codex：（T89、T90 之後做）稽核變成網站首頁：打開網站先看到「檢查影片」與 demo 導覽；斜坡教練移到第二個分頁「實驗教練」，功能不刪。首頁一句話說明：「檢查影片中的運動是否符合你假設的物理模型」，不准出現「AI 偵測」「抓假影片」等字 — commit c0c6758
 - [x] T89 Codex：檢查並修飾 Claude 在 T88 對前端的最小改動（`track_source: "color"` → 「顏色＋移動追蹤（未使用模型）」），樣式和其他來源標籤一致，補一個測試 — commit 46fccb8
 - [x] T90 Codex：demo 導覽加「真實影片」一段，讀 `data/demo/real_own_1.json` 到 `real_own_3.json`（`real_clip: true`）。要標明「john 自己拍的影片、標註由 john 確認」，並把 own_1、own_2 的「一致、最接近地球」和 own_3 的「不一致、原因不明」放在一起，不挑片。這些紀錄沒有影片（`video_url` 是空字串，john 的家不放上公開 repo），要能正常顯示軌跡、鬼影和數字 — commit f5103e9
@@ -432,3 +432,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T92：空網址與未知路由預設開稽核，主分頁為 Check video／Experiment coach；首頁說明限定為與假設模型核對，保留 demo 導覽、範圍說明與全部斜坡子路由。testid nav-audit/nav-coach，舊 nav-setup 等仍在教練內。npm 60 pass、build pass；pytest 76 pass/1 fail（既有 ffmpeg 無 drawtext），未宣稱全綠。
 
 - 10/28 Codex 工作總結：T89→T90→T92 已各自提交與推送，PR #42 待審；再次 pull main 後沒有 Codex 未勾項。前端 npm 60 pass、build pass；pytest 76 pass/1 fail，drawtext 缺口已列待 john 決定，不修改角色外的程式或掩蓋測試。未推 main。
+- 10/28 Codex T100：結果最上方、PNG 與 Markdown 加 explanation 原文與 template/model 來源，不改數字；離線 parser 驗證。npm/build 通過；pytest 的 drawtext 環境缺口仍列待決定。
