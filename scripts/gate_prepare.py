@@ -41,8 +41,12 @@ def contact_sheet(path: Path, out: Path, step_s: float = 0.1, cols: int = 10, ma
     vf = (f"fps={1 / step_s},scale=192:-2,"
           "drawtext=text='%{pts\\:hms}':x=4:y=4:fontsize=14:fontcolor=yellow:box=1:boxcolor=black@0.6,"
           f"tile={cols}x{rows}")
-    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(path), "-vf", vf, "-frames:v", "1", str(out)],
-                   check=True)
+    res = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(path), "-vf", vf, "-frames:v", "1", str(out)],
+                         capture_output=True)
+    if res.returncode != 0:
+        vf_fallback = f"fps={1 / step_s},scale=192:-2,tile={cols}x{rows}"
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(path), "-vf", vf_fallback, "-frames:v", "1", str(out)],
+                       check=True)
     return step_s
 
 
