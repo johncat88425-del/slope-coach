@@ -90,7 +90,7 @@
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
 **Claude**
-- [ ] T96 Claude：Manus 1 支、Antigravity 2 支（程式渲染 3D，另列「程式模擬」來源）標註好後補進關卡紀錄
+- [ ] T96 Claude：（Manus 已補，03:15）Manus 1 支、Antigravity 2 支（程式渲染 3D，另列「程式模擬」來源）標註好後補進關卡紀錄
 - [ ] T97 Claude：`output_check` 加上新方向的禁用語（抓假影片、AI 偵測、deepfake detector 等），並加測試
 - [x] T31 拋體檢查、T32 關卡工具、T35 彈跳與持續性檢查、T30 `/media`
 - [ ] 審查並合併 Muse 的 T05、T29
@@ -202,7 +202,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 1. 顏色追蹤是看過 john 的 3 支自拍之後才加的（見規則變更紀錄）。Meta 影片是在規則定下之後才生成、才跑的，沒有再調參數。
 2. 網站稽核比關卡更保守。它多了「物體大小沿軌跡變化超過 30% 就拒判」這條透視檢查（T56，看資料前就有）。同樣 6 支 Meta 影片，網站判 clip2（g 像月球）、clip3（g 像冥王星）不一致，另外 4 支因為球朝鏡頭飛而判資料不足。demo 和文件要用網站的結果。
 3. 目前只有一家生成模型（Meta AI），每家 1 支只是試驗。不能說「能檢查任何影片」或「能辨識 AI 影片」。
-4. 還沒列入關卡：Manus 生成 1 支（球是咖啡色，標註等 john）、Antigravity 用程式渲染的 3D 影片 2 支。後者不是生成式 AI，屬於「程式模擬」類；試跑 ag_clip1 得到 g = 23.75，最接近木星。
+4. 10/29 03:15 補進 Manus 生成 1 支：john 判定球是橘黑色，物體名稱填 `orange basketball`。顏色追蹤只追到 55% 的格數，所以**拒判**（照規則，沒有改標註去湊結果）；改用 frame_diff 的試跑是 g = 2.55，只當參考。加入後 Q3 是 1/10 拒判，仍然 pass。還沒列入關卡的：Antigravity 和 john 從 Gemini 拿到的影片各 2 支，都是**程式畫出來的動畫**（Lavf 編碼、簡單 3D 或平面畫面），不是生成式影片模型做的，另列「程式模擬」來源，不算進 Q2。後者不是生成式 AI，屬於「程式模擬」類；試跑 ag_clip1 得到 g = 23.75，最接近木星。
 
 **10/29 02:30 第一次正式試跑**（john 量的球直徑 0.11 m；john 10/29 02:28 確認時間窗，並確認三張疊加圖的紅點都在球上；`data/gate/results.md`，舊規則版本在 `results_frame_diff.md`）
 
