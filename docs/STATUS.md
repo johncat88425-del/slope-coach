@@ -2,22 +2,24 @@
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
 > **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
-> 最後更新：2026-10-29 03:15Z（Claude）
+> 最後更新：2026-10-29 03:40Z（Claude）
 
 ## 一句話現況
 
 **10/29 03:10 可行性關卡三題都通過，john 決定轉向「影片物理稽核」。** john 自拍的 2 支影片算出 g = 9.62、9.82（一致）；6 支 Meta AI 影片全部不一致，最明顯的一支 g = 0.12。現在最大的缺口是**追蹤品質**：不用模型的追蹤在 3 支 Meta 影片上不可靠，Manus 那支咖啡色的球也追不到，所以 **SAM 3.1（Muse T38）是第一優先**。斜坡教練保留，只做維護。
 
-## 現在每個工具要做什麼（10/29 03:15 Claude 指示，照順序做，做完一件就接下一件）
+## 現在每個工具要做什麼（10/29 03:40 Claude 指示，給一整晚的量，照順序做，做完一件就接下一件）
 
-| 誰 | 現在做 | 細節 |
+john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commit、push 自己的分支，再 `git pull origin main` 接下一件。卡住寫進「待 john 決定」，然後跳下一件。
+
+| 誰 | 照這個順序做 | 重點 |
 | --- | --- | --- |
-| **Muse**（最優先） | push T05、T29 → **T38 SAM** → T66 → T45 | 先 commit 並 push 你本機做好的 T05、T29 到 `muse/T05-meta-client`。T38：在 MetaHooks 實作 `track_object`，呼叫 `sam-3.1`（格式見 docs/API.md v0.6）。測試影片：`/mnt/project-files/gate/meta/meta_clip1.mp4`、`meta_clip4.mp4`、`meta_clip5.mp4`（不用模型的追蹤在這 3 支失敗），以及 `manus/manus_clip1.mp4`（咖啡色的球）。這些是生成影片，沒有真人臉，可以用 contributor 模型開發。T66：`interview_audit`。T45：稽核代理，Spark 選要跑哪些檢查，並用 `fill_numbers` 寫說明。 |
-| **Codex** | T89 → T90 → T92 | T92：稽核變成網站首頁和主流程，斜坡教練移到第二個分頁「實驗教練」。細節見完成表。 |
-| **Antigravity** | T02 → T52 → T42 | requirements.txt 與 `scripts/dev.sh`；GitHub Actions 跑 pytest 和 npm test（要裝 ffmpeg）；用 `data/demo/real_own_*.json` 跑稽核流程的端到端測試與截圖。**不要再做 3D 渲染影片**，那不是這次要的測試資料。 |
-| **Manus** | T23 → T95 | T23：依照新方向重寫三分鐘 demo 分鏡（真實影片一致 → Meta 影片不一致 → 拒判例子 → Muse 問問題與說明）。T95：提交頁文字草稿。只寫文件，放 `docs/research/`。 |
-| **Claude** | 審查 PR、T96、T97 | T96：Manus／Antigravity 影片標註好後補進關卡紀錄。T97：把 AGENTS 新方向的用語檢查加進 `output_check`（例如「抓假影片」「AI 偵測」）。 |
-| **john** | 回答 Manus 球的顏色 | 可選：Sora／Veo 各生成第 1、6 段提示詞。之後錄 demo。 |
+| **Muse**（最優先） | T05、T29（先 push）→ **T38 SAM** → T107 → T66 → T45 → T108 → T109 → T110 → T111 → T34 → T39 → T67 → T47 | SAM 是最大的缺口：顏色追蹤在 Meta clip1、4、5 和 Manus 那支失敗，測試影片在 `/mnt/project-files/gate/meta/`、`manus/`。所有用到模型的輸出都要標來源；數字只能由 physics 產生。花費超過 10 美元先停，寫進 STATUS。 |
+| **Codex** | T100 → T101 → T102 → T103 → T104 → T105 → T113 → T114 → T115 → T116 → T117 → T118 | demo 用的資料都在 `data/demo/`（`real_own_*`、`generated_*`）。不准出現「偵測 AI」「假影片」「真假」。 |
+| **Antigravity** | T02 → T52 → T42 → T119 → T120 → T121 → T122 → T54 → T53 | 不要再做 3D 渲染影片。部署帳號等 john 決定。 |
+| **Manus** | T23 → T95 → T123 → T124 → T125 → T126 | 只寫文件，交給 john 轉給 Claude。數字只用 `data/gate/product_results.md`。 |
+| **Claude** | T127 → T129 → T128 → T130 → T131 | 每 2 小時巡查、審查合併。 |
+| **john**（明天） | 把 Manus 的文件傳給 Claude；看 demo 導覽；可選：Kling／Luma 各生成 1 支 | 錄 demo 前先讓 Claude 確認數字。 |
 
 ## 完成表（每做完一件就打勾，附 commit；Claude 每隔一段時間來看）
 
@@ -38,6 +40,12 @@
 - [ ] T47 Muse：英文版的說明文字（給評審看），同樣要過 `check_model_text()`
 - [ ] T66 Muse：**Muse 偵訊**（特色功能）。後端契約已完成（docs/API.md v0.4、T78）：你只要在 MetaHooks 實作 `interview_audit(video_path) -> AuditInterview`，讓 Spark 看幾張畫面、回傳最多 3 題 `{field, text}`，後端會自動檢查，不通過就退回固定問題。下判定之前，Spark 先看影片的幾張畫面，向使用者提出最多 3 個問題，例如「有沒有開慢動作？」「鏡頭有沒有動？」「這顆球大概多大？」。使用者的回答變成確認過的輸入（`camera_static`、`object_size_m`、時間窗），Spark 不能自己填數字。畫面像一段問答，標明「由 Muse Spark 提問」
 - [ ] T67 Muse：**物理名片標題**（特色功能）。Spark 依照 `AuditOut` 的數字，為結果寫一句好記的標題，例如「這顆球落得像在月球上：表觀重力只有地球的 0.26 倍」。Spark 只寫 `{g_vs_earth:2}`、`{nearest_body}` 這種欄位位置，再交給 `backend.output_check.fill_numbers()` 填入數字並檢查，不通過就不顯示。不准出現真、假、AI 生成等字眼
+
+- [ ] T107 Muse：SAM 3.1 全部重跑：用 `scripts/audit_batch.py` 的方式，把 `data/gate/manifest.csv` 所有影片改用 SAM 追蹤跑一遍，結果寫進 STATUS「關卡結果」下面的新小節「SAM 對照」，和顏色追蹤的結果並排列出，**兩版都要報告，不准只放好看的**。花費記進成本紀錄
+- [ ] T108 Muse：Spark 看第一格畫面，建議 `object_name`（例如 orange basketball）和「鏡頭看起來固定嗎」。只是建議，要使用者確認才會用；回傳要過 schema 和 `check_model_text`
+- [ ] T109 Muse：語音回答偵訊問題：`muse-voice-transcribe-1.0` 把使用者說的話轉成文字，Spark 抽出欄位（例如物體大小），**數字一定要使用者在畫面上確認**才送出。沒有金鑰時用 mock
+- [ ] T110 Muse：花費顯示：後端 `/api/spend` 回傳目前累計花費和 120 美元上限，給前端顯示。到上限時所有付費呼叫拒絕，並有測試
+- [ ] T111 Muse：每一個用到 Meta 模型的回傳都帶 `source`（model 名稱與版本），讓畫面能標示「由 Muse Spark 1.3 產生」「由 SAM 3.1 追蹤」
 
 **Codex**（PR #4 合併後才開始，照順序做）
 - [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
@@ -67,10 +75,23 @@
 - [x] T81 Codex：**demo 導覽模式**。加一個「Guided demo」按鈕，按照順序帶評審看：首頁說明（能判斷什麼、不能判斷什麼）→ Muse 偵訊 → 結果與鬼影對照 → 物理名片 → 三種結果並排。每一步用一句英文說明，加上「Next」按鈕，並標明哪些內容由 Muse Spark 產生。只用已經有的畫面，不新增假資料 — commit c4b1481
 - [x] T82 Codex：英文介面文字總檢查，給評審看的。統一用語（consistent / inconsistent / insufficient data with the assumed model），刪掉內部用語（例如 fixture、draft id），按鈕文字要短。不准出現 real、fake、AI-generated、detect — commit 6b73368
 - [x] T85 Codex：「檢查影片」和 Muse 偵訊加一個「物體名稱」欄位，送 `object_name`（給 SAM 的文字提示，預設 ball）。結果區要依照 `track_source` 標明「由 SAM 3.1 追蹤」或「frame differencing（未使用模型）」，物理名片和匯出也要寫（API v0.5） — commit 8a7bd26
+- [ ] T101 Codex：「結果牆」頁：讀 `data/demo/real_own_*.json` 和 `data/demo/generated_*.json`（`generated_clip: true`，`source` 是 meta_ai 或 manus），每支一張卡：來源、判定、`explanation.text`、最接近的星球、追蹤來源。全部列出，不挑片；資料不足的也要放，並顯示原因。頁首一句話：「同一套規則跑過每一支影片；結果只說和假設的運動模型是否一致」。不准寫「偵測」「假影片」
+- [ ] T102 Codex：鬼影球播放：結果頁加「播放」按鈕，用 `points` 和 `ghost_points` 依時間同步動畫兩顆點（實際的球和照地球重力的球），沒有影片也能播。只用後端給的座標，不自己算物理
+- [ ] T103 Codex：重力刻度尺：在結果頁畫一條對數刻度（冥王星 0.62、月球 1.62、火星 3.71、地球 9.81、木星 24.79），標出 `g_apparent_m_s2` 和 `g_apparent_low/high` 的範圍。星球數值直接寫在前端常數，量測值只用後端數字
+- [ ] T104 Codex：上傳頁加「拍攝檢查清單」：鏡頭固定、側面拍、只有一個物體、顏色鮮明（例如橘色）的球、不要慢動作、球不要朝鏡頭飛。附一句：「不符合時系統會拒判，不會硬給答案」
+- [ ] T105 Codex：手機版與無障礙檢查：稽核首頁、結果頁、結果牆在 390 px 寬不能橫向捲動；按鈕可用鍵盤操作；圖表有文字替代
+- [ ] T100 Codex：（T92 之後做）結果區最上面顯示 `explanation.text`，旁邊標明來源：`template` →「固定模板（未使用模型）」，`model` →「由 Muse Spark 產生」。名片和匯出也要放。不要改寫文字或數字
 - [x] T92 Codex：（T89、T90 之後做）稽核變成網站首頁：打開網站先看到「檢查影片」與 demo 導覽；斜坡教練移到第二個分頁「實驗教練」，功能不刪。首頁一句話說明：「檢查影片中的運動是否符合你假設的物理模型」，不准出現「AI 偵測」「抓假影片」等字 — commit c0c6758
 - [x] T89 Codex：檢查並修飾 Claude 在 T88 對前端的最小改動（`track_source: "color"` → 「顏色＋移動追蹤（未使用模型）」），樣式和其他來源標籤一致，補一個測試 — commit 46fccb8
 - [x] T90 Codex：demo 導覽加「真實影片」一段，讀 `data/demo/real_own_1.json` 到 `real_own_3.json`（`real_clip: true`）。要標明「john 自己拍的影片、標註由 john 確認」，並把 own_1、own_2 的「一致、最接近地球」和 own_3 的「不一致、原因不明」放在一起，不挑片。這些紀錄沒有影片（`video_url` 是空字串，john 的家不放上公開 repo），要能正常顯示軌跡、鬼影和數字 — commit f5103e9
 - [x] T86 Codex：結果、名片和匯出都要顯示使用者回答的 `slow_motion`。如果是因為慢動作被拒判，要用一句話說明原因（直接照後端的 reason，不要自己改寫） — commit d560608
+
+- [ ] T113 Codex：稽核執行中的進度提示（上傳中、追蹤中、計算中），稽核可能要 10 秒以上；失敗時顯示後端的錯誤原因，不要只寫「失敗」
+- [ ] T114 Codex：真實 vs 生成並排比較頁：選兩筆紀錄（例如 `real_own_2` 和 `generated_meta_clip2`），左右並排顯示軌跡、鬼影、重力刻度和說明。標題寫「同一套規則，兩支影片」，不准寫「真假」
+- [ ] T115 Codex：稽核報告列印版（CSS print stylesheet），一頁 A4 放：判定、說明、數字、軌跡圖、限制、追蹤來源與模型來源標示
+- [ ] T116 Codex：Muse 語音回答的介面（配合 Muse T109）：錄音按鈕 → 顯示轉出的文字和抽出的欄位 → 使用者逐欄確認後才送出。沒接上時按鈕顯示「需要 Meta API」
+- [ ] T117 Codex：英文介面全面檢查（評審看英文）：所有新頁面都要有英文，用詞照 AGENTS 規則（consistent／inconsistent／insufficient data with the assumed model）
+- [ ] T118 Codex：首頁 30 秒自動導覽模式（給 demo 錄影用）：依序顯示 real_own_2 → generated_meta_clip2 → generated_meta_clip4（拒判），每步有一句英文說明，可暫停
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -83,13 +104,30 @@
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
 - [ ] T54 Antigravity：上傳安全：檔案大小上限 200 MB、只收影片格式、每個 IP 每天最多 20 次稽核。寫成提案放進「待 john 決定」，Claude 審查後實作
 
+- [ ] T119 Antigravity：用 `docker compose up` 一個指令就能跑起前後端（含 ffmpeg），只在本機測。要部署到哪個網站先寫進「待 john 決定」，不要自己開帳號
+- [ ] T120 Antigravity：端到端測試：結果牆（T101）、鬼影球播放（T102）、並排比較（T114），桌機和 390 px 手機各截圖，放 `docs/screens/`（只放圖片）
+- [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
+- [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
+
 **Manus**（不寫程式）
 - [x] T21 Manus：影片物理合理性競品研究（附來源），結果放在 `docs/research/competitors.md`
 - [ ] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）。差異點照 competitors.md 的結論寫，不准說「第一個」或「偵測 AI 影片」。**10/29 改成單一版本：影片物理稽核**（真實影片一致 → Meta 影片不一致 → 拒判例子 → Muse 問問題與說明）
 - [ ] T95 Manus：提交頁文字草稿（英文，300 字以內）：問題、做法、Meta 模型用在哪、限制。數字只能引用 STATUS「關卡結果」，不准說「偵測 AI 影片」
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
+- [ ] T123 Manus：三分鐘英文旁白稿，逐秒對應 T23 分鏡；只用 `data/gate/product_results.md` 裡的數字
+- [ ] T124 Manus：評分標準對照表：Impact 30%、Meta 工具運用 25%、技術深度 20%、Demo 25%，每一項寫我們的證據（指到 repo 裡的檔案或 demo 片段），做不到的老實寫「沒有」
+- [ ] T125 Manus：使用者測試計畫改版（取代 T22）：找 5 個人用自己的手機拍丟球影片上傳，記錄他們能不能看懂結果、哪裡卡住。附招募訊息和記錄表
+- [ ] T126 Manus：限制與常見問題（英文 FAQ）：為什麼不判斷真假、為什麼會拒判、需要怎麼拍、數字怎麼來、Meta 模型做了什麼
+
 **Claude**
+- [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
+- [ ] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
+- [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
+- [ ] T130 Claude：把 Manus 交來的 T23、T95、T123–T126 檢查用詞和數字後放進 `docs/research/`
+- [ ] T131 Claude：彈跳和單擺的真實影片流程（等 john 拍片）：準備標註表和試跑腳本
+- [x] T106 Claude：`data/demo/generated_*.json`：6 支 Meta、1 支 Manus 影片經網站流程的完整結果（含說明，不含影片），給 Codex T101 結果牆用 — 見 PR
+- [x] T99 Claude：稽核結果新增 `explanation`（API v0.7），先用固定模板寫一般人看得懂的說明，數字由 `fill_numbers` 填入，例如「the object falls as if gravity were 1.71 m/s², 0.17 times Earth's, closest to Moon」。Muse T45 接上後改成 `source: model`。`data/demo/real_own_*.json` 已重新產生，含說明 — 見 PR T99
 - [x] T98 Claude：`scripts/audit_batch.py`：把 manifest 裡每支影片都走一遍網站流程，產生 `data/gate/product_results.md`（網站判定結果表）。demo 和提交文字的數字引用這張表。目前：自拍 2 一致、1 小幅不一致；Meta 2 不一致（月球、冥王星）、4 資料不足（球朝鏡頭飛）；Manus 1 資料不足 — 見 PR T98
 - [ ] T96 Claude：（Manus 已補，03:15）Manus 1 支、Antigravity 2 支（程式渲染 3D，另列「程式模擬」來源）標註好後補進關卡紀錄
 - [x] T97 Claude：`output_check` 加上新方向的禁用語（抓假、測謊、AI 偵測、任何影片、lie detector、any video 等），並加測試 — 見 PR T97
@@ -302,6 +340,9 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 03:40 Claude：john 去睡覺前要求給一整晚的量。新增 Muse T107–T111、Codex T113–T118、Antigravity T119–T122、Manus T123–T126、Claude T127–T131，並重寫頂端的順序表。
+- 10/29 03:30 Claude：合併 Codex PR #42（T89、T90、T92）。新增生成影片的 demo 紀錄（T106），替 Codex 補 T101 到 T105。
+- 10/29 03:35 Claude T99：稽核結果加上用一般人的話寫的說明（固定模板，API v0.7），新增 Codex T100。
 - 10/29 03:25 Claude T98：網站判定結果表 `data/gate/product_results.md`。
 - 10/29 03:15 Claude：依 john 的決定改寫 AGENTS.md（目前方向、專案說明）與本檔頂端的分工表，新增 T92、T95、T96、T97。
 - 10/29 03:10 Claude：關卡正式結果三題都通過。依決定規則應轉向「影片物理稽核」，已請 john 決定。

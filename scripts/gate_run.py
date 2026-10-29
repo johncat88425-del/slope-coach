@@ -13,10 +13,11 @@ from pathlib import Path
 
 from physics.errors import PhysicsInputError
 from physics.experiments.freefall import check_flight, fit_flight
+from physics.persistence import size_trend
 
 import numpy as np
 
-from backend.video import color_for, probe_fps, read_frames, read_frames_rgb, save_overlay, track, track_color
+from backend.video import color_for, probe_fps, read_frames, read_frames_rgb, save_overlay, track_color, track_with_sizes
 
 # Frozen 2026-10-28 before any gate clip was seen. Do not tune per clip.
 GATE_RULES = {
@@ -56,13 +57,17 @@ def run_clip(row: dict, clips_dir: Path, overlay_dir: Path | None = None, tracke
         frames = rgb.mean(axis=-1)
     else:
         frames, fps = read_frames(path, start, end)
-        pts, size_px = track(frames, fps, start, GATE_RULES["diff_threshold"])
+        pts, sizes = track_with_sizes(frames, fps, start, GATE_RULES["diff_threshold"])
+        size_px = float(np.median(sizes)) if sizes else None
     out["tracker"] = f"color:{color}" if color else "frame_diff"
     if overlay_dir is not None:
         overlay_dir.mkdir(parents=True, exist_ok=True)
         save_overlay(frames, pts, start, fps, str(overlay_dir / f"{Path(row['clip']).stem}_track.png"))
     frac = len(pts) / max(len(frames), 1)
-    out |= {"frames": len(frames), "tracked_fraction": round(frac, 2)}
+    trend = size_trend([p[0] for p in pts], sizes) if len(pts) >= 2 else None
+    # shown only so this table can be read next to the website's (which refuses above 30%); not a gate rule
+    out |= {"frames": len(frames), "tracked_fraction": round(frac, 2),
+            "size_trend": None if trend is None else round(trend, 2)}
     if frac < GATE_RULES["min_tracked_fraction"]:
         return out | {"result": "refused", "why": f"object tracked in only {frac:.0%} of frames"}
     m_per_px = float(row["object_size_m"]) / size_px if row.get("object_size_m") and size_px else None
@@ -157,7 +162,7 @@ def summary_markdown(s: dict) -> str:
 
 def to_markdown(rows: list[dict]) -> str:
     keys = ["clip", "source", "assumed_model", "result", "why", "g_apparent", "time_factor",
-            "implied_size_m", "tilt_deg", "rms_over_travel", "tracked_fraction", "tracker", "track_ok"]
+            "implied_size_m", "tilt_deg", "rms_over_travel", "tracked_fraction", "size_trend", "tracker", "track_ok"]
     lines = ["| " + " | ".join(keys) + " |", "|" + " --- |" * len(keys)]
     for r in rows:
         lines.append("| " + " | ".join("" if r.get(k) is None else str(r.get(k, "")) for k in keys) + " |")
