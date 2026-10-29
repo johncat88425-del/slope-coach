@@ -78,7 +78,7 @@
 - [ ] T42 Antigravity：稽核流程的端到端測試。用 `tests/scripts/test_gate_run.py` 的 `write_clip` 產生合成影片，經 API 或畫面跑一次正常 g 和 g/4 兩種情況，截圖
 - [ ] T43 Antigravity：部署草稿：Dockerfile 與啟動說明。只在本機測，不要公開部署；`.env` 不准進映像檔
 - [ ] T44 Antigravity：README 的安裝與使用說明（英文），只寫已經能用的功能
-- [ ] T52 Antigravity：GitHub Actions CI：每個 PR 自動跑 `pytest` 和 `npm test`（需要安裝 ffmpeg）
+- [x] T52 Antigravity：GitHub Actions CI：每個 PR 自動跑 `pytest` 和 `npm test`（需要安裝 ffmpeg） — commit 750cd65
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
 - [ ] T54 Antigravity：上傳安全：檔案大小上限 200 MB、只收影片格式、每個 IP 每天最多 20 次稽核。寫成提案放進「待 john 決定」，Claude 審查後實作
