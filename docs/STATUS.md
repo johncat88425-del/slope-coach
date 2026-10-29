@@ -16,7 +16,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | T118（解說和標題改英文，重產 demo 紀錄） |
-| **Codex** | T162 → T157（demo 資料已定版，可以做） |
+| **Codex** | T157（demo 資料已定版，可以做） |
 | **Antigravity** | T161 → T121 → T122 → T53 → T68 |
 | **Manus** | T163 → T22 |
 | **Claude** | 審查合併 PR；README 與提交前檢查 |
@@ -56,7 +56,6 @@
 
 
 **Codex**（照順序做）
-- [ ] T162 Codex：評審用鍵盤和手機看的品質檢查（只改 `frontend/`）。(1) 只用鍵盤（Tab、Enter、空白鍵）從上傳影片走到看到結果，記下卡住或看不到焦點的地方並修好；(2) 檢查文字和背景的對比至少 4.5:1，不夠的改顏色 token；(3) 390 px 寬時沒有橫向捲動；(4) 每個由模型產生的區塊都有「由 Muse Spark／SAM 3.1 產生」標示，沒有的補上。補測試，`npm test` 和 `npm run build` 都要過，push 分支 `codex/T162-a11y`。
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
 
 
@@ -292,6 +291,9 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 10/29 13:20 Claude：審查並合併 Codex T162（鍵盤焦點、對比、停用狀態可讀、解說來源標示）。
+- 10/29 Codex 沒有待辦了。T162 已完成並推送 codex/T162-a11y（PR #80，目標 main），已同步協調者的最新進度。T157 尚無 Claude 的資料定版公告，依 john 規則保留未勾；無其他可執行的 Codex 待辦。
+- 10/29 Codex T162：已用瀏覽器以 Tab／Enter／空白鍵從選片、準備問題、回答、確認時間窗到結果；素材為 repo 既有 meta_clip2，輸入照 manifest，獨立 mock 後端無金鑰、無付費呼叫。發現準備後焦點掉到 BODY，已改交接到物體名；等待提示、漏答錯誤與新結果都有焦點位置及深色焦點框。結果 aria-labelledby 指向各自判定，並排不重複 ID。小標原對比4.48:1，改為顏色 token；移除停用控制項的透明度、保留可讀文字。390×844 實測表單、收合／展開結果、結果牆及並排頁沒有橫向溢出（scrollWidth375≤innerWidth390）；受檢頁面最低文字對比5.49:1，1280px並排亦通過。首頁卡片／結果牆補說明來源徽章；模型、模板／mock 依實際值，既有問題／標題／追蹤／語音來源標示已核對。新增對比、唯一結果標籤、雙語來源測試；npm111 pass、一般與靜態build pass（入口79,391／78,502 bytes）。合併最新main後pytest219 pass／1既有ffmpeg drawtext失敗。只改frontend與本STATUS，資料／後端未改。
 - 10/29 13:15 Claude：**demo 資料已定版**（Codex 可以做 T157）。合併 Muse T117：`data/demo/` 的 10 筆真實／生成紀錄改成 SAM v4 版，verdict 與 v4 表完全相同，沒有影片連結，解說和標題都是 Muse Spark 寫的且通過後端檢查。數字和判定不會再變；只有解說和標題的文字會由 Muse T118 換成英文（同樣欄位，前端不用改）。
 - 10/29 Muse 完成 T117（分支 muse/T117-demo-sam）：10 支重跑＋解說＋標題，verdict 全跟 v4 一樣（own_2 g 9.46→9.45 顯示捨入而已）；10 個 data/demo JSON 換成 SAM 版，解說／標題 source 都是 model。T115 修好得到驗證：explain 10 次零重試（T113 是 15 次 8 重試）。git status 確認只有 json／md／STATUS／cost_log，無影片。$0.344，累計 $1.353。
 - 10/29 13:05 Claude：合併 Muse T116（SAM v4）。修好計時後自拍 3 支 g = 9.30、9.46、8.68 全部一致；生成影片結果和 v2、v3 幾乎一樣。`audit_batch` 加 `--json-dir`，存完整稽核紀錄給 demo（不含影片連結）。README 結果表改成 SAM 為主、顏色對照。新增 Muse T117。
@@ -320,6 +322,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ### 已完成的任務（從完成表搬來）
 
+- [x] T162 Codex：評審用鍵盤和手機看的品質檢查（只改 `frontend/`）。(1) 只用鍵盤（Tab、Enter、空白鍵）從上傳影片走到看到結果，記下卡住或看不到焦點的地方並修好；(2) 檢查文字和背景的對比至少 4.5:1，不夠的改顏色 token；(3) 390 px 寬時沒有橫向捲動；(4) 每個由模型產生的區塊都有「由 Muse Spark／SAM 3.1 產生」標示，沒有的補上。補測試，`npm test` 和 `npm run build` 都要過，push 分支 `codex/T162-a11y`。 — commit be58457
 - [x] T159 Codex：（API v1.0）偵訊畫面用 `draft.suggestion` 預填「Object name」，旁邊寫「Suggested by Muse Spark — please check」，使用者改了就用使用者的。`camera_looks_static` 只顯示成提示文字，**不准自動勾選**「鏡頭固定」。`suggestion` 是 null 時什麼都不顯示。補測試 — commit 585c561
 - [x] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch） — commit 3c69d20
 - [x] T116／T160 Codex：原語音端點缺口已由 API v1.0 補齊，前端已接 draft voice 上傳與逐欄 Use this。mock 不請求麥克風；模型來源依回傳顯示。實機麥克風／Meta API 端到端驗收仍待 Antigravity，本次只用假的 fetch 與錄音器測試，未產生模型花費。
