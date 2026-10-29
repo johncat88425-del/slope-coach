@@ -92,10 +92,10 @@ def track_color(rgb_frames: np.ndarray, fps: float, start: float, color: str, th
     bg = np.median(rgb_frames, axis=0)
     pts, sizes = [], []
     for i, f in enumerate(rgb_frames):
-        h, s, v = _hsv(f)
+        mask = np.abs(f - bg).max(-1) > thresh  # moving pixels first; colour is only tested on those (T145)
+        h, s, v = _hsv(f[mask])
         in_hue = (h >= lo) & (h <= hi) if lo <= hi else (h >= lo) | (h <= hi)
-        mask = in_hue & (s >= MIN_SATURATION) & (v >= MIN_VALUE)
-        mask &= np.abs(f - bg).max(-1) > thresh
+        mask[mask] = in_hue & (s >= MIN_SATURATION) & (v >= MIN_VALUE)
         lab, n = ndimage.label(mask)
         if n == 0:
             continue
