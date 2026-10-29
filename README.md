@@ -199,3 +199,6 @@ slope-coach/
 
 ## License & Attribution
 Developed for the Meta Global AI Developer Hackathon. Open-source under the MIT License (see `LICENSE`). All work was done during the hackathon period (from 2026-10-26).
+
+### How this was built
+One person (john) built this with several AI coding assistants, each owning one part of the repo. Muse Code (Meta) built `meta_client/`: the Meta Model API calls, prompts and the interview agent. Claude Code built `physics/` and the backend checks, and reviewed and merged pull requests. Codex built the frontend. Antigravity did end-to-end testing and the install checks. Manus did research and drafted text. The team rules are in `AGENTS.md`, and the shared task board is `docs/STATUS.md`. These tools were only used to write the code. **At runtime the product calls only Meta models.**
