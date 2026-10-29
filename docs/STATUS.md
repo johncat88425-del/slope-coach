@@ -89,7 +89,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T113 Codex：稽核執行中的進度提示（上傳中、追蹤中、計算中），稽核可能要 10 秒以上；失敗時顯示後端的錯誤原因，不要只寫「失敗」 — commit 31543d9
 - [x] T114 Codex：真實 vs 生成並排比較頁：選兩筆紀錄（例如 `real_own_2` 和 `generated_meta_clip2`），左右並排顯示軌跡、鬼影、重力刻度和說明。標題寫「同一套規則，兩支影片」，不准寫「真假」 — commit 843d762
 - [x] T115 Codex：稽核報告列印版（CSS print stylesheet），一頁 A4 放：判定、說明、數字、軌跡圖、限制、追蹤來源與模型來源標示 — commit 9e810e1
-- [ ] T116 Codex：Muse 語音回答的介面（配合 Muse T109）：錄音按鈕 → 顯示轉出的文字和抽出的欄位 → 使用者逐欄確認後才送出。沒接上時按鈕顯示「需要 Meta API」
+- [x] T116 Codex：Muse 語音回答的介面（配合 Muse T109）：錄音按鈕 → 顯示轉出的文字和抽出的欄位 → 使用者逐欄確認後才送出。沒接上時按鈕顯示「需要 Meta API」 — commit 待回填（本次程式提交）
 - [ ] T117 Codex：英文介面全面檢查（評審看英文）：所有新頁面都要有英文，用詞照 AGENTS 規則（consistent／inconsistent／insufficient data with the assumed model）
 - [ ] T118 Codex：首頁 30 秒自動導覽模式（給 demo 錄影用）：依序顯示 real_own_2 → generated_meta_clip2 → generated_meta_clip4（拒判），每步有一句英文說明，可暫停
 
@@ -311,6 +311,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 待 john 決定
 
+- T116 Codex：docs/API.md 尚無 T109 錄音轉寫／欄位抽取端點與來源驗證契約；目前按鈕停用「需要 Meta API」，不請求麥克風。逐欄編輯／確認元件已備妥，但端到端錄音送出待 Muse／Claude 提供契約後再接。
+
 - T113 Codex：同步 POST /api/audits 不提供追蹤／計算分階段狀態；本次只呈現已知 upload bytes 與合併處理中。若要真實分階段進度，請 Claude 設計工作狀態端點；前端不以計時偽造階段。
 
 - T105 Codex：先前本機瀏覽器 origin 授權被拒，本次不繞過；已補 390px 收縮與語意測試，但實際 viewport／鍵盤／螢幕閱讀器驗收仍需 Antigravity（T120）。
@@ -445,3 +447,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T113：上傳 bytes 百分比與伺服器追蹤／計算合併等待狀態，無假計時或階段百分比；錯誤仍保留後端 reason。真實階段端點缺口列待決定；npm/build 通過，pytest drawtext 已知失敗。
 - 10/28 Codex T114：#compare 可選任意兩份紀錄，左右完整顯示說明、實測／鬼影、重力刻度與來源；小螢幕改上下，來源不作判定。npm/build 通過，pytest drawtext 已知失敗。
 - 10/28 Codex T115：選定單筆稽核列印，A4 stylesheet 包含判定／說明／數字／軌跡／限制及來源，不列印其他頁面紀錄；保留全部內容不截斷。npm/build 通過，瀏覽器一頁視覺驗收仍待 Antigravity；pytest drawtext 已知失敗。
+- 10/28 Codex T116：語音按鈕停用並標 Requires Meta API（沒有端點），不錄音；已提供轉寫文字與欄位編輯、逐欄勾選後才可送出的本地介面。契約缺口已列待決定，不虛構模型結果。npm/build 通過；pytest drawtext 缺口。
