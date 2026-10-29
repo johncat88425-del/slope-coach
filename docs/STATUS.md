@@ -91,6 +91,7 @@
 - [x] 審查並合併 Codex PR #4 與 #16（T36–T51，含 #4 的內容）：pytest 58、npm 37、build 都通過；前端沒有自己算物理，畫面沒有「真／假／AI 生成」字眼
 - [x] T37 Claude：後端稽核端點 `POST /api/audits`、`GET /api/audits/{aid}`（docs/API.md v0.2）
 - [ ] T32 跑關卡：自拍 3 支 Q1 pass、Q3 pass；等 john 的 Meta AI 影片跑 Q2
+- [x] T88 Claude：網站的「檢查影片」沒接 SAM 時，物體名稱有顏色（如 `orange ball`）就用 T87 的顏色追蹤，`track_source: "color"`（API v0.6）。前端只加了最小的型別與標籤，讓畫面不會拒收；Codex 請檢查文字和樣式。用 john 的 3 支影片走網站流程：g = 9.62、9.81、8.15，和關卡一致 — 見 PR T88
 - [x] T87 Claude：不用模型的顏色＋移動追蹤（`backend/video.track_color`）。人工標註的物體名稱有顏色（例如 `orange ball`）時，關卡改用它；`--tracker frame_diff` 可重現舊規則。球的大小改用短軸寬度，不受動態模糊影響。3 支真實影片的紅點都落在球上 — 見 PR T87
 - [x] T55 Claude：稽核支援 `assumed_model=bounce`（接上 `check_bounces`）
 - [x] T56 Claude：透視檢查：物體大小沿軌跡變化超過 30% 時拒判（`physics/persistence.size_trend`）
@@ -189,7 +190,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - Q1 自拍影片追得準：**pass**。2 支一致而且 g 在 15% 以內，john 確認紅點在球上（`track_ok` = yes）。
 - Q2 找得到明確異常：**fail（目前）**。還沒有 Meta AI 影片，這題要等 john 的 5 到 10 支生成影片。
 - Q3 同一套規則、拒判不超過一半：**pass**（0/3 拒判）。
-- own_3 是自拍影片上的誤報，要說明：它的 g 只差 17%，沒有到「明確異常」（差 50%）的程度。球在畫面上比另外兩支大（約 28 px 對 22 px），可能球有朝鏡頭方向移動，透視讓位移變小。這是推測，沒有調參。
+- own_3 是自拍影片上的誤報，要說明：它的 g 只差 17%，沒有到「明確異常」（差 50%）的程度。一開始猜是球朝鏡頭移動，但網站稽核量到的球大小沿軌跡只變 -3%，不支持這個猜測，**原因目前不明**。用 ±30% 尺寸誤差算，這個判斷不穩健（`g_verdict_robust` = 0），所以不算明確異常。沒有調參。
 
 ## 任務表
 
@@ -271,6 +272,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 Claude T88：網站稽核接上顏色追蹤（`track_source: color`）。為了不讓前端拒收新值，Claude 直接改了前端 4 個檔案的型別和標籤（只加一個值，沒動樣式），請 Codex 之後檢查。
 - 10/29 02:35 Claude：john 確認時間窗和 track_ok，關卡 Q1 通過、Q3 通過，Q2 等 Meta AI 影片。
 - 10/29 02:30 Claude：john 量到球直徑 0.11 m。關卡試跑：own_1 g = 9.62、own_2 g = 9.82 一致，own_3 g = 8.17 小幅不一致。舊版 frame_diff 三支都失敗。結果寫進「關卡結果」。
 - 10/29 Claude：合併 Codex PR #32（T85、T86）。完成 T87 顏色追蹤，記進規則變更紀錄。真實影片上的追蹤已經正確，但用 5 公分算出的 g 只有一半左右，請 john 量球的直徑並確認時間標註。
