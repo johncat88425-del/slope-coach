@@ -103,7 +103,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS — commit b3717c3
 - [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 041eb73
 - [x] T143 Codex：（API v0.9）結果區和物理名片最上面顯示 `headline.text`（有的時候才顯示），旁邊標明「由 Muse Spark 撰寫」；`headline` 是 null 時照舊用程式產生的標題。不要改寫文字或數字。靜態 demo 資料裡 `headline` 一律是 null — commit a3bb60f
-- [x] T146 Codex：結果區加「這次用了哪些 Meta 模型」小面板：照實際值列出提問（`interview.source`）、追蹤（`track_source`）、說明（`explanation.source`）、標題（`headline` 有沒有）。是 mock、template、color、frame_diff 的，要寫「未使用模型」，不准寫死成已接上 — commit 待回填（本次程式提交）
+- [x] T146 Codex：結果區加「這次用了哪些 Meta 模型」小面板：照實際值列出提問（`interview.source`）、追蹤（`track_source`）、說明（`explanation.source`）、標題（`headline` 有沒有）。是 mock、template、color、frame_diff 的，要寫「未使用模型」，不准寫死成已接上 — commit 9fa31c3
 - [ ] T151 Codex：拒判（`insufficient_data`）時顯示「怎麼重拍」提示：用固定對照表把 `reasons` 對應到提示，例如鏡頭移動 → 用腳架、物體朝鏡頭移動 → 從側面拍、慢動作 → 用正常速度。不用模型，並補測試
 - [ ] T145 Codex：右上角顯示 Meta API 花費（配合 Muse T110 的 `GET /api/spend`）。端點還不存在（404）時就不顯示，不要放假數字
 - [ ] T149 Codex：T133–T142 的新元件補齊繁中和英文切換，加測試確認沒有漏翻的字串
