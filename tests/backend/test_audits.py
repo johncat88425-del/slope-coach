@@ -150,3 +150,13 @@ def test_sam_track_used_when_connected(tmp_path):
     assert r["track_source"] == "sam" and r["verdict"] == "consistent", r
     assert r["numbers"]["g_apparent_m_s2"] == pytest.approx(9.81, rel=0.05)
     assert len(r["points"]) == 35  # the missed frame stays a gap
+
+
+def test_colour_named_object_uses_colour_tracker_when_sam_is_absent(tmp_path):
+    from tests.scripts.test_gate_run import write_orange_clip
+
+    write_orange_clip(tmp_path / "ball.mp4", 9.81)
+    r = post(tmp_path / "ball.mp4", object_name="orange ball").json()
+    assert r["track_source"] == "color" and r["verdict"] == "consistent", r
+    plain = post(tmp_path / "ball.mp4", object_name="ball").json()
+    assert plain["track_source"] == "frame_diff"
