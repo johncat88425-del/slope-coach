@@ -72,3 +72,23 @@ def test_ghost_matches_real_flight_and_diverges_on_slow_motion():
     assert abs(ghost[-1][2] - slow[-1][2]) > 100
     assert nearest_body(1.7)[0] == "Moon" and nearest_body(9.5)[0] == "Earth"
     assert nearest_body(3.0)[0] == "Mars"
+
+
+def test_suggest_flight_windows_splits_at_bounce_and_skips_hand_motion():
+    from physics.experiments.freefall import suggest_flight_windows
+
+    pts = []
+    for i in range(10):  # held in the hand: moves sideways at constant speed, no fall
+        pts.append((i / 60, 10 + i * 2.0, 100 + (i % 3) * 3.0))
+    for i in range(30):  # flight 1, lands at y = 300
+        t = i / 60
+        pts.append((10 / 60 + t, 30 + 200 * t, 300 - 400 * t + 0.5 * 2700 * t * t))
+    t1 = 40 / 60
+    for i in range(1, 25):  # flight 2 after the bounce
+        t = i / 60
+        pts.append((t1 + t, 30 + 200 * (30 / 60) + 200 * t, pts[39][2] - 300 * t + 0.5 * 2700 * t * t))
+    wins = suggest_flight_windows(pts)
+    assert len(wins) >= 2
+    assert abs(wins[0][0] - 10 / 60) < 0.05 and abs(wins[0][1] - (10 + 29) / 60) < 0.05
+    assert wins == sorted(wins)
+    assert suggest_flight_windows(pts[:5]) == []

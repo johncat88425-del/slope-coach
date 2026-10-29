@@ -227,6 +227,20 @@ class AuditDraftOut(BaseModel):
     interview: AuditInterview
 
 
+class FlightWindow(BaseModel):
+    t_start: float
+    t_end: float
+
+
+class FlightWindowsOut(BaseModel):
+    """Suggested flight windows (T141). Computed by physics/, never by a model; the user picks and confirms."""
+    draft_id: str
+    source: Literal["physics"] = "physics"
+    track_source: Literal["frame_diff", "color"]
+    windows: list[FlightWindow]
+    scanned_until_s: float
+
+
 class AuditExplanation(BaseModel):
     source: Literal["template", "model"]  # "model" = Muse Spark (T45); numbers are always filled by the program
     text: str
