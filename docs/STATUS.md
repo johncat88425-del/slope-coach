@@ -100,7 +100,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤 — commit a25a94b
 - [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
 - [ ] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS
-- [ ] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試
+- [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 待回填（本次程式提交）
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -500,3 +500,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - T138 靜態建置：在 repo 執行 `VITE_DEMO_ONLY=1 npm --prefix frontend run build`，輸出 frontend/dist。只打包 data/demo 紀錄，關閉上傳、教練後端操作與自動讀取；API 層亦拒絕所有網路呼叫。可用 `npm --prefix frontend run preview` 本機預覽；本次不公開部署。/audit/id 深連結仍需主機 SPA fallback。
 - 10/29 Codex T138：VITE_DEMO_ONLY=1 建置只用保存紀錄，停用上傳與教練操作、抑制自動讀取；API 層 read/upload/XHR 全阻擋。分享 ID 僅查本地 catalog。標準／靜態 build 均通過，npm74 pass；完整 pytest4項環境失敗。build指令與SPA要求已寫STATUS。
 - 10/29 Codex T135：#how 五步流程以 Meta model／deterministic code／user input 分清來源；可選紀錄查看實際 track_source、explanation.source。問答來源未保存在紀錄時明示未知，不宣稱已啟用模型。npm/build 通過；pytest4項環境失敗。
+- 10/29 Codex T140：七個結果元件在三模型下遍歷空 points、稀疏 numbers、缺 explanation、nearest_body=null；不崩潰、不產生 NaN／假數字、不修改輸入。npm76 pass、build pass；完整 pytest4項環境失敗。
