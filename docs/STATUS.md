@@ -91,7 +91,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T115 Codex：稽核報告列印版（CSS print stylesheet），一頁 A4 放：判定、說明、數字、軌跡圖、限制、追蹤來源與模型來源標示 — commit 9e810e1
 - [x] T116 Codex：Muse 語音回答的介面（配合 Muse T109）：錄音按鈕 → 顯示轉出的文字和抽出的欄位 → 使用者逐欄確認後才送出。沒接上時按鈕顯示「需要 Meta API」 — commit 3f85efa
 - [x] T117 Codex：英文介面全面檢查（評審看英文）：所有新頁面都要有英文，用詞照 AGENTS 規則（consistent／inconsistent／insufficient data with the assumed model） — commit fa18e96
-- [ ] T118 Codex：首頁 30 秒自動導覽模式（給 demo 錄影用）：依序顯示 real_own_2 → generated_meta_clip2 → generated_meta_clip4（拒判），每步有一句英文說明，可暫停
+- [x] T118 Codex：首頁 30 秒自動導覽模式（給 demo 錄影用）：依序顯示 real_own_2 → generated_meta_clip2 → generated_meta_clip4（拒判），每步有一句英文說明，可暫停 — commit 待回填（本次程式提交）
 
 **Antigravity**（照順序做）
 - [ ] T02 Antigravity：requirements.txt、`scripts/dev.sh`、環境檢查清單（不用 sudo；ffmpeg 沒裝就列出 `brew install ffmpeg` 給 john）
@@ -122,7 +122,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 
 **Claude**
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
-- [ ] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
+- [x] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
 - [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
 - [x] T130 Claude：（T95 第一版已入庫並更新數字，其餘等 Manus）把 Manus 交來的 T23、T95、T123–T126 檢查用詞和數字後放進 `docs/research/`
 - [ ] T131 Claude：彈跳和單擺的真實影片流程（等 john 拍片）：準備標註表和試跑腳本
@@ -222,6 +222,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 新舊兩版用同一組試算標註（Claude 提議、john 尚未確認：own_1 1.9–2.6 s、own_2 0.2–0.8 s、own_3 2.0–2.4 s，球 0.05 m）的結果：
   - 舊版 frame_diff：own_1 不一致（加速度偏 -70 度、軌跡不像拋物線）、own_2 不一致（-71 度）、own_3 資料不足。原因是追到手臂，不是物理。
   - 新版 color：三支軌跡都是乾淨拋物線（殘差只有行程的 0.4% 到 0.8%，偏角 1 到 6 度），但算出的 g 只有 3.7 到 4.5 m/s²。換句話說，如果 g 是 9.81，球的直徑應該是 0.11 到 0.13 m，不是 0.05 m。三支都偏同一個方向，比較像是尺寸標註的問題，所以先請 john 用尺量球（圓周 ÷ 3.14）。**不准為了讓結果變成一致去改門檻或改顏色參數。**
+
+- **10/29 03:45 T128**：顏色追蹤加上 yellow、green、blue、red（red 跨 0 度）。只對之後新的影片生效，關卡已跑的結果不重算；orange 的參數不變。
 
 ### 關卡結果
 
@@ -449,3 +451,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T115：選定單筆稽核列印，A4 stylesheet 包含判定／說明／數字／軌跡／限制及來源，不列印其他頁面紀錄；保留全部內容不截斷。npm/build 通過，瀏覽器一頁視覺驗收仍待 Antigravity；pytest drawtext 已知失敗。
 - 10/28 Codex T116：語音按鈕停用並標 Requires Meta API（沒有端點），不錄音；已提供轉寫文字與欄位編輯、逐欄勾選後才可送出的本地介面。契約缺口已列待決定，不虛構模型結果。npm/build 通過；pytest drawtext 缺口。
 - 10/28 Codex T117：新結果牆、比較、列印與名片統一 assumed-model 英文判定，來源用可讀名稱；後端原文與數字不改寫。測試遍歷三模型三判定；npm/build 通過，pytest drawtext 環境缺口仍列明。
+- 10/28 Codex T118：首頁可啟動 30 秒導覽，固定 own_2→meta_clip2→meta_clip4，各 10 秒、可暫停續播，只讀儲存結果。補三判定順序與全部 10 份結果 schema 測試；npm 69 pass、build pass；pytest 78 pass/1 fail（drawtext 已列待決定）。
