@@ -55,7 +55,8 @@ def test_transcribe_success_and_cost(tmp_path, monkeypatch):
     clip = tmp_path / "rec.m4a"
     clip.write_bytes(b"fake-audio")
     out = voice.transcribe(clip, tracker=tracker)
-    assert out == {"transcript": "斜坡長一米", "audio_seconds": 5.9}
+    assert out == {"transcript": "斜坡長一米", "audio_seconds": 5.9,
+                     "source": "muse-voice-transcribe-1.0"}
     assert calls[0][0].endswith("/asr/transcribe")
     assert tracker.total_usd() == pytest.approx(5 / 3600 * 0.18)  # whole seconds
     assert not (tmp_path / "in.wav").exists()  # transcribe deletes the converted wav
@@ -130,7 +131,7 @@ def test_extract_setup_fields_success(tmp_path, monkeypatch):
     monkeypatch.setattr(voice, "get_client", lambda: fake)
     tracker = _tracker(tmp_path)
     out = voice.extract_setup_fields("斜坡長一公尺高三十公分，擋片放開", tracker=tracker)
-    assert out == payload
+    assert out == {**payload, "source": "muse-spark-1.3"}
     assert fake.responses.calls[0]["text"]["type"] == "json_schema"
     assert tracker.total_usd() > 0
 
@@ -150,3 +151,84 @@ def test_extract_setup_fields_rejects(tmp_path, monkeypatch):
             voice.extract_setup_fields("something")
     with pytest.raises(ValueError, match="non-empty"):
         voice.extract_setup_fields("  ")
+
+
+ANSWER_OK = {
+    "camera_static": True,
+    "slow_motion": False,
+    "object_size": {"value": 11, "unit": "cm"},
+    "length": None,
+    "time_window": {"t_start_s": 0.5, "t_end_s": 3.0},
+    "assumed_model": "free_flight",
+}
+
+
+def test_extract_interview_fields_success(tmp_path, monkeypatch):
+    fake = FakeClient([fake_response(json.dumps(ANSWER_OK), fake_usage())])
+    monkeypatch.setattr(voice, "get_client", lambda: fake)
+    tracker = _tracker(tmp_path)
+    out = voice.extract_interview_fields(
+        "camera on tripod, no slow motion, ball eleven centimeters", tracker=tracker)
+    assert out["object_size"] == {"value": 11.0, "unit": "cm"}
+    assert out["camera_static"] is True
+    assert out["source"] == "muse-spark-1.3"
+    assert tracker.total_usd() > 0
+
+
+def test_extract_interview_fields_rejects(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    monkeypatch.setattr(voice, "get_tracker", lambda: _tracker(tmp_path))
+    bad_unit = dict(ANSWER_OK, object_size={"value": 11, "unit": "inch"})
+    bad_size = dict(ANSWER_OK, object_size={"value": -2, "unit": "cm"})
+    bad_window = dict(ANSWER_OK, time_window={"t_start_s": 3.0, "t_end_s": 1.0})
+    bad_model = dict(ANSWER_OK, assumed_model="orbit")
+    bad_bool = dict(ANSWER_OK, camera_static="yes")
+    cases = [
+        (bad_unit, "m, cm, or mm"),
+        (bad_size, "out of range"),
+        (bad_window, "end after it starts"),
+        (bad_model, "free_flight, bounce, pendulum, or null"),
+        (bad_bool, "boolean or null"),
+    ]
+    for payload, match in cases:
+        fake = FakeClient([fake_response(json.dumps(payload), fake_usage())])
+        monkeypatch.setattr(voice, "get_client", lambda: fake)
+        with pytest.raises(ModelOutputError, match=match):
+            voice.extract_interview_fields("something")
+
+
+def test_extract_interview_fields_accepts_loose_shapes(tmp_path, monkeypatch):
+    payload = dict(ANSWER_OK, object_size="11 centimeters",
+                   time_window=[0.5, 3.0])
+    fake = FakeClient([fake_response(json.dumps(payload), fake_usage())])
+    monkeypatch.setattr(voice, "get_client", lambda: fake)
+    monkeypatch.setattr(voice, "get_tracker", lambda: _tracker(tmp_path))
+    out = voice.extract_interview_fields("ball eleven centimeters")
+    assert out["object_size"] == {"value": 11.0, "unit": "cm"}
+    assert out["time_window"] == {"t_start_s": 0.5, "t_end_s": 3.0}
+    bad = dict(ANSWER_OK, object_size="eleven centimeters")
+    fake2 = FakeClient([fake_response(json.dumps(bad), fake_usage())])
+    monkeypatch.setattr(voice, "get_client", lambda: fake2)
+    with pytest.raises(ModelOutputError, match="number.*unit"):
+        voice.extract_interview_fields("ball eleven centimeters")
+
+
+def test_answer_interview_voice_converts_and_marks_unconfirmed(tmp_path, monkeypatch):
+    monkeypatch.setenv("MODEL_API_KEY", "test-key")
+    monkeypatch.setattr(voice, "transcribe",
+                        lambda path, **kw: {"transcript": "ball eleven cm", "audio_seconds": 2.0})
+    monkeypatch.setattr(voice, "extract_interview_fields", lambda text, **kw: ANSWER_OK)
+    out = voice.answer_interview_voice(tmp_path / "a.m4a")
+    assert out["mock"] is False
+    assert out["fields"]["object_size_m"] == {"value": 0.11, "confirmed": False}
+    assert out["fields"]["camera_static"] == {"value": True, "confirmed": False}
+    assert "length_m" not in out["fields"]
+    assert out["source"] == {"transcript": "muse-voice-transcribe-1.0",
+                             "fields": "muse-spark-1.3"}
+
+
+def test_answer_interview_voice_mock_without_key(tmp_path, monkeypatch):
+    monkeypatch.delenv("MODEL_API_KEY", raising=False)
+    out = voice.answer_interview_voice(tmp_path / "missing.m4a")
+    assert out == {"transcript": voice.MOCK_NO_KEY_TRANSCRIPT, "fields": {}, "mock": True,
+                   "source": {"transcript": "mock", "fields": "mock"}}

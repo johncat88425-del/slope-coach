@@ -140,7 +140,7 @@ def interview_audit(
 ) -> dict[str, Any]:
     """Ask up to 3 clarification questions about a clip (T66).
 
-    Returns {"questions": [{field, text}]}. Raises ModelOutputError when no
+    Returns {"questions": [{field, text}], "source": model}. Raises ModelOutputError when no
     valid set passes after retries; the backend falls back to fixed mock
     questions in that case.
     """
@@ -195,7 +195,10 @@ def interview_audit(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return {"questions": _validate_interview(json.loads(response.output_text or ""))}
+            return {
+                "questions": _validate_interview(json.loads(response.output_text or "")),
+                "source": resolved,
+            }
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"interview failed validation: {last_error}")
