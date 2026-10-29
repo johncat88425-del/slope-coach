@@ -8,6 +8,8 @@ export function sourceLabel(source: string, kind: 'understanding' | 'tracking' =
         return 'Mock 佔位資料（未呼叫模型）';
     if (source === 'manual' || source === 'user')
         return '使用者確認／人工標記';
+    if (source === 'color')
+        return '顏色＋移動追蹤（未使用模型）';
     if (source === 'frame_diff')
         return 'frame differencing（未使用模型）';
     if (source === 'physics')
