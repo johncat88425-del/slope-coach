@@ -14,7 +14,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from backend.interventions import CATALOG
-from backend.output_check import check_choice, check_model_text
+from backend.output_check import check_choice, check_model_text, fill_numbers
 from physics.errors import PhysicsInputError
 from physics.experiments.freefall import check_bounces, check_flight, fit_flight
 from physics.persistence import persistence_events
@@ -213,8 +213,12 @@ AUDIT_SYSTEM = (
     "says about the tracked motion, then call propose_plan exactly once with "
     "the checks worth keeping and a short Traditional Chinese rationale. "
     "Rules. Only propose checks from the fixed list; never invent another. "
-    "Base the rationale only on tool outputs; never invent, round, or "
-    "convert numbers. Say 與假設一致 or 目前無法區分 where appropriate; "
+    "Write the rationale as a TEMPLATE: never write digits yourself; cite "
+    "numbers only as {check_key} slots exactly as named in the tool "
+    "outputs, prefixed by the check name (for example "
+    "{free_flight_g_apparent_m_s2:2} or {persistence_n_events}), with an "
+    "optional :decimals suffix. The program fills the slots and rejects "
+    "unknown ones. Say 與假設一致 or 目前無法區分 where appropriate; "
     "never claim proof or causes (no 證實, 真因, 一定是, proves, confirms, "
     "must be). Never frame this as real-vs-generated video detection."
 )
@@ -234,14 +238,15 @@ AUDIT_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "name": "propose_plan",
-        "description": "Propose the final check list with a rationale. Call exactly once.",
+        "description": ("Propose the final check list with a rationale TEMPLATE "
+                        "(numbers only as {check_key} slots). Call exactly once."),
         "parameters": {
             "type": "object",
             "properties": {
                 "selected": {"type": "array", "items": {"type": "string"}},
-                "rationale": {"type": "string"},
+                "rationale_template": {"type": "string"},
             },
-            "required": ["selected", "rationale"],
+            "required": ["selected", "rationale_template"],
             "additionalProperties": False,
         },
     },
@@ -401,23 +406,33 @@ def plan_audit_checks(
                         )
                     elif cname == "propose_plan":
                         selected = args.get("selected")
-                        rationale = args.get("rationale")
+                        template = args.get("rationale_template")
                         if not isinstance(selected, list) or not selected:
                             raise ModelOutputError("propose_plan requires a non-empty selected list")
                         if any(s not in AUDIT_CHECKS for s in selected):
                             raise ModelOutputError(
                                 f"selected must be a subset of {list(AUDIT_CHECKS)}"
                             )
-                        if not isinstance(rationale, str) or not rationale.strip():
-                            raise ModelOutputError("rationale must be a non-empty string")
-                        text_check = check_model_text(rationale, [audit, *tool_outputs])
+                        if not isinstance(template, str) or not template.strip():
+                            raise ModelOutputError("rationale_template must be a non-empty string")
+                        slots: dict[str, float] = {}
+                        for output in tool_outputs:
+                            for key, value in (output.get("numbers") or {}).items():
+                                slots[f"{output.get('check')}_{key}"] = value
+                        filled, fill_check = fill_numbers(template, slots)
+                        if not fill_check.ok:
+                            raise ModelOutputError(
+                                "rationale slots failed: " + "; ".join(fill_check.problems)
+                            )
+                        assert filled is not None
+                        text_check = check_model_text(filled, [audit, *tool_outputs])
                         if not text_check.ok:
                             raise ModelOutputError(
                                 "output check failed: " + "; ".join(text_check.problems)
                             )
                         return {
                             "selected": list(dict.fromkeys(selected)),
-                            "rationale": rationale.strip(),
+                            "rationale": filled,
                         }
                     else:
                         raise ModelOutputError(f"unknown tool call {cname!r}")

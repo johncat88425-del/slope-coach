@@ -230,6 +230,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | T39 | Spark 檢查拍攝條件（鏡頭固定、近似側視、物體全程入鏡），只回布林值和原因 | Muse | 完成 | commit b696c68 |
 | T46 | Spark 準確度評估：建議時間窗/物體 vs 人工標註 | Muse | 完成 | commit b696c68；等 T33 影片實測 |
 | T47 | 英文版說明文字（給評審），同樣過 check | Muse | 完成 | commit b696c68 |
+| T45 | 稽核代理理由改用 fill_numbers 寫法（模型只寫欄位位置） | Muse | 進行中 | Muse-row 新要求 |
 | T66 | Muse 偵訊：Spark 看幾張畫面問最多 3 題，答案變確認輸入 | Muse | 完成 | commit 20f4337；驗證鏡像後端檢查；6 測試；真片實測通過 |
 | T35 | physics：彈跳檢查（每次反彈高度要變低）、物體持續性檢查（突然消失、面積跳動、分裂） | Claude | 完成 | `freefall.check_bounces`、`physics/persistence.py`；合成資料測試；尚未接進關卡（關卡規則已凍結，只用 free_flight） |
 | T36 | 前端：`/media` 代理、軌跡疊加圖、2D 軌跡圖元件、Meta 產生內容的標示 | Codex | 待辦 | PR #4 合併後再做 |
