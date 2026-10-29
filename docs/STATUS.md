@@ -56,6 +56,7 @@
 
 
 **Codex**（照順序做）
+- [ ] T164 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
 
 
@@ -231,6 +232,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T164 Codex：Figma Starter MCP 配額用完。14 個 editable 狀態與元件已建立，桌面高度修正已核對；手機 Field 內框待恢復 48px、上傳 CTA 待移到照片之前，待清理暫存 capture 5:2／照片節點 10:2，並核對 SAM Source instance 的文字 property（Label#9:21）。未經核對不宣稱 Figma 最終完成。前端這些修正均已完成並實測；不升級方案、不換管道繞過配額。
+
 - 10/29 Codex 合併檢查：PR #55 仍為 OPEN；PR #56 已 MERGED，但目標是 #55 的 codex/T150-window-keyboard，不是 main。因此 main 尚未包含 T143–T152 的全部前端。PR #58（T153）已改接在 #55 分支上避免重複大 diff；請 Claude 先把 #55 合併 main，再 retarget／合併 #58。
 - [T119 Antigravity] 本地端已備妥 `docker-compose.yml`（包含 backend + frontend 雙服務，支援 ffmpeg 與 .env 注入）。關於線上部署目標平台（如 Render, Fly.io, Railway, Google Cloud Run），請 john 決定目標平台並提供部署帳號／密鑰，Antigravity 不自行註冊外部帳號。
 
@@ -290,6 +293,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T117：demo 版 10 支（SAM $0.107＋解說 10 次零重試 $0.155＋標題 7 次 $0.081） | 0.344 | 1.353 |
 
 ## 工作日誌（最新在上）
+
+- 10/29 Codex T164：依 john 指示建立 Figma Editorial Lab（上傳、確認時間窗、等待、錯誤、結果、結果牆、並排，1440／390px 各七張；Auto Layout、47 個 tokens、21 個 variants、七種文字樣式）。Figma Starter MCP 配額於手機最後修正時用完，留下的明確修正見待決定，整項保留未勾。現有 frontend 已改為米白／墨藍／朱橘、單一上傳主操作、影片＋時間窗＋欄位工作區、細分隔線與一致結果層級；Details 預設收合，來源依實際 model／mock／template／tracker 顯示，後端文字用 Verbatim 保留。配色標示為受和田三造《配色事典》啟發，未虛構原書頁碼或色碼；本地 Noto Sans TC 字型附 SIL OFL，無新套件。首頁照片取自既有公開範例的單張影格，並有範例說明。瀏覽器 1440px／390px 檢查，手機首屏上傳可見；鍵盤選片→時間窗→回答→送出→等待→結果通過，焦點分別交給時間起點／狀態／判定；結果牆與並排無橫向溢出，受檢文字最低對比 5.51:1，繁中同步。npm 115 pass，標準／demo build pass（入口 81,392／80,505 bytes）；pytest 219 pass／1 既有 ffmpeg drawtext 缺口。未改後端、API、demo JSON 或測量值，mock 測試無付費模型呼叫。
 
 - 10/29 13:20 Claude：審查並合併 Codex T162（鍵盤焦點、對比、停用狀態可讀、解說來源標示）。
 - 10/29 Codex 沒有待辦了。T162 已完成並推送 codex/T162-a11y（PR #80，目標 main），已同步協調者的最新進度。T157 尚無 Claude 的資料定版公告，依 john 規則保留未勾；無其他可執行的 Codex 待辦。

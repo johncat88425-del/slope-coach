@@ -1,4 +1,4 @@
-import {SpendPanel} from './SpendPanel';
+import {SiteHeader} from './SiteHeader';
 import {DEMO_ONLY,demoUploadMessage} from './mode';
 import { Localize, LanguageRoot } from './i18n.js';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
@@ -10,8 +10,8 @@ import { createApi, friendlyApiError } from './api';
 import type { ExperimentRecord, TrialKind, ScenePhoto } from './api';
 import { mediaUrl } from './media';
 import { ModelSource } from './ModelSource';
-import {GuidedDemo} from './GuidedDemo';
 import './style.css';
+import './editorial.css';
 const HowItWorks=lazy(()=>import('./HowItWorks').then(m=>({default:m.HowItWorks})));
 const TrialEditor=lazy(()=>import('./TrialEditor').then(m=>({default:m.TrialEditor})));
 const CurveChart=lazy(()=>import('./CurveChart').then(m=>({default:m.CurveChart})));
@@ -107,8 +107,7 @@ function App() {
         throw new Error('請先選取此校準版本的已鎖定預測，並確認本次從靜止釋放。'); const t = await api.trial(record.experiment_id, trialKind, calVersion, trialFile); setVideos(old => ({ ...old, [t.trial_id]: trialPreview })); setTrialId(t.trial_id); setTrialFile(null); setTrialPreview(''); await refresh(); setMessage('影片已上傳。請自動追蹤或手動標記，再確認起滑時刻。'); }
     async function download(format: 'md' | 'csv') { if (!record)
         return; const content = await api.report(record.experiment_id, format); const href = URL.createObjectURL(new Blob([content], { type: format === 'csv' ? 'text/csv;charset=utf-8' : 'text/markdown;charset=utf-8' })); const anchor = document.createElement('a'); anchor.href = href; anchor.download = record.experiment_id + '.' + format; anchor.click(); setTimeout(() => URL.revokeObjectURL(href), 1000); }
-    return <Localize>{<><GuidedDemo route={route}/><a className="skip-link" href="#workspace">Skip to workspace</a><header><b>Motion Audit</b><SpendPanel api={api}/><span>Check motion against your assumed physical model.</span></header><main><aside><p className="eyebrow">Video physics audit</p><h1>{isCoach?'Experiment coach':'Check whether motion in a video fits your assumed physical model.'}</h1><nav aria-label="Main sections"><a data-testid="nav-audit" href="#audit" aria-current={!isCoach?'page':undefined}>Check video</a><a data-testid="nav-coach" href="#setup" aria-current={isCoach?'page':undefined}>Experiment coach</a></nav>{isCoach?<nav aria-label="實驗步驟">{pages.filter(p=>!['home','audit','demo','wall','compare','examples','how'].includes(p.route)).map((p,i)=><a data-testid={'nav-'+p.route} href={'#'+p.route} key={p.route} aria-current={route===p.route?'page':undefined}>{i+1}　{p.title}</a>)}</nav>:<nav aria-label="Review resources"><a data-testid="nav-home" href="#home">Scope and limitations</a><a href="#how">How it works</a><a href="#compare">Compare two clips</a><a href="#wall" data-testid="nav-wall">Results wall</a><a data-testid="nav-demo" href="#demo">Compare outcomes</a></nav>}<p>{isCoach?'Fixed camera · Approximately side-on · One straight slope · One slider':'Fixed camera · Supported motion models · Explicit insufficient-data outcomes'}</p></aside><section data-testid="workspace" id="workspace" tabIndex={-1} aria-label={active.title}>{route==='audit'&&<><OpeningCards/><AutoTour/></>}
- <div className="notice">照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。</div>
+    return <Localize>{<><SiteHeader api={api} route={route}/><main className={isCoach?'coach-layout':'audit-layout'}>{isCoach&&<aside><p className="eyebrow">Experiment coach</p><h1>Experiment coach</h1><nav aria-label="實驗步驟">{pages.filter(p=>!['home','audit','demo','wall','compare','examples','how'].includes(p.route)).map((p,i)=><a data-testid={'nav-'+p.route} href={'#'+p.route} key={p.route} aria-current={route===p.route?'page':undefined}>{i+1}　{p.title}</a>)}</nav><p>Fixed camera · Approximately side-on · One straight slope · One slider</p></aside>}<section data-testid="workspace" id="workspace" tabIndex={-1} aria-label={active.title}>
  <div aria-live="polite">{busy && <p role="status">處理中，請勿重複提交…</p>}{error && <p data-testid="workspace-error" role="alert">{error}</p>}{message && <p role="status">{message}</p>}</div>
  {route !== 'audit' && route !== 'home' && route !== 'demo' && route !== 'wall' && route !== 'compare' && route !== 'examples' && route !== 'how' && <fieldset disabled={busy||DEMO_ONLY}><legend>實驗紀錄</legend>
  {!record && <><label>實驗名稱<input value={title} onChange={e => setTitle(e.target.value)}/></label><button data-testid="experiment-create" onClick={() => void run(async () => { selectRecord(await api.create(title)); setLocal(createExperiment('local-draft')); setPhotoFile(null); })}>建立實驗</button></>}
@@ -174,7 +173,8 @@ function App() {
             } })}>選擇此核對（使用者）</button></div>)}<label>已建立核對<select value={interventionId} onChange={e => setInterventionId(e.target.value)}><option value="">請選擇</option>{record?.interventions.map(i => <option key={i.intervention_id} value={i.intervention_id}>{i.intervention_id} · {i.check_type}</option>)}</select></label>{intervention && <><h3>後端提供的核對指示</h3>{Object.entries(intervention.instructions).map(([key, value]) => <div key={key}><b>{key}</b>{Array.isArray(value) ? <ul>{value.map((v, i) => <li key={i}>{v}</li>)}</ul> : <p>{value}</p>}</div>)}{intervention.model_rationale && <div><ModelSource source="model"/><p>{intervention.model_rationale}</p></div>}<p>已連結結果：{intervention.result_trial_id ?? '尚無'}。先保存新預測，再上傳 intervention 影片。</p><select aria-label="核對結果試驗" value={trialId} onChange={e => setTrialId(e.target.value)}><option value="">請選取重做試驗</option>{record?.trials.filter(t => t.kind === 'intervention').map(t => <option key={t.trial_id} value={t.trial_id}>{t.trial_id}</option>)}</select><button data-testid="intervention-link" disabled={trial?.kind !== 'intervention'} onClick={() => void run(async () => { await api.link(intervention.intervention_id, trialId); await refresh(); })}>連結核對結果</button></>}
  </>}
  {route === 'report' && <><h2>匯出後端實驗紀錄</h2><p>校準 {record?.calibrations.length ?? 0} 版 · 試驗 {record?.trials.length ?? 0} 段 · 預測 {record?.predictions.length ?? 0} 筆 · 比較 {record?.comparisons.length ?? 0} 筆。來源與人工修正保留於報告。</p><button data-testid="report-markdown" onClick={() => void run(() => download('md'))}>下載 Markdown 報告</button><button data-testid="report-csv" onClick={() => void run(() => download('csv'))}>下載 CSV 資料</button><details><summary>完整後端紀錄</summary><pre>{JSON.stringify(record, null, 2)}</pre></details></>}
- </fieldset>}<footer><a href="#setup">返回場景設定</a><span>各頁共用同一份後端實驗紀錄。</span></footer></section></main></>}</Localize>;
+ </fieldset>}
+ <div className="notice">照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。</div>{route==='audit'&&<><OpeningCards/><AutoTour/></>}<footer><a href="#setup">返回場景設定</a><span>各頁共用同一份後端實驗紀錄。</span></footer></section></main></>}</Localize>;
 }
 function PredictionSelect({ record, value, onChange }: {
     record: ExperimentRecord | null;
