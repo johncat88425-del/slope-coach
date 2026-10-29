@@ -74,6 +74,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T109 Muse：語音回答偵訊問題：`muse-voice-transcribe-1.0` 把使用者說的話轉成文字，Spark 抽出欄位（例如物體大小），**數字一定要使用者在畫面上確認**才送出。沒有金鑰時用 mock — commit 72dff6d（voice.answer_interview_voice：轉錄→extract_interview_fields→每欄 {value, confirmed: False}；尺寸回原文 value+unit、程式換算成米；無 key 回 mock。4 mock 測試。抽欄位真打 7 次（含 2 輪形狀修正：尺寸字串／window 陣列寬容＋口語數字轉阿拉伯數字範例）後完整抽出；注意模型從動詞 flies 推得 assumed_model，照樣待確認。$0.164，累計 $0.435）
 - [x] T112 Muse：（後端已由 Claude T143 做好）在 `MetaHooks` 加兩個方法：`explain_audit(audit: dict) -> str | None` 呼叫 `explain.explain_result(audit, kind="audit")`，`headline_audit(audit: dict) -> str | None` 呼叫 `headline.write_headline(audit)`。失敗就回 None 或丟例外，後端會退回固定模板，也會再檢查一次數字和禁用字。用 john 的 own_2 和 meta clip2 真打各一次，結果和花費寫進 STATUS — commit f54000e（explain_audit 取 ["explanation"]、失敗回 None；headline_audit 直通。clip2 標題「落下節奏宛如置身月球，表觀重力約為地球的0.17倍」；附帶修了解說數字只引 2 位小數、標題天體名轉中文。$0.096，累計 $0.263）
 - [x] T111 Muse：每一個用到 Meta 模型的回傳都帶 `source`（model 名稱與版本），讓畫面能標示「由 Muse Spark 1.3 產生」「由 SAM 3.1 追蹤」 — commit 6f7d198（spark×4、interview、explain、voice×2、agent×2 回傳加實際 model id；TrackResult.source 預設 sam-3.1；write_headline 改回 {headline, source}；hooks 兩處展開先濾掉 source（後端 schema 只要 model/mock）；沒打模型的 early return 不帶 source。T108/T109/T112 三條未合併分支另補同改。$0，累計 $0.435）
+- [ ] T113 Muse：（最優先，T146 修好之後）用同一個指令重跑 SAM：`set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --out data/gate/product_results_sam_v2.md`。把表格貼進「SAM 對照」，放在舊表下面，標題寫「v2（T146 修正分母後）」。舊表不要刪。如果有影片從拒判變成可以判，就在 `/api/audits` 回傳的 overlay 上確認紅點真的在球上，結果寫進 STATUS。花費記進成本紀錄
 
 **Codex**（PR #4 合併後才開始，照順序做）
 - [x] T36a Codex：`vite.config.ts` 加上 `/media` 代理，校準畫面改用 `photo_url` — commit 7596711（17 項前端測試、build；pytest 50 pass/1 skip：缺 ffmpeg）
@@ -175,6 +176,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T141 Claude：候選時間窗：`physics.experiments.freefall.suggest_flight_windows` 和 `POST /api/audit-drafts/{id}/windows`（API v0.8）。在 john 的 3 支影片上，第一個或第二個候選和 john 的標註差不到 0.2 秒（own_1 1.87–2.60、own_2 0.03–0.80、own_3 1.82–2.42）。只是建議，關卡和稽核仍然只用人確認的時間窗 — 見 PR T141
 - [x] T143 Claude：稽核結果接上 Muse 的說明和標題（API v0.9）：後端呼叫 hook `explain_audit`、`headline_audit`，模型的文字要再過一次 `check_model_text`（數字要能在結果裡找到，四捨五入後也算；不能有禁用字）才會用，否則退回固定模板。模型看不到原始軌跡，判定和數字都不經過模型；模型失敗也不會讓稽核壞掉 — 見 PR T143
 - [x] T144 Claude：生成影片（Meta 6 支、Manus 1 支，共 11 MB，沒有個人隱私）放進 `data/gate/clips/`。`audit_batch --clips` 預設讀這裡，找不到的影片列成 missing。john 自己拍的影片不進 git — 見 PR T144
+- [x] T146 Claude：修 SAM 追蹤比例的分母（Muse T107 發現的）：改用 SAM 的取樣時間算追到的比例和缺格事件。新增 15 fps SAM 對 60 fps 影片的測試 — 見 PR
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [x] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
 - [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
@@ -277,6 +279,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
   - 舊版 frame_diff：own_1 不一致（加速度偏 -70 度、軌跡不像拋物線）、own_2 不一致（-71 度）、own_3 資料不足。原因是追到手臂，不是物理。
   - 新版 color：三支軌跡都是乾淨拋物線（殘差只有行程的 0.4% 到 0.8%，偏角 1 到 6 度），但算出的 g 只有 3.7 到 4.5 m/s²。換句話說，如果 g 是 9.81，球的直徑應該是 0.11 到 0.13 m，不是 0.05 m。三支都偏同一個方向，比較像是尺寸標註的問題，所以先請 john 用尺量球（圓周 ÷ 3.14）。**不准為了讓結果變成一致去改門檻或改顏色參數。**
 
+- **10/29 10:40 T146（看過 SAM 結果之後改的，屬於修 bug）**：SAM 追到的比例和缺格事件，改用 SAM 自己的取樣（15 fps）來算，不再用影片的格數（24 或 30 fps）當分母。門檻 0.8 不變。舊版的結果：7 支全部因為「只追到 61–63%」拒判（`data/gate/product_results_sam.md`，保留）。新版的結果由 Muse 在 T113 重跑，存成 `product_results_sam_v2.md`，兩版都要列。顏色追蹤和 frame differencing 不受影響。
 - **10/29 03:45 T128**：顏色追蹤加上 yellow、green、blue、red（red 跨 0 度）。只對之後新的影片生效，關卡已跑的結果不重算；orange 的參數不變。
 
 ### 關卡結果
@@ -409,7 +412,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - [Muse] 新套件 `meta-sam-parser`（Meta 官方、無依賴）：SAM 遮罩自研編碼，只能用官方解析器，已用於 track。requirements 請加 `openai` + `meta-sam-parser`。
 
-- [Muse T107] SAM 覆蓋率分母 bug（需 Claude 修後端）：`audits.py` 用來源片格數（24fps）當分母，SAM 只出 15fps，天花板 62.5% 永遠低於門檻 0.8，所以 7 支全拒判。另 `by_t` 時間戳精確對齊在 15fps/24fps 混用下幾乎對不上，下游 events／鬼影也要修。Muse 不碰後端規則，等修好後重跑 T107 才有數字。
+- [x] [Muse T107] SAM 覆蓋率分母 bug（需 Claude 修後端）：`audits.py` 用來源片格數（24fps）當分母，SAM 只出 15fps，天花板 62.5% 永遠低於門檻 0.8，所以 7 支全拒判。另 `by_t` 時間戳精確對齊在 15fps/24fps 混用下幾乎對不上，下游 events／鬼影也要修。Muse 不碰後端規則，等修好後重跑 T107 才有數字。 → **10/29 10:40 Claude 已修（T146）**
 
 - [Muse] 主 checkout（/Users/aacc/Documents/slope-coach，切在 antigravity/T44-readme）有未解決的 `docs/STATUS.md` 衝突，`git pull origin main` 被擋下。Muse 沒碰它，在 worktree 照 origin/main 繼續做；請 Antigravity 或 john 解掉。
 
@@ -445,6 +448,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 10:40 Claude：審查並合併 Muse 的 T107–T112（重跑 SAM、建議物體名稱、語音回答、花費端點、來源標示、MetaHooks 的說明和標題）。修好 Muse 回報的 SAM 分母 bug（T146），新增 Muse T113 重跑。
 - 10/29 Muse 完成 T107（分支 muse/T107-sam-rerun）：audit_batch 跑 data/gate/clips 7 支，track_source 全是 sam，但 7 支全因「只追到 61–63%」拒判——查出是後端覆蓋率分母用 24fps 來源格數、SAM 只出 15fps（天花板 62.5% < 門檻 0.8），修法在後端已寫進待 john 決定。SAM 對照表和兩版比較已貼進關卡結果。花費 $0.077，累計 $0.167。pip install 用「逐一確認 requirements 可 import＋ffmpeg＋meta-sam-parser 存在」代替（venv 本來就齊，避免重裝弄壞環境）。
 - 10/29 Muse 完成 T110（分支 muse/T110-spend）：GET /api/spend＋API.md 一行契約＋tests/backend/test_spend.py（4 測試，全套件 196 pass）。$0，累計 $0.435。
 | 10/29 | T108：suggest_object 真打 clip2 一次 | 0.008 | 0.271（含未合併 T107 0.077、T112 0.096） |

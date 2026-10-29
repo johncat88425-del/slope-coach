@@ -152,6 +152,32 @@ def test_sam_track_used_when_connected(tmp_path):
     assert len(r["points"]) == 35  # the missed frame stays a gap
 
 
+def test_sam_at_15_fps_is_not_refused_for_tracking_on_a_60_fps_clip(tmp_path):
+    """SAM samples at 15 fps; the tracked fraction counts SAM's samples, not the clip's 60 fps frames."""
+    from backend import schemas as S
+    from backend.model_hooks import MockHooks, get_hooks, set_hooks
+
+    class FakeSam15(MockHooks):
+        def track_object(self, video_path, text_prompt, t_start, t_end):
+            out = []
+            for i in range(9):  # 0 .. 0.53 s at 15 fps, every sample found
+                t = i / 15
+                x = (40 + t / 0.003 + 10) / 640
+                y = (300 - 2.0 / 0.003 * t + 0.5 * 9.81 / 0.003 * t * t + 10) / 480
+                out.append(S.DetectionIn(t_s=t, centroid_px=(x, y), area_px=400 / (640 * 480)))
+            return out
+
+    write_clip(tmp_path / "real.mp4", 9.81)
+    old = get_hooks()
+    set_hooks(FakeSam15())
+    try:
+        r = post(tmp_path / "real.mp4", object_name="black square").json()
+    finally:
+        set_hooks(old)
+    assert r["track_source"] == "sam" and r["numbers"]["tracked_fraction"] == pytest.approx(1.0), r
+    assert r["verdict"] == "consistent", r
+
+
 def test_colour_named_object_uses_colour_tracker_when_sam_is_absent(tmp_path):
     from tests.scripts.test_gate_run import write_orange_clip
 
