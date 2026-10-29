@@ -11,7 +11,7 @@ export function sourceLabel(source: string, kind: 'understanding' | 'tracking' =
     if (source === 'color')
         return '顏色＋移動追蹤（未使用模型）';
     if (source === 'frame_diff')
-        return 'frame differencing（未使用模型）';
+        return '動作追蹤（未使用模型）';
     if (source === 'physics')
         return '確定性 physics 計算';
     return kind === 'tracking' ? '追蹤來源未提供' : '來源未提供';

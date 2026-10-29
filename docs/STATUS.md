@@ -139,24 +139,24 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T150 Codex：時間窗選擇器的鍵盤操作（方向鍵移動把手、Enter 確認）和螢幕閱讀器標籤，補測試 — commit 381df65
 
 - [x] T152 Codex：依 john「發現待辦就做」指示，修正時間窗候選請求途中換片／送出時，舊草稿晚到可能綁到新片的競態；補測試。 — commit f50a4d1
-- [ ] T154 Codex：結果區重新排版，讓第一次看的人三秒內看懂。由上而下：(1) 一條大色帶寫判定的白話：consistent →「Consistent with free flight on Earth」（綠）、inconsistent →「Inconsistent with free flight on Earth」（橘）、insufficient_data →「Cannot judge this clip」（灰），模型名稱照 `assumed_model` 換；(2) `headline.text`（有才顯示，標「由 Muse Spark 撰寫」）；(3) `explanation.text`；(4) 原因 `reasons`；(5) 其他（數字、圖、鬼影、限制、名片）收進「Details」區塊，預設收起。不准改任何數字或文字，補測試確認三種判定的顏色和順序
-- [ ] T155 Codex：等待中的回饋：時間窗建議約要 11 秒，稽核約要 10 到 20 秒。按下後顯示目前在做哪一步（「Scanning the video…」「Checking the motion…」）和已經過了幾秒；按鈕在等待時不能重按；失敗時用白話顯示錯誤，使用者已填的答案不能清掉。不准用計時器假裝進度百分比。補測試
-- [ ] T156 Codex：手機版（390 px 寬）主要流程不能左右捲動：上傳 → 問題 → 時間窗 → 結果。修好溢出的元件（影片、時間軸、表格），補測試檢查 class 或樣式
-- [ ] T158 Codex：稽核流程所有使用者看得到的英文字句做一次白話整理：不用術語（例如「frame differencing」改成「motion-based tracking (no model)」），同一種判定全站用同一個說法，繁中翻譯同步更新。加測試確認沒有 fake、detect AI、real or fake 這類字
+- [x] T154 Codex：結果區重新排版，讓第一次看的人三秒內看懂。由上而下：(1) 一條大色帶寫判定的白話：consistent →「Consistent with free flight on Earth」（綠）、inconsistent →「Inconsistent with free flight on Earth」（橘）、insufficient_data →「Cannot judge this clip」（灰），模型名稱照 `assumed_model` 換；(2) `headline.text`（有才顯示，標「由 Muse Spark 撰寫」）；(3) `explanation.text`；(4) 原因 `reasons`；(5) 其他（數字、圖、鬼影、限制、名片）收進「Details」區塊，預設收起。不准改任何數字或文字，補測試確認三種判定的顏色和順序 — commit b85f852
+- [x] T155 Codex：等待中的回饋：時間窗建議約要 11 秒，稽核約要 10 到 20 秒。按下後顯示目前在做哪一步（「Scanning the video…」「Checking the motion…」）和已經過了幾秒；按鈕在等待時不能重按；失敗時用白話顯示錯誤，使用者已填的答案不能清掉。不准用計時器假裝進度百分比。補測試 — commit 7ad7f9a
+- [x] T156 Codex：手機版（390 px 寬）主要流程不能左右捲動：上傳 → 問題 → 時間窗 → 結果。修好溢出的元件（影片、時間軸、表格），補測試檢查 class 或樣式 — commit 5f50f91
+- [x] T158 Codex：稽核流程所有使用者看得到的英文字句做一次白話整理：不用術語（例如「frame differencing」改成「motion-based tracking (no model)」），同一種判定全站用同一個說法，繁中翻譯同步更新。加測試確認沒有 fake、detect AI、real or fake 這類字 — commit 689eec5
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
 
 **Antigravity**（照順序做）
 - [x] T02 Antigravity→Claude：（10/29 06:40 Antigravity 整晚沒有 push，改由 Claude 做）`requirements.txt`、`scripts/dev.sh`（檢查 ffmpeg／python3／npm，缺什麼就列出 brew 指令；後端 8000、前端 5173；沒有金鑰時用 mock） — 見 PR T02
-- [ ] T14 Antigravity：用 `seed_demo` 跑斜坡流程的端到端測試，截圖放 `docs/screenshots/`，問題寫進「缺什麼」
-- [ ] T42 Antigravity：稽核流程的端到端測試。用 `tests/scripts/test_gate_run.py` 的 `write_clip` 產生合成影片，經 API 或畫面跑一次正常 g 和 g/4 兩種情況，截圖
-- [ ] T43 Antigravity：部署草稿：Dockerfile 與啟動說明。只在本機測，不要公開部署；`.env` 不准進映像檔
-- [ ] T44 Antigravity：README 的安裝與使用說明（英文），只寫已經能用的功能
-- [ ] T52 Antigravity：GitHub Actions CI：每個 PR 自動跑 `pytest` 和 `npm test`（需要安裝 ffmpeg）
+- [x] T14 Antigravity：用 `seed_demo` 跑斜坡流程的端到端測試，截圖放 `docs/screenshots/`，問題寫進「缺什麼」 — commit a0904f0
+- [x] T42 Antigravity：稽核流程的端到端測試。用 `tests/scripts/test_gate_run.py` 的 `write_clip` 產生合成影片，經 API 或畫面跑一次正常 g 和 g/4 兩種情況，截圖 — commit 7d4114d
+- [x] T43 Antigravity：部署草稿：Dockerfile 與啟動說明。只在本機測，不要公開部署；`.env` 不准進映像檔 — commit 49a5a9a
+- [x] T44 Antigravity：README 的安裝與使用說明（英文），只寫已經能用的功能 — commit eaf5b7d
+- [x] T52 Antigravity：GitHub Actions CI：每個 PR 自動跑 `pytest` 和 `npm test`（需要安裝 ffmpeg） — commit 750cd65
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
-- [ ] T54 Antigravity：上傳安全：檔案大小上限 200 MB、只收影片格式、每個 IP 每天最多 20 次稽核。寫成提案放進「待 john 決定」，Claude 審查後實作
+- [x] T54 Antigravity：上傳安全：檔案大小上限 200 MB、只收影片格式、每個 IP 每天最多 20 次稽核。寫成提案放進「待 john 決定」，Claude 審查後實作 — 提案已寫入待 john 決定，待 Claude 審查
 
-- [ ] T119 Antigravity：用 `docker compose up` 一個指令就能跑起前後端（含 ffmpeg），只在本機測。要部署到哪個網站先寫進「待 john 決定」，不要自己開帳號
+- [x] T119 Antigravity：用 `docker compose up` 一個指令就能跑起前後端（含 ffmpeg），只在本機測。要部署到哪個網站先寫進「待 john 決定」，不要自己開帳號 — commit 9e14a1c
 - [ ] T120 Antigravity：端到端測試：結果牆（T101）、鬼影球播放（T102）、並排比較（T114），桌機和 390 px 手機各截圖，放 `docs/screens/`（只放圖片）
 - [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
 - [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
@@ -399,6 +399,9 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 ## 待 john 決定
 
 - 10/29 Codex 合併檢查：PR #55 仍為 OPEN；PR #56 已 MERGED，但目標是 #55 的 codex/T150-window-keyboard，不是 main。因此 main 尚未包含 T143–T152 的全部前端。PR #58（T153）已改接在 #55 分支上避免重複大 diff；請 Claude 先把 #55 合併 main，再 retarget／合併 #58。
+- [T119 Antigravity] 本地端已備妥 `docker-compose.yml`（包含 backend + frontend 雙服務，支援 ffmpeg 與 .env 注入）。關於線上部署目標平台（如 Render, Fly.io, Railway, Google Cloud Run），請 john 決定目標平台並提供部署帳號／密鑰，Antigravity 不自行註冊外部帳號。
+
+- [T54 Antigravity 上傳安全提案] 建議在後端 `POST /api/audits` 實施安全防護：(1) 限制檔案大小上限為 200 MB（超出回傳 413 Payload Too Large）；(2) 限制 MIME 格式僅接受 `video/mp4`, `video/quicktime`, `video/webm`；(3) 依 Client IP 限制每天最多 20 次稽核呼叫（超額回傳 429 Too Many Requests）。此提案等待 Claude 審查後即可實作。
 
 - （10/29 Claude）要不要用 GitHub Pages 放純靜態 demo 版（Codex T138 做好之後）？這會把 demo 紀錄公開放上網，repo 本來就要公開，Claude 建議可以，但要等 john 同意才開。
 
@@ -612,3 +615,10 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T153：問答預設展開且放在拍攝清單之前，步驟明示上傳→提問→回答→確認時間窗→檢查；直接分析收進Advanced，JSON匯入與可選語音收合，結果留在收合區外。中英文與展開／排序回歸測試通過；npm91 pass、標準/靜態build pass，完整pytest保留drawtext環境缺口。
 
 - 10/29 Codex 沒有待辦了：T153 問答主要流程已推送 PR #58，npm91 pass、標準/靜態build pass，pytest192 pass/1 fail（drawtext）。再次pull無Codex待辦；另核對實際PR狀態，發現#55仍待合併main，已記錄給Claude。
+- 10/29 Codex T154：結果依序為綠／橘／灰判定色帶、Muse標題、原文說明、原文原因；其餘數字／圖／鬼影／限制／名片保留於預設收合Details，不改輸入資料。三判定顏色與順序回歸測試、npm92 pass、build pass。PR目標main。
+- 10/29 Codex T155：掃描／準備提問／檢查／讀取時顯示實際經過秒數，不把計時當完成百分比；保留已知upload bytes進度。請求鎖防重送，失敗保留原答案與問題，草稿失效僅要求重備草稿，不清欄位。npm94 pass、build pass。
+- 10/29 Codex T156：390px主流程加容器縮小hook，影片等比例、欄位單欄、檔案輸入與表格限寬換行，不用全頁overflow-x:hidden掩蓋。新增主元件class與390px CSS規則測試；npm95 pass、build pass。實機瀏覽器驗收仍待Antigravity。
+- 10/29 Codex T158：判定色帶、結果牆、首頁卡、名片、報告、列印共享白話判定；追蹤來源改motion-based tracking(no model)等易懂標籤，繁中同步。分析原文用Verbatim保留，JSON／量測值不變；數據與圖只換說明文字。新增全模型三判定一致性、禁用詞與原文／數字不變測試。npm99 pass、標準/靜態build pass；pytest192 pass/1既有drawtext環境失敗。
+
+- 10/29 Codex 沒有待辦了。
+- 10/29 Codex 本次完成 T154、T155、T156、T158，各自測試與build通過後提交推送；PR #61／#62／#63／#64 的目標均為 main。npm99 pass、標準／靜態build pass；未改後端、資料集或量測值。pytest192 pass/1 fail（既有ffmpeg無drawtext）。T157 尚無 Claude 定版通知，依 john 指示跳過，保留未勾。手機與鍵盤的實機瀏覽器驗收仍待 Antigravity。
