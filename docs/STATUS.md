@@ -90,7 +90,8 @@
 - [ ] 審查並合併 Muse 的 T05、T29
 - [x] 審查並合併 Codex PR #4 與 #16（T36–T51，含 #4 的內容）：pytest 58、npm 37、build 都通過；前端沒有自己算物理，畫面沒有「真／假／AI 生成」字眼
 - [x] T37 Claude：後端稽核端點 `POST /api/audits`、`GET /api/audits/{aid}`（docs/API.md v0.2）
-- [ ] T32 跑關卡（等 john 的影片）
+- [ ] T32 跑關卡（影片到了，等 john 確認時間標註和球的直徑）
+- [x] T87 Claude：不用模型的顏色＋移動追蹤（`backend/video.track_color`）。人工標註的物體名稱有顏色（例如 `orange ball`）時，關卡改用它；`--tracker frame_diff` 可重現舊規則。球的大小改用短軸寬度，不受動態模糊影響。3 支真實影片的紅點都落在球上 — 見 PR T87
 - [x] T55 Claude：稽核支援 `assumed_model=bounce`（接上 `check_bounces`）
 - [x] T56 Claude：透視檢查：物體大小沿軌跡變化超過 30% 時拒判（`physics/persistence.size_trend`）
 - [x] T57 Claude：單擺 physics 插件 `physics/experiments/pendulum.py`（週期、等時性、由週期推算擺長），給稽核和教練兩條路共用；尚未接到 API
@@ -170,7 +171,10 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ### 規則變更紀錄
 
-（無）
+- **10/29 T87（看過 john 的 3 支自拍影片之後改的）**：原規則用 frame differencing，在真實影片上抓到手臂和背景。新規則：人工標註的物體名稱含顏色（目前只有 orange，色相 15 到 45 度、飽和度與亮度至少 0.4）時，只取「是這個顏色而且有在動」的最大一塊；物體大小改用色塊短軸的寬度。其他門檻不變。顏色範圍是看過這 3 支影片後訂的，所以**之後的 Meta AI 影片要用同一組參數，不准再調**。
+- 新舊兩版用同一組試算標註（Claude 提議、john 尚未確認：own_1 1.9–2.6 s、own_2 0.2–0.8 s、own_3 2.0–2.4 s，球 0.05 m）的結果：
+  - 舊版 frame_diff：own_1 不一致（加速度偏 -70 度、軌跡不像拋物線）、own_2 不一致（-71 度）、own_3 資料不足。原因是追到手臂，不是物理。
+  - 新版 color：三支軌跡都是乾淨拋物線（殘差只有行程的 0.4% 到 0.8%，偏角 1 到 6 度），但算出的 g 只有 3.7 到 4.5 m/s²。換句話說，如果 g 是 9.81，球的直徑應該是 0.11 到 0.13 m，不是 0.05 m。三支都偏同一個方向，比較像是尺寸標註的問題，所以先請 john 用尺量球（圓周 ÷ 3.14）。**不准為了讓結果變成一致去改門檻或改顏色參數。**
 
 ### 關卡結果
 
@@ -256,6 +260,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 Claude：合併 Codex PR #32（T85、T86）。完成 T87 顏色追蹤，記進規則變更紀錄。真實影片上的追蹤已經正確，但用 5 公分算出的 g 只有一半左右，請 john 量球的直徑並確認時間標註。
 - 10/28 02:05Z Claude 巡查：Codex 完成 11 件（PR #16，已審查合併）；Muse 和 Antigravity 還沒有 push。替 Codex 補了 T59 到 T63。
 - 10/27 Codex T48：介面英/繁中切換，首次預設英文、記住語言偏好，所有頁面顯示層使用同一詞表；後端原始原因/使用者資料與數字不改寫。32 項測試、build 通過。
 
