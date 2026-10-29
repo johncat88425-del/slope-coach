@@ -139,7 +139,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 
 - [x] T152 Codex：依 john「發現待辦就做」指示，修正時間窗候選請求途中換片／送出時，舊草稿晚到可能綁到新片的競態；補測試。 — commit f50a4d1
 - [x] T154 Codex：結果區重新排版，讓第一次看的人三秒內看懂。由上而下：(1) 一條大色帶寫判定的白話：consistent →「Consistent with free flight on Earth」（綠）、inconsistent →「Inconsistent with free flight on Earth」（橘）、insufficient_data →「Cannot judge this clip」（灰），模型名稱照 `assumed_model` 換；(2) `headline.text`（有才顯示，標「由 Muse Spark 撰寫」）；(3) `explanation.text`；(4) 原因 `reasons`；(5) 其他（數字、圖、鬼影、限制、名片）收進「Details」區塊，預設收起。不准改任何數字或文字，補測試確認三種判定的顏色和順序 — commit b85f852
-- [x] T155 Codex：等待中的回饋：時間窗建議約要 11 秒，稽核約要 10 到 20 秒。按下後顯示目前在做哪一步（「Scanning the video…」「Checking the motion…」）和已經過了幾秒；按鈕在等待時不能重按；失敗時用白話顯示錯誤，使用者已填的答案不能清掉。不准用計時器假裝進度百分比。補測試 — commit 待回填（本次程式提交）
+- [x] T155 Codex：等待中的回饋：時間窗建議約要 11 秒，稽核約要 10 到 20 秒。按下後顯示目前在做哪一步（「Scanning the video…」「Checking the motion…」）和已經過了幾秒；按鈕在等待時不能重按；失敗時用白話顯示錯誤，使用者已填的答案不能清掉。不准用計時器假裝進度百分比。補測試 — commit 7ad7f9a
 - [ ] T156 Codex：手機版（390 px 寬）主要流程不能左右捲動：上傳 → 問題 → 時間窗 → 結果。修好溢出的元件（影片、時間軸、表格），補測試檢查 class 或樣式
 - [ ] T158 Codex：稽核流程所有使用者看得到的英文字句做一次白話整理：不用術語（例如「frame differencing」改成「motion-based tracking (no model)」），同一種判定全站用同一個說法，繁中翻譯同步更新。加測試確認沒有 fake、detect AI、real or fake 這類字
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
