@@ -1,3 +1,4 @@
+import {DEMO_ONLY,demoUploadMessage} from './mode.js';
 import type {AuditModel,AuditOut} from './audit';
 export type FlightWindows={draft_id:string;source:'physics';track_source:'frame_diff'|'color';windows:{t_start:number;t_end:number}[];scanned_until_s:number};
 export type InterviewField='camera_static'|'slow_motion'|'object_size_m'|'time_window'|'assumed_model'|'length_m';
@@ -37,9 +38,11 @@ export function uploadAudit(url:string,data:FormData,progress:UploadProgress,mak
  progress(0);xhr.send(data);
  });
 }
-export function createApi(base='', transport:typeof fetch=fetch) {
+export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnly?:boolean}={}) {
+  const demoOnly=options.demoOnly??DEMO_ONLY;
   const root=base.replace(/\/$/,'');
   async function request<T>(path:string, init:RequestInit={}, text=false):Promise<T> {
+    if(demoOnly)throw new Error(demoUploadMessage);
     const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),120000);
     try {
       const response=await transport(root+'/api'+path,{...init,signal:controller.signal});
@@ -58,7 +61,7 @@ export function createApi(base='', transport:typeof fetch=fetch) {
   function json<T>(method:string,path:string,body:unknown) {return request<T>(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
   const e=(id:string)=>'/experiments/'+encodeURIComponent(id), t=(id:string)=>'/trials/'+encodeURIComponent(id);
   return {
-    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight',onProgress?:UploadProgress,length_m?:number,object_name='ball',slow_motion?:boolean)=>{const data=new FormData();data.append('file',file);data.append('object_name',object_name.trim()||'ball');if(slow_motion!==undefined)data.append('slow_motion',String(slow_motion));data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));if(length_m!==undefined)data.append('length_m',String(length_m));return onProgress?uploadAudit(root+'/api/audits',data,onProgress):request<AuditOut>('/audits',{method:'POST',body:data})},
+    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight',onProgress?:UploadProgress,length_m?:number,object_name='ball',slow_motion?:boolean)=>{if(demoOnly)return Promise.reject(new Error(demoUploadMessage));const data=new FormData();data.append('file',file);data.append('object_name',object_name.trim()||'ball');if(slow_motion!==undefined)data.append('slow_motion',String(slow_motion));data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));if(length_m!==undefined)data.append('length_m',String(length_m));return onProgress?uploadAudit(root+'/api/audits',data,onProgress):request<AuditOut>('/audits',{method:'POST',body:data})},
     flightWindows:(id:string,object_name:string)=>{const body=new FormData();body.append('object_name',object_name.trim()||'ball');return request<FlightWindows>('/audit-drafts/'+encodeURIComponent(id)+'/windows',{method:'POST',body})},
     auditDraft:(file:File)=>{const data=new FormData();data.append('file',file);return request<AuditDraft>('/audit-drafts',{method:'POST',body:data})},
     auditFromDraft:(id:string,answers:InterviewAnswers)=>{const data=new FormData();data.append('draft_id',id);for(const [k,v] of Object.entries(answers))if(v!==undefined)data.append(k,String(v));return request<AuditOut>('/audits',{method:'POST',body:data})},
