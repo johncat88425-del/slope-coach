@@ -1,6 +1,6 @@
 {
- "audit_id": "aud_d60fb0c524db",
- "created_at": "2026-10-29T13:01:09.860229Z",
+ "audit_id": "aud_03277cc27209",
+ "created_at": "2026-10-29T13:18:17.223108Z",
  "assumed_model": "free_flight",
  "t_start": 2.0,
  "t_end": 2.4,
@@ -13,81 +13,81 @@
  "reasons": [],
  "numbers": {
   "tracked_fraction": 1.0,
-  "size_trend": -0.008309810314313326,
-  "g_vs_earth": 0.8849873094652316,
-  "g_apparent_low": 6.678250389118402,
-  "g_apparent_high": 12.402465008362746,
+  "size_trend": -0.00844542050812247,
+  "g_vs_earth": 0.8848055484049733,
+  "g_apparent_low": 6.676878792194453,
+  "g_apparent_high": 12.399917756932556,
   "g_verdict_robust": 0.0,
-  "a_px_s2": 2116.0268576080935,
-  "tilt_deg": 3.1687770986583685,
-  "rms_over_travel": 0.00420448141842674,
-  "g_apparent_m_s2": 8.681725505853922,
-  "implied_time_factor": 1.0629956283921014,
-  "implied_object_size_m": 0.124295567657879,
+  "a_px_s2": 2115.6842346287144,
+  "tilt_deg": 3.16751136884818,
+  "rms_over_travel": 0.004200007258402625,
+  "g_apparent_m_s2": 8.679942429852789,
+  "implied_time_factor": 1.0631048056521428,
+  "implied_object_size_m": 0.12432110105807483,
   "n_points": 6.0
  },
  "points": [
   [
    2.0,
-   370.93158559561533,
-   62.20920399075105
+   370.95154590613225,
+   62.216491092840016
   ],
   [
    2.066666666666667,
-   350.75655377793237,
-   65.96918746195983
+   350.7564771344114,
+   65.97574334898279
   ],
   [
    2.1333333333333333,
-   330.18881468003906,
-   80.22970844057868
+   330.195952846106,
+   80.23338291448361
   ],
   [
    2.2,
-   309.697046772857,
-   104.62580563484026
+   309.7141935483871,
+   104.63043778801843
   ],
   [
    2.2666666666666666,
-   289.9461257066844,
-   139.1397572331227
+   289.9543885191348,
+   139.14259567387688
   ],
   [
    2.3333333333333335,
-   272.02885475359983,
-   179.28202978266702
+   272.0283267751744,
+   179.27481666964763
   ]
  ],
  "ghost_points": [
   [
    2.0,
-   371.27483759820984,
-   61.659213359078066
+   371.2878175223332,
+   61.66556775397874
   ],
   [
    2.066666666666667,
-   350.0484248771565,
-   67.19062489229074
+   350.0602076267542,
+   67.19861994467325
   ],
   [
    2.1333333333333333,
-   328.82201215610326,
-   83.3488145849262
+   328.8325977311753,
+   83.35891227840818
   ],
   [
    2.2,
-   307.5955994350499,
-   110.13378243698467
+   307.6049878355963,
+   110.14644475518375
   ],
   [
    2.2666666666666666,
-   286.36918671399667,
-   147.5455284484658
+   286.3773779400175,
+   147.56121737499956
   ],
   [
    2.3333333333333335,
-   265.1427739929434,
-   195.58405261937003
+   265.1497680444385,
+   195.60323013785617
   ]
  ],
  "nearest_body": "Earth",
@@ -99,15 +99,15 @@
  ],
  "explanation": {
   "source": "model",
-  "text": "\u9019\u6b21\u6aa2\u67e5\u5047\u8a2d\u57282\u52302.4\u4e4b\u9593\u70ba\u81ea\u7531\u98db\u884c\uff0c\u4ee50.11\u70ba\u7269\u9ad4\u5927\u5c0f\u9032\u884c\u4f30\u7b97\u3002\u91cf\u5230\u7684\u8868\u89c0\u91cd\u529b\u7d048.68\uff0c\u4f30\u8a08\u7bc4\u570d\u57286.68\u523012.4\u4e4b\u9593\uff0c\u8207\u5730\u7403\u7684\u6bd4\u503c\u7d040.88\uff0c\u50be\u659c\u7d043.17\u5ea6\u3002\u6574\u9ad4\u4f86\u770b\u8207\u5047\u8a2d\u4e00\u81f4\u3002"
+  "text": "Assuming free flight from 2 to 2.4 with a static camera and an assumed size of 0.11 m, the tracked fall was checked against gravity-like motion. The apparent gravity was 8.68 m per s squared, with a range of 6.68 to 12.4, about 0.88 times Earth gravity, and tilt was 3.17 degrees. This is consistent with the assumption and cannot yet distinguish a departure from free flight."
  },
  "headline": {
   "source": "model",
-  "text": "\u7de9\u7de9\u98c4\u843d\u5b9b\u5982\u8eab\u8655\u5730\u7403\uff0c\u8868\u89c0\u91cd\u529b\u7d04\u70ba\u5730\u7403\u76840.88\u500d\u3002"
+  "text": "This ball falls as if on Earth, at 0.88 times Earth's gravity."
  },
  "video_url": "",
  "overlay_url": null,
  "clip": "own_3_IMG_8434.mov",
- "real_clip": true,
- "labels_by": "john (window, camera, object size)"
+ "labels_by": "john (window, camera, object size)",
+ "real_clip": true
 }

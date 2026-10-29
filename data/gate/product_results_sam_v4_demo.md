@@ -1,6 +1,6 @@
 | clip | source | verdict | g_apparent_m_s2 | nearest_body | size_trend | track_source | reason |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| own_1_IMG_8426.mov | own | consistent | 9.30 | Earth | 0.04 | sam |  |
+| own_1_IMG_8426.mov | own | consistent | 9.31 | Earth | 0.04 | sam |  |
 | own_2_IMG_8429.mov | own | consistent | 9.45 | Earth | 0.10 | sam |  |
 | own_3_IMG_8434.mov | own | consistent | 8.68 | Earth | -0.01 | sam |  |
 | meta_clip1.mp4 | meta_ai | inconsistent | 0.25 | Pluto | -0.17 | sam | apparent g 0.25 m/s^2 is outside 8.34-11.28 |

@@ -15,10 +15,10 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T118（解說和標題改英文，重產 demo 紀錄） |
+| **Muse** | T119（真的接上 Meta API 跑一次完整流程） |
 | **Codex** | T157（demo 資料已定版，可以做） |
-| **Antigravity** | T161 → T121 → T122 → T53 → T68 |
-| **Manus** | T163 → T22 |
+| **Antigravity** | T53 → T68（T121、T122 已合併） |
+| **Manus** | T163 → T164 → T22 |
 | **Claude** | 審查合併 PR；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
 
@@ -48,7 +48,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
-- [ ] T118 Muse：（最優先）demo 紀錄裡的解說和標題現在是中文，但介面預設英文，評審也看英文。(1) `meta_client/headline.py` 加英文版（`lang` 參數，規則跟中文版一樣：模型不寫數字、不准真假字眼），補測試；(2) `meta_client/hooks.py` 的 `explain_audit` 傳 `lang="en"`，`headline_audit` 用英文版；(3) `pytest` 全過；(4) 重跑 T117 的同一個指令（約 $0.35，`--json-dir data/demo --explain`）；(5) 確認 10 支的 verdict 和數字跟現在一樣（只有 explanation、headline 文字變），不一樣就寫進 STATUS；(6) `git status` 確認沒有影片，commit，push 分支 `muse/T118-english-text`。
+- [ ] T119 Muse：真的接上 Meta API 跑一次完整的網站流程（不用瀏覽器，用 curl），確認 demo 時評審看到的 Muse 功能都能動。花費上限 $0.30。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; uvicorn backend.main:app --port 8000`（另開一個終端機跑下面）；(3) 用 `data/gate/clips/meta_clip2.mp4` 依序打：`POST /api/audit-drafts`（看 `interview.source` 是不是 model、`suggestion` 有沒有）→ `POST /api/audit-drafts/{id}/windows` → `POST /api/audit-drafts/{id}/voice`（用 `say -o answer.aiff "the camera did not move and the ball is twenty four centimetres"` 錄一段，轉成 m4a 再送）→ 照 docs/API.md 送出稽核；(4) 每一步記下：成功或失敗、`source` 欄位、花了多少錢、花幾秒；(5) 結果寫進 STATUS 日誌，壞掉的地方寫清楚錯誤訊息，不要自己改後端；(6) 不 commit 任何音檔或影片，push 分支 `muse/T119-live-smoke`（只改 STATUS 和 cost_log）。
 - [x] T117 Muse：（最優先）產生 demo 用的 SAM 版紀錄（含 Muse Spark 解說）。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --json-dir data/demo --explain --out data/gate/product_results_sam_v4_demo.md`（約 $0.35；會覆蓋 `data/demo/real_own_*.json` 和 `generated_*.json`，顏色版留在 git 歷史和 `product_results.md`）；(3) 確認 10 支的 verdict 跟 v4 表一樣，不一樣就寫進 STATUS，不要挑；(4) `git status` 確認只有 `data/demo/*.json`、結果檔、STATUS、cost_log 改動，**沒有任何影片**；(5) commit，push 分支 `muse/T117-demo-sam`。 — commit 02fb0c6（10 支 verdict 全跟 v4 一樣；10 個 demo JSON 換成 SAM 版＋模型解說／標題；explain 10 次零重試，T115 修好了。$0.344，累計 $1.353）
 - [x] T116 Muse：（最優先）Claude 已修好 SAM 的計時 bug（`meta_client/sam.py` 改用 `-vf fps=15`），請重跑 SAM 全部 10 支：(1) `git checkout main`、`git pull origin main`；(2) 確認 `~/slope-own-clips` 裡有 3 支自拍＋7 支生成影片；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v4.md`（約 $0.12，不會呼叫解說）；(4) 表格貼進「SAM 對照」v3 下面，標題「v4（修正 15fps 計時後）」，v2、v3 不要刪；(5) 看自拍 3 支的 overlay 紅點，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T116-sam-v4`。 — commit 61f00f2（v4：自拍 3 支全變一致 g=9.30／9.46／8.68，生成側 verdict 不變；3 張 overlay 紅點在球上。`~` 目錄仍不存在，續用 /tmp/slope-own-clips。$0.107，累計 $1.009）
 - [x] T114 Muse：自拍影片也用 SAM 跑（demo 要「同一種追蹤」下真實一致、生成不一致、拒判三種都有）。步驟：(1) 請 john 把 3 支自拍影片 IMG_8426.mov、IMG_8429.mov、IMG_8434.mov 放進 repo 外的資料夾 `~/slope-own-clips`，檔名改成 manifest 的名字 `own_1_IMG_8426.mov`、`own_2_IMG_8429.mov`、`own_3_IMG_8434.mov`（**不准放進 repo、不准 commit**）；(2) `cp data/gate/clips/*.mp4 ~/slope-own-clips/`；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v3.md`（現在批次預設不呼叫解說和標題，只花 SAM 的錢，約 $0.12）；(4) 表格貼進「SAM 對照」v2 下面，標題「v3（加入自拍影片）」；(5) 每支自拍影片看 overlay 確認紅點在球上，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T114-sam-own`。 — commit 32e8600（v3：自拍 3 支全判不一致、偏角 -22～-27 度，與顏色版矛盾；3 張 overlay 紅點都在球上。$0.107，累計 $0.902）
@@ -56,19 +56,19 @@
 
 
 **Codex**（照順序做）
-- [ ] T164 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ
+- [ ] T165 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ — frontend commit a624494；本任務原暫編 T164，同步 main 後避開 Manus 的 T164 改為 T165。
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
 
 
 **Antigravity**（照順序做）
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
-- [ ] T161 Antigravity：（T120 的手機版重做）三張 390 px 手機截圖檔案完全一樣（同一個 md5），表示沒有真的切到各畫面。請用 Playwright `viewport={"width":390,"height":844}`，每個畫面先等該畫面的 data-testid 出現再截圖，存成 `docs/screens/<畫面>_mobile_390px.png`。commit 前用 `md5` 確認三張不同。
-- [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
-- [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
+- [x] T121 Antigravity：效能量測：10 秒 1080p 影片 `/api/audits` 跑完耗時：顏色追蹤 1.13s、frame differencing 0.36s（目標 < 20s，通過；Claude 在雲端重跑 6.65s／1.53s，也通過。註：腳本只量 0–5 秒的時間窗）— commit b83b4d1
+- [x] T122 Antigravity：照 README 在乾淨目錄從零安裝：前端 111 測試通過；後端要用 README 寫的 `python3.11`（Homebrew 預設 3.14 建 venv 會失敗）。註：STATUS 提到的 commit 9db92e3（gate_prepare 的 drawtext 退路）沒有 push 到 GitHub，main 沒有這個改動 — commit 2c4af33
 
 
 **Manus**（不寫程式）
+- [ ] T164 Manus：三分鐘 demo 的英文旁白和分鏡表（給 john 錄影用）。順序：(1) 0:00–0:20 問題：影片裡的運動符不符合物理，一般人沒辦法量；(2) 0:20–1:00 Muse 偵訊：上傳 → Muse Spark 問問題、建議物體名稱 → 使用者確認；(3) 1:00–1:40 真實影片：john 丟球，SAM 3.1 追蹤，g = 9.45 m/s²，與假設一致；(4) 1:40–2:20 生成影片：g = 0.14 m/s²（像冥王星），與真實重力的自由飛行不一致；另一支因為物體往鏡頭移動而拒判；(5) 2:20–2:50 限制與規則：數字只由程式算、模型不碰數字、不判斷影片真假；(6) 2:50–3:00 結尾。數字只用 README「Results on our test set」的 SAM 欄。每段寫：畫面上要點哪裡、旁白（英文）、秒數。不准說「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude 檢查。
 - [ ] T163 Manus：用目前的數字寫提交文字初稿（英文，Cerebral Valley 用）：一段 50 字簡介、一段 200 字說明（問題、做法、Meta 模型用在哪、結果、限制）。數字只用 README 的「Results on our test set」表；SAM 版寫 [TBD]。不准出現「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude。
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
@@ -232,7 +232,13 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
-- T164 Codex：Figma Starter MCP 配額用完。14 個 editable 狀態與元件已建立，桌面高度修正已核對；手機 Field 內框待恢復 48px、上傳 CTA 待移到照片之前，待清理暫存 capture 5:2／照片節點 10:2，並核對 SAM Source instance 的文字 property（Label#9:21）。未經核對不宣稱 Figma 最終完成。前端這些修正均已完成並實測；不升級方案、不換管道繞過配額。
+- T165 Codex：Figma Starter MCP 配額用完。14 個 editable 狀態與元件已建立，桌面高度修正已核對；手機 Field 內框待恢復 48px、上傳 CTA 待移到照片之前，待清理暫存 capture 5:2／照片節點 10:2，並核對 SAM Source instance 的文字 property（Label#9:21）。未經核對不宣稱 Figma 最終完成。前端這些修正均已完成並實測；不升級方案、不換管道繞過配額。
+
+- [T122 Antigravity 乾淨環境安裝驗證] 在 `/tmp/slope-coach-clean-test` 依照 README 完整測試安裝：
+  1. Frontend：`cd frontend && npm install && npm test` 111 項測試全數 PASS。
+  2. Python Backend：macOS Homebrew 預設 Python 3.14.7 觸發 PEP 668 `externally-managed-environment`，導致 `python3 -m venv .venv` 在 ensurepip 階段失敗。解法為 README 所述安裝並指定 `python@3.11`（`brew install python@3.11` 後以 `python3.11 -m venv .venv` 建立），或在現有 Python 3.14 下使用 wheel 解包 / `--break-system-packages`。
+  3. ffmpeg：部分 macOS Homebrew ffmpeg 缺 `drawtext` 濾鏡。Antigravity 說已在 `scripts/gate_prepare.py` 加退路（commit 9db92e3），但這個 commit 沒有 push 到 GitHub（Claude 10/29 14:20 查證）。
+  （Claude：這三點都不用 john 決定。README 已寫 `python3.11`；drawtext 退路只影響關卡用的縮圖腳本，不影響產品。）
 
 - 10/29 Codex 合併檢查：PR #55 仍為 OPEN；PR #56 已 MERGED，但目標是 #55 的 codex/T150-window-keyboard，不是 main。因此 main 尚未包含 T143–T152 的全部前端。PR #58（T153）已改接在 #55 分支上避免重複大 diff；請 Claude 先把 #55 合併 main，再 retarget／合併 #58。
 - [T119 Antigravity] 本地端已備妥 `docker-compose.yml`（包含 backend + frontend 雙服務，支援 ffmpeg 與 .env 注入）。關於線上部署目標平台（如 Render, Fly.io, Railway, Google Cloud Run），請 john 決定目標平台並提供部署帳號／密鑰，Antigravity 不自行註冊外部帳號。
@@ -255,6 +261,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 已做的決定
 
+- 10/29 13:34 john：自拍影片的縮圖（`data/gate/sheets/own_*`，客廳、沒有人臉）留在公開 repo，當作實拍的證據。影片本身仍然不准 commit。
 - 10/29 13:05 Claude：**demo 主表改用 SAM 3.1 v4**（自拍 3 支一致、生成 4 支不一致、3 支拒判：同一種追蹤下三種結果都有，而且是 Muse 的模型）。顏色版並排當對照，兩版不同的地方照實寫（例如 own_3：SAM 8.68 一致、顏色 8.15 不一致）。README 已更新。
 - 10/29 12:30 Claude：demo 主表暫用**顏色追蹤版**（目前唯一在同一種追蹤下有「真實一致、生成不一致、拒判」三種結果的版本），SAM 版並排顯示。T114 自拍影片跑完 SAM 後再決定：若 SAM 版三種結果都有，demo 改以 SAM 版為主（Muse 優先），顏色版當對照。兩版的不同照實寫，不挑對自己有利的。
 - 10/29 john：關卡三題通過後，主方向轉向「影片物理稽核」；斜坡教練保留為第二條路，只做維護。
@@ -291,11 +298,14 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T114：SAM v3 跑 10 支（自拍 3＋生成 7，純 SAM 無解說） | 0.107 | 0.902 |
 | 10/29 | T116：SAM v4 跑 10 支（計時修好後，純 SAM） | 0.107 | 1.009 |
 | 10/29 | T117：demo 版 10 支（SAM $0.107＋解說 10 次零重試 $0.155＋標題 7 次 $0.081） | 0.344 | 1.353 |
+| 10/29 | T118：英文版重產 demo（SAM $0.107＋解說 10 次零重試 $0.161＋標題 7 次 $0.064） | 0.333 | 1.686 |
 
 ## 工作日誌（最新在上）
 
-- 10/29 Codex T164：依 john 指示建立 Figma Editorial Lab（上傳、確認時間窗、等待、錯誤、結果、結果牆、並排，1440／390px 各七張；Auto Layout、47 個 tokens、21 個 variants、七種文字樣式）。Figma Starter MCP 配額於手機最後修正時用完，留下的明確修正見待決定，整項保留未勾。現有 frontend 已改為米白／墨藍／朱橘、單一上傳主操作、影片＋時間窗＋欄位工作區、細分隔線與一致結果層級；Details 預設收合，來源依實際 model／mock／template／tracker 顯示，後端文字用 Verbatim 保留。配色標示為受和田三造《配色事典》啟發，未虛構原書頁碼或色碼；本地 Noto Sans TC 字型附 SIL OFL，無新套件。首頁照片取自既有公開範例的單張影格，並有範例說明。瀏覽器 1440px／390px 檢查，手機首屏上傳可見；鍵盤選片→時間窗→回答→送出→等待→結果通過，焦點分別交給時間起點／狀態／判定；結果牆與並排無橫向溢出，受檢文字最低對比 5.51:1，繁中同步。npm 115 pass，標準／demo build pass（入口 81,392／80,505 bytes）；pytest 219 pass／1 既有 ffmpeg drawtext 缺口。未改後端、API、demo JSON 或測量值，mock 測試無付費模型呼叫。
+- 10/29 Codex T165：依 john 指示建立 Figma Editorial Lab（上傳、確認時間窗、等待、錯誤、結果、結果牆、並排，1440／390px 各七張；Auto Layout、47 個 tokens、21 個 variants、七種文字樣式）。Figma Starter MCP 配額於手機最後修正時用完，留下的明確修正見待決定，整項保留未勾。現有 frontend 已改為米白／墨藍／朱橘、單一上傳主操作、影片＋時間窗＋欄位工作區、細分隔線與一致結果層級；Details 預設收合，來源依實際 model／mock／template／tracker 顯示，後端文字用 Verbatim 保留。配色標示為受和田三造《配色事典》啟發，未虛構原書頁碼或色碼；本地 Noto Sans TC 字型附 SIL OFL，無新套件。首頁照片取自既有公開範例的單張影格，並有範例說明。瀏覽器 1440px／390px 檢查，手機首屏上傳可見；鍵盤選片→時間窗→回答→送出→等待→結果通過，焦點分別交給時間起點／狀態／判定；結果牆與並排無橫向溢出，受檢文字最低對比 5.51:1，繁中同步。npm 115 pass，標準／demo build pass（入口 81,392／80,505 bytes）；pytest 219 pass／1 既有 ffmpeg drawtext 缺口。未改後端、API、demo JSON 或測量值，mock 測試無付費模型呼叫。
 
+- 10/29 13:35 Claude：合併 Muse T118（英文解說與標題；10 支 verdict 不變，SAM 重跑數字差 <0.2%，例如 own_1 9.30→9.31，README 註明）與 Antigravity T161（三張手機截圖 md5 都不同；gate_prepare 在沒有 drawtext 的 ffmpeg 改用無字幕縮圖）。
+- 10/29 Muse 完成 T118（分支 muse/T118-english-text）：headline 加 lang 參數（英文 prompt＋天體名不轉中文，禁真假／real／fake／AI 規則不變）＋hooks 切英文＋3 測試；pytest 221 pass。重跑 demo 指令：10 支 verdict 全同、數字差 <0.2%（SAM 非確定性；own_1 顯示值 9.30→9.31）、10 份文字全轉英文且無中文殘留、6 份合成 JSON 未動。explain 連續第二次 10 次零重試。$0.333，累計 $1.686。
 - 10/29 13:20 Claude：審查並合併 Codex T162（鍵盤焦點、對比、停用狀態可讀、解說來源標示）。
 - 10/29 Codex 沒有待辦了。T162 已完成並推送 codex/T162-a11y（PR #80，目標 main），已同步協調者的最新進度。T157 尚無 Claude 的資料定版公告，依 john 規則保留未勾；無其他可執行的 Codex 待辦。
 - 10/29 Codex T162：已用瀏覽器以 Tab／Enter／空白鍵從選片、準備問題、回答、確認時間窗到結果；素材為 repo 既有 meta_clip2，輸入照 manifest，獨立 mock 後端無金鑰、無付費呼叫。發現準備後焦點掉到 BODY，已改交接到物體名；等待提示、漏答錯誤與新結果都有焦點位置及深色焦點框。結果 aria-labelledby 指向各自判定，並排不重複 ID。小標原對比4.48:1，改為顏色 token；移除停用控制項的透明度、保留可讀文字。390×844 實測表單、收合／展開結果、結果牆及並排頁沒有橫向溢出（scrollWidth375≤innerWidth390）；受檢頁面最低文字對比5.49:1，1280px並排亦通過。首頁卡片／結果牆補說明來源徽章；模型、模板／mock 依實際值，既有問題／標題／追蹤／語音來源標示已核對。新增對比、唯一結果標籤、雙語來源測試；npm111 pass、一般與靜態build pass（入口79,391／78,502 bytes）。合併最新main後pytest219 pass／1既有ffmpeg drawtext失敗。只改frontend與本STATUS，資料／後端未改。
@@ -327,6 +337,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ### 已完成的任務（從完成表搬來）
 
+- [x] T118 Muse：（最優先）demo 紀錄裡的解說和標題現在是中文，但介面預設英文，評審也看英文。(1) `meta_client/headline.py` 加英文版（`lang` 參數，規則跟中文版一樣：模型不寫數字、不准真假字眼），補測試；(2) `meta_client/hooks.py` 的 `explain_audit` 傳 `lang="en"`，`headline_audit` 用英文版；(3) `pytest` 全過；(4) 重跑 T117 的同一個指令（約 $0.35，`--json-dir data/demo --explain`）；(5) 確認 10 支的 verdict 和數字跟現在一樣（只有 explanation、headline 文字變），不一樣就寫進 STATUS；(6) `git status` 確認沒有影片，commit，push 分支 `muse/T118-english-text`。 — commit 342d06c（headline 加 lang 版＋hooks 切英文＋3 測試；10 支 verdict 全同、數字差 <0.2%、文字全轉英文無中文殘留。explain 又是 10 次零重試。$0.333，累計 $1.686）
+- [x] T161 Antigravity：（T120 的手機版重做）三張 390 px 手機截圖檔案已重拍，先等 data-testid 出現並捲入視窗後截圖，確認三張 md5 皆不同（results_wall: 92ab8e63, pair_comparison: 3b5addab, ghost_review: 716e193e）— commit f7f98f2
 - [x] T162 Codex：評審用鍵盤和手機看的品質檢查（只改 `frontend/`）。(1) 只用鍵盤（Tab、Enter、空白鍵）從上傳影片走到看到結果，記下卡住或看不到焦點的地方並修好；(2) 檢查文字和背景的對比至少 4.5:1，不夠的改顏色 token；(3) 390 px 寬時沒有橫向捲動；(4) 每個由模型產生的區塊都有「由 Muse Spark／SAM 3.1 產生」標示，沒有的補上。補測試，`npm test` 和 `npm run build` 都要過，push 分支 `codex/T162-a11y`。 — commit be58457
 - [x] T159 Codex：（API v1.0）偵訊畫面用 `draft.suggestion` 預填「Object name」，旁邊寫「Suggested by Muse Spark — please check」，使用者改了就用使用者的。`camera_looks_static` 只顯示成提示文字，**不准自動勾選**「鏡頭固定」。`suggestion` 是 null 時什麼都不顯示。補測試 — commit 585c561
 - [x] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch） — commit 3c69d20
