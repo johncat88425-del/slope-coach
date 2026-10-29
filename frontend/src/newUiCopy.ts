@@ -1,4 +1,13 @@
 export const newUiCopy:Record<string,string>={
+"Scanning the video…":"正在掃描影片…",
+"Checking the motion…":"正在檢查運動…",
+"Preparing questions…":"正在準備問題…",
+"Loading the saved result…":"正在讀取已儲存的結果…",
+"Elapsed:":"已經過：",
+"This can take a little while. Your answers are kept; no automatic retry is made.":"處理需要一些時間。你的答案會保留，不會自動重送。",
+"Upload complete. Separate phase progress is not reported.":"上傳完成，目前沒有細分階段的進度資訊。",
+"The request is still running. Elapsed time is not a completion estimate.":"請求仍在處理中，已經過的時間不是完成進度估計。",
+"Prepare questions again before retrying. Your answers are kept.":"請重新準備問題後再試；你的答案會保留。",
 "Consistent with free flight on Earth":"與地球上的自由飛行一致",
 "Inconsistent with free flight on Earth":"與地球上的自由飛行不一致",
 "Consistent with passive bouncing":"與被動彈跳一致",

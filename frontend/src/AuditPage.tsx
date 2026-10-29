@@ -1,3 +1,4 @@
+import {createRequestGate} from './requestFeedback.js';
 import {verdictLabel} from './verdictLabel.js';
 import {createSelectedDraft} from './selectedDraft.js';
 import {RetakeGuide} from './RetakeGuide.js';
@@ -57,6 +58,8 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource }
 export function AuditPage({ api, auditId = null }: {
     api: ReturnType<typeof createApi>; auditId?: string|null;
 }) {
+    const requestGate=useRef(createRequestGate());
+    const [requestPhase,setRequestPhase]=useState<'checking'|'loading'>('checking');
     const selectedDraft=useRef(createSelectedDraft<File>());
     const [previewAuditId,setPreviewAuditId]=useState<string|null>(null);
     const [windowConfirmed,setWindowConfirmed]=useState(false);
@@ -80,8 +83,8 @@ export function AuditPage({ api, auditId = null }: {
     const errors = validateAuditInput(start, end, size);if(model==='pendulum'&&length.trim()&&(!Number.isFinite(Number(length))||Number(length)<=0))errors.push('Pendulum length must be positive and finite; leave blank if unknown.');
     useEffect(() => () => { if (preview)
         URL.revokeObjectURL(preview); }, [preview]);
-    async function run(action: () => Promise<AuditOut>, allowLocalPreview=false) { if (busy)
-        return;setPreviewAuditId(null); setBusy(true); setError('');setInterviewSource(null);setAudit(null);setUploadPercent(null); try {
+    async function run(action: () => Promise<AuditOut>, allowLocalPreview=false) { await requestGate.current(async()=>{if (busy)
+        return;setRequestPhase(allowLocalPreview?'checking':'loading');setPreviewAuditId(null); setBusy(true); setError('');setInterviewSource(null);setAudit(null);setUploadPercent(null); try {
         const value = await action();
         setPreviewAuditId(allowLocalPreview?value.audit_id:null);setAudit(value);window.dispatchEvent(new Event('audit-completed'));
         setReplay(false);
@@ -92,7 +95,7 @@ export function AuditPage({ api, auditId = null }: {
     }
     finally {
         setBusy(false);
-    } }
+    } }); }
     return <Localize>{<section aria-label="檢查影片"><h2>檢查影片</h2>{DEMO_ONLY&&<p role="status">{demoUploadMessage}</p>}<p>Check the selected segment against the chosen motion model. Confirm capture conditions and the time window; insufficient evidence remains an explicit outcome.</p>
  <p>Upload a video → Prepare questions → Answer → Confirm time window → Check</p><InterviewPanel api={api} disabled={busy||DEMO_ONLY} onBusyChange={setInterviewBusy} onResult={(value,source)=>{selectedDraft.current.clear();window.dispatchEvent(new Event('audit-completed'));setInterviewSource(source??null);setAudit(value);setReplay(false);setId(value.audit_id);setPreview('');setFile(null);setError('')}}/>
  <aside data-testid="capture-checklist"><h3>Before recording</h3><ul><li>Keep the camera fixed on a tripod.</li><li>Film from the side.</li><li>Keep one moving object in frame.</li><li>Use a clearly coloured ball, such as orange.</li><li>Use normal speed, without slow motion or retiming.</li><li>Keep motion parallel to the image plane, away from the camera direction.</li></ul><p>When capture conditions or evidence fail the quality checks, the system returns insufficient data rather than forcing an answer.</p></aside>
@@ -110,6 +113,6 @@ export function AuditPage({ api, auditId = null }: {
         return; const savedDraft=selectedDraft.current.take();void run(() => savedDraft?api.auditFromDraft(savedDraft,{t_start:Number(start),t_end:Number(end),camera_static:fixed,slow_motion:slowMotion?slowMotion==='yes':undefined,assumed_model:model,object_name:objectName,object_size_m:size.trim()?Number(size):undefined,length_m:model==='pendulum'&&length.trim()?Number(length):undefined}):api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined,objectName,slowMotion?slowMotion==='yes':undefined),true); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input data-testid="audit-id" value={id} onChange={e => setId(e.target.value)}/></label><button data-testid="audit-load" disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
- </fieldset></details><div aria-live="polite">{busy && <AuditProgress percent={uploadPercent}/>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult key={audit.audit_id} audit={audit} replay={replay} videoUrl={matchingAuditPreview(audit.audit_id,previewAuditId,preview)} interviewSource={interviewSource}/>}
+ </fieldset></details><div aria-live="polite">{busy && <AuditProgress percent={uploadPercent} phase={requestPhase}/>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult key={audit.audit_id} audit={audit} replay={replay} videoUrl={matchingAuditPreview(audit.audit_id,previewAuditId,preview)} interviewSource={interviewSource}/>}
  </section>}</Localize>;
 }
