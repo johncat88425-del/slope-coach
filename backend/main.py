@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 import math
+import os
 import shutil
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -22,9 +23,29 @@ from physics.tracking import Detection, to_samples, usable_fraction
 from . import report, schemas as S
 from .audits import router as audits_router
 from .interventions import CATALOG
-from .model_hooks import TrackingUnavailable, get_hooks
+from .model_hooks import TrackingUnavailable, get_hooks, set_hooks
 from .output_check import check_model_text
 from .store import UPLOAD_ROOT, ExperimentRecord, TrialRecord, new_id, now, store
+
+def _wire_model_hooks() -> str:
+    """Use real Meta hooks when a key is configured; else stay on mocks.
+
+    Returns "meta" or "mock". Never raises: a missing key, a missing
+    meta_client, or a missing SDK all fall back to MockHooks, so the app and
+    the test suite run without credentials. Import is lazy so backend never
+    hard-depends on the OpenAI SDK.
+    """
+    if not os.environ.get("MODEL_API_KEY"):
+        return "mock"
+    try:
+        from meta_client.hooks import MetaHooks
+    except ImportError:
+        return "mock"
+    set_hooks(MetaHooks())
+    return "meta"
+
+
+HOOKS_SOURCE = _wire_model_hooks()
 
 app = FastAPI(title="Slope Coach API", version="0.1.0")
 
