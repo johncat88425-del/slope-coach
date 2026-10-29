@@ -17,7 +17,7 @@
 | --- | --- |
 | **Muse** | T119（真的接上 Meta API 跑一次完整流程） |
 | **Codex** | T157（demo 資料已定版，可以做） |
-| **Antigravity** | T121 → T122 → T53 → T68 |
+| **Antigravity** | T53 → T68（T121、T122 已合併） |
 | **Manus** | T163 → T164 → T22 |
 | **Claude** | 審查合併 PR；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
@@ -62,8 +62,8 @@
 **Antigravity**（照順序做）
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
-- [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
-- [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
+- [x] T121 Antigravity：效能量測：10 秒 1080p 影片 `/api/audits` 跑完耗時：顏色追蹤 1.13s、frame differencing 0.36s（目標 < 20s，通過；Claude 在雲端重跑 6.65s／1.53s，也通過。註：腳本只量 0–5 秒的時間窗）— commit b83b4d1
+- [x] T122 Antigravity：照 README 在乾淨目錄從零安裝：前端 111 測試通過；後端要用 README 寫的 `python3.11`（Homebrew 預設 3.14 建 venv 會失敗）。註：STATUS 提到的 commit 9db92e3（gate_prepare 的 drawtext 退路）沒有 push 到 GitHub，main 沒有這個改動 — commit 2c4af33
 
 
 **Manus**（不寫程式）
@@ -230,6 +230,12 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - [ ] 是否允許用其他 AI 寫程式：Discord 原文未取得。
 
 ## 待 john 決定
+
+- [T122 Antigravity 乾淨環境安裝驗證] 在 `/tmp/slope-coach-clean-test` 依照 README 完整測試安裝：
+  1. Frontend：`cd frontend && npm install && npm test` 111 項測試全數 PASS。
+  2. Python Backend：macOS Homebrew 預設 Python 3.14.7 觸發 PEP 668 `externally-managed-environment`，導致 `python3 -m venv .venv` 在 ensurepip 階段失敗。解法為 README 所述安裝並指定 `python@3.11`（`brew install python@3.11` 後以 `python3.11 -m venv .venv` 建立），或在現有 Python 3.14 下使用 wheel 解包 / `--break-system-packages`。
+  3. ffmpeg：部分 macOS Homebrew ffmpeg 缺 `drawtext` 濾鏡。Antigravity 說已在 `scripts/gate_prepare.py` 加退路（commit 9db92e3），但這個 commit 沒有 push 到 GitHub（Claude 10/29 14:20 查證）。
+  （Claude：這三點都不用 john 決定。README 已寫 `python3.11`；drawtext 退路只影響關卡用的縮圖腳本，不影響產品。）
 
 - 10/29 Codex 合併檢查：PR #55 仍為 OPEN；PR #56 已 MERGED，但目標是 #55 的 codex/T150-window-keyboard，不是 main。因此 main 尚未包含 T143–T152 的全部前端。PR #58（T153）已改接在 #55 分支上避免重複大 diff；請 Claude 先把 #55 合併 main，再 retarget／合併 #58。
 - [T119 Antigravity] 本地端已備妥 `docker-compose.yml`（包含 backend + frontend 雙服務，支援 ffmpeg 與 .env 注入）。關於線上部署目標平台（如 Render, Fly.io, Railway, Google Cloud Run），請 john 決定目標平台並提供部署帳號／密鑰，Antigravity 不自行註冊外部帳號。
