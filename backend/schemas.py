@@ -269,3 +269,4 @@ class AuditOut(BaseModel):
     events: list[PersistenceEventOut]
     limits: list[str]
     explanation: AuditExplanation | None = None
+    headline: AuditExplanation | None = None  # one-line Muse Spark headline (T67/T143); None without a model

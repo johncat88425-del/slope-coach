@@ -189,3 +189,35 @@ def test_window_suggestions_for_a_draft(tmp_path):
     assert r["source"] == "physics" and r["track_source"] == "color"
     assert r["windows"] and r["windows"][0]["t_start"] < 0.1 and r["windows"][0]["t_end"] > 0.5
     assert client.post("/api/audit-drafts/drf_nope/windows").status_code == 404
+
+
+def test_model_explanation_and_headline_used_only_when_they_pass_checks(tmp_path):
+    from backend.model_hooks import MockHooks, get_hooks, set_hooks
+
+    class FakeSpark(MockHooks):
+        def __init__(self, explanation, headline):
+            self.explanation, self.headline = explanation, headline
+
+        def explain_audit(self, audit):
+            assert "points" not in audit and "numbers" in audit  # the model never gets the raw track
+            return self.explanation.format(g=audit["numbers"]["g_apparent_m_s2"])
+
+        def headline_audit(self, audit):
+            if self.headline is None:
+                raise RuntimeError("spend cap reached")
+            return self.headline
+
+    write_clip(tmp_path / "slow.mp4", 9.81 / 4)
+    old = get_hooks()
+    try:
+        set_hooks(FakeSpark("The ball falls at {g:.2f} m/s², consistent with nothing on Earth.", "Falls like on Mars"))
+        good = post(tmp_path / "slow.mp4").json()
+        set_hooks(FakeSpark("The ball falls at 3.33 m/s², so this is a fake video.", None))
+        bad = post(tmp_path / "slow.mp4").json()
+    finally:
+        set_hooks(old)
+    assert good["explanation"]["source"] == "model"
+    assert good["headline"] == {"source": "model", "text": "Falls like on Mars"}
+    assert bad["explanation"]["source"] == "template"  # unfound number and banned wording -> fixed template
+    assert bad["headline"] is None  # a failing model call never breaks the audit
+    assert good["verdict"] == bad["verdict"]
