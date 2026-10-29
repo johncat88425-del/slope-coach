@@ -2,7 +2,11 @@
 one table of what the website itself says (T98). The website is stricter than the gate: it also refuses
 when the object's size changes by more than 30% along the track. Demo and submission text quote this table.
 
-    python -m scripts.audit_batch data/gate/manifest.csv --clips <folder> --out data/gate/product_results.md
+    python -m scripts.audit_batch data/gate/manifest.csv --out data/gate/product_results.md
+
+Clips are read from data/gate/clips/ (the generated clips are in git; john's own clips stay on his Mac and
+are copied there by hand, never committed). A clip that is not there is listed as "missing", not skipped.
+With MODEL_API_KEY set the backend tracks with SAM 3.1 instead of the model-free trackers.
 
 Only john's labels go in; nothing is tuned per clip.
 """
@@ -28,6 +32,8 @@ def audit_row(client: TestClient, row: dict, clips: Path) -> dict:
             "object_name": row.get("object") or "ball", "slow_motion": "false"}
     if (row.get("object_size_m") or "").strip():
         data["object_size_m"] = row["object_size_m"]
+    if not (clips / row["clip"]).is_file():
+        return out | {"verdict": "missing", "reason": f"not found in {clips}"}
     with open(clips / row["clip"], "rb") as f:
         r = client.post("/api/audits", data=data, files={"file": (row["clip"], f, "application/octet-stream")})
     if r.status_code != 201:
@@ -56,7 +62,7 @@ def to_markdown(rows: list[dict]) -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("manifest")
-    ap.add_argument("--clips", required=True)
+    ap.add_argument("--clips", default="data/gate/clips")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     client = TestClient(app)
