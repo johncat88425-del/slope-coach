@@ -16,9 +16,9 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | T114（自拍影片也用 SAM 跑）→ T115（解說常驗證失敗的原因） |
-| **Codex** |（等 Claude 寫「demo 資料已定版」）T157 |
+| **Codex** | T162 →（等 Claude 寫「demo 資料已定版」）T157 |
 | **Antigravity** | T161 → T121 → T122 → T53 → T68 |
-| **Manus** | T22，以及用最終數字更新提交文字和旁白 |
+| **Manus** | T163 → T22 |
 | **Claude** | 審查合併 PR；T114 合併後產生最終結果表與 demo 資料；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
 
@@ -52,7 +52,8 @@
 - [ ] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。
 
 
-**Codex**（PR #4 合併後才開始，照順序做）
+**Codex**（照順序做）
+- [ ] T162 Codex：評審用鍵盤和手機看的品質檢查（只改 `frontend/`）。(1) 只用鍵盤（Tab、Enter、空白鍵）從上傳影片走到看到結果，記下卡住或看不到焦點的地方並修好；(2) 檢查文字和背景的對比至少 4.5:1，不夠的改顏色 token；(3) 390 px 寬時沒有橫向捲動；(4) 每個由模型產生的區塊都有「由 Muse Spark／SAM 3.1 產生」標示，沒有的補上。補測試，`npm test` 和 `npm run build` 都要過，push 分支 `codex/T162-a11y`。
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
 
 
@@ -65,6 +66,7 @@
 
 
 **Manus**（不寫程式）
+- [ ] T163 Manus：用目前的數字寫提交文字初稿（英文，Cerebral Valley 用）：一段 50 字簡介、一段 200 字說明（問題、做法、Meta 模型用在哪、結果、限制）。數字只用 README 的「Results on our test set」表；SAM 版寫 [TBD]。不准出現「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude。
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
 
