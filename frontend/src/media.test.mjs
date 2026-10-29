@@ -12,3 +12,5 @@ test('untrusted paths and non-http backend URLs are not used for media',()=>{
  for(const p of ['javascript:alert(1)','https://third.party/image','//third.party/media/a','/api/a'])assert.equal(mediaUrl(p),undefined);
  assert.equal(mediaUrl('/media/a','file:///tmp'),undefined);
 });
+
+test('an old upload preview is never overlaid on a different loaded result',async()=>{const {matchingAuditPreview}=await import('../.test-dist/media.js');assert.equal(matchingAuditPreview('result-B','result-A','blob:A'),undefined);assert.equal(matchingAuditPreview('result-B',null,'blob:A'),undefined);assert.equal(matchingAuditPreview('result-A','result-A','blob:A'),'blob:A');assert.equal(matchingAuditPreview('result-A','result-A',''),undefined)});

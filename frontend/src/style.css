@@ -46,3 +46,6 @@ article,figure,details,.results-grid,.demo-grid{min-width:0;max-width:100%}h1,h2
 .opening-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.opening-cards a{display:block;padding:16px;border:1px solid #a8bbb1;border-radius:8px;overflow-wrap:anywhere;text-decoration:none}.opening-cards a:focus-visible{outline:3px solid #007e91}@media(max-width:800px){.opening-cards{grid-template-columns:1fr}}
 
 .process-steps{list-style:none;counter-reset:step;padding:0;display:grid;gap:16px}.process-steps>li{border-left:4px solid #007e91;padding:12px 20px;background:#f3f5f1}.process-steps h3{margin-top:0}
+
+[data-testid="window-selector"] .fields>div{flex:1;min-width:min(100%,200px)}
+.model-headline{display:block;padding:12px 0;border:0;background:transparent}.model-headline h2{overflow-wrap:anywhere}.model-headline span{display:block;font-size:14px;line-height:1.5}

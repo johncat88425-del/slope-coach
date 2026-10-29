@@ -65,6 +65,7 @@ export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnl
     flightWindows:(id:string,object_name:string)=>{const body=new FormData();body.append('object_name',object_name.trim()||'ball');return request<FlightWindows>('/audit-drafts/'+encodeURIComponent(id)+'/windows',{method:'POST',body})},
     auditDraft:(file:File)=>{const data=new FormData();data.append('file',file);return request<AuditDraft>('/audit-drafts',{method:'POST',body:data})},
     auditFromDraft:(id:string,answers:InterviewAnswers)=>{const data=new FormData();data.append('draft_id',id);for(const [k,v] of Object.entries(answers))if(v!==undefined)data.append(k,String(v));return request<AuditOut>('/audits',{method:'POST',body:data})},
+    spend:()=>request<unknown>('/spend'),
     getAudit:(id:string)=>request<AuditOut>('/audits/'+encodeURIComponent(id)),
     create:(title:string)=>json<ExperimentRecord>('POST','/experiments',{title}),
     get:(id:string)=>request<ExperimentRecord>(e(id)),
