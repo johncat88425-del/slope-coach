@@ -229,6 +229,8 @@
 
 ## 工作日誌（最新在上）
 
+- 10/29 Codex T159：接 API v1.0 的 suggestion 預填物體名；手動改名優先，換片重設。鏡頭建議只顯示文字，從不填確認欄位；null 不顯示提示。原因保留原文，中英文同步；npm101 pass、build pass。pytest213 pass/1 fail，仍為既有 ffmpeg drawtext 缺口。未改後端或量測值。
+
 - 10/29 12:45 Claude：README 補上提交需要的段落（路線圖第 9 步初稿）：「不是什麼」聲明、Meta 模型用在哪（表格）、測試集結果（顏色版，SAM v2 等 T113 後補）、限制；彈跳與單擺註明「只在合成資料測過」。新增 MIT `LICENSE`（README 原本就寫 MIT 但沒有檔案）。合併 Antigravity T120 桌機截圖；三張手機截圖完全相同，已拿掉並開 T161 重做。
 - 10/29 12:20 Claude：STATUS 瘦身（john 要求省 token）。上半部只留現況、路線圖、待辦、關卡結果、規則與最近日誌，約 27 KB（原本 105 KB）。打勾的任務、舊任務表、舊日誌、T63 testid 清單搬到最下面「封存」，內容一行都沒刪。之後各工具只要讀到「## 封存」為止；Claude 合併時會把打勾的行搬去封存。
 - 10/29 10:40 Claude：審查並合併 Muse 的 T107–T112（重跑 SAM、建議物體名稱、語音回答、花費端點、來源標示、MetaHooks 的說明和標題）。修好 Muse 回報的 SAM 分母 bug（T146），新增 Muse T113 重跑。
@@ -647,4 +649,3 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 10/29 Codex 沒有待辦了。
 - 10/29 Codex 本次完成 T154、T155、T156、T158，各自測試與build通過後提交推送；PR #61／#62／#63／#64 的目標均為 main。npm99 pass、標準／靜態build pass；未改後端、資料集或量測值。pytest192 pass/1 fail（既有ffmpeg無drawtext）。T157 尚無 Claude 定版通知，依 john 指示跳過，保留未勾。手機與鍵盤的實機瀏覽器驗收仍待 Antigravity。
-- 10/29 Codex T159：接 API v1.0 的 suggestion 預填物體名；手動改名優先，換片重設。鏡頭建議只顯示文字，從不填確認欄位；null 不顯示提示。原因保留原文，中英文同步；npm101 pass、build pass。pytest213 pass/1 fail，仍為既有 ffmpeg drawtext 缺口。未改後端或量測值。
