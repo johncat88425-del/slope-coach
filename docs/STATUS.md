@@ -58,7 +58,7 @@
 
 
 **Codex**（照順序做）
-- [ ] T167 Codex：（網站已上線，10/29 17:55 john 確認能開）打開 https://johncat88425-del.github.io/slope-coach/ ，在 1440px 和 390px 各看 `#demo`、`#wall`、`#audit`、`#compare`、`#how`、`#home`，點一遍所有導覽連結和「Guided demo」。壞掉的連結、空白頁、圖片沒出來、console 錯誤都修掉（只改 frontend），修不了的寫進 STATUS。截圖不 commit。push 分支 `codex/T167-pages-check`。（原本給 Antigravity，john 嫌太慢改給 Codex）
+- [x] T167 Codex：已檢查線上 Pages 在 1440／390px 的 demo、wall、audit、compare、how、home（12 張不同截圖，未 commit）；六個頁面／圖片與全部導覽均可用，console 無錯誤。修正 Guided demo 在長頁面看不到下一步、一般導覽被拉回、跨頁焦點遺失；本機 Pages 子路徑版以鍵盤完成六步、固定面板保持可見、結束回到啟動按鈕。npm 118 pass、pytest 224 pass、一般與 Pages build pass；修補待 PR 合併後部署。 — commit 9889f77，PR #97（目標 main）。
 - [ ] T165 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ — frontend commit a624494；同步 main 7e2c8bf，PR #87（目標 main）；本任務原暫編 T164，同步 main 後避開 Manus 的 T164 改為 T165。
 - [x] T157 Codex：依 Claude「demo 資料已定版」公告，靜態展示與結果牆共用 T118 的完整 10 筆 SAM 紀錄；移除 own_3 舊判定文案，補模型標題、原始原因，展示／導覽／比較共用三種結果入口，程式測試範例另列。npm 114 pass、普通／靜態 build pass、pytest 222 pass；只改 frontend 與 STATUS。 — commit 82f90f9，PR #88（目標 main）。
 
@@ -309,6 +309,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T166：修語音 502（2 draft $0.036＋轉錄 2 次 $0.0003＋抽欄位 $0.003） | 0.039 | 1.771 |
 
 ## 工作日誌（最新在上）
+
+- 10/29 Codex T167／完成核對：PR #87（T165 前端）及 #88（T157）均已合併 main；本輪以 6c2e2c6 為基準，GitHub Pages 與 CI 的最新 run 都成功。實際開啟 https://johncat88425-del.github.io/slope-coach/，1440／390px 各看六頁並保存十二張不同 screenshot（/tmp，不 commit），沒有空白頁、失效圖片、橫向溢出或 console error；結果牆十筆、比較展示十筆、首頁三結果入口可用。品牌、skip link（焦點 workspace）、五個教練分頁亦通過；靜態模式上傳停用、來源提示明確。發現 Guided demo 在長頁面把控制鈕留在頁頂、點一般導覽時會強制跳回、跨頁焦點遺失，已改為啟用時固定面板、直接對齊目標標題、明確換頁即結束導覽，進入／跨步保留控制項焦點、完成／退出返回啟動按鈕。以 Pages 相同 /slope-coach/ base 建置驗證 1440／390px 六步鍵盤操作；手機 ghost 標題 top24px、操作面板在 viewport 內，文字對比受檢最低5.40:1。npm 118 pass、pytest 224 pass，npm run build pass（入口85,449 bytes），Pages 同指令 build pass（入口84,359 bytes），沒有後端／API／測量值改動，沒有付費模型呼叫。修補隨此分支送審，尚未宣稱線上已部署；目前公開網站是儲存紀錄展示版，完整上傳分析需本機完整 app 或另行部署後端。Figma get_metadata 再次回 Starter tool-call quota，無法重新核對手機收尾，T165 維持未勾。
 - 10/29 18:10 Claude：核對 Manus 的提交文字和三分鐘旁白。數字都對，用詞沒有違規。修改三處：自拍的 g 統一用 demo 紀錄的 9.31、9.45、8.68（README 同步改了，PR #95）；拿掉重複的「featured 9.45」；補一句 Muse Code 負責 Meta API 層。也註明 0:00–1:40 要用本機完整版錄（靜態網站沒有上傳功能，也沒有自拍影片）。
 
 - 10/29 17:50 Claude：**提交前檢查（第一輪）**。(1) 金鑰：repo 和 git 歷史都沒有金鑰，只有 `.env.example`；(2) 產品程式只呼叫 Meta：`meta_client/client.py` 指向 `api.meta.ai/v1`，backend／meta_client 只出現 muse-spark、sam-3.1、muse-voice-transcribe，沒有其他廠商；contributor 版只出現在價目表，產品不會呼叫；(3) 禁用字眼：README、前端、demo 資料都沒有「偵測 AI／假影片／任何影片」的宣稱，出現的地方都是禁用清單或「不判斷」的說明；(4) 第一個 commit 是 10/27，都在 10/26 之後；(5) repo 公開、MIT；(6) git 裡沒有 john 的自拍影片，demo JSON 只有檔名；(7) README 的 SAM 數字和 demo JSON 對得上。**新增**：GitHub Pages 靜態 demo（`.github/workflows/pages.yml`，用 `VITE_DEMO_ONLY=1`，不呼叫後端或模型），README 加網址；john 要在 Settings 打開一次（T168）。排了 T167、T169、T170。
