@@ -149,7 +149,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T54 Antigravity：上傳安全：檔案大小上限 200 MB、只收影片格式、每個 IP 每天最多 20 次稽核。寫成提案放進「待 john 決定」，Claude 審查後實作 — 提案已寫入待 john 決定，待 Claude 審查
 
 - [x] T119 Antigravity：用 `docker compose up` 一個指令就能跑起前後端（含 ffmpeg），只在本機測。要部署到哪個網站先寫進「待 john 決定」，不要自己開帳號 — commit 9e14a1c
-- [ ] T120 Antigravity：端到端測試：結果牆（T101）、鬼影球播放（T102）、並排比較（T114），桌機和 390 px 手機各截圖，放 `docs/screens/`（只放圖片）
+- [x] T120 Antigravity：端到端測試：結果牆（T101）、鬼影球播放（T102）、並排比較（T114），桌機和 390 px 手機各截圖，放 `docs/screens/`（只放圖片） — commit 853ec74
 - [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
 - [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
 
