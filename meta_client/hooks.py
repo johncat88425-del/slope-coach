@@ -28,6 +28,7 @@ from . import headline as _headline
 from . import interview as _interview
 from . import sam as _sam
 from . import spark as _spark
+from . import voice as _voice
 from .exceptions import MetaClientError, ModelOutputError
 
 
@@ -93,6 +94,14 @@ class MetaHooks(ModelHooks):
             questions=[AuditQuestion(**q) for q in result["questions"]],
             note=None,
         )
+
+    def suggest_object(self, video_path: Path) -> dict:
+        """First-frame object guess via Spark (T108); the backend checks it and the user confirms it."""
+        return _spark.suggest_object(video_path)
+
+    def answer_voice(self, audio_path: Path) -> dict:
+        """Spoken interview answer via Voice Transcribe + Spark (T109); every field stays unconfirmed."""
+        return _voice.answer_interview_voice(audio_path)
 
     def explain_audit(self, audit: dict) -> str | None:
         """Plain-language explanation via Spark (T112); None keeps the fixed template."""
