@@ -124,7 +124,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [ ] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
 - [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
-- [ ] T130 Claude：把 Manus 交來的 T23、T95、T123–T126 檢查用詞和數字後放進 `docs/research/`
+- [x] T130 Claude：（T95 第一版已入庫並更新數字，其餘等 Manus）把 Manus 交來的 T23、T95、T123–T126 檢查用詞和數字後放進 `docs/research/`
 - [ ] T131 Claude：彈跳和單擺的真實影片流程（等 john 拍片）：準備標註表和試跑腳本
 - [x] T106 Claude：`data/demo/generated_*.json`：6 支 Meta、1 支 Manus 影片經網站流程的完整結果（含說明，不含影片），給 Codex T101 結果牆用 — 見 PR
 - [x] T99 Claude：稽核結果新增 `explanation`（API v0.7），先用固定模板寫一般人看得懂的說明，數字由 `fill_numbers` 填入，例如「the object falls as if gravity were 1.71 m/s², 0.17 times Earth's, closest to Moon」。Muse T45 接上後改成 `source: model`。`data/demo/real_own_*.json` 已重新產生，含說明 — 見 PR T99
