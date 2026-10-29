@@ -532,3 +532,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T145：頁首讀取真實 /api/spend；404、網路失敗或未知schema均隱藏，不補假額度。total_usd/limit_usd 待後端確認，防禦性接受明確USD有限數；focus與稽核完成後刷新，demo完全不查。npm81 pass、build pass；pytest192 pass/1 fail。
 - 10/29 Codex T149：時間窗、候選、首頁卡片、How it works與分享／demo文案補齊繁中與英文。後端標題／說明以原文元件保留。測試逐一解析新元件所有靜態文字與讀屏標籤，並核對兩語言數字不變；npm83 pass、build pass，pytest192 pass/1 fail（drawtext）。
 - 10/29 Codex T150：把手方向鍵精確0.01秒、Home/End有界移動，Enter僅在時間輸入且有效未確認時確認；數字欄與把手分開label、讀屏秒數與雙語操作說明。鍵盤邏輯與SSR語意測試通過；npm85 pass、標準/靜態build pass（主入口約72kB），pytest192 pass/1 fail（drawtext）。
+
+- 10/29 Codex 沒有待辦了：T143→T146→T151→T145→T149→T150 已依序測試、各自分支推送並回填commit；再次pull main確認Codex區沒有[ ]。npm85 pass、標準/靜態build pass（entry約72kB），pytest192 pass/1 fail（ffmpeg缺drawtext，未略過）。interview來源跨載入與spend回傳契約待後端確認，已列待決定；未呼叫付費模型、未推main或部署，瀏覽器視覺/鍵盤實測仍待Antigravity。
