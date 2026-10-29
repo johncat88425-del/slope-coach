@@ -49,7 +49,7 @@
 
 **Muse**（照順序做）
 - [ ] T114 Muse：自拍影片也用 SAM 跑（demo 要「同一種追蹤」下真實一致、生成不一致、拒判三種都有）。步驟：(1) 請 john 把 3 支自拍影片 IMG_8426.mov、IMG_8429.mov、IMG_8434.mov 放進 repo 外的資料夾 `~/slope-own-clips`，檔名改成 manifest 的名字 `own_1_IMG_8426.mov`、`own_2_IMG_8429.mov`、`own_3_IMG_8434.mov`（**不准放進 repo、不准 commit**）；(2) `cp data/gate/clips/*.mp4 ~/slope-own-clips/`；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v3.md`（現在批次預設不呼叫解說和標題，只花 SAM 的錢，約 $0.12）；(4) 表格貼進「SAM 對照」v2 下面，標題「v3（加入自拍影片）」；(5) 每支自拍影片看 overlay 確認紅點在球上，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T114-sam-own`。
-- [x] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。 — commit TBD（原因見日誌：門檻數字只在原因句裡、檢查只收數字欄，提示詞和檢查打架。修：程式 parse 原因句數字加入 allowlist＋提示詞點名陷阱；2 測試。$0 真打）
+- [x] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。 — commit 800f506（原因見日誌：門檻數字只在原因句裡、檢查只收數字欄，提示詞和檢查打架。修：程式 parse 原因句數字加入 allowlist＋提示詞點名陷阱；2 測試。$0 真打）
 
 
 **Codex**（PR #4 合併後才開始，照順序做）
