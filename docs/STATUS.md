@@ -56,7 +56,7 @@
 
 
 **Codex**（照順序做）
-- [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
+- [x] T157 Codex：依 Claude「demo 資料已定版」公告，靜態展示與結果牆共用 T118 的完整 10 筆 SAM 紀錄；移除 own_3 舊判定文案，補模型標題、原始原因，展示／導覽／比較共用三種結果入口，程式測試範例另列。npm 114 pass、普通／靜態 build pass、pytest 222 pass；只改 frontend 與 STATUS。
 
 
 **Antigravity**（照順序做）
@@ -298,6 +298,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T118：英文版重產 demo（SAM $0.107＋解說 10 次零重試 $0.161＋標題 7 次 $0.064） | 0.333 | 1.686 |
 
 ## 工作日誌（最新在上）
+
+- 10/29 Codex T157：從最新 origin/main 獨立開 codex/T157-final-demo（PR 目標 main）。靜態 demo 和結果牆共用 DemoCatalog 全 10 筆最終紀錄，完整保留 3 筆實拍一致、4 筆生成不一致、3 筆資料不足；不再把 own_3 寫成不一致，也不把透視拒判寫成追蹤不足。沒有複製／改寫 JSON，headline／explanation／reasons 均用原文，空 headline 不補；結果牆補七筆已提供的模型標題與原始原因。首頁、30秒導覽與預設並排共用 entry keys（own_2／meta4／meta2），仍可選所有 10 筆，程式繪製案例移到獨立收合區。導覽等待 lazy view 掛載並展開證據祖先，實際鬼影／名片步驟可見，支援 reduced motion；拒判字幕依實際 verdict 引導讀原始原因。靜態模式的全站提示改為只重播儲存結果，避免誤稱媒體會上傳。瀏覽器驗證 10 筆／七個標題、390px 無橫向溢出、預設並排一致與不一致、繁中仍保留英文模型原文。新增完整紀錄與內容不變、三結果入口、雙語及開發範例分離測試；npm 114 pass、普通／靜態 build pass（入口 83,634／82,531 bytes，gzip 前），pytest 222 pass。未改後端、API、數字或資料檔，未打付費模型。
 
 - 10/29 13:35 Claude：合併 Muse T118（英文解說與標題；10 支 verdict 不變，SAM 重跑數字差 <0.2%，例如 own_1 9.30→9.31，README 註明）與 Antigravity T161（三張手機截圖 md5 都不同；gate_prepare 在沒有 drawtext 的 ffmpeg 改用無字幕縮圖）。
 - 10/29 Muse 完成 T118（分支 muse/T118-english-text）：headline 加 lang 參數（英文 prompt＋天體名不轉中文，禁真假／real／fake／AI 規則不變）＋hooks 切英文＋3 測試；pytest 221 pass。重跑 demo 指令：10 支 verdict 全同、數字差 <0.2%（SAM 非確定性；own_1 顯示值 9.30→9.31）、10 份文字全轉英文且無中文殘留、6 份合成 JSON 未動。explain 連續第二次 10 次零重試。$0.333，累計 $1.686。
