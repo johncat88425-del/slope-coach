@@ -129,6 +129,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
 - [x] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS — commit b3717c3
 - [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 041eb73
+- [x] T153 Codex：（最優先）稽核頁的主要流程改成 Muse 偵訊：上傳影片 → 「Prepare questions」→ 回答 → 時間窗 → 檢查。偵訊區塊預設展開、放在最上面；舊的直接上傳表單收進「Advanced: check without the interview」。Offline demo（匯入 JSON）也收起來。補測試 — commit 10935e8
 - [x] T143 Codex：（API v0.9）結果區和物理名片最上面顯示 `headline.text`（有的時候才顯示），旁邊標明「由 Muse Spark 撰寫」；`headline` 是 null 時照舊用程式產生的標題。不要改寫文字或數字。靜態 demo 資料裡 `headline` 一律是 null — commit a3bb60f
 - [x] T146 Codex：結果區加「這次用了哪些 Meta 模型」小面板：照實際值列出提問（`interview.source`）、追蹤（`track_source`）、說明（`explanation.source`）、標題（`headline` 有沒有）。是 mock、template、color、frame_diff 的，要寫「未使用模型」，不准寫死成已接上 — commit 9fa31c3
 - [x] T151 Codex：拒判（`insufficient_data`）時顯示「怎麼重拍」提示：用固定對照表把 `reasons` 對應到提示，例如鏡頭移動 → 用腳架、物體朝鏡頭移動 → 從側面拍、慢動作 → 用正常速度。不用模型，並補測試 — commit 791b638
@@ -137,7 +138,6 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T150 Codex：時間窗選擇器的鍵盤操作（方向鍵移動把手、Enter 確認）和螢幕閱讀器標籤，補測試 — commit 381df65
 
 - [x] T152 Codex：依 john「發現待辦就做」指示，修正時間窗候選請求途中換片／送出時，舊草稿晚到可能綁到新片的競態；補測試。 — commit f50a4d1
-- [ ] T153 Codex：（最優先）稽核頁的主要流程改成 Muse 偵訊：上傳影片 → 「Prepare questions」→ 回答 → 時間窗 → 檢查。偵訊區塊預設展開、放在最上面；舊的直接上傳表單收進「Advanced: check without the interview」。Offline demo（匯入 JSON）也收起來。補測試
 - [ ] T154 Codex：結果區重新排版，讓第一次看的人三秒內看懂。由上而下：(1) 一條大色帶寫判定的白話：consistent →「Consistent with free flight on Earth」（綠）、inconsistent →「Inconsistent with free flight on Earth」（橘）、insufficient_data →「Cannot judge this clip」（灰），模型名稱照 `assumed_model` 換；(2) `headline.text`（有才顯示，標「由 Muse Spark 撰寫」）；(3) `explanation.text`；(4) 原因 `reasons`；(5) 其他（數字、圖、鬼影、限制、名片）收進「Details」區塊，預設收起。不准改任何數字或文字，補測試確認三種判定的顏色和順序
 - [ ] T155 Codex：等待中的回饋：時間窗建議約要 11 秒，稽核約要 10 到 20 秒。按下後顯示目前在做哪一步（「Scanning the video…」「Checking the motion…」）和已經過了幾秒；按鈕在等待時不能重按；失敗時用白話顯示錯誤，使用者已填的答案不能清掉。不准用計時器假裝進度百分比。補測試
 - [ ] T156 Codex：手機版（390 px 寬）主要流程不能左右捲動：上傳 → 問題 → 時間窗 → 結果。修好溢出的元件（影片、時間軸、表格），補測試檢查 class 或樣式
@@ -376,7 +376,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 待 john 決定
 
-- T145 Codex：/api/spend 尚無回傳 schema。前端暫只接受明確有限的 total_usd／limit_usd，未知 shape 或 404 一律隱藏；不改後端契約、不補上限或金額。請 Muse T110／Claude 確認欄位後接正式契約。
+- 10/29 Codex 合併檢查：PR #55 仍為 OPEN；PR #56 已 MERGED，但目標是 #55 的 codex/T150-window-keyboard，不是 main。因此 main 尚未包含 T143–T152 的全部前端。PR #58（T153）已改接在 #55 分支上避免重複大 diff；請 Claude 先把 #55 合併 main，再 retarget／合併 #58。
 
 - （10/29 Claude）要不要用 GitHub Pages 放純靜態 demo 版（Codex T138 做好之後）？這會把 demo 紀錄公開放上網，repo 本來就要公開，Claude 建議可以，但要等 john 同意才開。
 
@@ -553,16 +553,24 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T139：大頁面與範例資料按需載入，React 共用chunk可快取。production entry 64,514 bytes（gzip前），React另222.29 kB；原主入口約426.87 kB。靜態entry64,182 bytes。build加入250000bytes自動門檻；npm76 pass，標準／demo build pass，pytest187 pass/4 fail（本機缺SAM解碼套件與drawtext）。
 
 - 10/29 Codex 工作總結：T133→T142→T136→T137→T138→T135→T140→T139 已各分支完成並推送；最新 pull 無 Codex 未勾項。最終 npm76 pass，標準 build entry64,514bytes、demo build entry64,182bytes（均gzip前），React另222.29kB。範例強制 replay，靜態模式不取後端媒體。依 Muse 已合併的需求在 /tmp 測試環境安裝 meta-sam-parser 後 SAM 三測試通過，完整 pytest190 pass/1 fail，只剩 ffmpeg缺drawtext；未略過測試、不改後端。未公開部署、瀏覽器視覺驗收仍待 Antigravity。
+
 - 10/29 Codex T143：結果與名片／PNG／Markdown／列印支援 headline 原文及 Muse 撰寫標示；null／舊紀錄維持程式標題並移除假待生成文案。原文不經介面翻譯且HTML安全轉義。npm77 pass、build pass；pytest191 pass/1 fail（drawtext）。
 
-- T146 資料限制：AuditOut 尚不保存 interview.source；當次偵訊結果由本地上下文顯示，重載／靜態舊紀錄只能顯示「未記錄」，不推斷為已使用或未使用模型。跨載入保存需後端契約。
 - 10/29 Codex T146：提問／追蹤／說明／標題四項實際來源面板；mock/template/color/frame_diff 均明示未使用模型。未保存的問答來源顯示未記錄；當次偵訊保留上下文。npm/build 通過；pytest drawtext 缺口仍列明。
+
 - 10/29 Codex T151：insufficient_data 顯示固定 reason→重拍提示對照：腳架／側視／正常速度／追蹤可見性／完整時間窗。保留原 reason，不用模型、不作因果歸因；未知原因回一般清單。npm79 pass、build pass；pytest191 pass/1 fail（drawtext）。
+
 - 10/29 Codex T145：頁首讀取真實 /api/spend；404、網路失敗或未知schema均隱藏，不補假額度。total_usd/limit_usd 待後端確認，防禦性接受明確USD有限數；focus與稽核完成後刷新，demo完全不查。npm81 pass、build pass；pytest192 pass/1 fail。
+
 - 10/29 Codex T149：時間窗、候選、首頁卡片、How it works與分享／demo文案補齊繁中與英文。後端標題／說明以原文元件保留。測試逐一解析新元件所有靜態文字與讀屏標籤，並核對兩語言數字不變；npm83 pass、build pass，pytest192 pass/1 fail（drawtext）。
+
 - 10/29 Codex T150：把手方向鍵精確0.01秒、Home/End有界移動，Enter僅在時間輸入且有效未確認時確認；數字欄與把手分開label、讀屏秒數與雙語操作說明。鍵盤邏輯與SSR語意測試通過；npm85 pass、標準/靜態build pass（主入口約72kB），pytest192 pass/1 fail（drawtext）。
 
 - 10/29 Codex 沒有待辦了：T143→T146→T151→T145→T149→T150 已依序測試、各自分支推送並回填commit；再次pull main確認Codex區沒有[ ]。npm85 pass、標準/靜態build pass（entry約72kB），pytest192 pass/1 fail（ffmpeg缺drawtext，未略過）。interview來源跨載入與spend回傳契約待後端確認，已列待決定；未呼叫付費模型、未推main或部署，瀏覽器視覺/鍵盤實測仍待Antigravity。
+
 - 10/29 Codex T152：主動檢查發現換片時候選草稿可能晚到綁錯片；新增選取版本綁定、同片請求去重、送出／切換／匯入後失效，忽略已卸載候選回傳。另用結果ID綁定本機預覽，讀其他紀錄時不套用舊片。補慢回應、切換、消耗、重試與錯片預覽測試；npm90 pass、兩種build pass，pytest192 pass/1 fail（drawtext）。
 
 - 10/29 Codex 沒有待辦了：完成表無新增後，依 john 指示主動檢查並修正 T152 錯片競態，已推送並開 PR #56（接在 #55）。npm90 pass、標準／靜態build pass，pytest192 pass/1 fail（既有drawtext環境缺口）；再次pull main無Codex未勾項。未推main、未改後端。
+- 10/29 Codex T153：問答預設展開且放在拍攝清單之前，步驟明示上傳→提問→回答→確認時間窗→檢查；直接分析收進Advanced，JSON匯入與可選語音收合，結果留在收合區外。中英文與展開／排序回歸測試通過；npm91 pass、標準/靜態build pass，完整pytest保留drawtext環境缺口。
+
+- 10/29 Codex 沒有待辦了：T153 問答主要流程已推送 PR #58，npm91 pass、標準/靜態build pass，pytest192 pass/1 fail（drawtext）。再次pull無Codex待辦；另核對實際PR狀態，發現#55仍待合併main，已記錄給Claude。
