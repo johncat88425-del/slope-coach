@@ -41,8 +41,41 @@ LIMITS = [
 MAX_QUESTIONS = 3
 
 
+def _model_view(rec: dict) -> dict:
+    """What the model sees of a result: verdict, reasons and the program's numbers, never the raw track."""
+    return {k: v for k, v in rec.items() if k not in ("audit_id", "created_at", "points", "ghost_points", "events", "video_url", "overlay_url")}
+
+
+def _number_sources(view: dict) -> list:
+    """The result plus each number rounded to 0-4 decimals, so a model sentence may quote a rounded value."""
+    rounded = {f"{k}_r{d}": round(v, d) for k, v in view.get("numbers", {}).items() for d in range(5)}
+    return [view, rounded]
+
+
+def _model_text(hook_name: str, view: dict) -> str | None:
+    """Ask the connected Meta model (T143) for text about a finished audit. Any failure, a missing hook, or
+    text that fails the backend's own check (unfound numbers, banned wording) gives None, so the caller keeps
+    the fixed template (AGENTS.md rule 5). The verdict and numbers never come from here."""
+    hook = getattr(get_hooks(), hook_name, None)
+    if hook is None:
+        return None
+    try:
+        text = hook(dict(view))
+    except Exception:  # budget cap, network, validation: a model failure must never break the audit
+        return None
+    if not isinstance(text, str) or not text.strip() or not check_model_text(text, _number_sources(view)).ok:
+        return None
+    return text.strip()
+
+
 def _finish(rec: dict) -> dict:
     rec["explanation"] = explain_audit(rec)
+    view = _model_view(rec)
+    text = _model_text("explain_audit", view)
+    if text:
+        rec["explanation"] = {"source": "model", "text": text}
+    headline = _model_text("headline_audit", view)
+    rec["headline"] = {"source": "model", "text": headline} if headline else None
     return rec
 
 
