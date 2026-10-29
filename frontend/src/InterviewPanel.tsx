@@ -45,8 +45,8 @@ export function InterviewPanel({api,onResult,disabled=false,onBusyChange,hasResu
     <p className="upload-note">Local preview · user-confirmed inputs</p>
    </div>
    {!draft&&<figure className="upload-example">
-    {preview?<video aria-label="Selected video preview" controls src={preview}/>:<img src={(import.meta.env?.BASE_URL??'/')+'images/motion-study.jpg'} width="1280" height="720" alt="A frame from an existing saved motion example"/>}
-    <figcaption>{file?'Review your selected clip before preparing questions.':'A saved motion study. Start with your own clip.'}</figcaption>
+    {preview?<video aria-label="Selected video preview" controls src={preview}/>:<img src={(import.meta.env?.BASE_URL??'/')+'images/motion-study.jpg'} width="1280" height="720" alt="A frame from a Meta AI–generated test clip (meta_clip4)"/>}
+    <figcaption>{file?'Review your selected clip before preparing questions.':'A frame from one of our Meta AI test clips. Start with your own clip.'}</figcaption>
    </figure>}
    {draft&&<div ref={reviewGrid} className="interview-grid">
     {preview&&<WindowSelector key={preview} url={preview} start={start} end={end} confirmed={windowConfirmed} onChange={(s,e)=>{setStart(s);setEnd(e);setWindowConfirmed(false)}} onConfirm={()=>setWindowConfirmed(true)}><WindowSuggestions key={draft.draft_id+objectName} api={api} objectName={objectName} prepare={async()=>draft.draft_id} onSelect={(s,e)=>{setStart(s);setEnd(e);setWindowConfirmed(false)}}/></WindowSelector>}
