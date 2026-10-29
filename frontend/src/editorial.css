@@ -105,7 +105,7 @@ main.coach-layout { margin-top:32px; }
 [data-testid=audit-details]>dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:16px 24px; }
 [data-testid=audit-details] section { padding:24px 0; }
 [data-testid=audit-details] button { margin:12px 12px 0 0; }
-.model-headline { background:transparent;padding:24px 0 0; }
+.model-headline { display:block;border:0;background:transparent;padding:24px 0 0; }
 .model-headline h2 { font-size:28px;line-height:1.4;margin:0 0 8px; }
 .source-label { border-color:var(--color-border);background:var(--color-page);color:var(--color-action);border-radius:var(--radius-4);font-size:14px;font-weight:400; }
 .page-title { font-size:clamp(36px,4vw,56px);line-height:1.15;letter-spacing:-.035em;margin:24px 0;max-width:22ch; }
@@ -118,7 +118,13 @@ main.coach-layout { margin-top:32px; }
 [data-verdict=inconsistent]>.wall-verdict { color:#8b3e0b; }
 [data-verdict=insufficient_data]>.wall-verdict { color:#4e5960; }
 .results-grid .source-label { margin:0 8px 8px 0; }
+.results-grid .model-headline { padding-top:16px; }
+.results-grid .model-headline h2 { font-size:20px; }
 .results-grid [data-testid=audit-result] { padding:20px;margin:16px 0 0; }
+.demo-comparison>section { padding:32px 0; }
+.demo-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:40px 32px; }
+.demo-grid .verdict-banner h2 { font-size:28px; }
+.demo-grid .model-headline h2 { font-size:22px; }
 .pair-grid { gap:32px;margin-top:40px; }
 .pair-grid [data-testid=audit-result] { padding:24px; }
 .pair-grid>div>label { font-size:14px; }
@@ -137,7 +143,7 @@ main.coach-layout { margin-top:32px; }
 @media(max-width:800px) {
  .audit-flow[data-stage=upload],.interview-grid { display:block; }.audit-intro h1 { max-width:18ch;font-size:44px; }
  .audit-intro>p:last-child { margin-bottom:24px; }.audit-flow[data-stage=upload] .upload-area { padding:24px; }
- .interview-answers { margin-top:32px; }.results-grid { grid-template-columns:minmax(0,1fr); }
+ .interview-answers { margin-top:32px; }.results-grid,.demo-grid { grid-template-columns:minmax(0,1fr); }
  .upload-example { order:1; }.site-navigation { gap:20px; }.site-tools { gap:8px; }
 }
 @media(max-width:480px) {
