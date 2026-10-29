@@ -153,7 +153,8 @@ def transcribe(
         raise ModelOutputError("transcribe returned a bad audioDurationMs")
     seconds = max(0.0, float(duration_ms) / 1000)
     tracker.record(VOICE_MODEL, "voice.transcribe", audio_seconds=seconds)
-    return {"transcript": transcript.strip(), "audio_seconds": seconds}
+    return {"transcript": transcript.strip(), "audio_seconds": seconds,
+            "source": VOICE_MODEL}
 
 
 def _validate_setup(data: Any) -> dict[str, Any]:
@@ -215,7 +216,9 @@ def extract_setup_fields(
             output_tokens=usage["output_tokens"],
         )
         try:
-            return _validate_setup(json.loads(response.output_text or ""))
+            out = _validate_setup(json.loads(response.output_text or ""))
+            out["source"] = resolved
+            return out
         except (json.JSONDecodeError, ModelOutputError, ValueError) as exc:
             last_error = exc
     raise ModelOutputError(f"setup fields failed validation: {last_error}")

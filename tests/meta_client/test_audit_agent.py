@@ -65,6 +65,7 @@ def test_plan_audit_checks_success(tmp_path, monkeypatch):
     tracker = _tracker(tmp_path)
     out = agent.plan_audit_checks(_audit(), tracker=tracker)
     assert out["selected"] == ["free_flight"]
+    assert out["source"] == "muse-spark-1.3"
     assert f"{g:.2f}" in out["rationale"]
     assert "不一致" in out["rationale"]
     assert tracker.total_usd() > 0
@@ -105,5 +106,6 @@ def test_plan_empty_points_without_call(tmp_path, monkeypatch):
     monkeypatch.setattr(agent, "get_tracker", lambda: _tracker(tmp_path))
     out = agent.plan_audit_checks({"points": []})
     assert out == {"selected": [], "rationale": "目前證據不足"}
+    assert "source" not in out  # no model call, no source
     with pytest.raises(ModelOutputError, match="must be a list"):
         agent.plan_audit_checks({"points": "nope"})
