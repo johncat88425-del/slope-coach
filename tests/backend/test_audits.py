@@ -177,3 +177,15 @@ def test_template_explanation_quotes_program_numbers_only(tmp_path):
     assert not find_banned_phrases(s) and not find_banned_phrases(real["explanation"]["text"])
     refused = post(tmp_path / "real.mp4", camera_static="false").json()
     assert refused["explanation"]["text"].startswith("This clip cannot be judged")
+
+
+def test_window_suggestions_for_a_draft(tmp_path):
+    from tests.scripts.test_gate_run import write_orange_clip
+
+    write_orange_clip(tmp_path / "ball.mp4", 9.81)
+    with open(tmp_path / "ball.mp4", "rb") as f:
+        d = client.post("/api/audit-drafts", files={"file": ("ball.mp4", f, "video/mp4")}).json()
+    r = client.post(f"/api/audit-drafts/{d['draft_id']}/windows", data={"object_name": "orange ball"}).json()
+    assert r["source"] == "physics" and r["track_source"] == "color"
+    assert r["windows"] and r["windows"][0]["t_start"] < 0.1 and r["windows"][0]["t_end"] > 0.5
+    assert client.post("/api/audit-drafts/drf_nope/windows").status_code == 404
