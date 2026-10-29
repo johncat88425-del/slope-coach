@@ -15,7 +15,7 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T166（修語音 502） |
+| **Muse** | T166 已合併；可選 T171（靜音時回 200 空欄位） |
 | **Codex** | T157、T165 已合併；Figma 收尾等配額恢復，不急 |
 | **Antigravity** | T53 → T68 → T167（T167 等靜態網站上線） |
 | **Manus** | T163 → T164 → T22 |
@@ -48,7 +48,8 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
-- [ ] T166 Muse：修語音 502（T119 發現）。在 `meta_client/voice.py` 的 ASR request 補上 `audioEncoding` 欄位（照 Meta API 文件填我們送的格式），加一個單元測試確認 request 帶了這個欄位；再真打一次 `POST /api/audit-drafts/{id}/voice` 確認不是 502，花費上限 $0.05。只改 `meta_client/`、測試、STATUS、cost_log。push 分支 `muse/T166-voice-encoding`。
+- [ ] T171 Muse：（可選）錄音是純靜音、轉出空稿時，`/voice` 現在回 502。改成回 200、欄位全空、加一句「沒有聽到內容」的提示；加測試。只改 `meta_client/` 和測試，不要真打 API。push 分支 `muse/T171-empty-voice`。
+- [x] T166 Muse：修語音 502（T119 發現）。在 `meta_client/voice.py` 的 ASR request 補上 `audioEncoding` 欄位（照 Meta API 文件填我們送的格式），加一個單元測試確認 request 帶了這個欄位；再真打一次 `POST /api/audit-drafts/{id}/voice` 確認不是 502，花費上限 $0.05。只改 `meta_client/`、測試、STATUS、cost_log。push 分支 `muse/T166-voice-encoding`。 — commit 006fb55（request 補 audioEncoding WAV＋斷言測試；真打 voice 端點 200。$0.039，累計 $1.771）
 - [x] T119 Muse：真的接上 Meta API 跑一次完整的網站流程（不用瀏覽器，用 curl），確認 demo 時評審看到的 Muse 功能都能動。花費上限 $0.30。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; uvicorn backend.main:app --port 8000`（另開一個終端機跑下面）；(3) 用 `data/gate/clips/meta_clip2.mp4` 依序打：`POST /api/audit-drafts`（看 `interview.source` 是不是 model、`suggestion` 有沒有）→ `POST /api/audit-drafts/{id}/windows` → `POST /api/audit-drafts/{id}/voice`（用 `say -o answer.aiff "the camera did not move and the ball is twenty four centimetres"` 錄一段，轉成 m4a 再送）→ 照 docs/API.md 送出稽核；(4) 每一步記下：成功或失敗、`source` 欄位、花了多少錢、花幾秒；(5) 結果寫進 STATUS 日誌，壞掉的地方寫清楚錯誤訊息，不要自己改後端；(6) 不 commit 任何音檔或影片，push 分支 `muse/T119-live-smoke`（只改 STATUS 和 cost_log）。 — commit 45ab6d3（4 步 3 過：偵訊／時間窗／稽核全通；語音 502——ASR API 現在強制要 audioEncoding 欄位，我方沒送（T24 時不用，API 變了），修法見日誌。$0.046，累計 $1.732）
 - [x] T117 Muse：（最優先）產生 demo 用的 SAM 版紀錄（含 Muse Spark 解說）。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --json-dir data/demo --explain --out data/gate/product_results_sam_v4_demo.md`（約 $0.35；會覆蓋 `data/demo/real_own_*.json` 和 `generated_*.json`，顏色版留在 git 歷史和 `product_results.md`）；(3) 確認 10 支的 verdict 跟 v4 表一樣，不一樣就寫進 STATUS，不要挑；(4) `git status` 確認只有 `data/demo/*.json`、結果檔、STATUS、cost_log 改動，**沒有任何影片**；(5) commit，push 分支 `muse/T117-demo-sam`。 — commit 02fb0c6（10 支 verdict 全跟 v4 一樣；10 個 demo JSON 換成 SAM 版＋模型解說／標題；explain 10 次零重試，T115 修好了。$0.344，累計 $1.353）
 - [x] T116 Muse：（最優先）Claude 已修好 SAM 的計時 bug（`meta_client/sam.py` 改用 `-vf fps=15`），請重跑 SAM 全部 10 支：(1) `git checkout main`、`git pull origin main`；(2) 確認 `~/slope-own-clips` 裡有 3 支自拍＋7 支生成影片；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v4.md`（約 $0.12，不會呼叫解說）；(4) 表格貼進「SAM 對照」v3 下面，標題「v4（修正 15fps 計時後）」，v2、v3 不要刪；(5) 看自拍 3 支的 overlay 紅點，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T116-sam-v4`。 — commit 61f00f2（v4：自拍 3 支全變一致 g=9.30／9.46／8.68，生成側 verdict 不變；3 張 overlay 紅點在球上。`~` 目錄仍不存在，續用 /tmp/slope-own-clips。$0.107，累計 $1.009）
@@ -305,10 +306,12 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | T117：demo 版 10 支（SAM $0.107＋解說 10 次零重試 $0.155＋標題 7 次 $0.081） | 0.344 | 1.353 |
 | 10/29 | T118：英文版重產 demo（SAM $0.107＋解說 10 次零重試 $0.161＋標題 7 次 $0.064） | 0.333 | 1.686 |
 | 10/29 | T119：live smoke 4 步（偵訊 $0.012＋物體建議 $0.006＋SAM $0.010＋解說 $0.017；語音 502 未計費） | 0.046 | 1.732 |
+| 10/29 | T166：修語音 502（2 draft $0.036＋轉錄 2 次 $0.0003＋抽欄位 $0.003） | 0.039 | 1.771 |
 
 ## 工作日誌（最新在上）
 
 - 10/29 17:50 Claude：**提交前檢查（第一輪）**。(1) 金鑰：repo 和 git 歷史都沒有金鑰，只有 `.env.example`；(2) 產品程式只呼叫 Meta：`meta_client/client.py` 指向 `api.meta.ai/v1`，backend／meta_client 只出現 muse-spark、sam-3.1、muse-voice-transcribe，沒有其他廠商；contributor 版只出現在價目表，產品不會呼叫；(3) 禁用字眼：README、前端、demo 資料都沒有「偵測 AI／假影片／任何影片」的宣稱，出現的地方都是禁用清單或「不判斷」的說明；(4) 第一個 commit 是 10/27，都在 10/26 之後；(5) repo 公開、MIT；(6) git 裡沒有 john 的自拍影片，demo JSON 只有檔名；(7) README 的 SAM 數字和 demo JSON 對得上。**新增**：GitHub Pages 靜態 demo（`.github/workflows/pages.yml`，用 `VITE_DEMO_ONLY=1`，不呼叫後端或模型），README 加網址；john 要在 Settings 打開一次（T168）。排了 T167、T169、T170。
+- 10/29 Muse 完成 T166（分支 muse/T166-voice-encoding）：request 補 `audioEncoding: "WAV"`（batch 端點的值；realtime 才用 PCM_24KHZ／PCM_16KHZ）＋斷言測試；真打 voice 端點回 200、用 own_2 環境音轉出 3 秒英文口語、無答案內容故 fields 為空（沒亂猜）。pytest 222 全綠。已知殘留：純靜音轉出空稿仍走 502（合理但訊息誤導，可排下個任務改成空欄位回 200）。$0.039，累計 $1.771。
 - 10/29 Codex T157 最終同步：保留 main 的協調者範例圖片來源說明與回歸測試，後續整合改由 PR #88 交付（PR #87 的 809f3df 已合併）。重跑 npm 118 pass、標準／靜態 build pass（入口 85,160／84,058 bytes）；同一後端版本 pytest 222 pass。Figma 待配額恢復，前端與 T157 已完成並提交審查。
 
 - 10/29 Codex 本輪可執行前端待辦已完成：主改版 PR #87 已由 Claude 合併；T157（82f90f9）與後續整合修整交付 PR #88（目標 main）。已保留 Claude 在 main 補的範例來源文案與測試。Figma 手機收尾仍受 Starter MCP 配額阻擋，T165 保留未勾及明確續接項目。

@@ -93,7 +93,8 @@ def _post_transcribe(audio: Path, timeout: float) -> dict[str, Any]:
             resp = httpx.post(
                 TRANSCRIBE_URL,
                 headers={"Authorization": "Bearer " + api_key, "Accept": "application/json"},
-                data={"request": json.dumps({"model": VOICE_MODEL})},
+                data={"request": json.dumps({"model": VOICE_MODEL,
+                                                   "audioEncoding": "WAV"})},
                 files={"audio": (audio.name, f, "audio/wav")},
                 timeout=timeout,
             )
