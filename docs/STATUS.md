@@ -331,3 +331,5 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 22:35 例行巡查：審查並合併 Codex PR #30（T80 有效數字、T81 demo 導覽、T82 英文文字）。pytest 69、npm 56、build 都通過，也有測試確認畫面沒有 real、fake、detect 等字眼。新增 Codex 的 T85、T86。Muse、Antigravity 仍然沒有推任何東西。
 - 10/28 Codex T85：一般稽核／偵訊新增物體名稱（預設 ball），傳 object_name；結果、PNG、Markdown 標明 SAM 3.1 或 frame differencing（no model used），JSON 保留 track_source。testid audit-object-name/interview-object-name；npm 57 pass、build pass。
 - 10/28 Codex T86：一般稽核加慢動作 yes/no/未提供，結果、PNG、Markdown 保留回答，JSON 原值不變；舊紀錄無欄位仍顯示未提供，不假定 false。slow_motion=true 的拒判突出顯示後端 reason 原文，不自行改數字或歸因。testid audit-slow-motion/audit-slow-answer/audit-timing-limit；npm 58 pass、build pass。
+
+- 10/28 Codex 工作總結：T85／T86 已推送，PR #32 待審；pull main 後沒有新增 Codex 未勾項。npm 58 pass、build pass、pytest 56 pass/13 skip（環境依賴）。追蹤來源與慢動作回答全流程保留，未推 main；瀏覽器端到端待驗收。
