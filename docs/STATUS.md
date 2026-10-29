@@ -49,7 +49,7 @@
 
 **Muse**（照順序做）
 - [ ] T114 Muse：自拍影片也用 SAM 跑（demo 要「同一種追蹤」下真實一致、生成不一致、拒判三種都有）。步驟：(1) 請 john 把 3 支自拍影片 IMG_8426.mov、IMG_8429.mov、IMG_8434.mov 放進 repo 外的資料夾 `~/slope-own-clips`，檔名改成 manifest 的名字 `own_1_IMG_8426.mov`、`own_2_IMG_8429.mov`、`own_3_IMG_8434.mov`（**不准放進 repo、不准 commit**）；(2) `cp data/gate/clips/*.mp4 ~/slope-own-clips/`；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v3.md`（現在批次預設不呼叫解說和標題，只花 SAM 的錢，約 $0.12）；(4) 表格貼進「SAM 對照」v2 下面，標題「v3（加入自拍影片）」；(5) 每支自拍影片看 overlay 確認紅點在球上，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T114-sam-own`。
-- [ ] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。
+- [x] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。 — commit TBD（原因見日誌：門檻數字只在原因句裡、檢查只收數字欄，提示詞和檢查打架。修：程式 parse 原因句數字加入 allowlist＋提示詞點名陷阱；2 測試。$0 真打）
 
 
 **Codex**（PR #4 合併後才開始，照順序做）
@@ -248,6 +248,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 10/29 Muse 完成 T115（分支 muse/T115-explain-retries）：8 次重試全是「數字來源」沒過——模型照提示詞引用 payload 裡的門檻（8.34／11.28），但那些數字只活在原因句字串裡，檢查只收數字欄位，首輪幾乎必死一次；另 9.81／fps 也不在 payload 裡。修法（只動 meta_client）：explain 用程式 parse 原因句數字加入 allowlist（檢查本體沒動），提示詞點名禁寫 fps／自算百分比、範例 9.81 換成 1.71；2 測試鎖住（門檻引文一次過、9.81／fps 照樣擋）。$0 真打，全套件 216 pass。建議 Claude：後端 `_model_text` 的 `_number_sources` 也要加同樣的字串數字，否則修好的解說在後端門還是會被退回模板；另建議把驗證失敗的原文記下來，下次不用猜。
 - 10/29 12:40 Claude：審查並合併 Codex T159（物體名稱預填，鏡頭建議只顯示文字）與 T160（語音回答逐欄按 Use this 才填入）。
 - 10/29 Codex 沒有待辦了。T159／T160 已完成並推送 PR #70／#74，目標都是 main，兩者已同步最新 main 且可合併。T157 仍待 Claude 資料定版通知，依規則保留未勾；無其他可執行的 Codex 待辦。npm108 pass、標準／靜態 build pass；pytest213 pass／1既有drawtext環境失敗。
 - 10/29 Codex T160：接 API v1.0 錄音→預聽→明確送出→逐字稿／欄位預覽，每欄 Use this 才填一般表單，不自動提交稽核；語音時間窗仍需影片確認。來源標示 Voice Transcribe／Spark；mock 停用錄音。錄音超過10MB／錯誤／卸載均釋放麥克風，送出防重複、失敗保留答案與錄音，換草稿忽略晚到回應；未加套件、未呼叫付費模型。新增假的 fetch、錄音器、逐欄、精度、mock、錯誤及雙語測試；npm108 pass、標準與靜態build pass（入口79,345／78,456 bytes）；pytest213 pass/1既有drawtext失敗。實機端到端待Antigravity。
