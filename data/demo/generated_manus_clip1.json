@@ -1,0 +1,136 @@
+{
+ "audit_id": "aud_e5789e5dc889",
+ "created_at": "2026-10-29T03:26:03.416255Z",
+ "assumed_model": "free_flight",
+ "t_start": 0.8,
+ "t_end": 2.1,
+ "camera_static": true,
+ "object_size_m": 0.24,
+ "length_m": null,
+ "slow_motion": false,
+ "video_url": "",
+ "overlay_url": null,
+ "track_source": "color",
+ "verdict": "insufficient_data",
+ "reasons": [
+  "object tracked in only 55% of frames"
+ ],
+ "numbers": {
+  "tracked_fraction": 0.5454545454545454
+ },
+ "points": [
+  [
+   1.05,
+   103.33333333333333,
+   14.333333333333334
+  ],
+  [
+   1.425,
+   159.7,
+   31.8
+  ],
+  [
+   1.4666666666666668,
+   168.3,
+   35.65
+  ],
+  [
+   1.55,
+   191.21794871794873,
+   48.44871794871795
+  ],
+  [
+   1.5916666666666668,
+   195.72222222222223,
+   55.47222222222222
+  ],
+  [
+   1.6333333333333333,
+   202.84158415841586,
+   63.59405940594059
+  ],
+  [
+   1.675,
+   211.1764705882353,
+   68.44117647058823
+  ],
+  [
+   1.7166666666666668,
+   217.0487804878049,
+   76.82926829268293
+  ],
+  [
+   1.7583333333333333,
+   221.32203389830508,
+   87.50847457627118
+  ],
+  [
+   1.8,
+   231.71428571428572,
+   94.91428571428571
+  ],
+  [
+   1.8416666666666668,
+   236.8684210526316,
+   104.1842105263158
+  ],
+  [
+   1.8833333333333333,
+   241.04761904761904,
+   114.11904761904762
+  ],
+  [
+   1.925,
+   246.0,
+   126.0
+  ],
+  [
+   1.9666666666666668,
+   255.01694915254237,
+   134.15254237288136
+  ],
+  [
+   2.0083333333333333,
+   259.88235294117646,
+   144.47058823529412
+  ],
+  [
+   2.05,
+   271.26506024096386,
+   153.84337349397592
+  ],
+  [
+   2.091666666666667,
+   276.5425531914894,
+   166.1595744680851
+  ],
+  [
+   2.1333333333333333,
+   280.9878048780488,
+   177.90243902439025
+  ]
+ ],
+ "ghost_points": [],
+ "nearest_body": null,
+ "events": [
+  {
+   "kind": "vanished",
+   "t_s": 1.0916666666666668,
+   "detail": "missing for 8 frames until t=1.425s"
+  }
+ ],
+ "limits": [
+  "Without SAM, tracking is model-free (colour + motion when the object name gives a colour, otherwise frame differencing); frame differencing can lock onto other moving things.",
+  "Perspective is not modelled: motion towards or away from the camera is not reliable.",
+  "The time window and camera state are confirmed by the user."
+ ],
+ "explanation": {
+  "source": "template",
+  "text": "This clip cannot be judged against the free flight model: object tracked in only 55% of frames."
+ },
+ "generated_clip": true,
+ "source": "manus",
+ "clip": "manus_clip1.mp4",
+ "labels_by": "john (window, camera, nominal ball size from the prompt)",
+ "track_ok": ""
+}
