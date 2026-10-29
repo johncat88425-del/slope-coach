@@ -192,3 +192,45 @@ def ghost_track(fit: FlightFit, times: list[float], m_per_px: float) -> list[tup
         dt = t - fit.t0_s
         out.append((t, fit.x0_px + fit.vx_px_s * dt, fit.y0_px + fit.vy_px_s * dt + 0.5 * a * dt * dt))
     return out
+
+
+def suggest_flight_windows(points: list[tuple[float, float, float]], *, min_points: int = 8,
+                           max_rms_fraction: float = 0.015, min_rms_px: float = 1.0) -> list[tuple[float, float]]:
+    """Candidate flight windows for the user to pick from and confirm (T141), earliest first.
+
+    Only suggestions; the gate and the audit always use the human-confirmed window. The track is split
+    at tracking gaps (more than 2.5 frame intervals) and at bounces (the object's lowest image point);
+    in each piece the longest run of at least min_points frames that fits one constant-acceleration
+    flight, with rms within max(min_rms_px, max_rms_fraction x travel), is a candidate.
+    """
+    arr = sorted(points)
+    if len(arr) < min_points:
+        return []
+    t = np.array([p[0] for p in arr])
+    y = np.array([p[2] for p in arr])
+    dt = float(np.median(np.diff(t)))
+    cut = {0, len(arr)}
+    for k in range(1, len(arr)):
+        if dt > 0 and t[k] - t[k - 1] > 2.5 * dt:
+            cut.add(k)
+    for k in range(1, len(arr) - 1):
+        if y[k] > y[k - 1] and y[k] >= y[k + 1]:  # lowest point in the image: a bounce or a catch
+            cut.add(k + 1)
+    bounds = sorted(cut)
+    out = []
+    for a, b in zip(bounds, bounds[1:]):
+        best: tuple[int, int] | None = None
+        for i in range(a, b - min_points + 1):
+            if best and (b - i) <= best[1] - best[0]:
+                break
+            j_ok = None
+            for j in range(i + min_points, b + 1):
+                fit = fit_flight(arr[i:j])
+                if fit.rms_residual_px > max(min_rms_px, max_rms_fraction * fit.travel_px):
+                    break
+                j_ok = j
+            if j_ok and (best is None or j_ok - i > best[1] - best[0]):
+                best = (i, j_ok)
+        if best:
+            out.append((float(t[best[0]]), float(t[best[1] - 1])))
+    return out

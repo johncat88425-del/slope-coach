@@ -15,7 +15,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 | 誰 | 照這個順序做 | 重點 |
 | --- | --- | --- |
 | **Muse**（最優先） | T05、T29（先 push）→ **T38 SAM** → T107 → T66 → T45 → T108 → T109 → T110 → T111 → T34 → T39 → T67 → T47 | SAM 是最大的缺口：顏色追蹤在 Meta clip1、4、5 和 Manus 那支失敗，測試影片在 `/mnt/project-files/gate/meta/`、`manus/`。所有用到模型的輸出都要標來源；數字只能由 physics 產生。花費超過 10 美元先停，寫進 STATUS。 |
-| **Codex** | T133 → T136 → T137 → T138 → T135 → T140 → T139（T100–T118 已完成並合併） | demo 用的資料都在 `data/demo/`（`real_own_*`、`generated_*`）。不准出現「偵測 AI」「假影片」「真假」。 |
+| **Codex** | T133 → T142 → T136 → T137 → T138 → T135 → T140 → T139（T100–T118 已完成並合併） | demo 用的資料都在 `data/demo/`（`real_own_*`、`generated_*`）。不准出現「偵測 AI」「假影片」「真假」。 |
 | **Antigravity** | T02 → T52 → T42 → T119 → T120 → T121 → T122 → T54 → T53 | 不要再做 3D 渲染影片。部署帳號等 john 決定。 |
 | **Manus** | T23 → T95 → T123 → T124 → T125 → T126 | 只寫文件，交給 john 轉給 Claude。數字只用 `data/gate/product_results.md`。 |
 | **Claude** | T127 → T129 → T128 → T130 → T131 | 每 2 小時巡查、審查合併。 |
@@ -93,6 +93,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T117 Codex：英文介面全面檢查（評審看英文）：所有新頁面都要有英文，用詞照 AGENTS 規則（consistent／inconsistent／insufficient data with the assumed model） — commit fa18e96
 - [x] T118 Codex：首頁 30 秒自動導覽模式（給 demo 錄影用）：依序顯示 real_own_2 → generated_meta_clip2 → generated_meta_clip4（拒判），每步有一句英文說明，可暫停 — commit 9428051
 
+- [ ] T142 Codex：（T133 之後做）時間窗選擇器加「建議的時間窗」按鈕：呼叫 `POST /api/audit-drafts/{id}/windows`，把候選畫成時間軸上的色塊，點一下就把把手移過去，使用者還是要按「確認時間窗」。標明「由程式建議（未使用模型）」
 - [ ] T133 Codex：上傳後可以在瀏覽器預覽影片，拖動兩個把手選 `t_start`、`t_end`（顯示到 0.01 秒），使用者按「確認時間窗」才送出。時間只來自使用者操作，前端不猜
 - [ ] T135 Codex：「How it works」頁（英文為主）：流程圖 Muse 問問題 → SAM 3.1／顏色追蹤 → physics 擬合 → 判定 → 說明，每一步標明「Meta model」或「deterministic code」，並標出目前哪些是 mock（照 `track_source`、`explanation.source` 的實際值，不要寫死成已接上）
 - [ ] T136 Codex：首頁給評審的開場區：一句話說明 + 三張卡片（real_own_2 一致、generated_meta_clip2 不一致、generated_meta_clip4 資料不足），點下去開那筆紀錄
@@ -129,6 +130,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T126 Manus：限制與常見問題（英文 FAQ）：為什麼不判斷真假、為什麼會拒判、需要怎麼拍、數字怎麼來、Meta 模型做了什麼
 
 **Claude**
+- [x] T141 Claude：候選時間窗：`physics.experiments.freefall.suggest_flight_windows` 和 `POST /api/audit-drafts/{id}/windows`（API v0.8）。在 john 的 3 支影片上，第一個或第二個候選和 john 的標註差不到 0.2 秒（own_1 1.87–2.60、own_2 0.03–0.80、own_3 1.82–2.42）。只是建議，關卡和稽核仍然只用人確認的時間窗 — 見 PR T141
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [x] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
 - [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
