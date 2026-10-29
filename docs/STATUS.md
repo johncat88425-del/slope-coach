@@ -90,7 +90,7 @@
 - [ ] 審查並合併 Muse 的 T05、T29
 - [x] 審查並合併 Codex PR #4 與 #16（T36–T51，含 #4 的內容）：pytest 58、npm 37、build 都通過；前端沒有自己算物理，畫面沒有「真／假／AI 生成」字眼
 - [x] T37 Claude：後端稽核端點 `POST /api/audits`、`GET /api/audits/{aid}`（docs/API.md v0.2）
-- [ ] T32 跑關卡：自拍 3 支已跑（2 一致、1 小幅不一致），等 john 確認時間窗、看疊加圖填 track_ok，再加 Meta AI 影片
+- [ ] T32 跑關卡：自拍 3 支 Q1 pass、Q3 pass；等 john 的 Meta AI 影片跑 Q2
 - [x] T87 Claude：不用模型的顏色＋移動追蹤（`backend/video.track_color`）。人工標註的物體名稱有顏色（例如 `orange ball`）時，關卡改用它；`--tracker frame_diff` 可重現舊規則。球的大小改用短軸寬度，不受動態模糊影響。3 支真實影片的紅點都落在球上 — 見 PR T87
 - [x] T55 Claude：稽核支援 `assumed_model=bounce`（接上 `check_bounces`）
 - [x] T56 Claude：透視檢查：物體大小沿軌跡變化超過 30% 時拒判（`physics/persistence.size_trend`）
@@ -178,7 +178,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ### 關卡結果
 
-**10/29 02:30 第一次正式試跑**（john 量的球直徑 0.11 m；時間窗是 Claude 提議的，john 還沒確認；`data/gate/results.md`，舊規則版本在 `results_frame_diff.md`）
+**10/29 02:30 第一次正式試跑**（john 量的球直徑 0.11 m；john 10/29 02:28 確認時間窗，並確認三張疊加圖的紅點都在球上；`data/gate/results.md`，舊規則版本在 `results_frame_diff.md`）
 
 | 影片 | 新版（顏色追蹤） | 舊版（frame_diff） |
 | --- | --- | --- |
@@ -186,7 +186,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 | own_2 | 一致，g = 9.82 | 不一致（追到手臂） |
 | own_3 | 不一致，g = 8.17（超出 ±15% 的下限 8.34 一點點） | 資料不足 |
 
-- Q1 自拍影片追得準：**pending**。2 支一致而且 g 在 15% 以內，等 john 看疊加圖確認紅點在球上（`track_ok`）。
+- Q1 自拍影片追得準：**pass**。2 支一致而且 g 在 15% 以內，john 確認紅點在球上（`track_ok` = yes）。
 - Q2 找得到明確異常：**fail（目前）**。還沒有 Meta AI 影片，這題要等 john 的 5 到 10 支生成影片。
 - Q3 同一套規則、拒判不超過一半：**pass**（0/3 拒判）。
 - own_3 是自拍影片上的誤報，要說明：它的 g 只差 17%，沒有到「明確異常」（差 50%）的程度。球在畫面上比另外兩支大（約 28 px 對 22 px），可能球有朝鏡頭方向移動，透視讓位移變小。這是推測，沒有調參。
@@ -271,6 +271,7 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 02:35 Claude：john 確認時間窗和 track_ok，關卡 Q1 通過、Q3 通過，Q2 等 Meta AI 影片。
 - 10/29 02:30 Claude：john 量到球直徑 0.11 m。關卡試跑：own_1 g = 9.62、own_2 g = 9.82 一致，own_3 g = 8.17 小幅不一致。舊版 frame_diff 三支都失敗。結果寫進「關卡結果」。
 - 10/29 Claude：合併 Codex PR #32（T85、T86）。完成 T87 顏色追蹤，記進規則變更紀錄。真實影片上的追蹤已經正確，但用 5 公分算出的 g 只有一半左右，請 john 量球的直徑並確認時間標註。
 - 10/28 02:05Z Claude 巡查：Codex 完成 11 件（PR #16，已審查合併）；Muse 和 Antigravity 還沒有 push。替 Codex 補了 T59 到 T63。

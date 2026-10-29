@@ -1,4 +1,4 @@
 clip,source,assumed_model,t_start,t_end,camera_static,object,object_size_m,track_ok
-own_1_IMG_8426.mov,own,free_flight,1.9,2.6,yes,orange ball,0.11,
-own_2_IMG_8429.mov,own,free_flight,0.2,0.8,yes,orange ball,0.11,
-own_3_IMG_8434.mov,own,free_flight,2.0,2.4,yes,orange ball,0.11,
+own_1_IMG_8426.mov,own,free_flight,1.9,2.6,yes,orange ball,0.11,yes
+own_2_IMG_8429.mov,own,free_flight,0.2,0.8,yes,orange ball,0.11,yes
+own_3_IMG_8434.mov,own,free_flight,2.0,2.4,yes,orange ball,0.11,yes
