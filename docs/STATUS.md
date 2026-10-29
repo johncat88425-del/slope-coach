@@ -145,7 +145,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T158 Codex：稽核流程所有使用者看得到的英文字句做一次白話整理：不用術語（例如「frame differencing」改成「motion-based tracking (no model)」），同一種判定全站用同一個說法，繁中翻譯同步更新。加測試確認沒有 fake、detect AI、real or fake 這類字 — commit 689eec5
 - [ ] T157 Codex：（等 Claude 在工作日誌寫「demo 資料已定版」後才做）用 `data/demo/*.json` 的最終版本更新靜態 demo（T138）和結果牆，跑 build 確認
 - [x] T159 Codex：（API v1.0）偵訊畫面用 `draft.suggestion` 預填「Object name」，旁邊寫「Suggested by Muse Spark — please check」，使用者改了就用使用者的。`camera_looks_static` 只顯示成提示文字，**不准自動勾選**「鏡頭固定」。`suggestion` 是 null 時什麼都不顯示。補測試 — commit 585c561
-- [x] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch） — commit 待回填（本次程式提交）
+- [x] T160 Codex：（API v1.0）把語音回答（T116 的 VoiceAnswers）接上 `POST /api/audit-drafts/{id}/voice`：錄音 → 送出 → 顯示 transcript 和每個欄位，每一欄都要使用者按「Use this」才會填進表單，不准自動送出。`source` 是 mock 時按鈕維持「需要 Meta API」。標明「由 Muse Voice Transcribe／Muse Spark 產生」。補測試（用假的 fetch） — commit 3c69d20
 
 **Antigravity**（照順序做）
 - [x] T02 Antigravity→Claude：（10/29 06:40 Antigravity 整晚沒有 push，改由 Claude 做）`requirements.txt`、`scripts/dev.sh`（檢查 ffmpeg／python3／npm，缺什麼就列出 brew 指令；後端 8000、前端 5173；沒有金鑰時用 mock） — 見 PR T02
