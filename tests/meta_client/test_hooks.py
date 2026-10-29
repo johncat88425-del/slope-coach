@@ -1,8 +1,8 @@
 import pytest
 
 from backend.model_hooks import TrackingUnavailable
-from meta_client import hooks, sam, spark
-from meta_client.exceptions import MediaError
+from meta_client import explain, headline, hooks, sam, spark
+from meta_client.exceptions import MediaError, ModelOutputError
 
 
 def test_check_scene_maps_to_schema(monkeypatch, tmp_path):
@@ -105,3 +105,24 @@ def test_track_object_failure_becomes_501_signal(tmp_path, monkeypatch):
     monkeypatch.setattr(sam, "track", boom)
     with pytest.raises(TrackingUnavailable, match="ffmpeg"):
         hooks.MetaHooks().track_object(tmp_path / "c.mp4", "ball", 0.0, 1.0)
+
+
+def test_explain_audit_extracts_text_and_none_on_failure(monkeypatch):
+    seen = {}
+    def fake_explain(result, *, kind="comparison", **kwargs):
+        seen["kind"] = kind
+        return {"explanation": "motion matches"}
+    monkeypatch.setattr(explain, "explain_result", fake_explain)
+    assert hooks.MetaHooks().explain_audit({"verdict": "consistent"}) == "motion matches"
+    assert seen == {"kind": "audit"}
+    def boom(result, **kwargs):
+        raise ModelOutputError("bad")
+    monkeypatch.setattr(explain, "explain_result", boom)
+    assert hooks.MetaHooks().explain_audit({"verdict": "consistent"}) is None
+
+
+def test_headline_audit_passes_through(monkeypatch):
+    monkeypatch.setattr(headline, "write_headline", lambda audit, **kw: "falls like the Moon")
+    assert hooks.MetaHooks().headline_audit({}) == "falls like the Moon"
+    monkeypatch.setattr(headline, "write_headline", lambda audit, **kw: None)
+    assert hooks.MetaHooks().headline_audit({}) is None

@@ -35,6 +35,16 @@ MAX_HEADLINE_CHARS = 200
 
 _STRING_SLOT = re.compile(r"\{nearest_body(?::\d+)?\}")
 
+# physics returns English body names; the Chinese headline reads better
+# with Chinese names. Display-only mapping inside this module.
+BODY_ZH = {
+    "Pluto": "冥王星",
+    "Moon": "月球",
+    "Mars": "火星",
+    "Earth": "地球",
+    "Jupiter": "木星",
+}
+
 HEADLINE_PROMPT = (
     "You write ONE memorable headline in Traditional Chinese for a video "
     "physics audit. The clip's apparent gravity is {g_vs_earth:2} times "
@@ -83,7 +93,7 @@ def _validate_headline(raw: Any, audit: dict[str, Any]) -> str:
         raise ModelOutputError("nearest_body must be a string")
     if _STRING_SLOT.search(template) is None:
         raise ModelOutputError("headline must use the {nearest_body} slot")
-    with_body = _STRING_SLOT.sub(body, template)
+    with_body = _STRING_SLOT.sub(BODY_ZH.get(body, body), template)
     filled, fill_check = fill_numbers(with_body, {"g_vs_earth": g_vs_earth})
     if not fill_check.ok:
         raise ModelOutputError("headline slots failed: " + "; ".join(fill_check.problems))

@@ -15,7 +15,7 @@ def _audit(**over):
     audit = {
         "verdict": "inconsistent",
         "numbers": {"g_vs_earth": 0.0122},
-        "nearest_body": "月球",
+        "nearest_body": "Moon",
     }
     audit.update(over)
     return audit
