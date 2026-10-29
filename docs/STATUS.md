@@ -97,7 +97,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T133 Codex：上傳後可以在瀏覽器預覽影片，拖動兩個把手選 `t_start`、`t_end`（顯示到 0.01 秒），使用者按「確認時間窗」才送出。時間只來自使用者操作，前端不猜 — commit 66249bc
 - [ ] T135 Codex：「How it works」頁（英文為主）：流程圖 Muse 問問題 → SAM 3.1／顏色追蹤 → physics 擬合 → 判定 → 說明，每一步標明「Meta model」或「deterministic code」，並標出目前哪些是 mock（照 `track_source`、`explanation.source` 的實際值，不要寫死成已接上）
 - [x] T136 Codex：首頁給評審的開場區：一句話說明 + 三張卡片（real_own_2 一致、generated_meta_clip2 不一致、generated_meta_clip4 資料不足），點下去開那筆紀錄 — commit cc65c0a
-- [ ] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤
+- [x] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤 — commit 待回填（本次程式提交）
 - [ ] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS
 - [ ] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS
 - [ ] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試
@@ -493,3 +493,6 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T133：一般稽核與偵訊共享本機影片預覽、兩個鍵盤可用時間把手與 0.01 秒輸入；必須確認時間窗才能送出，改界線／重選片即失效。不自動猜起終點。npm/build 通過；pytest drawtext 環境缺口仍列待決定。
 - 10/29 Codex T142：接 POST draft/windows，候選以時間軸色塊與鍵盤按鈕顯示；選取只移把手，不自動確認。標示程式建議未使用模型，一般稽核重用該草稿送出，不重複傳影片。補端點測試，測試環境補既定 SDK。
 - 10/29 Codex T136：稽核首頁加入指定三筆結果卡與一句話開場，點擊 #examples/key 開對應儲存證據，不把範例 key 當後端 ID。npm 72 pass、build pass；pytest 187 pass/4 fail（本機缺 meta-sam-parser、drawtext）。
+
+- 10/29 Codex 測試環境：合併 Muse 後，已補專案既定 OpenAI SDK 到 /tmp 測試環境；pytest 仍有 3 項缺 meta-sam-parser、1 項 ffmpeg 無 drawtext。未改後端或跳過測試。
+- 10/29 Codex T137：支援 /audit/id 與既有 hash 連結，GET 讀取與 404 友善錯誤；結果可複製 origin+編碼ID連結。部署需 SPA fallback 到 index.html，未部署或改伺服器。npm 73 pass、build pass；pytest 環境 4 項失敗保留。

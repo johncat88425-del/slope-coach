@@ -49,7 +49,7 @@ test('audit links round-trip encoded IDs, resolve audit route and use read-only 
  for(const id of ['audit-123','id with space','id/slash']){assert.equal(auditIdFromHash(auditHash(id)),id);assert.equal(resolveRoute(auditHash(id)),'audit')}
  for(const hash of ['#/audits/','#/audits/%ZZ','#setup'])assert.equal(auditIdFromHash(hash),null);
  let path,init;await createApi('',async(p,i)=>{path=p;init=i;return Response.json(fixture('consistent'))}).getAudit('id/slash');assert.equal(path,'/api/audits/id%2Fslash');assert.equal(init.method,undefined);
- const html=rawRender(createElement(AuditResult,{audit:fixture('consistent')}));assert.match(html,/href="#\/audits\/ui-fixture"/);
+ const html=rawRender(createElement(AuditResult,{audit:fixture('consistent')}));assert.match(html,/href="\/audit\/ui-fixture"/);
  assert.doesNotMatch(rawRender(createElement(AuditResult,{audit:fixture('consistent'),replay:true})),/Open result link/);
 });
 
@@ -89,3 +89,5 @@ test('voice input stays unavailable without Meta API and proposals require field
 test('all supported model verdicts use consistent reviewer-facing English',async()=>{const {verdictEnglish}=await import('../.test-dist/audit.js');for(const assumed_model of ['free_flight','bounce','pendulum'])for(const verdict of ['consistent','inconsistent','insufficient_data']){const t=verdictEnglish({assumed_model,verdict});assert.match(t,/with the assumed .* model$/);assert.doesNotMatch(t,/insufficient_data|free_flight|detect|fake/)}});
 
 test('window confirmation requires explicit valid bounds within the video duration',async()=>{const {validWindow}=await import('../.test-dist/WindowSelector.js');assert.ok(validWindow('0.10','1.23',2));for(const [s,e,d] of [['','1',2],['1','1',2],['0','3',2],['0','1',0],['NaN','1',2]])assert.equal(validWindow(s,e,d),false)});
+
+test('public audit paths safely round-trip IDs and share links exclude local drafts',async()=>{const {auditIdFromPath,shareAuditUrl}=await import('../.test-dist/experiment.js');assert.equal(auditIdFromPath('/audit/a%2Fb'),'a/b');assert.equal(auditIdFromPath('/audit/%ZZ'),null);assert.equal(auditIdFromPath('/audit/'),null);assert.equal(shareAuditUrl('a/b','https://example.test'),'https://example.test/audit/a%2Fb')});
