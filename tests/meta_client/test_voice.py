@@ -170,6 +170,7 @@ def test_extract_interview_fields_success(tmp_path, monkeypatch):
         "camera on tripod, no slow motion, ball eleven centimeters", tracker=tracker)
     assert out["object_size"] == {"value": 11.0, "unit": "cm"}
     assert out["camera_static"] is True
+    assert out["source"] == "muse-spark-1.3"
     assert tracker.total_usd() > 0
 
 
@@ -221,9 +222,12 @@ def test_answer_interview_voice_converts_and_marks_unconfirmed(tmp_path, monkeyp
     assert out["fields"]["object_size_m"] == {"value": 0.11, "confirmed": False}
     assert out["fields"]["camera_static"] == {"value": True, "confirmed": False}
     assert "length_m" not in out["fields"]
+    assert out["source"] == {"transcript": "muse-voice-transcribe-1.0",
+                             "fields": "muse-spark-1.3"}
 
 
 def test_answer_interview_voice_mock_without_key(tmp_path, monkeypatch):
     monkeypatch.delenv("MODEL_API_KEY", raising=False)
     out = voice.answer_interview_voice(tmp_path / "missing.m4a")
-    assert out == {"transcript": voice.MOCK_NO_KEY_TRANSCRIPT, "fields": {}, "mock": True}
+    assert out == {"transcript": voice.MOCK_NO_KEY_TRANSCRIPT, "fields": {}, "mock": True,
+                   "source": {"transcript": "mock", "fields": "mock"}}
