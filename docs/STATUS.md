@@ -69,7 +69,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
     2. `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --out data/gate/product_results_sam.md`（有金鑰時後端會自動用 SAM 追蹤；表格的 track_source 欄要是 sam）
     3. 把 `product_results_sam.md` 的表格貼到 STATUS「關卡結果」下面的新小節「SAM 對照」，和 `data/gate/product_results.md`（顏色追蹤版）並排。兩版都要報告，不准只放好看的，也不准改 manifest 的標註
     4. 花費記進成本紀錄，commit `data/gate/product_results_sam.md`＋STATUS，push 分支 `muse/T107-sam-rerun`
-- [ ] T108 Muse：Spark 看第一格畫面，建議 `object_name`（例如 orange basketball）和「鏡頭看起來固定嗎」。只是建議，要使用者確認才會用；回傳要過 schema 和 `check_model_text`
+- [x] T108 Muse：Spark 看第一格畫面，建議 `object_name`（例如 orange basketball）和「鏡頭看起來固定嗎」。只是建議，要使用者確認才會用；回傳要過 schema 和 `check_model_text` — commit 46c1c57（spark.suggest_object：第一格命名＋約1秒後那格比對判斷鏡頭——單格看不出移動，特此說明；3 mock 測試。clip2 真打一次通過：orange basketball／static，跟標註一致。$0.008，累計 $0.271）
 - [ ] T109 Muse：語音回答偵訊問題：`muse-voice-transcribe-1.0` 把使用者說的話轉成文字，Spark 抽出欄位（例如物體大小），**數字一定要使用者在畫面上確認**才送出。沒有金鑰時用 mock
 - [x] T110 Muse：花費顯示：後端 `/api/spend` 回傳目前累計花費和 120 美元上限，給前端顯示。到上限時所有付費呼叫拒絕，並有測試 — commit 74890d1（GET /api/spend 回 {spent_usd, limit_usd, at_limit}，meta_client 缺席回零；已驗證全部 12 個付費函式都是先 check 後呼叫＋record 再 check，拒絕本來就有。4 測試：總額／達上限旗標／缺模組／達上限時付費呼叫零 API 觸及。$0，累計 $0.435）
 - [ ] T111 Muse：每一個用到 Meta 模型的回傳都帶 `source`（model 名稱與版本），讓畫面能標示「由 Muse Spark 1.3 產生」「由 SAM 3.1 追蹤」
@@ -447,6 +447,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 - 10/29 Muse 完成 T107（分支 muse/T107-sam-rerun）：audit_batch 跑 data/gate/clips 7 支，track_source 全是 sam，但 7 支全因「只追到 61–63%」拒判——查出是後端覆蓋率分母用 24fps 來源格數、SAM 只出 15fps（天花板 62.5% < 門檻 0.8），修法在後端已寫進待 john 決定。SAM 對照表和兩版比較已貼進關卡結果。花費 $0.077，累計 $0.167。pip install 用「逐一確認 requirements 可 import＋ffmpeg＋meta-sam-parser 存在」代替（venv 本來就齊，避免重裝弄壞環境）。
 - 10/29 Muse 完成 T110（分支 muse/T110-spend）：GET /api/spend＋API.md 一行契約＋tests/backend/test_spend.py（4 測試，全套件 196 pass）。$0，累計 $0.435。
+| 10/29 | T108：suggest_object 真打 clip2 一次 | 0.008 | 0.271（含未合併 T107 0.077、T112 0.096） |
+- 10/29 Muse 完成 T108（分支 muse/T108-suggest-object）：spark.suggest_object 回 {object_name, camera_looks_static, reason}，schema＋check_model_text，bool 嚴格檢查。實作跟規格有一處差異：只看第一格無法判斷鏡頭動不動，所以多取約1秒後那格做比對（命名仍只看第一格）。clip2 真打一次通過，orange basketball／static 跟標註一致。3 mock 測試，全套件 195 pass。$0.008，累計 $0.271。
 - 10/29 09:00 Claude：查出昨晚工具停下來的原因。(1) 各工具把當時看到的任務做完就結束了，Claude 後來加的任務沒有人去讀。(2) Muse 的 T107 要用 `/mnt/project-files/gate/`，但那個路徑只在 Claude 的雲端電腦上，Muse 早就回報找不到。已把生成影片放進 `data/gate/clips/`（T144），`audit_batch` 預設讀那裡，找不到的影片列為 missing，T107 也改成一步一步的指令。頂端加了「做完一件不要結束對話」。
 - 10/29 06:40 Claude：巡查時發現 04:37 之後沒有任何工具 push 新東西（john 睡了，工具可能停了）。Claude 代做 T02。**Antigravity 下一件改成 T52（CI）**。
 - 10/29 04:45 Claude：合併 Codex T133–T142（PR #51，npm 76、build 通過、主 bundle 64 kB）。做了 T143：說明和標題可以由 Muse Spark 寫，但要通過後端檢查才用。給 Muse 加 T112（在 MetaHooks 接上），給 Codex 加 T143、T145、T146、T149、T150、T151。Antigravity 到現在什麼都沒推，可能也是 GitHub 登入的問題，已在頂端寫明現在能 push。
