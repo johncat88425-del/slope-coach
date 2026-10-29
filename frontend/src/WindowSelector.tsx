@@ -7,7 +7,7 @@ export function WindowSelector({url,start,end,confirmed,onChange,onConfirm,child
  const [duration,setDuration]=useState(0),[error,setError]=useState('');const valid=validWindow(start,end,duration);
  function change(which:'start'|'end',value:string){onChange(which==='start'?value:start,which==='end'?value:end)}
  function confirm(){if(valid&&!confirmed)onConfirm()}
- return <Localize><section data-testid="window-selector" onKeyDown={e=>{if(e.target instanceof HTMLInputElement&&!e.nativeEvent.isComposing&&canConfirmWithKey(e.key,valid,confirmed)){e.preventDefault();confirm()}}}>
+ return <Localize><section className="window-editor" data-testid="window-selector" onKeyDown={e=>{if(e.target instanceof HTMLInputElement&&!e.nativeEvent.isComposing&&canConfirmWithKey(e.key,valid,confirmed)){e.preventDefault();confirm()}}}>
  <h3>Select and confirm a time window</h3>
  <video ref={video} controls src={url} onLoadedMetadata={e=>{setDuration(Number.isFinite(e.currentTarget.duration)?e.currentTarget.duration:0);setError('')}} onError={()=>setError('Cannot preview this video. Choose a supported video encoding.')}/>
  {error&&<p role="alert">{error}</p>}{children}

@@ -1,3 +1,5 @@
+import {createRequestGate} from './requestFeedback.js';
+import {verdictLabel,motionLabel} from './verdictLabel.js';
 import {createSelectedDraft} from './selectedDraft.js';
 import {RetakeGuide} from './RetakeGuide.js';
 import {ModelUsage} from './ModelUsage.js';
@@ -32,20 +34,32 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource }
     audit: AuditOut; replay?: boolean; videoUrl?:string;interviewSource?:'model'|'mock'|null;
 }) {
     const [copyStatus,setCopyStatus]=useState('');
-    return <Localize>{<article data-testid="audit-result" aria-label="稽核結果"><ModelHeadline headline={audit.headline}/>{audit.explanation&&<section data-testid="audit-explanation"><p>{audit.explanation.source==='model'?'由 Muse Spark 產生':'固定模板（未使用模型）'}</p><p><Verbatim text={audit.explanation.text}/></p></section>}{replay && <p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">SYNTHETIC test example — program-drawn motion.</p>}<h2 data-testid="audit-verdict">{verdictText(audit.verdict,audit.assumed_model)}</h2><p>稽核 {audit.audit_id} · 假設：{audit.assumed_model} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
- {!replay && <p><a href={'/audit/'+encodeURIComponent(audit.audit_id)}>Open result link</a><button data-testid="copy-audit-link" onClick={async()=>{try{await navigator.clipboard.writeText(shareAuditUrl(audit.audit_id,location.origin));setCopyStatus('Link copied.')}catch{setCopyStatus('Could not copy. Use the result link.')}}}>Copy link</button><span role="status">{copyStatus}</span></p>}<p data-testid="audit-slow-answer">Slow motion or retimed playback (user): {audit.slow_motion===true?'Yes':audit.slow_motion===false?'No':'Not provided'}</p>{audit.slow_motion===true&&audit.verdict==='insufficient_data'&&<aside data-testid="audit-timing-limit"><h3>Reported limitations</h3>{audit.reasons.map((r,i)=><blockquote key={i}>{r}</blockquote>)}</aside>}<h3>原因</h3><ul>{audit.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
- <RetakeGuide verdict={audit.verdict} reasons={audit.reasons}/><ModelUsage audit={audit} interviewSource={interviewSource}/><GravityRuler numbers={audit.numbers}/><h3>後端計算數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
+    return <Localize><article data-testid="audit-result" aria-label="稽核結果">
+ <div className={'verdict-banner verdict-'+audit.verdict}><h2 data-testid="audit-verdict">{verdictLabel(audit.verdict,audit.assumed_model)}</h2></div>
+ <ModelHeadline headline={audit.headline}/>
+ {audit.explanation&&<section data-testid="audit-explanation"><p>{audit.explanation.source==='model'?'由 Muse Spark 產生':'固定模板（未使用模型）'}</p><p><Verbatim text={audit.explanation.text}/></p></section>}
+ <section data-testid="audit-reasons"><h3>原因</h3><ul>{audit.reasons.map((reason,i)=><li key={i}><Verbatim text={reason}/></li>)}</ul></section>
+ <details data-testid="audit-details"><summary>Details</summary>
+ {replay&&<p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">SYNTHETIC test example — program-drawn motion.</p>}
+ <p>稽核 {audit.audit_id} · 假設：{motionLabel(audit.assumed_model)} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
+ {!replay&&<p><a href={'/audit/'+encodeURIComponent(audit.audit_id)}>Open result link</a><button data-testid="copy-audit-link" onClick={async()=>{try{await navigator.clipboard.writeText(shareAuditUrl(audit.audit_id,location.origin));setCopyStatus('Link copied.')}catch{setCopyStatus('Could not copy. Use the result link.')}}}>Copy link</button><span role="status">{copyStatus}</span></p>}
+ <p data-testid="audit-slow-answer">Slow motion or retimed playback (user): {audit.slow_motion===true?'Yes':audit.slow_motion===false?'No':'Not provided'}</p>
+ {audit.slow_motion===true&&audit.verdict==='insufficient_data'&&<aside data-testid="audit-timing-limit"><h3>Reported limitations</h3>{audit.reasons.map((r,i)=><blockquote key={i}><Verbatim text={r}/></blockquote>)}</aside>}
+ <RetakeGuide verdict={audit.verdict} reasons={audit.reasons}/><ModelUsage audit={audit} interviewSource={interviewSource}/><GravityRuler numbers={audit.numbers}/><h3>量測數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <GhostReview audit={audit} url={replay ? undefined : videoUrl??mediaUrl(audit.video_url, import.meta.env?.VITE_API_BASE_URL)}/><Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
  {audit.assumed_model==='bounce'&&<BounceChart numbers={audit.numbers}/>}
  {audit.assumed_model==='bounce' && <p>Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.</p>}<EventTimeline events={audit.events}/>
  {audit.verdict==='insufficient_data' && audit.numbers.size_trend!==undefined && <aside data-testid="audit-size-trend" aria-label="Size trend limitation"><h3>Size trend limitation</h3><p>size_trend: <span title={String(audit.numbers.size_trend)}>{formatNumber(audit.numbers.size_trend)}</span></p><p>A changing apparent size can make the 2D motion check unreliable. The backend rejects changes beyond its quality threshold. Review the backend reasons above; this value alone does not establish a cause.</p></aside>}
- <PrintReport audit={audit}/><PhysicsCard audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/><button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json", "application/json;charset=utf-8")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}>{r}</li>)}</ul>
- </article>}</Localize>;
+ <PrintReport audit={audit}/><PhysicsCard audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/><button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json", "application/json;charset=utf-8")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}><Verbatim text={r}/></li>)}</ul>
+ </details></article></Localize>;
 }
+
 export function AuditPage({ api, auditId = null }: {
     api: ReturnType<typeof createApi>; auditId?: string|null;
 }) {
+    const requestGate=useRef(createRequestGate());
+    const [requestPhase,setRequestPhase]=useState<'checking'|'loading'>('checking');
     const selectedDraft=useRef(createSelectedDraft<File>());
     const [previewAuditId,setPreviewAuditId]=useState<string|null>(null);
     const [windowConfirmed,setWindowConfirmed]=useState(false);
@@ -61,7 +75,7 @@ export function AuditPage({ api, auditId = null }: {
     const [objectName,setObjectName]=useState('ball');
     const [model, setModel] = useState<AuditModel>('free_flight');
     useEffect(()=>{
-        if(!auditId){setBusy(false);return;}let cancelled=false;setBusy(true);setError('');selectedDraft.current.clear();setAudit(null);setPreview('');setReplay(DEMO_ONLY);setInterviewSource(null);setId(auditId);
+        if(!auditId){setBusy(false);return;}let cancelled=false;setRequestPhase('loading');setBusy(true);setError('');selectedDraft.current.clear();setAudit(null);setPreview('');setReplay(DEMO_ONLY);setInterviewSource(null);setId(auditId);
         (DEMO_ONLY?import('./DemoCatalog.js').then(({demoRecords})=>{const found=demoRecords.find(r=>r.audit.audit_id===auditId||r.key===auditId);if(!found)throw new Error('Saved example not found in this demo.');return found.audit}):api.getAudit(auditId)).then(value=>{if(!cancelled)setAudit(value)}).catch(e=>{if(!cancelled)setError(friendlyApiError(e))}).finally(()=>{if(!cancelled)setBusy(false)});
         return ()=>{cancelled=true};
     },[api,auditId]);
@@ -69,8 +83,8 @@ export function AuditPage({ api, auditId = null }: {
     const errors = validateAuditInput(start, end, size);if(model==='pendulum'&&length.trim()&&(!Number.isFinite(Number(length))||Number(length)<=0))errors.push('Pendulum length must be positive and finite; leave blank if unknown.');
     useEffect(() => () => { if (preview)
         URL.revokeObjectURL(preview); }, [preview]);
-    async function run(action: () => Promise<AuditOut>, allowLocalPreview=false) { if (busy)
-        return;setPreviewAuditId(null); setBusy(true); setError('');setInterviewSource(null);setAudit(null);setUploadPercent(null); try {
+    async function run(action: () => Promise<AuditOut>, allowLocalPreview=false) { await requestGate.current(async()=>{if (busy)
+        return;setRequestPhase(allowLocalPreview?'checking':'loading');setPreviewAuditId(null); setBusy(true); setError('');setInterviewSource(null);setAudit(null);setUploadPercent(null); try {
         const value = await action();
         setPreviewAuditId(allowLocalPreview?value.audit_id:null);setAudit(value);window.dispatchEvent(new Event('audit-completed'));
         setReplay(false);
@@ -81,8 +95,8 @@ export function AuditPage({ api, auditId = null }: {
     }
     finally {
         setBusy(false);
-    } }
-    return <Localize>{<section aria-label="檢查影片"><h2>檢查影片</h2>{DEMO_ONLY&&<p role="status">{demoUploadMessage}</p>}<p>Check the selected segment against the chosen motion model. Confirm capture conditions and the time window; insufficient evidence remains an explicit outcome.</p>
+    } }); }
+    return <Localize>{<section className="audit-flow" aria-label="檢查影片"><h2>檢查影片</h2>{DEMO_ONLY&&<p role="status">{demoUploadMessage}</p>}<p>Check the selected segment against the chosen motion model. Confirm capture conditions and the time window; insufficient evidence remains an explicit outcome.</p>
  <p>Upload a video → Prepare questions → Answer → Confirm time window → Check</p><InterviewPanel api={api} disabled={busy||DEMO_ONLY} onBusyChange={setInterviewBusy} onResult={(value,source)=>{selectedDraft.current.clear();window.dispatchEvent(new Event('audit-completed'));setInterviewSource(source??null);setAudit(value);setReplay(false);setId(value.audit_id);setPreview('');setFile(null);setError('')}}/>
  <aside data-testid="capture-checklist"><h3>Before recording</h3><ul><li>Keep the camera fixed on a tripod.</li><li>Film from the side.</li><li>Keep one moving object in frame.</li><li>Use a clearly coloured ball, such as orange.</li><li>Use normal speed, without slow motion or retiming.</li><li>Keep motion parallel to the image plane, away from the camera direction.</li></ul><p>When capture conditions or evidence fail the quality checks, the system returns insufficient data rather than forcing an answer.</p></aside>
  <details data-testid="offline-import"><summary>Offline demo: import saved JSON</summary><fieldset disabled={busy||interviewBusy||DEMO_ONLY}><legend>Offline demo</legend><p>Load a previously saved result. No network connection or tracking is needed.</p><label>Saved audit JSON<input data-testid="audit-import-json" type="file" accept=".json,application/json" onChange={async e => { const saved = e.target.files?.[0]; if (!saved) return; setError(''); try { if(saved.size > 5 * 1024 * 1024) throw new Error('Saved JSON must be under 5 MB.'); const result = parseSavedAudit(await saved.text()); selectedDraft.current.clear();setAudit(result);setInterviewSource(null); setReplay(true); setPreview(''); setFile(null); } catch(e) {setError(friendlyApiError(e));} }}/></label></fieldset></details>
@@ -99,6 +113,6 @@ export function AuditPage({ api, auditId = null }: {
         return; const savedDraft=selectedDraft.current.take();void run(() => savedDraft?api.auditFromDraft(savedDraft,{t_start:Number(start),t_end:Number(end),camera_static:fixed,slow_motion:slowMotion?slowMotion==='yes':undefined,assumed_model:model,object_name:objectName,object_size_m:size.trim()?Number(size):undefined,length_m:model==='pendulum'&&length.trim()?Number(length):undefined}):api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined,objectName,slowMotion?slowMotion==='yes':undefined),true); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input data-testid="audit-id" value={id} onChange={e => setId(e.target.value)}/></label><button data-testid="audit-load" disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
- </fieldset></details><div aria-live="polite">{busy && <AuditProgress percent={uploadPercent}/>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult key={audit.audit_id} audit={audit} replay={replay} videoUrl={matchingAuditPreview(audit.audit_id,previewAuditId,preview)} interviewSource={interviewSource}/>}
+ </fieldset></details><div aria-live="polite">{busy && <AuditProgress percent={uploadPercent} phase={requestPhase}/>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult key={audit.audit_id} audit={audit} replay={replay} videoUrl={matchingAuditPreview(audit.audit_id,previewAuditId,preview)} interviewSource={interviewSource}/>}
  </section>}</Localize>;
 }
