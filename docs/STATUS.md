@@ -112,7 +112,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T146 Codex：結果區加「這次用了哪些 Meta 模型」小面板：照實際值列出提問（`interview.source`）、追蹤（`track_source`）、說明（`explanation.source`）、標題（`headline` 有沒有）。是 mock、template、color、frame_diff 的，要寫「未使用模型」，不准寫死成已接上 — commit 9fa31c3
 - [x] T151 Codex：拒判（`insufficient_data`）時顯示「怎麼重拍」提示：用固定對照表把 `reasons` 對應到提示，例如鏡頭移動 → 用腳架、物體朝鏡頭移動 → 從側面拍、慢動作 → 用正常速度。不用模型，並補測試 — commit 791b638
 - [x] T145 Codex：右上角顯示 Meta API 花費（配合 Muse T110 的 `GET /api/spend`）。端點還不存在（404）時就不顯示，不要放假數字 — commit 97b5d85
-- [ ] T149 Codex：T133–T142 的新元件補齊繁中和英文切換，加測試確認沒有漏翻的字串
+- [x] T149 Codex：T133–T142 的新元件補齊繁中和英文切換，加測試確認沒有漏翻的字串 — commit 待回填（本次程式提交）
 - [ ] T150 Codex：時間窗選擇器的鍵盤操作（方向鍵移動把手、Enter 確認）和螢幕閱讀器標籤，補測試
 
 **Antigravity**（照順序做）
@@ -530,3 +530,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/29 Codex T146：提問／追蹤／說明／標題四項實際來源面板；mock/template/color/frame_diff 均明示未使用模型。未保存的問答來源顯示未記錄；當次偵訊保留上下文。npm/build 通過；pytest drawtext 缺口仍列明。
 - 10/29 Codex T151：insufficient_data 顯示固定 reason→重拍提示對照：腳架／側視／正常速度／追蹤可見性／完整時間窗。保留原 reason，不用模型、不作因果歸因；未知原因回一般清單。npm79 pass、build pass；pytest191 pass/1 fail（drawtext）。
 - 10/29 Codex T145：頁首讀取真實 /api/spend；404、網路失敗或未知schema均隱藏，不補假額度。total_usd/limit_usd 待後端確認，防禦性接受明確USD有限數；focus與稽核完成後刷新，demo完全不查。npm81 pass、build pass；pytest192 pass/1 fail。
+- 10/29 Codex T149：時間窗、候選、首頁卡片、How it works與分享／demo文案補齊繁中與英文。後端標題／說明以原文元件保留。測試逐一解析新元件所有靜態文字與讀屏標籤，並核對兩語言數字不變；npm83 pass、build pass，pytest192 pass/1 fail（drawtext）。
