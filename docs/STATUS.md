@@ -98,7 +98,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [ ] T135 Codex：「How it works」頁（英文為主）：流程圖 Muse 問問題 → SAM 3.1／顏色追蹤 → physics 擬合 → 判定 → 說明，每一步標明「Meta model」或「deterministic code」，並標出目前哪些是 mock（照 `track_source`、`explanation.source` 的實際值，不要寫死成已接上）
 - [x] T136 Codex：首頁給評審的開場區：一句話說明 + 三張卡片（real_own_2 一致、generated_meta_clip2 不一致、generated_meta_clip4 資料不足），點下去開那筆紀錄 — commit cc65c0a
 - [x] T137 Codex：分享連結：`/audit/<audit_id>` 直接顯示已存的結果（GET /api/audits/{aid}），加「複製連結」按鈕；找不到時顯示清楚的錯誤 — commit a25a94b
-- [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 待回填（本次程式提交）
+- [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
 - [ ] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS
 - [ ] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試
 
