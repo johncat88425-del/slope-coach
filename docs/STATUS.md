@@ -17,7 +17,7 @@
 | --- | --- |
 | **Muse** | T113（SAM 重跑 v2） |
 | **Codex** | T159 → T160 →（等 Claude 寫「demo 資料已定版」）T157 |
-| **Antigravity** | T120 → T121 → T122 → T53 → T68 |
+| **Antigravity** | T161 → T121 → T122 → T53 → T68 |
 | **Manus** | T22，以及用最終數字更新提交文字和旁白 |
 | **Claude** | 審查合併 PR；T113 合併後產生最終結果表與 demo 資料；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
@@ -60,7 +60,7 @@
 **Antigravity**（照順序做）
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
-- [ ] T120 Antigravity：端到端測試：結果牆（T101）、鬼影球播放（T102）、並排比較（T114），桌機和 390 px 手機各截圖，放 `docs/screens/`（只放圖片）
+- [ ] T161 Antigravity：（T120 的手機版重做）三張 390 px 手機截圖檔案完全一樣（同一個 md5），表示沒有真的切到各畫面。請用 Playwright `viewport={"width":390,"height":844}`，每個畫面先等該畫面的 data-testid 出現再截圖，存成 `docs/screens/<畫面>_mobile_390px.png`。commit 前用 `md5` 確認三張不同。
 - [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
 - [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
 
@@ -242,6 +242,8 @@
 ## 封存（不用讀；只在要查舊紀錄時搜尋）
 
 ### 已完成的任務（從完成表搬來）
+
+- [x] T120 Antigravity：桌機三張截圖（結果牆、鬼影球、並排比較）— commit 853ec74（手機版重做見 T161）
 
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 **Muse**（照順序做）
