@@ -48,6 +48,8 @@ def test_transcribe_success_and_cost(tmp_path, monkeypatch):
         calls.append((url, kwargs))
         assert kwargs["headers"]["Authorization"] == "Bearer test-key"
         assert "request" in kwargs["data"]
+        # T166: batch endpoint requires audioEncoding "WAV" for our RIFF/WAVE upload
+        assert json.loads(kwargs["data"]["request"])["audioEncoding"] == "WAV"
         return _Resp(200, {"transcript": "斜坡長一米", "audioDurationMs": 5900})
 
     monkeypatch.setattr(voice.httpx, "post", fake_post)
