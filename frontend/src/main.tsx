@@ -2,7 +2,7 @@ import { Localize, LanguageRoot } from './i18n.js';
 import { useEffect, useRef, useState } from 'react';
 import type { MouseEvent } from 'react';
 import { createRoot } from 'react-dom/client';
-import { exampleKeyFromHash, auditIdFromHash, createExperiment, imagePoint, pages, replacePhoto, resolveRoute, updateDraft, validateDraft } from './experiment';
+import { auditIdFromPath, exampleKeyFromHash, auditIdFromHash, createExperiment, imagePoint, pages, replacePhoto, resolveRoute, updateDraft, validateDraft } from './experiment';
 import type { Draft, Point } from './experiment';
 import { createApi, friendlyApiError } from './api';
 import type { ExperimentRecord, TrialKind, ScenePhoto } from './api';
@@ -30,8 +30,8 @@ catch {
 } }
 function App() {
     const [exampleKey,setExampleKey]=useState(()=>exampleKeyFromHash(location.hash));
-    const [auditRouteId, setAuditRouteId] = useState(()=>auditIdFromHash(location.hash));
-    const [route, setRoute] = useState(() => resolveRoute(location.hash));
+    const [auditRouteId, setAuditRouteId] = useState(()=>(auditIdFromHash(location.hash)??(!location.hash?auditIdFromPath(location.pathname):null)));
+    const [route, setRoute] = useState(() => (location.hash?resolveRoute(location.hash):auditIdFromPath(location.pathname)?'audit':resolveRoute('')));
     const [local, setLocal] = useState(() => createExperiment('local-draft'));
     const [record, setRecord] = useState<ExperimentRecord | null>(null);
     const [loadId, setLoadId] = useState(rememberedId);
@@ -80,12 +80,12 @@ function App() {
         const c = value.calibrations.at(-1);
         setLocal(current => ({ ...current, draft: { ...current.draft, photo: { name: photo!.photo_id, url: photoUrl }, size: { width: 0, height: 0 }, points: c ? [...c.ruler_px, c.path_start_px, c.path_end_px].map(([x, y]) => ({ x, y })) : [], length: c ? String(c.slope_length_m) : '', height: c ? String(c.slope_height_m) : '', rulerLength: c ? String(c.ruler_length_m) : '', captureConfirmed: false } }));
     } adopt(value); setScene(value.scene_photos.at(-1) ?? null); setCalVersion(value.calibrations.at(-1)?.version ?? 0); setBaseVersion(value.baselines.at(-1)?.version ?? 0); setPredictionId(value.predictions.at(-1)?.prediction_id ?? ''); setTrialId(value.trials.at(-1)?.trial_id ?? ''); setComparisonId(value.comparisons.at(-1)?.comparison_id ?? ''); setInterventionId(value.interventions.at(-1)?.intervention_id ?? ''); setBaselineIds([]); }
-    useEffect(() => { const update = () => {setRoute(resolveRoute(location.hash));setAuditRouteId(auditIdFromHash(location.hash));setExampleKey(exampleKeyFromHash(location.hash));}; window.addEventListener('hashchange', update); return () => window.removeEventListener('hashchange', update); }, []);
+    useEffect(() => { const update = () => {setRoute((location.hash?resolveRoute(location.hash):auditIdFromPath(location.pathname)?'audit':resolveRoute('')));setAuditRouteId((auditIdFromHash(location.hash)??(!location.hash?auditIdFromPath(location.pathname):null)));setExampleKey(exampleKeyFromHash(location.hash));}; window.addEventListener('hashchange', update);window.addEventListener('popstate',update);return ()=>{window.removeEventListener('hashchange',update);window.removeEventListener('popstate',update)}; }, []);
     useEffect(() => { document.title = active.title + ' · Motion Audit'; }, [active.title]);
     useEffect(() => { setRestConfirmed(false); setTrialFile(null); setTrialPreview(''); }, [predictionId, calVersion]);
     useEffect(() => () => allocatedUrls.current.forEach(value => URL.revokeObjectURL(value)), []);
     // Read-only resume: never auto-create or repeat a mutation after refresh.
-    useEffect(() => { if (['home','audit','demo','wall','compare','examples'].includes(resolveRoute(location.hash))) return; const id = rememberedId(); if (!id)
+    useEffect(() => { if (['home','audit','demo','wall','compare','examples'].includes((location.hash?resolveRoute(location.hash):auditIdFromPath(location.pathname)?'audit':resolveRoute('')))) return; const id = rememberedId(); if (!id)
         return; let cancelled = false; setBusy(true); api.get(id).then(value => { if (!cancelled)
         selectRecord(value); }).catch(e => { if (!cancelled)
         setError(friendlyApiError(e)); }).finally(() => { if (!cancelled)
