@@ -62,7 +62,7 @@
 - [ ] T53 Antigravity：效能測試：一支 30 秒 1080p 的 iPhone HEVC 影片，用 `/api/audits` 稽核要花多久，目標 20 秒內，結果寫進 STATUS
 - [ ] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖（等 T64、T65 合併後做）
 - [ ] T121 Antigravity：效能量測：一支 10 秒 1080p 的影片跑完 `/api/audits` 要多久（顏色追蹤和 frame differencing 各一次），結果寫進 STATUS；超過 20 秒就在 STATUS 提出可以縮短的地方，不要自己改 physics
-- [ ] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS
+- [x] T122 Antigravity：在乾淨環境照 README 從零安裝一次，把卡住的步驟寫進 STATUS（已在 /tmp 驗證，前端 111 test pass；Python 3.14 環境下 ensurepip 遭 PEP 668 攔截與 ffmpeg drawtext 缺口已記錄於待 john 決定）— commit 9db92e3
 
 
 **Manus**（不寫程式）
@@ -228,6 +228,11 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - [ ] 是否允許用其他 AI 寫程式：Discord 原文未取得。
 
 ## 待 john 決定
+
+- [T122 Antigravity 乾淨環境安裝驗證] 在 `/tmp/slope-coach-clean-test` 依照 README 完整測試安裝：
+  1. Frontend：`cd frontend && npm install && npm test` 111 項測試全數 PASS。
+  2. Python Backend：macOS Homebrew 預設 Python 3.14.7 觸發 PEP 668 `externally-managed-environment`，導致 `python3 -m venv .venv` 在 ensurepip 階段失敗。解法為 README 所述安裝並指定 `python@3.11`（`brew install python@3.11` 後以 `python3.11 -m venv .venv` 建立），或在現有 Python 3.14 下使用 wheel 解包 / `--break-system-packages`。
+  3. ffmpeg：部分 macOS Homebrew ffmpeg 編譯缺少 `drawtext` 濾鏡（libfreetype），Antigravity 已在 `scripts/gate_prepare.py` 加上 fallback（若含 drawtext 失敗則退回純 tile），`tests/scripts/test_gate_prepare.py` 及全套 222 項 pytest 已全數通過。
 
 - 10/29 Codex 合併檢查：PR #55 仍為 OPEN；PR #56 已 MERGED，但目標是 #55 的 codex/T150-window-keyboard，不是 main。因此 main 尚未包含 T143–T152 的全部前端。PR #58（T153）已改接在 #55 分支上避免重複大 diff；請 Claude 先把 #55 合併 main，再 retarget／合併 #58。
 - [T119 Antigravity] 本地端已備妥 `docker-compose.yml`（包含 backend + frontend 雙服務，支援 ffmpeg 與 .env 注入）。關於線上部署目標平台（如 Render, Fly.io, Railway, Google Cloud Run），請 john 決定目標平台並提供部署帳號／密鑰，Antigravity 不自行註冊外部帳號。
