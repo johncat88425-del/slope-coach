@@ -53,7 +53,7 @@
 - `numbers.g_apparent_low`、`g_apparent_high`、`g_verdict_robust`（v0.3）：物體像素大小估錯 ±30% 時，表觀 g 的範圍。`g_verdict_robust` 為 1 表示判定在這個範圍內都不變，0 表示判定會因尺寸誤差翻轉，畫面要提醒使用者。
 - `overlay_url`：軌跡疊加圖，給使用者確認追蹤點有落在物體上。
 - `events[]`：物體持續性事件（消失、大小跳動、位置跳動），附發生時間。
-- `track_source`：目前是 `frame_diff`。接上 SAM 後是 `sam`，畫面要標明「由 SAM 3.1 產生」。
+- `track_source`：`sam`（畫面要標明「由 SAM 3.1 追蹤」）、`color`（v0.6：沒接 SAM、而且 `object_name` 含顏色時，例如 `orange ball`，用顏色＋移動追蹤，未使用模型）、`frame_diff`（其他情況）、`manual`。
 - `limits[]`：已知限制，畫面要顯示。
 - 物體大小沿軌跡變化超過 30%（`numbers.size_trend`），表示物體朝鏡頭或遠離鏡頭移動，結果會是 `insufficient_data`。
 - `bounce` 模式會回傳 `rebound_ratio_k`，代表第 k 次反彈高度除以前一次高度。大於 1 加上容差就判不一致。

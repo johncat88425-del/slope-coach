@@ -2,24 +2,22 @@
 
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
 > **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
-> 最後更新：2026-10-28 01:30Z（Claude）
+> 最後更新：2026-10-29 03:15Z（Claude）
 
 ## 一句話現況
 
-斜坡閉環已經可以用合成資料跑通（後端、physics、前端）。**10/28 john 決定先驗證縮小版的「影片物理稽核」**：檢查影片中物體的運動，是否違反這次假設的運動模型。10/29 晚上依照下方「可行性關卡」的結果，決定轉向或回到「實驗調查員」。沒有影片也能先做的工作，見下一段。
+**10/29 03:10 可行性關卡三題都通過，john 決定轉向「影片物理稽核」。** john 自拍的 2 支影片算出 g = 9.62、9.82（一致）；6 支 Meta AI 影片全部不一致，最明顯的一支 g = 0.12。現在最大的缺口是**追蹤品質**：不用模型的追蹤在 3 支 Meta 影片上不可靠，Manus 那支咖啡色的球也追不到，所以 **SAM 3.1（Muse T38）是第一優先**。斜坡教練保留，只做維護。
 
-## 現在每個工具要做什麼（沒有影片也能做）
-
-下面每一項，在兩條路（轉向或不轉向）上都用得到，現在就可以開工。只有「要不要轉向」這個決定需要等 john 的影片。
+## 現在每個工具要做什麼（10/29 03:15 Claude 指示，照順序做，做完一件就接下一件）
 
 | 誰 | 現在做 | 細節 |
 | --- | --- | --- |
-| **Muse** | T05 → T29 → T34 | T05：`meta_client/`，包括 Spark、SAM 3.1、花費計數與 120 美元上限。T29：把後端 MockHooks 換成 MetaHooks。T34：Spark 建議運動片段（見任務表）。測試素材可以用合成影片，或 john 的 `IMG_8418.MOV`。這支畫面有人臉，**只能送標準版 `muse-spark-1.3`，不能送 contributor 版**。 |
-| **Claude** | T32、審查 PR | 關卡工具、彈跳檢查、物體持續性檢查都已完成。等影片跑關卡；審查 Muse、Codex、Antigravity 的 PR。 |
-| **Codex** | 先等 john 合併 PR #4，再做 T36 | `vite.config.ts` 加上 `/media` 代理；做軌跡疊加圖和 2D 軌跡圖元件；所有 Meta 模型產生的內容標明「由 Muse Spark／SAM 3.1 產生」。 |
-| **Antigravity** | T02 → T14 | 建立開發環境（requirements.txt、`scripts/dev.sh`）。用 `python -m scripts.seed_demo --case pushed` 建立合成實驗，跑一次斜坡流程的端到端測試並截圖。 |
-| **Manus** | T21（改題）→ T23 | 競品研究改查「影片物理合理性」：VideoPhy、Physics-IQ、Tracker，以及有沒有一般人可用的工具，確認我們的差異。demo 草稿要寫兩個版本（轉向或不轉向），未完成的部分寫 [TBD]。 |
-| **john** | T33、合併 PR #4、Discord 確認 | 拍片和生成影片（見下方關卡素材）；到 https://github.com/johncat88425-del/slope-coach/pull/4 按「Ready for review」再按「Merge」；在 Discord 問「用其他工具生成的影片當測試素材可不可以」。 |
+| **Muse**（最優先） | push T05、T29 → **T38 SAM** → T66 → T45 | 先 commit 並 push 你本機做好的 T05、T29 到 `muse/T05-meta-client`。T38：在 MetaHooks 實作 `track_object`，呼叫 `sam-3.1`（格式見 docs/API.md v0.6）。測試影片：`/mnt/project-files/gate/meta/meta_clip1.mp4`、`meta_clip4.mp4`、`meta_clip5.mp4`（不用模型的追蹤在這 3 支失敗），以及 `manus/manus_clip1.mp4`（咖啡色的球）。這些是生成影片，沒有真人臉，可以用 contributor 模型開發。T66：`interview_audit`。T45：稽核代理，Spark 選要跑哪些檢查，並用 `fill_numbers` 寫說明。 |
+| **Codex** | T89 → T90 → T92 | T92：稽核變成網站首頁和主流程，斜坡教練移到第二個分頁「實驗教練」。細節見完成表。 |
+| **Antigravity** | T02 → T52 → T42 | requirements.txt 與 `scripts/dev.sh`；GitHub Actions 跑 pytest 和 npm test（要裝 ffmpeg）；用 `data/demo/real_own_*.json` 跑稽核流程的端到端測試與截圖。**不要再做 3D 渲染影片**，那不是這次要的測試資料。 |
+| **Manus** | T23 → T95 | T23：依照新方向重寫三分鐘 demo 分鏡（真實影片一致 → Meta 影片不一致 → 拒判例子 → Muse 問問題與說明）。T95：提交頁文字草稿。只寫文件，放 `docs/research/`。 |
+| **Claude** | 審查 PR、T96、T97 | T96：Manus／Antigravity 影片標註好後補進關卡紀錄。T97：把 AGENTS 新方向的用語檢查加進 `output_check`（例如「抓假影片」「AI 偵測」）。 |
+| **john** | 回答 Manus 球的顏色 | 可選：Sora／Veo 各生成第 1、6 段提示詞。之後錄 demo。 |
 
 ## 完成表（每做完一件就打勾，附 commit；Claude 每隔一段時間來看）
 
@@ -69,6 +67,9 @@
 - [x] T81 Codex：**demo 導覽模式**。加一個「Guided demo」按鈕，按照順序帶評審看：首頁說明（能判斷什麼、不能判斷什麼）→ Muse 偵訊 → 結果與鬼影對照 → 物理名片 → 三種結果並排。每一步用一句英文說明，加上「Next」按鈕，並標明哪些內容由 Muse Spark 產生。只用已經有的畫面，不新增假資料 — commit c4b1481
 - [x] T82 Codex：英文介面文字總檢查，給評審看的。統一用語（consistent / inconsistent / insufficient data with the assumed model），刪掉內部用語（例如 fixture、draft id），按鈕文字要短。不准出現 real、fake、AI-generated、detect — commit 6b73368
 - [x] T85 Codex：「檢查影片」和 Muse 偵訊加一個「物體名稱」欄位，送 `object_name`（給 SAM 的文字提示，預設 ball）。結果區要依照 `track_source` 標明「由 SAM 3.1 追蹤」或「frame differencing（未使用模型）」，物理名片和匯出也要寫（API v0.5） — commit 8a7bd26
+- [ ] T92 Codex：（T89、T90 之後做）稽核變成網站首頁：打開網站先看到「檢查影片」與 demo 導覽；斜坡教練移到第二個分頁「實驗教練」，功能不刪。首頁一句話說明：「檢查影片中的運動是否符合你假設的物理模型」，不准出現「AI 偵測」「抓假影片」等字
+- [x] T89 Codex：檢查並修飾 Claude 在 T88 對前端的最小改動（`track_source: "color"` → 「顏色＋移動追蹤（未使用模型）」），樣式和其他來源標籤一致，補一個測試 — commit 待回填（本次程式提交）
+- [ ] T90 Codex：demo 導覽加「真實影片」一段，讀 `data/demo/real_own_1.json` 到 `real_own_3.json`（`real_clip: true`）。要標明「john 自己拍的影片、標註由 john 確認」，並把 own_1、own_2 的「一致、最接近地球」和 own_3 的「不一致、原因不明」放在一起，不挑片。這些紀錄沒有影片（`video_url` 是空字串，john 的家不放上公開 repo），要能正常顯示軌跡、鬼影和數字
 - [x] T86 Codex：結果、名片和匯出都要顯示使用者回答的 `slow_motion`。如果是因為慢動作被拒判，要用一句話說明原因（直接照後端的 reason，不要自己改寫） — commit d560608
 
 **Antigravity**（照順序做）
@@ -84,15 +85,21 @@
 
 **Manus**（不寫程式）
 - [x] T21 Manus：影片物理合理性競品研究（附來源），結果放在 `docs/research/competitors.md`
-- [ ] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）。差異點照 competitors.md 的結論寫，不准說「第一個」或「偵測 AI 影片」
+- [ ] T23 Manus：demo 分鏡與提交文字（兩個版本，未完成的部分寫 [TBD]）。差異點照 competitors.md 的結論寫，不准說「第一個」或「偵測 AI 影片」。**10/29 改成單一版本：影片物理稽核**（真實影片一致 → Meta 影片不一致 → 拒判例子 → Muse 問問題與說明）
+- [ ] T95 Manus：提交頁文字草稿（英文，300 字以內）：問題、做法、Meta 模型用在哪、限制。數字只能引用 STATUS「關卡結果」，不准說「偵測 AI 影片」
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
 **Claude**
+- [ ] T96 Claude：（Manus 已補，03:15）Manus 1 支、Antigravity 2 支（程式渲染 3D，另列「程式模擬」來源）標註好後補進關卡紀錄
+- [x] T97 Claude：`output_check` 加上新方向的禁用語（抓假、測謊、AI 偵測、任何影片、lie detector、any video 等），並加測試 — 見 PR T97
 - [x] T31 拋體檢查、T32 關卡工具、T35 彈跳與持續性檢查、T30 `/media`
 - [ ] 審查並合併 Muse 的 T05、T29
 - [x] 審查並合併 Codex PR #4 與 #16（T36–T51，含 #4 的內容）：pytest 58、npm 37、build 都通過；前端沒有自己算物理，畫面沒有「真／假／AI 生成」字眼
 - [x] T37 Claude：後端稽核端點 `POST /api/audits`、`GET /api/audits/{aid}`（docs/API.md v0.2）
-- [ ] T32 跑關卡（等 john 的影片）
+- [x] T32 跑關卡：三題都通過（自拍 3、Meta AI 6），方向等 john 決定
+- [x] T91 Claude：`data/demo/real_own_1..3.json`：john 3 支真實影片經 `/api/audits` 的完整結果（顏色追蹤、0.11 m），給 demo 和 Codex T90 用；不含影片和疊加圖 — 見 PR T91
+- [x] T88 Claude：網站的「檢查影片」沒接 SAM 時，物體名稱有顏色（如 `orange ball`）就用 T87 的顏色追蹤，`track_source: "color"`（API v0.6）。前端只加了最小的型別與標籤，讓畫面不會拒收；Codex 請檢查文字和樣式。用 john 的 3 支影片走網站流程：g = 9.62、9.81、8.15，和關卡一致 — 見 PR T88
+- [x] T87 Claude：不用模型的顏色＋移動追蹤（`backend/video.track_color`）。人工標註的物體名稱有顏色（例如 `orange ball`）時，關卡改用它；`--tracker frame_diff` 可重現舊規則。球的大小改用短軸寬度，不受動態模糊影響。3 支真實影片的紅點都落在球上 — 見 PR T87
 - [x] T55 Claude：稽核支援 `assumed_model=bounce`（接上 `check_bounces`）
 - [x] T56 Claude：透視檢查：物體大小沿軌跡變化超過 30% 時拒判（`physics/persistence.size_trend`）
 - [x] T57 Claude：單擺 physics 插件 `physics/experiments/pendulum.py`（週期、等時性、由週期推算擺長），給稽核和教練兩條路共用；尚未接到 API
@@ -172,11 +179,43 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ### 規則變更紀錄
 
-（無）
+- **10/29 T87（看過 john 的 3 支自拍影片之後改的）**：原規則用 frame differencing，在真實影片上抓到手臂和背景。新規則：人工標註的物體名稱含顏色（目前只有 orange，色相 15 到 45 度、飽和度與亮度至少 0.4）時，只取「是這個顏色而且有在動」的最大一塊；物體大小改用色塊短軸的寬度。其他門檻不變。顏色範圍是看過這 3 支影片後訂的，所以**之後的 Meta AI 影片要用同一組參數，不准再調**。
+- 新舊兩版用同一組試算標註（Claude 提議、john 尚未確認：own_1 1.9–2.6 s、own_2 0.2–0.8 s、own_3 2.0–2.4 s，球 0.05 m）的結果：
+  - 舊版 frame_diff：own_1 不一致（加速度偏 -70 度、軌跡不像拋物線）、own_2 不一致（-71 度）、own_3 資料不足。原因是追到手臂，不是物理。
+  - 新版 color：三支軌跡都是乾淨拋物線（殘差只有行程的 0.4% 到 0.8%，偏角 1 到 6 度），但算出的 g 只有 3.7 到 4.5 m/s²。換句話說，如果 g 是 9.81，球的直徑應該是 0.11 到 0.13 m，不是 0.05 m。三支都偏同一個方向，比較像是尺寸標註的問題，所以先請 john 用尺量球（圓周 ÷ 3.14）。**不准為了讓結果變成一致去改門檻或改顏色參數。**
 
 ### 關卡結果
 
-（10/29 填）
+**10/29 03:10 正式結果：三題都通過（用 T87 之後的規則）**（`data/gate/results.md`；舊規則版本 `results_frame_diff.md`）
+
+| 來源 | 一致 | 不一致 | 資料不足 | 拒判 |
+| --- | --- | --- | --- | --- |
+| 自拍（john） | 2 | 1 | 0 | 0 |
+| Meta AI 生成 | 0 | 6 | 0 | 0 |
+
+- Q1 **pass**：own_1 g = 9.62、own_2 g = 9.82，john 確認紅點在球上。
+- Q2 **pass**：john 確認追蹤正確的 3 支 Meta 影片（clip2、3、6）都是明確異常。例如 clip6 的軌跡是乾淨拋物線（殘差 1.8%），但 g 只有 0.12 m/s²（落下約 0.9 m 花了約 3.5 秒）。clip1、4、5 john 判定追蹤不可靠（`track_ok = no`），不拿來當證據。
+- Q3 **pass**：9 支都用同一套規則，0 支拒判。
+- 舊規則（frame_diff）：Q1 fail，因為追到手臂。
+
+**要誠實寫出來的限制：**
+1. 顏色追蹤是看過 john 的 3 支自拍之後才加的（見規則變更紀錄）。Meta 影片是在規則定下之後才生成、才跑的，沒有再調參數。
+2. 網站稽核比關卡更保守。它多了「物體大小沿軌跡變化超過 30% 就拒判」這條透視檢查（T56，看資料前就有）。同樣 6 支 Meta 影片，網站判 clip2（g 像月球）、clip3（g 像冥王星）不一致，另外 4 支因為球朝鏡頭飛而判資料不足。demo 和文件要用網站的結果。
+3. 目前只有一家生成模型（Meta AI），每家 1 支只是試驗。不能說「能檢查任何影片」或「能辨識 AI 影片」。
+4. 10/29 03:15 補進 Manus 生成 1 支：john 判定球是橘黑色，物體名稱填 `orange basketball`。顏色追蹤只追到 55% 的格數，所以**拒判**（照規則，沒有改標註去湊結果）；改用 frame_diff 的試跑是 g = 2.55，只當參考。加入後 Q3 是 1/10 拒判，仍然 pass。還沒列入關卡的：Antigravity 和 john 從 Gemini 拿到的影片各 2 支，都是**程式畫出來的動畫**（Lavf 編碼、簡單 3D 或平面畫面），不是生成式影片模型做的，另列「程式模擬」來源，不算進 Q2。後者不是生成式 AI，屬於「程式模擬」類；試跑 ag_clip1 得到 g = 23.75，最接近木星。
+
+**10/29 02:30 第一次正式試跑**（john 量的球直徑 0.11 m；john 10/29 02:28 確認時間窗，並確認三張疊加圖的紅點都在球上；`data/gate/results.md`，舊規則版本在 `results_frame_diff.md`）
+
+| 影片 | 新版（顏色追蹤） | 舊版（frame_diff） |
+| --- | --- | --- |
+| own_1 | 一致，g = 9.62 | 不一致（追到手臂） |
+| own_2 | 一致，g = 9.82 | 不一致（追到手臂） |
+| own_3 | 不一致，g = 8.17（超出 ±15% 的下限 8.34 一點點） | 資料不足 |
+
+- Q1 自拍影片追得準：**pass**。2 支一致而且 g 在 15% 以內，john 確認紅點在球上（`track_ok` = yes）。
+- Q2 找得到明確異常：**fail（目前）**。還沒有 Meta AI 影片，這題要等 john 的 5 到 10 支生成影片。
+- Q3 同一套規則、拒判不超過一半：**pass**（0/3 拒判）。
+- own_3 是自拍影片上的誤報，要說明：它的 g 只差 17%，沒有到「明確異常」（差 50%）的程度。一開始猜是球朝鏡頭移動，但網站稽核量到的球大小沿軌跡只變 -3%，不支持這個猜測，**原因目前不明**。用 ±30% 尺寸誤差算，這個判斷不穩健（`g_verdict_robust` = 0），所以不算明確異常。沒有調參。
 
 ## 任務表
 
@@ -237,6 +276,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 已做的決定
 
+- 10/29 john：關卡三題通過後，主方向轉向「影片物理稽核」；斜坡教練保留為第二條路，只做維護。
+
 | 日期 | 決定 | 原因 |
 | --- | --- | --- |
 | 10/28 | 競品結論（T21）：Tracker、FizziQ 已能讓一般人量影片中的 g；MotionPhys 已在研究用物理特徵偵測 AI 影片。所以我們不能說「第一個」，也不碰 AI 偵測。我們的差異要靠 Muse 自動做掉 Tracker、FizziQ 需要手動的步驟（選物體、選片段、說明結果），再加上凍結的品質門檻和拒判 | `docs/research/competitors.md` |
@@ -258,6 +299,14 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 工作日誌（最新在上）
 
+- 10/29 03:15 Claude：依 john 的決定改寫 AGENTS.md（目前方向、專案說明）與本檔頂端的分工表，新增 T92、T95、T96、T97。
+- 10/29 03:10 Claude：關卡正式結果三題都通過。依決定規則應轉向「影片物理稽核」，已請 john 決定。
+- 10/29 02:35 Muse 查證：Meta Model API 的 `/v1/models` 只有 muse-spark、muse-wonder-1.0、sam-3.1、muse-voice-transcribe-1.0、muse-image-1.0，**沒有影片生成**。關卡用的生成影片改由 john 在 Meta AI app／meta.ai 手動生成（提示詞在 `/mnt/project-files/gate/meta_ai_prompts.md`）。
+- 10/29 02:40 例行巡查：Muse、Antigravity 仍然沒有 push；Codex 沒有新分支。Claude 加了真實影片的 demo 紀錄（T91），替 Codex 補 T89、T90。
+- 10/29 Claude T88：網站稽核接上顏色追蹤（`track_source: color`）。為了不讓前端拒收新值，Claude 直接改了前端 4 個檔案的型別和標籤（只加一個值，沒動樣式），請 Codex 之後檢查。
+- 10/29 02:35 Claude：john 確認時間窗和 track_ok，關卡 Q1 通過、Q3 通過，Q2 等 Meta AI 影片。
+- 10/29 02:30 Claude：john 量到球直徑 0.11 m。關卡試跑：own_1 g = 9.62、own_2 g = 9.82 一致，own_3 g = 8.17 小幅不一致。舊版 frame_diff 三支都失敗。結果寫進「關卡結果」。
+- 10/29 Claude：合併 Codex PR #32（T85、T86）。完成 T87 顏色追蹤，記進規則變更紀錄。真實影片上的追蹤已經正確，但用 5 公分算出的 g 只有一半左右，請 john 量球的直徑並確認時間標註。
 - 10/28 02:05Z Claude 巡查：Codex 完成 11 件（PR #16，已審查合併）；Muse 和 Antigravity 還沒有 push。替 Codex 補了 T59 到 T63。
 - 10/27 Codex T48：介面英/繁中切換，首次預設英文、記住語言偏好，所有頁面顯示層使用同一詞表；後端原始原因/使用者資料與數字不改寫。32 項測試、build 通過。
 
@@ -333,3 +382,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T86：一般稽核加慢動作 yes/no/未提供，結果、PNG、Markdown 保留回答，JSON 原值不變；舊紀錄無欄位仍顯示未提供，不假定 false。slow_motion=true 的拒判突出顯示後端 reason 原文，不自行改數字或歸因。testid audit-slow-motion/audit-slow-answer/audit-timing-limit；npm 58 pass、build pass。
 
 - 10/28 Codex 工作總結：T85／T86 已推送，PR #32 待審；pull main 後沒有新增 Codex 未勾項。npm 58 pass、build pass、pytest 56 pass/13 skip（環境依賴）。追蹤來源與慢動作回答全流程保留，未推 main；瀏覽器端到端待驗收。
+- 10/28 Codex T89：審核 color 型別、離線 parser、來源與匯出標籤均保留；統一來源 badge 樣式，補英／繁中測試，明示未使用模型。npm 59 pass、build pass；pytest 結果見本次驗證，環境跳過項仍保留。
