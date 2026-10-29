@@ -380,5 +380,26 @@ def report_csv(eid: str):
     return PlainTextResponse(report.to_csv(_exp(eid)), media_type="text/csv")
 
 
+@app.get("/api/spend")
+def spend():
+    """Cumulative Meta API spend and the hard ceiling, for display (T110).
+
+    meta_client stays an optional dependency: without it the backend has
+    spent nothing. Every paid meta_client call checks this same ceiling
+    before touching the API and refuses past it.
+    """
+    try:
+        from meta_client.cost import get_tracker
+    except ImportError:
+        return {"spent_usd": 0.0, "limit_usd": 120.0, "at_limit": False}
+    tracker = get_tracker()
+    spent = tracker.total_usd()
+    return {
+        "spent_usd": round(spent, 4),
+        "limit_usd": tracker.limit_usd,
+        "at_limit": spent >= tracker.limit_usd,
+    }
+
+
 def _raise(code: int, msg: str):
     raise HTTPException(code, msg)
