@@ -23,10 +23,12 @@ from backend.schemas import (
     SceneCheck,
 )
 
+from . import explain as _explain
+from . import headline as _headline
 from . import interview as _interview
 from . import sam as _sam
 from . import spark as _spark
-from .exceptions import MetaClientError
+from .exceptions import MetaClientError, ModelOutputError
 
 
 def _dense_detections(
@@ -89,3 +91,15 @@ class MetaHooks(ModelHooks):
             questions=[AuditQuestion(**q) for q in result["questions"]],
             note=None,
         )
+
+    def explain_audit(self, audit: dict) -> str | None:
+        """Plain-language explanation via Spark (T112); None keeps the fixed template."""
+        try:
+            return _explain.explain_result(audit, kind="audit")["explanation"]
+        except ModelOutputError:
+            return None
+
+    def headline_audit(self, audit: dict) -> str | None:
+        """One-line headline via Spark (T112); None shows no headline."""
+        result = _headline.write_headline(audit)
+        return result["headline"] if result else None
