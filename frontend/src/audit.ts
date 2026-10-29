@@ -32,3 +32,5 @@ export function parseSavedAudit(text:string):AuditOut {
  throw new Error('Invalid saved audit JSON (supported motion model required).');
  return a as AuditOut;
 }
+
+export function verdictEnglish(a:Pick<AuditOut,'verdict'|'assumed_model'>){return `${a.verdict==='consistent'?'Consistent':a.verdict==='inconsistent'?'Inconsistent':'Insufficient data'} with the assumed ${a.assumed_model.replace('_','-')} model`}
