@@ -29,3 +29,15 @@ def test_generated_gate_clips_are_in_the_repo():
     names = {p.name for p in Path("data/gate/clips").glob("*.mp4")}
     assert {f"meta_clip{i}.mp4" for i in range(1, 7)} | {"manus_clip1.mp4"} <= names
     assert not any(n.startswith("own_") for n in names)  # john's own clips never go in git
+
+
+def test_json_dir_saves_demo_records_without_media(tmp_path):
+    import json
+
+    write_orange_clip(tmp_path / "own_1_ball.mp4", 9.81)
+    c = TestClient(app)
+    r = row("own_1_ball.mp4") | {"object": "orange ball", "source": "own"}
+    audit_row(c, r, tmp_path, tmp_path / "demo")
+    rec = json.loads((tmp_path / "demo" / "real_own_1.json").read_text())
+    assert rec["real_clip"] is True and rec["video_url"] == "" and rec["overlay_url"] is None
+    assert rec["verdict"] == "consistent" and rec["points"] and rec["clip"] == "own_1_ball.mp4"

@@ -15,11 +15,11 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T116（修好計時後重跑 SAM，v4） |
+| **Muse** | T117（demo 用 SAM 版紀錄） |
 | **Codex** | T162 →（等 Claude 寫「demo 資料已定版」）T157 |
 | **Antigravity** | T161 → T121 → T122 → T53 → T68 |
 | **Manus** | T163 → T22 |
-| **Claude** | 審查合併 PR；T116 合併後產生最終結果表與 demo 資料；README 與提交前檢查 |
+| **Claude** | 審查合併 PR；T117 合併後寫「demo 資料已定版」；README 與提交前檢查 |
 | **john** | 可選：拍 1 支彈跳球；最後錄 demo、送出 |
 
 ## 提交前路線圖（10/29 09:30 Claude，john 要求一次列完；截止 11/04 21:00 ET，我們目標 11/03 交）
@@ -48,6 +48,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
+- [ ] T117 Muse：（最優先）產生 demo 用的 SAM 版紀錄（含 Muse Spark 解說）。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --json-dir data/demo --explain --out data/gate/product_results_sam_v4_demo.md`（約 $0.35；會覆蓋 `data/demo/real_own_*.json` 和 `generated_*.json`，顏色版留在 git 歷史和 `product_results.md`）；(3) 確認 10 支的 verdict 跟 v4 表一樣，不一樣就寫進 STATUS，不要挑；(4) `git status` 確認只有 `data/demo/*.json`、結果檔、STATUS、cost_log 改動，**沒有任何影片**；(5) commit，push 分支 `muse/T117-demo-sam`。
 - [x] T116 Muse：（最優先）Claude 已修好 SAM 的計時 bug（`meta_client/sam.py` 改用 `-vf fps=15`），請重跑 SAM 全部 10 支：(1) `git checkout main`、`git pull origin main`；(2) 確認 `~/slope-own-clips` 裡有 3 支自拍＋7 支生成影片；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v4.md`（約 $0.12，不會呼叫解說）；(4) 表格貼進「SAM 對照」v3 下面，標題「v4（修正 15fps 計時後）」，v2、v3 不要刪；(5) 看自拍 3 支的 overlay 紅點，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T116-sam-v4`。 — commit 61f00f2（v4：自拍 3 支全變一致 g=9.30／9.46／8.68，生成側 verdict 不變；3 張 overlay 紅點在球上。`~` 目錄仍不存在，續用 /tmp/slope-own-clips。$0.107，累計 $1.009）
 - [x] T114 Muse：自拍影片也用 SAM 跑（demo 要「同一種追蹤」下真實一致、生成不一致、拒判三種都有）。步驟：(1) 請 john 把 3 支自拍影片 IMG_8426.mov、IMG_8429.mov、IMG_8434.mov 放進 repo 外的資料夾 `~/slope-own-clips`，檔名改成 manifest 的名字 `own_1_IMG_8426.mov`、`own_2_IMG_8429.mov`、`own_3_IMG_8434.mov`（**不准放進 repo、不准 commit**）；(2) `cp data/gate/clips/*.mp4 ~/slope-own-clips/`；(3) `set -a; . ./.env; set +a; python -m scripts.audit_batch data/gate/manifest.csv --clips ~/slope-own-clips --out data/gate/product_results_sam_v3.md`（現在批次預設不呼叫解說和標題，只花 SAM 的錢，約 $0.12）；(4) 表格貼進「SAM 對照」v2 下面，標題「v3（加入自拍影片）」；(5) 每支自拍影片看 overlay 確認紅點在球上，寫一句；(6) commit 結果檔＋STATUS，push 分支 `muse/T114-sam-own`。 — commit 32e8600（v3：自拍 3 支全判不一致、偏角 -22～-27 度，與顏色版矛盾；3 張 overlay 紅點都在球上。$0.107，累計 $0.902）
 - [x] T115 Muse：查 T113 時 explain 15 次裡有 8 次重試的原因。不准再真打超過 0.10 美元：先用 T113 留下的回傳（或 mock）找出是 schema、數字來源、還是禁用字眼沒過，把原因和建議寫進 STATUS 日誌。若是提示詞的問題就改 `meta_client/` 的提示詞並補測試；不要放寬 `backend/output_check.py` 的檢查。 — commit 800f506（原因見日誌：門檻數字只在原因句裡、檢查只收數字欄，提示詞和檢查打架。修：程式 parse 原因句數字加入 allowlist＋提示詞點名陷阱；2 測試。$0 真打）
@@ -251,6 +252,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 已做的決定
 
+- 10/29 13:05 Claude：**demo 主表改用 SAM 3.1 v4**（自拍 3 支一致、生成 4 支不一致、3 支拒判：同一種追蹤下三種結果都有，而且是 Muse 的模型）。顏色版並排當對照，兩版不同的地方照實寫（例如 own_3：SAM 8.68 一致、顏色 8.15 不一致）。README 已更新。
 - 10/29 12:30 Claude：demo 主表暫用**顏色追蹤版**（目前唯一在同一種追蹤下有「真實一致、生成不一致、拒判」三種結果的版本），SAM 版並排顯示。T114 自拍影片跑完 SAM 後再決定：若 SAM 版三種結果都有，demo 改以 SAM 版為主（Muse 優先），顏色版當對照。兩版的不同照實寫，不挑對自己有利的。
 - 10/29 john：關卡三題通過後，主方向轉向「影片物理稽核」；斜坡教練保留為第二條路，只做維護。
 
@@ -288,6 +290,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 10/29 13:05 Claude：合併 Muse T116（SAM v4）。修好計時後自拍 3 支 g = 9.30、9.46、8.68 全部一致；生成影片結果和 v2、v3 幾乎一樣。`audit_batch` 加 `--json-dir`，存完整稽核紀錄給 demo（不含影片連結）。README 結果表改成 SAM 為主、顏色對照。新增 Muse T117。
 - 10/29 Muse 完成 T116（分支 muse/T116-sam-v4）：計時修好後重跑 10 支，自拍 3 支全變一致（g=9.30／9.46／8.68），v3 偏角確認是轉碼 bug；生成側 verdict 不變、數字微移；3 張自拍 overlay 紅點在球上。demo「同一種追蹤三種結果」達成。$0.107，累計 $1.009。
 - 10/29 12:55 Claude：合併 Muse T114（SAM v3）、T115（解說可引用原因句裡的門檻數字）。T115 只改了 meta_client 的檢查，後端的第二道檢查會照樣擋掉，所以後端 `_number_sources` 也加上「程式自己寫的原因句裡的數字」（有測試；模型自己編的數字仍然擋）。找到並修好 SAM 15fps 計時 bug（見規則變更紀錄），v2、v3 的 SAM 數字作廢待 v4。新增 Muse T116。
 - 10/29 Muse 完成 T114（分支 muse/T114-sam-own）：自拍 3 支＋生成 7 支全用 SAM 跑（批次已默認關解說，只花 SAM 錢）。自拍全判不一致（偏角 -22～-27 度），3 張 overlay 紅點都在球上、不是跟丟；跟顏色版矛盾，「同一種追蹤下真實一致」目前達不到，請 Claude／john 決定 demo 用版。行動偏離：`~/slope-own-clips` 不存在（三支在 Downloads）、沙盒寫不到 `~`，改放 /tmp/slope-own-clips（等價，同在 repo 外、沒 commit）。$0.107，累計 $0.902。
