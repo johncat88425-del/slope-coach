@@ -102,7 +102,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T138 Codex：純靜態 demo 模式：`VITE_DEMO_ONLY=1` 時只讀 `data/demo/` 的紀錄、不呼叫後端，上傳按鈕顯示「demo 版不能上傳」。這樣沒有後端也能給評審看。build 指令寫進 STATUS — commit 04a747a
 - [x] T139 Codex：效能：大頁面拆分載入，production build 的主 bundle 降到 250 kB 以下（gzip 前），把數字寫進 STATUS — commit b3717c3
 - [x] T140 Codex：容錯測試：`points` 是空的、`numbers` 缺欄位、`explanation` 不存在、`nearest_body` 是 null 時，每個結果元件都不會壞掉，並補測試 — commit 041eb73
-- [x] T143 Codex：（API v0.9）結果區和物理名片最上面顯示 `headline.text`（有的時候才顯示），旁邊標明「由 Muse Spark 撰寫」；`headline` 是 null 時照舊用程式產生的標題。不要改寫文字或數字。靜態 demo 資料裡 `headline` 一律是 null — commit 待回填（本次程式提交）
+- [x] T143 Codex：（API v0.9）結果區和物理名片最上面顯示 `headline.text`（有的時候才顯示），旁邊標明「由 Muse Spark 撰寫」；`headline` 是 null 時照舊用程式產生的標題。不要改寫文字或數字。靜態 demo 資料裡 `headline` 一律是 null — commit a3bb60f
 - [ ] T146 Codex：結果區加「這次用了哪些 Meta 模型」小面板：照實際值列出提問（`interview.source`）、追蹤（`track_source`）、說明（`explanation.source`）、標題（`headline` 有沒有）。是 mock、template、color、frame_diff 的，要寫「未使用模型」，不准寫死成已接上
 - [ ] T151 Codex：拒判（`insufficient_data`）時顯示「怎麼重拍」提示：用固定對照表把 `reasons` 對應到提示，例如鏡頭移動 → 用腳架、物體朝鏡頭移動 → 從側面拍、慢動作 → 用正常速度。不用模型，並補測試
 - [ ] T145 Codex：右上角顯示 Meta API 花費（配合 Muse T110 的 `GET /api/spend`）。端點還不存在（404）時就不顯示，不要放假數字
@@ -138,7 +138,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 
 **Claude**
 - [x] T141 Claude：候選時間窗：`physics.experiments.freefall.suggest_flight_windows` 和 `POST /api/audit-drafts/{id}/windows`（API v0.8）。在 john 的 3 支影片上，第一個或第二個候選和 john 的標註差不到 0.2 秒（own_1 1.87–2.60、own_2 0.03–0.80、own_3 1.82–2.42）。只是建議，關卡和稽核仍然只用人確認的時間窗 — 見 PR T141
-- [x] T143 Claude：稽核結果接上 Muse 的說明和標題（API v0.9）：後端呼叫 hook `explain_audit`、`headline_audit`，模型的文字要再過一次 `check_model_text`（數字要能在結果裡找到，四捨五入後也算；不能有禁用字）才會用，否則退回固定模板。模型看不到原始軌跡，判定和數字都不經過模型；模型失敗也不會讓稽核壞掉 — 見 PR T143 — commit 待回填（本次程式提交）
+- [x] T143 Claude：稽核結果接上 Muse 的說明和標題（API v0.9）：後端呼叫 hook `explain_audit`、`headline_audit`，模型的文字要再過一次 `check_model_text`（數字要能在結果裡找到，四捨五入後也算；不能有禁用字）才會用，否則退回固定模板。模型看不到原始軌跡，判定和數字都不經過模型；模型失敗也不會讓稽核壞掉 — 見 PR T143 — commit a3bb60f
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [x] T128 Claude：顏色追蹤支援更多顏色（yellow、green、red），只對**之後新的影片**生效，記進規則變更紀錄，關卡已跑的結果不重算
 - [x] T129 Claude：`gate_run` 報告多加一欄 `size_trend`（只顯示，不當規則），讓關卡表和網站結果表能對照 — 見 PR T129
