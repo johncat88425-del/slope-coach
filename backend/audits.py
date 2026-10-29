@@ -12,7 +12,8 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from physics.errors import PhysicsInputError
 from physics.experiments.pendulum import check_pendulum
-from physics.experiments.freefall import check_bounces, check_flight, fit_flight, ghost_track, nearest_body
+from physics.experiments.freefall import (check_bounces, check_flight, fit_flight, ghost_track, nearest_body,
+                                         suggest_flight_windows)
 from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
 
@@ -111,6 +112,31 @@ def create_draft(file: UploadFile = File(...)):
     except Exception as e:  # a model failure must not block the audit
         iv = S.AuditInterview(source="mock", questions=MOCK_QUESTIONS, note=f"model unavailable: {type(e).__name__}")
     return {"draft_id": did, "video_url": f"/media/audits/{did}/{video.name}", "interview": iv}
+
+
+SCAN_LIMIT_S = 15.0  # window suggestions look at the first 15 s only
+
+
+@router.post("/api/audit-drafts/{did}/windows", response_model=S.FlightWindowsOut)
+def suggest_windows(did: str, object_name: str = Form("ball", max_length=60)):
+    """Candidate flight windows for the user to pick from (T141). Model-free; the audit still uses only
+    the window the user confirms."""
+    if did not in store.audit_drafts:
+        raise HTTPException(404, f"draft {did} not found")
+    video = store.audit_drafts[did]
+    try:
+        frames, fps = read_frames(video, 0.0, SCAN_LIMIT_S)
+    except Exception:
+        raise HTTPException(422, "could not read video frames")
+    color = color_for(object_name)
+    if color:
+        pts, _ = track_color(read_frames_rgb(video, 0.0, SCAN_LIMIT_S), fps, 0.0, color)
+    else:
+        pts, _ = track_with_sizes(frames, fps, 0.0)
+    wins = suggest_flight_windows(pts)
+    return {"draft_id": did, "track_source": "color" if color else "frame_diff",
+            "windows": [{"t_start": a, "t_end": b} for a, b in wins],
+            "scanned_until_s": min(SCAN_LIMIT_S, len(frames) / fps)}
 
 
 @router.post("/api/audits", response_model=S.AuditOut, status_code=201)
