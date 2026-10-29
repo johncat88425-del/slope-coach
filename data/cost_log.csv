@@ -1,0 +1,2 @@
+timestamp_utc,model,operation,input_tokens,cached_tokens,output_tokens,images,frames,audio_seconds,cost_usd
+2026-10-29T03:25:09.799764+00:00,sam-3.1,sam.track,0,0,0,0,75,0.0,0.015000
