@@ -79,7 +79,7 @@ john 睡覺時：不要問問題、不要停。做完一件就打勾、附 commi
 - [x] T102 Codex：鬼影球播放：結果頁加「播放」按鈕，用 `points` 和 `ghost_points` 依時間同步動畫兩顆點（實際的球和照地球重力的球），沒有影片也能播。只用後端給的座標，不自己算物理 — commit 9a68187
 - [x] T103 Codex：重力刻度尺：在結果頁畫一條對數刻度（冥王星 0.62、月球 1.62、火星 3.71、地球 9.81、木星 24.79），標出 `g_apparent_m_s2` 和 `g_apparent_low/high` 的範圍。星球數值直接寫在前端常數，量測值只用後端數字 — commit ddf0f3c
 - [x] T104 Codex：上傳頁加「拍攝檢查清單」：鏡頭固定、側面拍、只有一個物體、顏色鮮明（例如橘色）的球、不要慢動作、球不要朝鏡頭飛。附一句：「不符合時系統會拒判，不會硬給答案」 — commit 883190a
-- [ ] T105 Codex：手機版與無障礙檢查：稽核首頁、結果頁、結果牆在 390 px 寬不能橫向捲動；按鈕可用鍵盤操作；圖表有文字替代
+- [x] T105 Codex：手機版與無障礙檢查：稽核首頁、結果頁、結果牆在 390 px 寬不能橫向捲動；按鈕可用鍵盤操作；圖表有文字替代 — commit 待回填（本次程式提交）
 - [x] T100 Codex：（T92 之後做）結果區最上面顯示 `explanation.text`，旁邊標明來源：`template` →「固定模板（未使用模型）」，`model` →「由 Muse Spark 產生」。名片和匯出也要放。不要改寫文字或數字 — commit c2fdeaf
 - [x] T92 Codex：（T89、T90 之後做）稽核變成網站首頁：打開網站先看到「檢查影片」與 demo 導覽；斜坡教練移到第二個分頁「實驗教練」，功能不刪。首頁一句話說明：「檢查影片中的運動是否符合你假設的物理模型」，不准出現「AI 偵測」「抓假影片」等字 — commit c0c6758
 - [x] T89 Codex：檢查並修飾 Claude 在 T88 對前端的最小改動（`track_source: "color"` → 「顏色＋移動追蹤（未使用模型）」），樣式和其他來源標籤一致，補一個測試 — commit 46fccb8
@@ -311,6 +311,8 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 
 ## 待 john 決定
 
+- T105 Codex：先前本機瀏覽器 origin 授權被拒，本次不繞過；已補 390px 收縮與語意測試，但實際 viewport／鍵盤／螢幕閱讀器驗收仍需 Antigravity（T120）。
+
 - Codex 10/28：本機 ffmpeg 缺 drawtext filter，pytest tests/scripts/test_gate_prepare.py::test_prepare_writes_sheet_and_blank_labels 失敗（其餘 75 pass）。請 Claude／Antigravity 確認具 drawtext 的 ffmpeg；本次不改後端／部署或跳過測試掩蓋。T89 npm 59 pass、build pass，但 pytest 全綠受此環境缺口阻擋。
 
 - （無）
@@ -437,3 +439,4 @@ python -m scripts.gate_run data/gate/manifest.csv --clips /mnt/project-files/gat
 - 10/28 Codex T102：無影片時可播放／暫停、拖曳後端 points 與 ghost_points，缺口不插值。時鐘只控制顯示，不算物理；testid points-play/points-scrubber。npm/build 通過；pytest drawtext 缺口維持紀錄。
 - 10/28 Codex T103：新增對數重力刻度、五個固定參考星球、後端 g 與 low/high 範圍；缺正有限數不畫量測標記。文字替代與單測；npm/build 通過，pytest drawtext 環境缺口未變。
 - 10/28 Codex T104：上傳區新增英／繁中六項拍攝檢查與拒判原則，不替使用者確認條件；testid capture-checklist。npm/build 通過；pytest drawtext 缺口已知。
+- 10/28 Codex T105：390px 巢狀卡片收縮、長文字換行、range 控制與圖表文字替代補強；npm/build 通過。實際瀏覽器 viewport／鍵盤驗收受先前 origin 拒絕所限，已列待決定並交 Antigravity；不宣稱實測通過。pytest drawtext 失敗未隱藏。
