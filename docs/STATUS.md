@@ -16,7 +16,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | T166 已合併；可選 T171（靜音時回 200 空欄位） |
-| **Codex** | T167（檢查線上靜態網站）；Figma 收尾等配額恢復，不急 |
+| **Codex** | T173（顯示重力當尺）；Figma 收尾不急 |
 | **Antigravity** | 沒有待辦（T53、T68 已合併；T167 改給 Codex） |
 | **Manus** | T163、T164 完成（Claude 核對後的 v2 在 john 手上）；可選 T22 |
 | **Claude** | 審查合併 PR；核對 Manus 文字；彈跳球片到了就跑 |
@@ -58,6 +58,7 @@
 
 
 **Codex**（照順序做）
+- [ ] T173 Codex：在稽核結果和物理名片上顯示「重力當尺」四個新數字（後端已有，見 docs/API.md 的 `if_earth_*`）。標題寫「如果這是地球重力、正常速度」，數字照後端原值顯示，不要自己算。旁邊固定一句說明：「這是假設下的讀數，不是判定；慢動作會讓高度變大。」結果牆和靜態 demo 要能看到（demo JSON 沒有這些欄位時就不顯示）。push 分支 `codex/T173-gravity-ruler`。
 - [x] T167 Codex：已檢查線上 Pages 在 1440／390px 的 demo、wall、audit、compare、how、home（12 張不同截圖，未 commit）；六個頁面／圖片與全部導覽均可用，console 無錯誤。修正 Guided demo 在長頁面看不到下一步、一般導覽被拉回、跨頁焦點遺失；本機 Pages 子路徑版以鍵盤完成六步、固定面板保持可見、結束回到啟動按鈕。npm 118 pass、pytest 224 pass、一般與 Pages build pass；修補待 PR 合併後部署。 — commit 9889f77，PR #97（目標 main）。
 - [ ] T165 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ — frontend commit a624494；同步 main 7e2c8bf，PR #87（目標 main）；本任務原暫編 T164，同步 main 後避開 Manus 的 T164 改為 T165。
 - [x] T157 Codex：依 Claude「demo 資料已定版」公告，靜態展示與結果牆共用 T118 的完整 10 筆 SAM 紀錄；移除 own_3 舊判定文案，補模型標題、原始原因，展示／導覽／比較共用三種結果入口，程式測試範例另列。npm 114 pass、普通／靜態 build pass、pytest 222 pass；只改 frontend 與 STATUS。 — commit 82f90f9，PR #88（目標 main）。
@@ -77,6 +78,8 @@
 
 
 **Claude**
+- [x] T172 Claude：「重力當尺」：`physics/experiments/freefall.py` 的 `gravity_ruler()`，不需要尺寸，假設地球重力、正常速度，算出飛行時間、垂直距離、出手速度和角度；後端放進 `numbers.if_earth_*`；API.md 已更新；2 個測試。meta_clip4 跑出「如果是地球重力，這顆球掉了 44 m」。
+- [ ] T174 Claude：用最終版本重跑 `data/demo/*.json`，讓 demo 紀錄也有 `if_earth_*`（只加欄位，判定和 g 不准變）
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [ ] T131 Claude：彈跳和單擺的真實影片流程（等 john 拍片）：準備標註表和試跑腳本
 - [ ] T96 Claude：（Manus 已補，03:15）Manus 1 支、Antigravity 2 支（程式渲染 3D，另列「程式模擬」來源）標註好後補進關卡紀錄

@@ -46,7 +46,7 @@
 `AuditOut` 的欄位：
 - `verdict`：只會是 `consistent`、`inconsistent` 或 `insufficient_data`，**都是相對於 `assumed_model`**。畫面上不准寫成「真影片」或「AI 影片」。
 - `reasons[]`：判定的原因，或拒判的原因。
-- `numbers{}`：程式算出的數字。可能有 `g_apparent_m_s2`、`implied_time_factor`、`implied_object_size_m`、`tilt_deg`、`rms_over_travel`、`tracked_fraction`、`n_points`。沒算出來的就不會出現。
+- `numbers{}`：程式算出的數字。可能有 `g_apparent_m_s2`、`implied_time_factor`、`implied_object_size_m`、`tilt_deg`、`rms_over_travel`、`tracked_fraction`、`n_points`。沒算出來的就不會出現。自由飛行另有「重力當尺」四個數（不需要尺寸，**假設**是地球重力、正常速度、正側面）：`if_earth_flight_time_s`、`if_earth_vertical_extent_m`（軌跡最高到最低的垂直距離）、`if_earth_launch_speed_m_s`、`if_earth_launch_angle_deg`（第一個追蹤點相對水平的角度，負的是往下）。這是在假設下的讀數，不是判定；慢動作 2 倍會讓高度讀成 4 倍。
 - `points[]`：`[t, x_px, y_px]`，座標以寬 480 px 的畫面為準。
 - `assumed_model=pendulum`（v0.3）：單擺。可另外送 `length_m`（使用者自己量的擺長，公尺）。`numbers` 會有 `period_s`、`period_spread`（各次擺動週期的差異比例）、`implied_length_m`（由週期推算的擺長），有給 `length_m` 時還有 `predicted_period_s`。週期只用水平位置算，不需要尺寸。
 - `ghost_points[]`（v0.3）：「鬼影軌跡」。物體從同一點、用同樣的初速度出發，但以 9.81 m/s² 往畫面正下方落下時，每個時間點應該在的位置。只有填了 `object_size_m` 才會有。前端畫成虛線，和實測點並排。

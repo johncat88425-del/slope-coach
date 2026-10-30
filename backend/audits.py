@@ -14,8 +14,8 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from physics.errors import PhysicsInputError
 from physics.experiments.pendulum import check_pendulum
-from physics.experiments.freefall import (check_bounces, check_flight, fit_flight, ghost_track, nearest_body,
-                                         suggest_flight_windows)
+from physics.experiments.freefall import (check_bounces, check_flight, fit_flight, ghost_track, gravity_ruler,
+                                         nearest_body, suggest_flight_windows)
 from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
 
@@ -375,6 +375,12 @@ def create_audit(
         inside = [9.81 * (1 - 0.15) <= v <= 9.81 * (1 + 0.15) for v in (lo, g, hi)]
         rec["numbers"] |= {"g_apparent_low": lo, "g_apparent_high": hi,
                            "g_verdict_robust": float(all(inside) or not any(inside))}
+    # Gravity as a ruler (no size needed): metres and speeds *if* this is Earth gravity at normal speed.
+    ruler = gravity_ruler(fit)
+    rec["numbers"] |= {
+        "if_earth_flight_time_s": ruler.flight_time_s, "if_earth_vertical_extent_m": ruler.vertical_extent_m,
+        "if_earth_launch_speed_m_s": ruler.launch_speed_m_s, "if_earth_launch_angle_deg": ruler.launch_angle_deg,
+    }
     rec["numbers"] |= {
         "a_px_s2": fit.a_px_s2, "tilt_deg": fit.tilt_deg, "rms_over_travel": fit.rms_residual_px / fit.travel_px,
         "g_apparent_m_s2": chk.g_apparent_m_s2, "implied_time_factor": chk.implied_time_factor,

@@ -3,7 +3,7 @@ import math
 import pytest
 
 from physics.errors import PhysicsInputError
-from physics.experiments.freefall import G, check_flight, fit_flight
+from physics.experiments.freefall import G, check_flight, fit_flight, gravity_ruler
 
 M_PER_PX = 0.002  # 500 px == 1 m
 
@@ -92,3 +92,24 @@ def test_suggest_flight_windows_splits_at_bounce_and_skips_hand_motion():
     assert abs(wins[0][0] - 10 / 60) < 0.05 and abs(wins[0][1] - (10 + 29) / 60) < 0.05
     assert wins == sorted(wins)
     assert suggest_flight_windows(pts[:5]) == []
+
+
+def test_gravity_ruler_reads_metres_without_any_scale():
+    # Thrown up at 2 m/s and sideways at 1 m/s; no ruler is given, g itself sets the scale.
+    r = gravity_ruler(fit_flight(throw()))
+    T = 39 / 60
+    t_peak = 2.0 / G
+    rise = 2.0 * t_peak - 0.5 * G * t_peak**2
+    drop_end = -2.0 * T + 0.5 * G * T * T
+    assert r.flight_time_s == pytest.approx(T)
+    assert r.vertical_extent_m == pytest.approx(rise + drop_end, rel=1e-6)
+    assert r.launch_speed_m_s == pytest.approx(math.sqrt(5), rel=1e-6)
+    assert r.launch_angle_deg == pytest.approx(math.degrees(math.atan2(2, 1)), rel=1e-6)
+
+
+def test_gravity_ruler_drop_from_rest_and_slow_motion_inflates_heights():
+    r = gravity_ruler(fit_flight(throw(vx=0.0, vy=0.0)))
+    assert r.vertical_extent_m == pytest.approx(0.5 * G * r.flight_time_s**2, rel=1e-6)
+    # A 2x slow-motion clip of the same drop reads a 4x too large height: the assumption matters.
+    slow = gravity_ruler(fit_flight([(2 * t, x, y) for t, x, y in throw(vx=0.0, vy=0.0)]))
+    assert slow.vertical_extent_m == pytest.approx(4 * r.vertical_extent_m, rel=1e-6)
