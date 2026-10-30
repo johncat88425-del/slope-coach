@@ -79,7 +79,7 @@
 
 **Claude**
 - [x] T172 Claude：「重力當尺」：`physics/experiments/freefall.py` 的 `gravity_ruler()`，不需要尺寸，假設地球重力、正常速度，算出飛行時間、垂直距離、出手速度和角度；後端放進 `numbers.if_earth_*`；API.md 已更新；2 個測試。meta_clip4 跑出「如果是地球重力，這顆球掉了 44 m」。
-- [ ] T174 Claude：用最終版本重跑 `data/demo/*.json`，讓 demo 紀錄也有 `if_earth_*`（只加欄位，判定和 g 不准變）
+- [x] T174 Claude：`data/demo/` 裡 9 筆走到擬合的自由飛行紀錄加上 `if_earth_*`。做法：用紀錄裡存的追蹤點重新 `fit_flight`，確認 `a_px_s2` 和點數與原紀錄完全相同才寫入，其他欄位一個字都沒動（判定、g 不變）。拒判的 4 筆（meta_clip2/3/6、moving camera）和 bounce/pendulum 沒有這些欄位，這是對的。demo 的 meta_clip4（窗口 0–2.5 s）：如果是地球重力，垂直距離 28.7 m；自己拍的三支是 0.86、0.67、0.52 m。
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
 - [ ] T131 Claude：彈跳和單擺的真實影片流程（等 john 拍片）：準備標註表和試跑腳本
 - [ ] T96 Claude：（Manus 已補，03:15）Manus 1 支、Antigravity 2 支（程式渲染 3D，另列「程式模擬」來源）標註好後補進關卡紀錄
