@@ -123,6 +123,39 @@ def check_flight(
 
 
 @dataclass(frozen=True)
+class GravityRuler:
+    """What the track means in metres and seconds *if* the clip shows Earth gravity at normal speed.
+
+    Uses g itself as the ruler (scale = G / fitted acceleration), so it needs no size from the
+    user. It is a reading under an assumption, not a verdict: if the clip is slowed down or not
+    side-on, every number here is wrong in the way the assumption is wrong. A user who knows a real
+    height (a building, a table) compares it with vertical_extent_m.
+    """
+    flight_time_s: float  # tracked time span
+    vertical_extent_m: float  # highest to lowest point of the fitted path within the span
+    launch_speed_m_s: float  # speed at the first tracked point
+    launch_angle_deg: float  # above horizontal at the first tracked point; negative = heading down
+
+
+def gravity_ruler(fit: FlightFit) -> GravityRuler:
+    if fit.a_px_s2 <= 0:
+        raise PhysicsInputError("no measurable acceleration")
+    scale = G / fit.a_px_s2
+    ux, uy = fit.ax_px_s2 / fit.a_px_s2, fit.ay_px_s2 / fit.a_px_s2  # unit vector of "down"
+    v_down = fit.vx_px_s * ux + fit.vy_px_s * uy
+    v_side = fit.vx_px_s * uy - fit.vy_px_s * ux
+    T = fit.t_span_s
+    times = [0.0, T] + ([-v_down / fit.a_px_s2] if 0 < -v_down / fit.a_px_s2 < T else [])
+    d = [v_down * t + 0.5 * fit.a_px_s2 * t * t for t in times]
+    return GravityRuler(
+        flight_time_s=T,
+        vertical_extent_m=(max(d) - min(d)) * scale,
+        launch_speed_m_s=math.hypot(fit.vx_px_s, fit.vy_px_s) * scale,
+        launch_angle_deg=math.degrees(math.atan2(-v_down, abs(v_side))),
+    )
+
+
+@dataclass(frozen=True)
 class BounceCheck:
     verdict: str  # "consistent" | "inconsistent" | "insufficient_data"
     reasons: tuple[str, ...]
