@@ -26,7 +26,11 @@
   "g_apparent_m_s2": 0.2493041920118516,
   "implied_time_factor": 6.272919482836483,
   "implied_object_size_m": 1.5739807535259809,
-  "n_points": 35.0
+  "n_points": 35.0,
+  "if_earth_flight_time_s": 2.2666666666666666,
+  "if_earth_vertical_extent_m": 17.08868614692149,
+  "if_earth_launch_speed_m_s": 8.022541006011721,
+  "if_earth_launch_angle_deg": 29.29390691360192
  },
  "points": [
   [
