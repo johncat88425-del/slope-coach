@@ -69,7 +69,7 @@
 
 
 **Codex**（照順序做）
-- [ ] T182 Codex：（10/31 Claude，設計 v4，john 已同意顏色）網站改版。設計稿 https://claude.ai/artifact/81ELAL51WpPCbXJHxnzmzt （看 1 Home、2 Results、3 How it works、Share card 四張）。**顏色**：底 #0E0F12、卡片 #17181C、hover 卡片 #1C1E23、細線 #26282E、文字 #EDEDEF、次要 #8A8F98；地球／一致 = 藍 #5AB0F0；這支影片／不一致／主要按鈕 = 琥珀 #F5A524；資料不足 = 灰。**字體**：標題 Space Grotesk 700，內文 Inter，數字 JetBrains Mono。**分頁**：首頁、Results、How it works、上傳／稽核頁分成不同路由，不要一頁很長；導覽列只有 Results、How it works、中文／English。**首頁**：大標「Does it fall like Earth?」（Earth 藍色）、一句說明、琥珀色「Check a video」和外框「See examples」兩顆按鈕；右邊是 meta_clip4 畫面加動畫：藍色虛線（地球）先出現，琥珀線畫出來，終點彈出，最後出現「Doesn't match Earth gravity.」。**首頁不放數字。** **Results**：三張卡（一致／不一致／不能判斷），滑鼠指到的卡放大到 1.05、顯示數字，其他卡變暗、模糊、縮小；數字從 `data/demo` JSON 讀。**How it works**：四步，指到的那步變寬、編號變琥珀色、顯示說明。動畫只用 CSS transition／keyframes，不加新套件。保留所有 testid、鍵盤操作、中英切換、禁用字眼測試。`npm test`、`npm run build`、`VITE_DEMO_ONLY=1 npm run build` 都要過。push `codex/T182-redesign`。**做完直接接 T191。**
+- [ ] T182 Codex：（進行中，分支 codex/T182-redesign）（10/31 Claude，設計 v4，john 已同意顏色）網站改版。設計稿 https://claude.ai/artifact/81ELAL51WpPCbXJHxnzmzt （看 1 Home、2 Results、3 How it works、Share card 四張）。**顏色**：底 #0E0F12、卡片 #17181C、hover 卡片 #1C1E23、細線 #26282E、文字 #EDEDEF、次要 #8A8F98；地球／一致 = 藍 #5AB0F0；這支影片／不一致／主要按鈕 = 琥珀 #F5A524；資料不足 = 灰。**字體**：標題 Space Grotesk 700，內文 Inter，數字 JetBrains Mono。**分頁**：首頁、Results、How it works、上傳／稽核頁分成不同路由，不要一頁很長；導覽列只有 Results、How it works、中文／English。**首頁**：大標「Does it fall like Earth?」（Earth 藍色）、一句說明、琥珀色「Check a video」和外框「See examples」兩顆按鈕；右邊是 meta_clip4 畫面加動畫：藍色虛線（地球）先出現，琥珀線畫出來，終點彈出，最後出現「Doesn't match Earth gravity.」。**首頁不放數字。** **Results**：三張卡（一致／不一致／不能判斷），滑鼠指到的卡放大到 1.05、顯示數字，其他卡變暗、模糊、縮小；數字從 `data/demo` JSON 讀。**How it works**：四步，指到的那步變寬、編號變琥珀色、顯示說明。動畫只用 CSS transition／keyframes，不加新套件。保留所有 testid、鍵盤操作、中英切換、禁用字眼測試。`npm test`、`npm run build`、`VITE_DEMO_ONLY=1 npm run build` 都要過。push `codex/T182-redesign`。**做完直接接 T191。**
 - [ ] T191 Codex：（10/31 Claude）手機版。每一頁在 390 px 和 768 px 寬檢查：不能橫向捲動、按鈕至少 44 px 高、大標縮到 44–52 px、Results 三張卡改成上下排、How 四步改成上下排。手機沒有滑鼠：卡片改成點一下展開數字（再點一下收起）。加一個前端測試確認 390 px 沒有元素超出畫面寬度。push `codex/T191-mobile`。
 - [ ] T192 Codex：（10/31 Claude）無障礙。(1) 所有滑鼠效果用 `:focus-visible` 也要觸發，Tab 鍵可以一張一張看卡片；(2) `prefers-reduced-motion: reduce` 時關掉所有動畫，直接顯示最後畫面；(3) 文字對比至少 4.5:1（#8A8F98 在 #0E0F12 上要量，不夠就調亮）；(4) 判定不能只靠顏色，一定要有文字標籤；(5) 每張圖有 alt。跑現有的 a11y 測試並補新的。push `codex/T192-a11y`。
 - [ ] T193 Codex：（10/31 Claude）分享卡。照設計稿的 Share card 改 `frontend/src/cardExport.ts`：琥珀滿版、大數字（例如「1/69」）、一句「of Earth's gravity.」、下面「Tracked by SAM 3.1」「Numbers by code」兩個標籤、最下面「Checks motion against a model. Does not say whether a video is real.」。一致的結果用藍色版、不能判斷用灰色版。數字從稽核結果讀，比例由後端給的數字算（前端不准自己算物理；如果後端沒有比例欄位，在 STATUS 寫提案給 Claude，先只顯示 m/s²）。下載成 1080×1920 PNG，不加新套件。push `codex/T193-share-card`。
@@ -271,6 +271,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T182 Codex：設計 v4 artifact 在 IAB 要求登入，Chrome 登入後仍顯示 Artifact took too long to load。已依任務列完整規格實作並實測；視覺參照頁無法逐張核對，不宣稱逐像素還原。未更改分享權限。
+
 - T165 Codex：Figma Starter MCP 配額用完。14 個 editable 狀態與元件已建立，桌面高度修正已核對；手機 Field 內框待恢復 48px、上傳 CTA 待移到照片之前，待清理暫存 capture 5:2／照片節點 10:2，並核對 SAM Source instance 的文字 property（Label#9:21）。另需同步首頁影格來源說明（main 已標示生成測試影格）。未經核對不宣稱 Figma 最終完成。前端這些修正均已完成並實測；不升級方案、不換管道繞過配額。
 
 - [T122 Antigravity 乾淨環境安裝驗證] 在 `/tmp/slope-coach-clean-test` 依照 README 完整測試安裝：
@@ -344,6 +346,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T183：凍結前真打（2 draft $0.058＋語音 3 次 $0.007＋SAM 稽核 2 次 $0.063 含解說標題） | 0.127 | 1.987 |
 
 ## 工作日誌（最新在上）
+
+- 10/31 Codex T182：深色 v4、獨立首頁／Results／How／上傳路由、三卡 hover 與四步展開、meta_clip4 儲存軌跡 CSS 動畫。保留所有 API、testid、來源與原始資料，導覽其餘入口移 footer；空 hash 預設首頁。三套字體從 Google Fonts 官方下載且附 OFL。桌面 1440 首頁已檢視；設計 artifact 逾時依任務規格落地。npm 128 tests、一般與 demo build 通過；無新依賴。
 
 - 10/31 02:45 Claude：john 要求一次給多件。Manus T178 收進 `docs/research/vehicle.md` 並核對（T185）。排了 Muse T184、T186–T189，Codex T182（改成設計 v4 規格）、T191–T195，Antigravity T196–T198，Manus T199–T201，Claude T190、T202。
 
