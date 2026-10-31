@@ -277,6 +277,7 @@ class AuditOut(BaseModel):
     t_end: float
     camera_static: bool
     object_size_m: float | None  # vehicle: the car's length, user-confirmed
+    vehicle_class: str | None = None  # vehicle: compact_car, sedan, suv, pickup or unknown, user-confirmed
     length_m: float | None = None  # pendulum only, user-measured
     slow_motion: bool | None = None  # user's answer; True refuses the timing-based checks
     video_url: str

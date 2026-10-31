@@ -14,7 +14,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from physics.errors import PhysicsInputError
 from physics.experiments.pendulum import check_pendulum
-from physics.experiments.vehicle import check_drive, fit_drive
+from physics.experiments.vehicle import VEHICLE_CLASS_LENGTH_M, check_drive, fit_drive
 from physics.experiments.freefall import (check_bounces, check_flight, fit_flight, ghost_track, gravity_ruler,
                                          nearest_body, suggest_flight_windows)
 from physics.persistence import persistence_events, size_trend
@@ -272,6 +272,7 @@ def create_audit(
     object_size_m: float | None = Form(None),
     object_name: str = Form("ball", max_length=60),  # text prompt for SAM, e.g. "tennis ball"
     length_m: float | None = Form(None),  # pendulum only: user-measured string length to the bob centre
+    vehicle_class: str | None = Form(None),  # vehicle only: user-confirmed class; sets the length range
 ):
     if assumed_model not in MODELS:
         raise HTTPException(422, f"assumed_model must be one of {MODELS}")
@@ -283,6 +284,8 @@ def create_audit(
         raise HTTPException(422, "object_size_m must be positive")
     if length_m is not None and length_m <= 0:
         raise HTTPException(422, "length_m must be positive")
+    if vehicle_class is not None and vehicle_class not in (*VEHICLE_CLASS_LENGTH_M, "unknown"):
+        raise HTTPException(422, f"vehicle_class must be one of {[*VEHICLE_CLASS_LENGTH_M, 'unknown']}")
 
     if (file is None) == (draft_id is None):
         raise HTTPException(422, "send either a file or a draft_id")
@@ -301,7 +304,7 @@ def create_audit(
     rec = {
         "audit_id": aid, "created_at": now(), "assumed_model": assumed_model,
         "t_start": t_start, "t_end": t_end, "camera_static": camera_static, "object_size_m": object_size_m,
-        "length_m": length_m,
+        "length_m": length_m, "vehicle_class": vehicle_class,
         "slow_motion": slow_motion, "video_url": f"{media}/{video.name}", "overlay_url": None,
         "track_source": "frame_diff", "verdict": "insufficient_data", "reasons": [], "numbers": {},
         "points": [], "ghost_points": [], "nearest_body": None, "events": [], "limits": LIMITS,
@@ -363,7 +366,7 @@ def create_audit(
 
     if assumed_model == "vehicle":
         try:
-            v = check_drive(fit_drive(pts), widths, car_length_m=object_size_m)
+            v = check_drive(fit_drive(pts), widths, car_length_m=object_size_m, vehicle_class=vehicle_class)
         except PhysicsInputError as e:
             rec["reasons"] = [str(e)]
             store.audits[aid] = _finish(rec)
@@ -373,6 +376,11 @@ def create_audit(
                            "accel_car_lengths_s2": v.accel_lengths_s2, "car_length_for_max_accel_m": v.length_for_max_accel_m,
                            "speed_m_s": v.speed_m_s, "speed_km_h": v.speed_m_s * 3.6 if v.speed_m_s is not None else None,
                            "accel_m_s2": v.accel_m_s2, "accel_g": v.accel_g, "n_points": float(len(pts))}
+        if v.length_range_m is not None:
+            lo, hi = v.length_range_m
+            rec["numbers"] |= {"car_length_low_m": lo, "car_length_high_m": hi,
+                               "speed_km_h_low": v.speed_lengths_s * lo * 3.6, "speed_km_h_high": v.speed_lengths_s * hi * 3.6,
+                               "accel_g_low": abs(v.accel_lengths_s2) * lo / 9.81, "accel_g_high": abs(v.accel_lengths_s2) * hi / 9.81}
         rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v is not None and v == v and abs(v) != float("inf")}
         store.audits[aid] = _finish(rec)
         return rec
