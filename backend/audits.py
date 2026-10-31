@@ -14,6 +14,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from physics.errors import PhysicsInputError
 from physics.experiments.pendulum import check_pendulum
+from physics.experiments.vehicle import check_drive, fit_drive
 from physics.experiments.freefall import (check_bounces, check_flight, fit_flight, ghost_track, gravity_ruler,
                                          nearest_body, suggest_flight_windows)
 from physics.persistence import persistence_events, size_trend
@@ -31,7 +32,7 @@ router = APIRouter()
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
 SIZE_ERROR = 0.3  # assumed worst-case error of the object's pixel size, same as gate question 2
-MODELS = ("free_flight", "bounce", "pendulum")
+MODELS = ("free_flight", "bounce", "pendulum", "vehicle")
 LIMITS = [
     "Without SAM, tracking is model-free (colour + motion when the object name gives a colour, otherwise frame "
     "differencing); frame differencing can lock onto other moving things.",
@@ -108,14 +109,18 @@ def checked_interview(iv: S.AuditInterview) -> S.AuditInterview:
     return iv
 
 
-def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, object_name: str):
+def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, object_name: str,
+                 widths: list | None = None):
     """SAM 3.1 when connected; otherwise colour + motion when the object name gives a colour (T88, same
     tracker as the gate), otherwise frame differencing. SAM output is normalised and converted here to the
     same 480 px frame the rest of the audit uses; frames SAM misses stay gaps.
 
     Also returns the sample times the tracker looked at: SAM samples at its own rate (15 fps), so the tracked
     fraction and the gap events are counted against SAM's samples, not the video's frames (T146 fix: counting
-    against 24 or 30 fps frames capped every SAM track at 15/24 = 62% and refused every clip)."""
+    against 24 or 30 fps frames capped every SAM track at 15/24 = 62% and refused every clip).
+
+    With widths, also appends each tracked frame's box width in the same 480 px frame (vehicle check); SAM
+    frames without a width leave it out."""
     h, w = frames.shape[1], frames.shape[2]
     try:
         dets = get_hooks().track_object(video, object_name, t_start, t_end)
@@ -136,14 +141,16 @@ def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, 
                 continue  # outside the contract: drop rather than guess
             pts.append((d.t_s, x * w, y * h))
             sizes.append(((d.area_px or 0) * w * h) ** 0.5)
+            if widths is not None and d.width_px:
+                widths.append(d.width_px * w)
         if pts:
             return pts, sizes, "sam", times
     times = [t_start + i / fps for i in range(len(frames))]
     color = color_for(object_name)
     if color:
-        pts, sizes = track_color(read_frames_rgb(str(video), t_start, t_end), fps, t_start, color)
+        pts, sizes = track_color(read_frames_rgb(str(video), t_start, t_end), fps, t_start, color, widths=widths)
         return pts, sizes, "color", times
-    pts, sizes = track_with_sizes(frames, fps, t_start)
+    pts, sizes = track_with_sizes(frames, fps, t_start, widths=widths)
     return pts, sizes, "frame_diff", times
 
 
@@ -303,7 +310,8 @@ def create_audit(
         frames, fps = read_frames(str(video), t_start, t_end)
     except Exception:
         raise HTTPException(422, "could not read video frames in that window")
-    pts, sizes, source, times = track_points(video, frames, fps, t_start, t_end, object_name)
+    widths: list[float] = []
+    pts, sizes, source, times = track_points(video, frames, fps, t_start, t_end, object_name, widths)
     rec["track_source"] = source
     size_px = sorted(sizes)[len(sizes) // 2] if sizes else None
     save_overlay(frames, pts, t_start, fps, str(d / "overlay.png"))
@@ -328,7 +336,7 @@ def create_audit(
             store.audits[aid] = _finish(rec)
             return rec
 
-    if slow_motion and assumed_model in ("free_flight", "pendulum"):
+    if slow_motion and assumed_model in ("free_flight", "pendulum", "vehicle"):
         rec["reasons"] = ["the user says the clip is slow motion, so its timing is not real time and "
                           f"the {assumed_model} timing check cannot be judged"]
         store.audits[aid] = _finish(rec)
@@ -345,6 +353,22 @@ def create_audit(
         rec["numbers"] |= {"period_s": p.period_s, "period_spread": p.period_spread,
                            "implied_length_m": p.implied_length_m, "predicted_period_s": p.predicted_period_s}
         rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v is not None}
+        store.audits[aid] = _finish(rec)
+        return rec
+
+    if assumed_model == "vehicle":
+        try:
+            v = check_drive(fit_drive(pts), widths, car_length_m=object_size_m)
+        except PhysicsInputError as e:
+            rec["reasons"] = [str(e)]
+            store.audits[aid] = _finish(rec)
+            return rec
+        rec["verdict"], rec["reasons"] = v.verdict, list(v.reasons)
+        rec["numbers"] |= {"car_length_px": v.length_px, "speed_car_lengths_s": v.speed_lengths_s,
+                           "accel_car_lengths_s2": v.accel_lengths_s2, "car_length_for_max_accel_m": v.length_for_max_accel_m,
+                           "speed_m_s": v.speed_m_s, "speed_km_h": v.speed_m_s * 3.6 if v.speed_m_s is not None else None,
+                           "accel_m_s2": v.accel_m_s2, "accel_g": v.accel_g, "n_points": float(len(pts))}
+        rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v is not None and v == v and abs(v) != float("inf")}
         store.audits[aid] = _finish(rec)
         return rec
 
