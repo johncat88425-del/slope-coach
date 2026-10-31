@@ -4,10 +4,11 @@ import {ModelSource} from './ModelSource.js';
 import {formatNumber} from './formatNumber.js';
 import {verdictEnglish} from './audit.js';
 import type {AuditOut} from './audit.js';
+export const previewVerdictLabels={consistent:'Fits the model.',inconsistent:"Doesn't fit the model.",insufficient_data:'Not enough evidence.'};
 /** Preview of a stored result; every measurement comes from the selected record. */
 export function ResultPreview({audit,recordKey}:{audit:AuditOut;recordKey:string}){
  const [expanded,setExpanded]=useState(false),detailsId=useId();
- const labels={consistent:'Fits the model.',inconsistent:"Doesn't fit the model.",insufficient_data:'Not enough evidence.'};
+ const labels=previewVerdictLabels;
  const value=audit.numbers.g_apparent_m_s2;
  return <Localize><article className="result-preview" data-testid="opening-card" data-verdict={audit.verdict} data-expanded={expanded}>
  <span className="preview-status"><i aria-hidden="true"/>{labels[audit.verdict]}</span>

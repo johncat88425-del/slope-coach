@@ -79,7 +79,7 @@
 - [x] T211 Codex：（10/31 Claude）**分享連結的預覽圖**。`frontend/index.html` 加 Open Graph 和 Twitter card 標籤（標題「Does it fall like Earth?」、一句說明、1200×630 預覽圖）；預覽圖照分享卡設計用 SVG 或 canvas 產生一次，存成 `frontend/public/og.png`；加 favicon（logo 那條虛線拋物線加琥珀色點）。不加新套件。push `codex/T211-og`。 — commit 63acb1d（144 tests、兩種 build、Pages base 檢查通過）
 - [x] T212 Codex：（10/31 Claude）**分析中的進度畫面**。上傳後等待時，顯示三步：「Muse Spark 正在看影片」「SAM 3.1 正在追蹤」「程式正在計算」，用現在 API 回傳的狀態決定哪一步亮（`AuditProgress.tsx`）。不准做假的百分比或假進度；拿不到狀態就只顯示一個轉圈和這三行說明。`prefers-reduced-motion` 時不轉圈。push `codex/T212-progress`。 — commit 77f52f7（147 tests、兩種 build；未知階段不假亮）
 - [x] T213 Codex：（10/31 Claude，Antigravity T196／T198 回報後）修好 Antigravity 寫進 STATUS「缺什麼」的前端問題，每修一個就在那一行打勾。三個 build 都要過。push `codex/T213-fixes`。**到這裡 Codex 的待辦全部結束。** — commit 94cf870（148 tests、兩種 build、Pages base 與三項回報核對通過）
-- [ ] T218 Codex：（10/31 Claude，Antigravity T215 彩排發現）錄影時找不到兩個東西，請拿出來：(1) 結果頁的「下載分享卡」按鈕現在藏在收合的 Details 裡，改成結果卡正下方一顆看得到的按鈕（外框樣式，不要搶「Check a video」的琥珀色）；(2) 兩個合成車子例子（50 km/h 煞車、3 g 起步）現在藏在 `/#demo` 底部收合區，改成 Results 頁第四張卡「Cars」，標「Synthetic test clips」，滑鼠指到時顯示兩個例子的 km/h 和 g（數字從 `data/demo` JSON 讀）。三個 build 都要過。push `codex/T218-visible`。
+- [x] T218 Codex：（10/31 Claude，Antigravity T215 彩排發現）錄影時找不到兩個東西，請拿出來：(1) 結果頁的「下載分享卡」按鈕現在藏在收合的 Details 裡，改成結果卡正下方一顆看得到的按鈕（外框樣式，不要搶「Check a video」的琥珀色）；(2) 兩個合成車子例子（50 km/h 煞車、3 g 起步）現在藏在 `/#demo` 底部收合區，改成 Results 頁第四張卡「Cars」，標「Synthetic test clips」，滑鼠指到時顯示兩個例子的 km/h 和 g（數字從 `data/demo` JSON 讀）。三個 build 都要過。push `codex/T218-visible`。 — 已完成（156 tests、兩種 build、pytest 283 通過；桌面 hover／手機點擊／鍵盤和 PNG 下載已驗證）
 - [x] T182 Codex：（10/31 Claude，設計 v4，john 已同意顏色）網站改版。設計稿 https://claude.ai/artifact/81ELAL51WpPCbXJHxnzmzt （看 1 Home、2 Results、3 How it works、Share card 四張）。**顏色**：底 #0E0F12、卡片 #17181C、hover 卡片 #1C1E23、細線 #26282E、文字 #EDEDEF、次要 #8A8F98；地球／一致 = 藍 #5AB0F0；這支影片／不一致／主要按鈕 = 琥珀 #F5A524；資料不足 = 灰。**字體**：標題 Space Grotesk 700，內文 Inter，數字 JetBrains Mono。**分頁**：首頁、Results、How it works、上傳／稽核頁分成不同路由，不要一頁很長；導覽列只有 Results、How it works、中文／English。**首頁**：大標「Does it fall like Earth?」（Earth 藍色）、一句說明、琥珀色「Check a video」和外框「See examples」兩顆按鈕；右邊是 meta_clip4 畫面加動畫：藍色虛線（地球）先出現，琥珀線畫出來，終點彈出，最後出現「Doesn't match Earth gravity.」。**首頁不放數字。** **Results**：三張卡（一致／不一致／不能判斷），滑鼠指到的卡放大到 1.05、顯示數字，其他卡變暗、模糊、縮小；數字從 `data/demo` JSON 讀。**How it works**：四步，指到的那步變寬、編號變琥珀色、顯示說明。動畫只用 CSS transition／keyframes，不加新套件。保留所有 testid、鍵盤操作、中英切換、禁用字眼測試。`npm test`、`npm run build`、`VITE_DEMO_ONLY=1 npm run build` 都要過。push `codex/T182-redesign`。**做完直接接 T191。** — commit a189883（128 tests、一般／demo build 通過）
 - [x] T191 Codex：（10/31 Claude）手機版。每一頁在 390 px 和 768 px 寬檢查：不能橫向捲動、按鈕至少 44 px 高、大標縮到 44–52 px、Results 三張卡改成上下排、How 四步改成上下排。手機沒有滑鼠：卡片改成點一下展開數字（再點一下收起）。加一個前端測試確認 390 px 沒有元素超出畫面寬度。push `codex/T191-mobile`。 — commit 4560248（130 tests、一般／demo build 通過）
 - [x] T192 Codex：（10/31 Claude）無障礙。(1) 所有滑鼠效果用 `:focus-visible` 也要觸發，Tab 鍵可以一張一張看卡片；(2) `prefers-reduced-motion: reduce` 時關掉所有動畫，直接顯示最後畫面；(3) 文字對比至少 4.5:1（#8A8F98 在 #0E0F12 上要量，不夠就調亮）；(4) 判定不能只靠顏色，一定要有文字標籤；(5) 每張圖有 alt。跑現有的 a11y 測試並補新的。push `codex/T192-a11y`。 — commit 1b9a772（133 tests、一般／demo build 通過）
@@ -283,8 +283,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - [ ] [T215 Antigravity 3 分鐘 demo 實測彩排發現與錄影建議]
   1. **等太久之處（Live 追蹤耗時）**：Live 呼叫 Muse Spark 偵訊生成耗時約 12.5–15.6s，可完全容納於 0:15–0:45（30s）時間段；但現場跑 SAM 3.1 追蹤耗時極長（own_2 約 45s、meta_clip4 約 48s、meta_clip2 約 35s，3 支合計 128s）。若錄影時全程等待真實追蹤，總時間將達約 4 分 40 秒（超標 100 秒）。
   2. **按鈕尋找注意**：
-     (a) 「Download physics card PNG」下載按鈕與 Share Card 位於稽核結果頁的 `<details data-testid="audit-details">` 內，預設為折疊狀態，錄影操作時需先點擊展開「Details」才能看到並點擊下載。
-     (b) 車子合成測試範例（50 km/h 煞車 0.60 g 與 3.0 g 起步）位於展示頁（`/#demo`）底部的 `<details data-testid="synthetic-demo">` 內，需展開該區塊。
+     (a) [x] T218 已修：外框「Download share card PNG」按鈕移至結果卡正下方、Details 外，收合時可直接下載；原 Share Card 預覽與完整證據仍在 Details。已實際下載 1080×1920 PNG。
+     (b) [x] T218 已修：Results 第四張 Cars 卡直接標 Synthetic test clips，hover／鍵盤焦點／手機點擊顯示兩案數值與入口；實際 JSON 為 49 km/h、0.60 g 與 28 km/h、2.98 g，按既有格式顯示，未改資料。
   3. **剪輯與節奏建議（若總長度需嚴格壓在 180 秒內）**：
      - **建議 1（關鍵）**：影片後製時，對 own_2 的 SAM 追蹤轉圈畫面進行快轉或跳接（jump cut 縮減為 2–3 秒），可省下約 42 秒。
      - **建議 2**：展示 meta_clip4（不一致 0.14）與 meta_clip2（資料不足）時，可直接載入已跑好的 demo 紀錄或預留跳接，避免畫面持續等待旋轉進度條。
@@ -412,6 +412,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 10/31 Codex T218：結果卡下方直接提供外框分享 PNG 下載，保留單一 testid、等待／錯誤狀態及原 Details 證據。Results 增加明示「程式模擬／Synthetic test clips」的 Cars 卡，重用原始 demo JSON 與車子數值格式，保留舊 demo／錄影路由，不新增測量、不改後端。1440px hover 顯示兩案，390px 點擊展開／收起與鍵盤 Enter 連至範例，無橫向捲動；Details 收合時成功下載 1080×1920 PNG，按鈕高 48px。156 前端 tests、一般／demo build、pytest 283 全過；截圖 frontend/qa/t218-cars-1440.jpg、frontend/qa/t218-visible-download.jpg。T215 僅兩項入口問題已解，真實模型等待時間與錄影建議保留。Codex 沒有待辦了。
 
 - 10/31 Codex T210：先同步 T207 的 main（f75d6f1），依 docs/API.md v1.3 增加三個可選欄位與離線 JSON 結構驗證。物體複查明確分同一物體／可能追錯且標 Muse Spark；拒判優先顯示原始 retake_tips，缺資料沿用固定無模型建議，建議移至 Details 外；不一致自由飛行顯示 what_would_fit 原文及 Muse 來源。缺欄位不補結果，不改後端 verdict／numbers，中文 UI 不翻寫模型原句。153 tests、一般／demo build 通過；無 API 請求的明示 UI fixture 驗證 1440／390px、兩語、正負／缺欄位與舊紀錄，截圖 frontend/qa/t210-retake-ui-fixture-1440.jpg。T207 依賴已解除。
 
