@@ -3,7 +3,7 @@ import {GuidedDemo} from './GuidedDemo.js';
 import {SpendPanel} from './SpendPanel.js';
 import {Localize,LanguageSwitch} from './i18n.js';
 export function SiteHeader({route}:{api:ReturnType<typeof createApi>;route:string}){
- return <Localize><a className="skip-link" href="#workspace">Skip to workspace</a><header className="site-header">
+ return <Localize><a className="skip-link" href="#workspace" onClick={event=>{event.preventDefault();document.getElementById('workspace')?.focus()}}>Skip to workspace</a><header className="site-header">
  <a className="wordmark" href="#home"><span className="brand-symbol" aria-hidden="true">↘</span>VIDEO PHYSICS AUDIT</a>
  <nav className="site-navigation" aria-label="Main sections"><a data-testid="nav-wall" href="#wall" aria-current={route==='wall'?'page':undefined}>Results</a><a href="#how" aria-current={route==='how'?'page':undefined}>How it works</a></nav><LanguageSwitch/>
  </header></Localize>;
