@@ -189,7 +189,7 @@ def test_extract_interview_fields_rejects(tmp_path, monkeypatch):
         (bad_unit, "m, cm, or mm"),
         (bad_size, "out of range"),
         (bad_window, "end after it starts"),
-        (bad_model, "free_flight, bounce, pendulum, or null"),
+        (bad_model, "free_flight, bounce, pendulum, vehicle, or null"),
         (bad_bool, "boolean or null"),
     ]
     for payload, match in cases:
@@ -227,6 +227,23 @@ def test_answer_interview_voice_converts_and_marks_unconfirmed(tmp_path, monkeyp
     assert "length_m" not in out["fields"]
     assert out["source"] == {"transcript": "muse-voice-transcribe-1.0",
                              "fields": "muse-spark-1.3"}
+
+
+def test_answer_interview_voice_vehicle_car_length(tmp_path, monkeypatch):
+    transcript = "it's a car driving past, about four and a half metres long"
+    monkeypatch.setenv("MODEL_API_KEY", "test-key")
+    monkeypatch.setattr(voice, "transcribe",
+                        lambda path, **kw: {"transcript": transcript, "audio_seconds": 4.0})
+    payload = {"camera_static": None, "slow_motion": None,
+               "object_size": {"value": 4.5, "unit": "m"}, "length": None,
+               "time_window": None, "assumed_model": "vehicle"}
+    fake = FakeClient([fake_response(json.dumps(payload), fake_usage())])
+    monkeypatch.setattr(voice, "get_client", lambda: fake)
+    monkeypatch.setattr(voice, "get_tracker", lambda: _tracker(tmp_path))
+    out = voice.answer_interview_voice(tmp_path / "a.m4a")
+    assert out["transcript"] == transcript
+    assert out["fields"]["assumed_model"] == {"value": "vehicle", "confirmed": False}
+    assert out["fields"]["object_size_m"] == {"value": 4.5, "confirmed": False}
 
 
 def test_answer_interview_voice_mock_without_key(tmp_path, monkeypatch):
