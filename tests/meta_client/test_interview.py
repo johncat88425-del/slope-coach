@@ -56,6 +56,29 @@ def test_interview_asks_vehicle_class(tmp_path, monkeypatch):
     assert out["questions"] == payload["questions"]
 
 
+def test_interview_non_json_retries_then_raises(tmp_path, monkeypatch):
+    # T188: garbage from Spark is retried 2x, then raises so the backend
+    # falls back to fixed mock questions (never hangs).
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    clip = tmp_path / "clip.mp4"
+    clip.write_bytes(b"v")
+    frames = []
+    for i in range(3):
+        p = tmp_path / f"f{i}.jpg"
+        p.write_bytes(b"fake-jpeg")
+        frames.append(p)
+    monkeypatch.setattr(interview._sam, "_probe_clip",
+                        lambda path: {"fps": 30.0, "n_frames": 150,
+                                      "width": 640, "height": 480})
+    monkeypatch.setattr(interview, "_extract_frames", lambda path, dur: frames)
+    fake = FakeClient([fake_response("not json", fake_usage())])
+    monkeypatch.setattr(interview, "get_client", lambda: fake)
+    monkeypatch.setattr(interview, "get_tracker", lambda: _tracker(tmp_path))
+    with pytest.raises(ModelOutputError, match="failed validation"):
+        interview.interview_audit(clip)
+    assert len(fake.responses.calls) == 3  # initial + 2 retries
+
+
 def test_interview_rejects(tmp_path, monkeypatch):
     monkeypatch.setattr(time, "sleep", lambda s: None)
     q = lambda field, text: {"field": field, "text": text}  # noqa: E731
