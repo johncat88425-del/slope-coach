@@ -1,0 +1,5 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Analysis waiting UI fixture</title></head><body><main class="audit-layout"><section id="workspace"><h1>Analysis waiting UI fixture</h1><p>Local UI fixture. No upload, backend request or model call is made.</p><label>Preview language<select id="language"><option value="en">English</option><option value="zh">中文</option></select></label><div id="fixture"></div></section></main>
+<script type="module">
+import '../src/style.css';import '../src/editorial.css';import {createElement as h} from 'react';import {createRoot} from 'react-dom/client';import {AuditProgress} from '../src/AuditProgress.tsx';import {LanguageProvider} from '../src/i18n.tsx';
+const root=createRoot(document.querySelector('#fixture'));function show(){const language=document.querySelector('#language').value;document.documentElement.lang=language==='zh'?'zh-Hant':'en';root.render(h(LanguageProvider,{value:language},h(AuditProgress,{percent:null})))}document.querySelector('#language').onchange=show;show();
+</script></body></html>

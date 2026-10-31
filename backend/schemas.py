@@ -293,3 +293,6 @@ class AuditOut(BaseModel):
     limits: list[str]
     explanation: AuditExplanation | None = None
     headline: AuditExplanation | None = None  # one-line Muse Spark headline (T67/T143); None without a model
+    track_check: dict | None = None  # T207: Muse Spark re-check of the SAM track {same_object, note, source}; None = not checked
+    retake_tips: list[str] | None = None  # T207: Muse Spark reshoot tips for insufficient_data; None = use the fixed tips
+    what_would_fit: AuditExplanation | None = None  # T207: Muse Spark sentence for inconsistent free flight, numbers from code

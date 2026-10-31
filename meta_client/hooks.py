@@ -12,6 +12,7 @@ keeps its documented 501 ("upload detections manually") behavior.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from backend.model_hooks import ModelHooks, TrackingUnavailable
@@ -26,8 +27,10 @@ from backend.schemas import (
 from . import explain as _explain
 from . import headline as _headline
 from . import interview as _interview
+from . import retake as _retake
 from . import sam as _sam
 from . import spark as _spark
+from . import track_check as _track_check
 from . import voice as _voice
 from .exceptions import MetaClientError, ModelOutputError
 
@@ -105,6 +108,19 @@ class MetaHooks(ModelHooks):
         """First-frame object guess via Spark (T108); the backend checks it and the user confirms it."""
         return _spark.suggest_object(video_path)
 
+    def track_check(
+        self, video_path: Path, points: list, object_name: str
+    ) -> dict | None:
+        """Spark re-check of the SAM track on 4 ringed frames (T203).
+
+        Points are (t_s, x, y) in the backend 480 px frame. Returns
+        {"same_object", "note", "source"}, or None when there is no key,
+        too few points, or the check fails (the backend shows no label).
+        """
+        if not os.environ.get("MODEL_API_KEY"):
+            return None
+        return _track_check.check_track(video_path, points, object_name)
+
     def answer_voice(self, audio_path: Path) -> dict:
         """Spoken interview answer via Voice Transcribe + Spark (T109); every field stays unconfirmed."""
         return _voice.answer_interview_voice(audio_path)
@@ -120,3 +136,16 @@ class MetaHooks(ModelHooks):
         """One-line headline via Spark (T112, English since T118); None shows no headline."""
         result = _headline.write_headline(audit, lang="en")
         return result["headline"] if result else None
+
+    def retake_tips(self, audit: dict) -> list[str] | None:
+        """Reshoot tips via Spark for a refused audit (T204, English).
+
+        None keeps the frontend's fixed tips.
+        """
+        result = _retake.write_retake_tips(audit, "en")
+        return result["tips"] if result else None
+
+    def what_would_fit(self, audit: dict) -> str | None:
+        """Counterfactual sentence via Spark (T205, English); None shows nothing."""
+        result = _explain.what_would_fit(audit, "en")
+        return result["sentence"] if result else None
