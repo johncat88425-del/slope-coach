@@ -2,7 +2,7 @@ import pytest
 
 from meta_client import sam
 from meta_client.cost import CostTracker
-from meta_client.exceptions import MediaError, TrackingError
+from meta_client.exceptions import MediaError, SpendLimitExceeded, TrackingError
 from tests.meta_client.helpers import FakeClient, fake_response
 
 # Real wire example from the meta-sam-parser docs: frame 0, 320x334 source,
@@ -247,3 +247,29 @@ def test_transcoded_frame_n_is_at_window_start_plus_n_over_15(tmp_path):
     shown = [int(round(np.argmax(f.mean(0) > 128) / 4)) for f in out]
     assert len(shown) >= 14
     assert shown == [30 + 2 * k for k in range(len(shown))]
+
+
+def test_track_rejects_over_60s_before_upload(tmp_path, monkeypatch):
+    probe = dict(PROBE, n_frames=sam.MAX_SAM_FRAMES + 1)
+    clip = _patch_media(monkeypatch, tmp_path, probe=probe)
+    monkeypatch.setattr(
+        "meta_client.client.upload_file",
+        lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("overlong clip must not upload")),
+    )
+    tracker = CostTracker(tmp_path / "cost.csv", limit_usd=120)
+    with pytest.raises(MediaError, match="60 秒"):
+        sam.track(clip, "sliding block", tracker=tracker)
+
+
+def test_track_refuses_when_estimate_breaks_ceiling(tmp_path, monkeypatch):
+    probe = dict(PROBE, n_frames=sam.MAX_SAM_FRAMES)  # 900 frames ~ $0.18
+    clip = _patch_media(monkeypatch, tmp_path, probe=probe)
+    monkeypatch.setattr(
+        "meta_client.client.upload_file",
+        lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("over-budget call must not upload")),
+    )
+    tracker = CostTracker(tmp_path / "cost.csv", limit_usd=0.10)
+    with pytest.raises(SpendLimitExceeded):
+        sam.track(clip, "sliding block", tracker=tracker)
