@@ -1,4 +1,14 @@
 export const newUiCopy:Record<string,string>={
+  "Numbers by code": "數字由程式計算",
+  "of Earth's gravity.": "相當於地球重力。",
+  "Apparent gravity under your assumptions.": "依你確認的假設估計的表觀重力。",
+  "Observed period.": "觀測週期。",
+  "Not enough evidence to compare.": "證據不足，無法比較。",
+  "Tracking not recorded": "未記錄追蹤來源",
+  "Full evidence in the audit report.": "完整證據請見稽核報告。",
+  "Full card evidence": "完整名片證據",
+  "Checks motion against a model. Does not say whether a video is real.": "檢查運動是否符合模型；無法據此判定影片是否實拍。",
+
   "Does it fall like": "它的下落符合",
   "Earth?": "地球重力嗎？",
   "Check whether the motion in a video fits your assumed physical model.": "檢查影片中的運動，是否符合你假設的物理模型。",
