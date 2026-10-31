@@ -259,7 +259,7 @@ ANSWER_SCHEMA: dict[str, Any] = {
         },
         "assumed_model": {
             "type": ["string", "null"],
-            "enum": ["free_flight", "bounce", "pendulum", None],
+            "enum": ["free_flight", "bounce", "pendulum", "vehicle", None],
         },
     },
     "required": ["camera_static", "slow_motion", "object_size", "length",
@@ -272,10 +272,11 @@ ANSWER_PROMPT = (
     "speaker stated into JSON: camera_static (did they say the camera stayed "
     "still), slow_motion (did they say slow motion was on), object_size (the "
     "object's size exactly as stated, as an object like {\"value\": 11, "
-    "\"unit\": \"cm\"} with digits, or a short string like \"11 cm\"), length "
+    "\"unit\": \"cm\"} with digits, or a short string like \"11 cm\"; for a "
+    "car, its length), length "
     "(pendulum string length the same way), time_window (the motion's start "
-    "and end times in seconds), assumed_model (free_flight, bounce, or "
-    "pendulum if named). Convert spoken numbers to digits exactly as stated "
+    "and end times in seconds), assumed_model (free_flight, bounce, "
+    "pendulum, or vehicle if named). Convert spoken numbers to digits exactly as stated "
     "(eleven → 11, half a second → 0.5, three → 3); use null only when the "
     "speaker truly did not state it, never guess, never convert units, "
     "never invent values. Return JSON only, with "
@@ -356,8 +357,8 @@ def _validate_answer(data: Any) -> dict[str, Any]:
             raise ModelOutputError("time_window must end after it starts")
     out["time_window"] = window
     model = data.get("assumed_model")
-    if model not in ("free_flight", "bounce", "pendulum", None):
-        raise ModelOutputError("assumed_model must be free_flight, bounce, pendulum, or null")
+    if model not in ("free_flight", "bounce", "pendulum", "vehicle", None):
+        raise ModelOutputError("assumed_model must be free_flight, bounce, pendulum, vehicle, or null")
     out["assumed_model"] = model
     return out
 

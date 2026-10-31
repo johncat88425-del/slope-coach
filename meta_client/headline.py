@@ -75,6 +75,36 @@ HEADLINE_PROMPT_EN = (
     'matching the schema: exactly one key, "headline_template".'
 )
 
+VEHICLE_PROMPT = (
+    "You write ONE memorable headline in Traditional Chinese for a video "
+    "physics audit of a car driving past side-on. The car reached "
+    "{speed_km_h:0} km/h with acceleration {accel_g:1} g. Write the "
+    "headline as a TEMPLATE: copy those slots exactly as written (names "
+    "and braces), never write any digits yourself, and use no other "
+    "{...} slots. Example shape: 這台車在{accel_g:1}g下煞車，比賽車還猛. "
+    "Rules. One sentence, under 200 characters, about how the car moved; "
+    "never claim proof or causes (no 證實, 真因, 一定是). Never write the "
+    "characters 真 or 假 anywhere, and never write AI生成 or any "
+    "equivalent: this is about motion matching a model, not about whether "
+    "the video is real. Return JSON only, matching the schema: exactly "
+    'one key, "headline_template".'
+)
+
+VEHICLE_PROMPT_EN = (
+    "You write ONE memorable headline in English for a video physics "
+    "audit of a car driving past side-on. The car reached {speed_km_h:0} "
+    "km/h with acceleration {accel_g:1} g. Write the headline as a "
+    "TEMPLATE: copy those slots exactly as written (names and braces), "
+    "never write any digits yourself, and use no other {...} slots. "
+    "Example shape: This car braked at {accel_g:1} g, harder than a race "
+    "car. Rules. One sentence, under 200 characters, about how the car "
+    "moved; never claim proof or causes (no proves, confirms, must be). "
+    "Never write real video, fake video, AI-generated, or any equivalent: "
+    "this is about motion matching a model, not about whether the video "
+    "is real. Return JSON only, matching the schema: exactly one key, "
+    '"headline_template".'
+)
+
 
 def rounded_number_sources(values: dict[str, float]) -> dict[str, float]:
     """Deterministic roundings of slot values, for the filled-text check.
@@ -90,7 +120,7 @@ def rounded_number_sources(values: dict[str, float]) -> dict[str, float]:
     return out
 
 
-def _validate_headline(raw: Any, audit: dict[str, Any], *, lang: str = "zh") -> str:
+def _template_text(raw: Any) -> str:
     if not isinstance(raw, dict):
         raise ModelOutputError("headline must be a JSON object")
     template = raw.get("headline_template")
@@ -99,6 +129,24 @@ def _validate_headline(raw: Any, audit: dict[str, Any], *, lang: str = "zh") -> 
     template = template.strip()
     if len(template) > MAX_HEADLINE_CHARS:
         raise ModelOutputError("headline_template must be under 200 characters")
+    return template
+
+
+def _check_filled(filled: str, audit: dict[str, Any], slots: dict[str, float]) -> str:
+    bad_words = [w for w in AUTHENTICITY_BANNED if w in filled]
+    if "真" in filled or "假" in filled:
+        bad_words += [c for c in ("真", "假") if c in filled]
+    if bad_words:
+        raise ModelOutputError("forbidden authenticity language: " + ", ".join(bad_words))
+    sources: list[dict[str, Any]] = [audit, dict(slots), rounded_number_sources(slots)]
+    text_check = check_model_text(filled, sources)
+    if not text_check.ok:
+        raise ModelOutputError("headline failed checks: " + "; ".join(text_check.problems))
+    return filled
+
+
+def _validate_headline(raw: Any, audit: dict[str, Any], *, lang: str = "zh") -> str:
+    template = _template_text(raw)
     numbers = audit.get("numbers") or {}
     g_vs_earth = numbers.get("g_vs_earth")
     body = audit.get("nearest_body")
@@ -114,20 +162,25 @@ def _validate_headline(raw: Any, audit: dict[str, Any], *, lang: str = "zh") -> 
     if not fill_check.ok:
         raise ModelOutputError("headline slots failed: " + "; ".join(fill_check.problems))
     assert filled is not None
-    bad_words = [w for w in AUTHENTICITY_BANNED if w in filled]
-    if "真" in filled or "假" in filled:
-        bad_words += [c for c in ("真", "假") if c in filled]
-    if bad_words:
-        raise ModelOutputError("forbidden authenticity language: " + ", ".join(bad_words))
-    sources: list[dict[str, Any]] = [
-        audit,
-        {"g_vs_earth": g_vs_earth},
-        rounded_number_sources({"g_vs_earth": g_vs_earth}),
-    ]
-    text_check = check_model_text(filled, sources)
-    if not text_check.ok:
-        raise ModelOutputError("headline failed checks: " + "; ".join(text_check.problems))
-    return filled
+    return _check_filled(filled, audit, {"g_vs_earth": g_vs_earth})
+
+
+def _validate_vehicle_headline(raw: Any, audit: dict[str, Any], *, lang: str = "zh") -> str:
+    """Vehicle headlines (T176): only {speed_km_h} and {accel_g} slots."""
+    _ = lang  # same slot rules in both languages; the prompt sets the wording
+    template = _template_text(raw)
+    numbers = audit.get("numbers") or {}
+    slots = {k: numbers[k] for k in ("speed_km_h", "accel_g")
+             if isinstance(numbers.get(k), (int, float))}
+    if not slots:
+        raise ModelOutputError("audit has no vehicle numbers for a headline")
+    if "{speed_km_h" not in template and "{accel_g" not in template:
+        raise ModelOutputError("vehicle headline must use a {speed_km_h} or {accel_g} slot")
+    filled, fill_check = fill_numbers(template, slots)
+    if not fill_check.ok:
+        raise ModelOutputError("headline slots failed: " + "; ".join(fill_check.problems))
+    assert filled is not None
+    return _check_filled(filled, audit, slots)
 
 
 def write_headline(
@@ -140,19 +193,29 @@ def write_headline(
 ) -> dict[str, str] | None:
     """Write one headline template for an audit, filled and verified.
 
-    Returns {"headline", "source"}, or None when the audit has no gravity
-    numbers (insufficient_data, pendulum) or no valid headline passes
-    after retries (caller must not display anything then).
+    Returns {"headline", "source"}, or None when the audit has no usable
+    numbers (insufficient_data, pendulum, vehicle without speed) or no
+    valid headline passes after retries (caller must not display
+    anything then). Vehicle audits use the speed/accel slots (T176).
     """
     if lang not in ("zh", "en"):
         raise ValueError("lang must be 'zh' or 'en'")
-    prompt = HEADLINE_PROMPT if lang == "zh" else HEADLINE_PROMPT_EN
     numbers = audit.get("numbers") or {}
     g_vs_earth = numbers.get("g_vs_earth")
     if audit.get("verdict") == "insufficient_data":
         return None
-    if not isinstance(g_vs_earth, (int, float)) or not audit.get("nearest_body"):
-        return None
+    vehicle = (
+        audit.get("assumed_model") == "vehicle"
+        and isinstance(numbers.get("speed_km_h"), (int, float))
+    )
+    if vehicle:
+        prompt = VEHICLE_PROMPT if lang == "zh" else VEHICLE_PROMPT_EN
+        validate = _validate_vehicle_headline
+    else:
+        if not isinstance(g_vs_earth, (int, float)) or not audit.get("nearest_body"):
+            return None
+        prompt = HEADLINE_PROMPT if lang == "zh" else HEADLINE_PROMPT_EN
+        validate = _validate_headline
     resolved = model or SPARK_MODEL
     _check_priced(resolved)
     tracker = tracker or get_tracker()
@@ -181,7 +244,7 @@ def write_headline(
             output_tokens=usage["output_tokens"],
         )
         try:
-            filled = _validate_headline(
+            filled = validate(
                 json.loads(response.output_text or ""), audit, lang=lang)
             return {"headline": filled, "source": resolved}
         except (json.JSONDecodeError, ModelOutputError, ValueError):
