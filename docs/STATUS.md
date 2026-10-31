@@ -54,7 +54,7 @@
 - [x] T204 Muse：commit c765d18。新 `meta_client/retake.py`：拒判時讀 reasons 寫 1–3 條重拍建議，每條 80 字內，數字只能用 reasons 裡的（程式 parse 原因句數字當 allowlist），禁字照舊，失敗回 `None`（前端退回固定建議）。hook `retake_tips`（英文，同 explain）。7 個 mock 測試（成功＋引原因數字＋偷渡數字＋禁字兩種＋非拒判不呼叫＋超長＋壞 lang），pytest 269 全過，未真打 API，未碰 backend。判定是 insufficient_data 時，Spark 讀 `reasons` 寫 1 到 3 條具體的重拍建議（例如「球往鏡頭飛：請站到球飛行路線的正側面」）。新增 `meta_client/retake.py` 的 `write_retake_tips(audit, lang)`，輸出 `{"tips": ["..."]}`；每條 80 字內；不准出現 reasons 裡沒有的數字；禁用字眼照舊；失敗就回 `None`，前端會退回現在的固定建議。hook 名稱 `retake_tips`。測試至少 4 個。push `muse/T204-retake`。
 - [x] T205 Muse：commit 660dd41。`explain.py` 新 `what_would_fit(audit, lang)`：只接 inconsistent 自由飛行；Spark 寫句型，`{implied_time_factor}`、`{implied_object_size_m}` 由程式填（至少用一槽，缺數字回 `None`）；禁自寫數字、禁「假的」與因果字眼；重試 2 次，再敗回 `None`。hook `what_would_fit`（英文）。5 個 mock 測試（中英成功＋偷渡數字＋假的＋跳過條件），pytest 267 全過，未真打 API，未碰 backend。判定是 inconsistent 的自由飛行，`numbers` 裡有 `implied_time_factor`（如果影片其實被放慢幾倍就會符合地球）和 `implied_object_size_m`（如果物體其實多大就會符合）。寫 `meta_client/explain.py` 的新樣板 `what_would_fit`：Spark 只寫句子，數字用 `{implied_time_factor}`、`{implied_object_size_m}` 欄位由程式填，例如「如果這支影片其實放慢了 {implied_time_factor} 倍，或球其實有 {implied_object_size_m} 公尺寬，才會和地球重力一致。」不准寫「所以是假的」或任何因果字眼。中英文都要。測試至少 4 個。push `muse/T205-what-would-fit`。
 - [ ] T206 Muse：（10/31 Claude，T203–T205 和 Claude T207 都合併後）照最終 demo 腳本的順序（自拍 own_2 → meta_clip4 → meta_clip2 → 合成車子）真打一次完整流程，記錄每一步秒數（Spark 偵訊、SAM、擬合、Spark 說明、Spark 複查）和花費，寫進 STATUS 日誌，給 john 錄影抓節奏。上限 $0.40。push `muse/T206-rehearsal`。
-- [ ] T208 Muse：（10/31 Claude）在 STATUS「已做的決定」下面加一段**「Meta 模型用法總表」**（評審看 Meta 用法占 25%）：每個呼叫點一行，寫模型名稱、做什麼、輸入、輸出格式、驗證方式（schema、禁用字眼、數字不准出現）、失敗時怎麼退回、平均每次花費（從 `data/cost_log.csv` 算，用程式算不要估）。只改 STATUS。push `muse/T208-model-table`。**到這裡 Muse 的待辦全部結束。**
+- [x] T208 Muse：commit 245eb95。「已做的決定」下加了「Meta 模型用法總表」：12 行呼叫點（稽核 10＋斜坡／代理各 1 組），平均花費用程式從 cost_log 算（Spark 偵訊 $0.0132、建議 $0.0095、說明 $0.0154、標題 $0.0096、語音抽欄 $0.0173、SAM $0.0109、轉錄 $0.0001；T203–T205 新呼叫尚無真打紀錄）。只改 STATUS，$0。
 - [x] T184 Muse：（10/31 Claude，Manus T178 清單已到，見 `docs/research/vehicle.md`）用真的 SAM 跑**側面**車子影片。(1) 下載到 repo 外的 `~/slope-own-clips/`（**不准 commit**）：`car_side_1.mp4` = Pexels 36330662（Cars Passing on Suburban Road in Autumn，時間窗 1.0–1.5 s 灰色小轎車；另外 7.5–8.5 s、9.25–10.0 s 各跑一次）；`car_side_2.mp4` = Pexels 35089647（Black and White Urban Street，時間窗 5.0–5.75 s 淺色車）；`car_side_3.mp4` = Pexels 35527369（時間窗 3.0–3.75 s，遠車道淺色轎車，條件式）；`car_side_4.mp4` = Pixabay 31625（4.4–4.6 s，預期因為太短被拒判）。都下載 HD（1920 寬）版本就好，不要 4K。時間窗照 Manus 寫的「整台車在畫面裡」，不要放寬，車子被畫面邊緣切到時位置會偏。(2) 每支 `POST /api/audits`：`assumed_model=vehicle`、`camera_static=true`、`object_name=car`、**不填** `object_size_m`（讓程式用 3 m 和 6 m 兩種車長都判一次）。如果 SAM 抓到別台車，`object_name` 改成 `gray car` 或 `white car` 再跑一次，兩次都記。(3) 每次記 `track_source`、`verdict`、`reasons`、`speed_km_h`、`accel_g`、`car_length_px`、`n_points`、花費、秒數。(4) john 如果用 Meta AI 生成了 `car_meta_1.mp4`…，一起跑。(5) 花費上限 $0.40，判定不准挑。(6) 結果寫進 STATUS 日誌，push `muse/T184-car-side`。**做完直接接 T186。** — commit 8fdb3d5（6 窗全 sam、全拒判：0.47s 差門檻／73%／18%／尺寸+43%／像素車長漂／3 格；overlay 全鎖對車；tmcd 軌繞過；$0.125，累計 $2.112）
 - [x] T186 Muse：commit 6cb4f5a。場景建議（註：實際在 `spark.py` 的 `suggest_object`，不在 interview.py）：側面行駛的車 → `assumed_model=vehicle`＋`vehicle_class`（四種＋unknown，清單外轉 unknown）；朝鏡頭／鏡頭動 → `judgeable=false`＋原因；`vehicle_class` 帶數字直接退件（不轉 unknown，避免把偷渡的車長吃掉）；`assumed_model` 只能是 vehicle 或 null。偵訊 FIELDS 加 `vehicle_class`（「這是什麼車」，使用者選，模型不填）。7 個新 mock 測試（任務要的 5 個＋壞 assumed_model＋偵訊問車種），pytest 252 全過，未真打 API。後端還沒接（見「缺什麼」）。(1) `meta_client/interview.py` 的場景建議：畫面主體是側面行駛的車時，建議 `assumed_model=vehicle`；如果車是朝鏡頭開或鏡頭在動，就建議不能判，並說原因（例如「車子朝鏡頭開，側面檢查量不到」）。(2) 偵訊多問一題「這是什麼車？」，回傳欄位 `vehicle_class`，只能是固定清單其中一個：`compact_car`、`sedan`、`suv`、`pickup`、`unknown`。**模型不准回傳車長數字**；長度由 Claude T190 的程式表換算，使用者在畫面上確認。(3) 輸出要過 JSON schema，清單外的值就當 `unknown`；失敗最多重試 2 次。(4) 用假的模型回應寫單元測試（至少 5 個：側面車、朝鏡頭車、移動鏡頭、亂回傳車長、清單外的車種），`pytest` 全過，不真打 API。(5) push `muse/T186-vehicle-scene`。
 - [x] T187 Muse：commit c3b98e3。檢查結果：explain 本來就支援三種判定（payload 驅動）；補了車子專用提示（不一致時講「加速度約 X g，超過一般輪胎抓地力上限，與正常路上行駛不一致」，數字只能引 payload，1.2 由原因句提供）；禁字表加「假的」（後端只禁「假影片」，bare 假的之前漏網，標題本來就禁真／假單字不受影響）。headline 車子路徑（T176）已符合要求（只有程式填的槽位＋檢查），沒動。5 個新 mock 測試（三種判定＋偷渡數字＋假的），pytest 250 全過，未真打 API。來源欄位：explain／headline 都回 source=模型名，後端標 model（和自由落體一樣），不用改。(1) 檢查 `meta_client/explain.py` 和 `headline.py`：vehicle 的一致、不一致、資料不足三種都要有 Spark 寫的說明，數字只能用 `{speed_km_h}`、`{accel_g}`、`{car_length_px}` 這類欄位讓程式填入；缺哪種就補。(2) 不一致的說明要講「加速度約 X g，超過一般輪胎抓地力上限 1.2 g，與正常路上行駛不一致」，不准說「假的」「AI 生成」「證實」。(3) 輸出都標 `由 Muse Spark 產生` 的來源欄位（和自由落體一樣）。(4) 單元測試：三種判定各一個、模型偷寫數字要被擋、出現禁用字眼要被擋。(5) push `muse/T187-vehicle-explain`。
@@ -346,6 +346,25 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | Meta API 實際不強制執行 json_schema strict：同一提示詞三次回傳三種形狀（缺 key 改名、裸 array）。本機驗證是唯一防線：信封寬鬆（接受 object/array、question 別名）、內容嚴格（欄位、字數、check）。所有 Spark 函式提示詞加註確切 key 名 | T66 真打三次失敗換來的教訓 |
 | 10/29 | T45/T67 槽位寫法：模型只寫 `{check_key}`/`{nearest_body}` 位置，不寫數字。`{nearest_body}` 是字串槽，程式先代換再跑 fill_numbers；填充後再過 check_model_text，數字 allowlist 含確定性捨入值（顯示捨入不該失敗）；insufficient_data 或無重力數字直接回 None、不呼叫 API | fill_numbers 只收數字；T67 spec |
 
+### Meta 模型用法總表（T208，10/31 Muse；平均花費用程式從 `data/cost_log.csv` 算到 10/31 main）
+
+產品執行時只呼叫 Meta 模型。每個呼叫都走 schema＋`check_model_text`（禁因果、禁真偽）＋數字規則，傳輸失敗重試 2 次。
+
+| 呼叫點 | 模型 | 做什麼 | 輸入 → 輸出 | 驗證（數字規則） | 失敗退回 | 平均每次 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 偵訊提問 `interview_audit` | muse-spark-1.3 | 看 3 格問 1–3 個澄清問題 | 影格 → `{questions:[{field,text}]}` | field 白名單、text 200 字內無數字 | 固定 mock 問題 | $0.0132（17 次） |
+| 物體建議 `suggest_object` | muse-spark-1.3 | 首格猜物體名＋鏡頭靜否＋車種 | 2 張 still → `{object_name, camera_looks_static, reason, assumed_model, judgeable, vehicle_class}` | 型別＋禁字＋禁數字、車種清單外轉 unknown | 無建議（使用者自填） | $0.0095（11 次） |
+| 追蹤 `sam.track` | sam-3.1 | 概念追蹤，每格框＋遮罩 | 15fps 影片＋一名詞 → 每格 bbox／質心／面積／寬度 | 框格要對上轉碼尺寸，否則拒收 | 不用模型的追蹤 | $0.0109（72 次） |
+| 追蹤複查 `check_track`（T203） | muse-spark-1.3 | 看 4 張圈圖判是否同一物體 | 圈圖 → `{same_object, note}` | note 嚴禁數字＋禁字 | `None`（不顯示） | 無真打紀錄 |
+| 稽核說明 `explain_result` | muse-spark-1.3 | 把判定翻成白話 | audit payload → `{explanation}` | 數字只能引 payload（含原因句門檻） | 固定範本 | $0.0154（56 次） |
+| 標題 `write_headline` | muse-spark-1.3 | 一句記憶點標題樣板 | 判定 → `{headline_template}` | 只有程式填的 `{...}` 槽、填充後再驗 | `None`（不顯示） | $0.0096（25 次） |
+| 重拍建議 `write_retake_tips`（T204） | muse-spark-1.3 | 拒判時給 1–3 條重拍法 | reasons → `{tips[]}` | 每條 80 字內、數字限原因句 | 固定建議 | 無真打紀錄 |
+| 反事實一句 `what_would_fit`（T205） | muse-spark-1.3 | 不一致時講要怎樣才會符合 | 判定 → 槽位句型 | 同標題（程式填槽＋驗） | `None`（不顯示） | 無真打紀錄 |
+| 語音轉錄 `transcribe` | muse-voice-transcribe-1.0 | 口述轉逐字稿 | 音檔 → transcript | 空稿走「沒有聽到內容」提示 | 502（空稿回 200 空欄） | $0.0001（4 次） |
+| 語音抽欄位 `extract_interview_fields` | muse-spark-1.3 | 逐字稿抽欄位 | transcript → 欄位 JSON | 值域＋單位、數字轉公尺由程式算 | 502 | $0.0173（10 次） |
+| 斜坡：場景／釋放／擷取 `describe_scene`、`suggest_release_time`、`check_capture_conditions`、`extract_setup_fields` | muse-spark-1.3 | 斜坡教練的照片檢查與建議 | 照片／影片／逐字稿 → 固定 schema | 同上各表 | 丟 `ModelOutputError` | 無真打紀錄 |
+| 代理：選驗證／排檢查 `choose_intervention`、`plan_audit_checks`、`suggest_motion_segment` | muse-spark-1.3 | 從證據候選挑下一步 | 證據 → 選項＋理由 | 只能選候選清單內的（`check_choice`） | 丟 `ModelOutputError` | 無真打紀錄 |
+
 ## 成本紀錄（Meta API）
 
 上限：額度 150 美元；後端硬上限 120 美元。每天收工前填。
@@ -374,6 +393,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - 10/31 Muse 完成 T203（分支 muse/T203-track-check，commit af69bb6）：Spark 複查追蹤（4 張圈圖問同物體，敗回 None）。8 新測試，pytest 270 全過，$0，未碰 backend。
 - 10/31 Muse 完成 T204（分支 muse/T204-retake，commit c765d18）：Spark 重拍建議（1–3 條，數字限原因句，敗回 None）。7 新測試，pytest 269 全過，$0。
 - 10/31 Muse 完成 T205（分支 muse/T205-what-would-fit，commit 660dd41）：「要怎樣才會一致」一句話（槽位程式填，敗回 None）。5 新測試，pytest 267 全過，$0。
+- 10/31 Muse 完成 T208（分支 muse/T208-model-table，commit 245eb95）：Meta 模型用法總表 12 行，平均花費用程式算。只改 STATUS，$0。
 
 - 10/31 22:00 Claude：john 要求一次多給。排第二批：Muse T203–T206、T208；Codex T209–T213；Antigravity T214–T216（加在 T196、T198 後面）；Claude T207、T217。都在 11/02 晚上凍結前。
 
