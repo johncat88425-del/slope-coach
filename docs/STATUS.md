@@ -75,7 +75,7 @@
 
 **Codex**（照順序做）
 - [x] T209 Codex：（10/31 Claude）**錄影用的導覽**。把 `GuidedDemo`／`AutoTour` 改成照最終 demo 腳本的順序：自拍的球（一致 9.45）→ Meta AI 籃球（不一致 0.14，顯示地球鬼影軌跡）→ 往鏡頭飛的球（不能判斷）→ 合成車子兩張（要標「Synthetic test clip」）→ 分享卡。用新設計的樣式；左右方向鍵和空白鍵換下一步；右上角小字顯示「3 / 6」。數字全部從 `data/demo` JSON 讀。push `codex/T209-tour`。 — commit c999fc8（142 tests、兩種 build、鍵盤／手機檢查通過）
-- [ ] T210 Codex：（10/31 Claude，Muse T203–T205 合併後）把三個新的 Muse 輸出放上畫面，都要標「由 Muse Spark 產生」：(1) 結果頁小標籤「Muse Spark 複查：追蹤的是同一個物體 ✓」或「⚠ 可能追錯物體」（後端欄位 `track_check`，沒有就不顯示）；(2) 不能判斷時，`RetakeGuide` 優先顯示 Spark 的 `retake_tips`，沒有就用現在的固定建議；(3) 不一致時在結果下面顯示「要怎樣才會一致」那一句。欄位名稱以 Claude T207 更新的 `docs/API.md` 為準。push `codex/T210-muse-ui`。
+- [x] T210 Codex：（10/31 Claude，Muse T203–T205 合併後）把三個新的 Muse 輸出放上畫面，都要標「由 Muse Spark 產生」：(1) 結果頁小標籤「Muse Spark 複查：追蹤的是同一個物體 ✓」或「⚠ 可能追錯物體」（後端欄位 `track_check`，沒有就不顯示）；(2) 不能判斷時，`RetakeGuide` 優先顯示 Spark 的 `retake_tips`，沒有就用現在的固定建議；(3) 不一致時在結果下面顯示「要怎樣才會一致」那一句。欄位名稱以 Claude T207 更新的 `docs/API.md` 為準。push `codex/T210-muse-ui`。 — commit 43b4fb2（153 tests、兩種 build、桌面／手機與原文保留通過）
 - [x] T211 Codex：（10/31 Claude）**分享連結的預覽圖**。`frontend/index.html` 加 Open Graph 和 Twitter card 標籤（標題「Does it fall like Earth?」、一句說明、1200×630 預覽圖）；預覽圖照分享卡設計用 SVG 或 canvas 產生一次，存成 `frontend/public/og.png`；加 favicon（logo 那條虛線拋物線加琥珀色點）。不加新套件。push `codex/T211-og`。 — commit 63acb1d（144 tests、兩種 build、Pages base 檢查通過）
 - [x] T212 Codex：（10/31 Claude）**分析中的進度畫面**。上傳後等待時，顯示三步：「Muse Spark 正在看影片」「SAM 3.1 正在追蹤」「程式正在計算」，用現在 API 回傳的狀態決定哪一步亮（`AuditProgress.tsx`）。不准做假的百分比或假進度；拿不到狀態就只顯示一個轉圈和這三行說明。`prefers-reduced-motion` 時不轉圈。push `codex/T212-progress`。 — commit 77f52f7（147 tests、兩種 build；未知階段不假亮）
 - [x] T213 Codex：（10/31 Claude，Antigravity T196／T198 回報後）修好 Antigravity 寫進 STATUS「缺什麼」的前端問題，每修一個就在那一行打勾。三個 build 都要過。push `codex/T213-fixes`。**到這裡 Codex 的待辦全部結束。** — commit 94cf870（148 tests、兩種 build、Pages base 與三項回報核對通過）
@@ -314,6 +314,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 - T210 Codex：T212 完成後已 pull main（065852d），T207 仍未勾選，docs/API.md／backend/schemas.py 尚無 track_check、retake_tips、what_would_fit 的回應契約。依 john 指示先跳過，完成 T213 後再同步重查；不預猜 JSON 形狀、不自行修改後端或捏造 Muse 輸出。
 
+- T206 Muse：最後彩排真打在等 Claude T207（後端接 track_check／retake_tips／what_would_fit）合併。沒合併就跑，秒數和流程都不是最終版，白花錢，所以先不跑。T207 合併後 Muse 再跑 T206（上限 $0.40）。
 - T194 Codex／Claude：T186 已合併但 backend/schemas.py 尚未接新 suggestion／QuestionField（原有「缺什麼」已記）。前端先完成使用者手選 vehicle_class 並傳既有 POST /api/audits；固定參考車長逐字對應 API v1.2 表，僅供確認／輸入量測值覆蓋，不填入 object_size_m、不算中點。結果範圍照後端 numbers。自動場景建議仍取決於後端接線，未冒稱已可端到端運作。
 
 - T193 Codex／Claude：已有 `numbers.g_vs_earth`，分享卡直接格式化為十進位倍率（例如現有資料 0.0146×）；缺此欄就顯示後端 `g_apparent_m_s2`，不自行用 g/9.81 或 1/g 算比例。若設計一定要「1/69」，請後端新增經驗證的顯示字串／倒數欄位；前端未捏造倒數。
@@ -415,6 +416,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 ## 工作日誌（最新在上）
 
 - 10/31 Muse 完成 T206（分支 muse/T206-rehearsal，commit d88697a）：最終彩排 4 案（TestClient＋真 API，uvicorn 照樣 EPERM）。own_2：偵訊 15.7 秒 $0.029→稽核 34.8 秒 $0.042，一致 g=9.45，sam，說明＋標題 model。clip4：偵訊 16.5 秒 $0.023→稽核 45.8 秒 $0.045，不一致 g=0.14，what_would_fit source=model；子步驟直打：SAM 16.6 秒 $0.010（38/38 格）、說明 8.6 秒 $0.010、複查見下、擬合 0.000 秒。clip2：偵訊 13.3 秒 $0.020→稽核 25.6 秒 $0.030，拒判（尺寸 -48%），retake_tips 兩條英文。合成車（現畫 car_50kmh）：偵訊 22.8 秒 $0.025→稽核 21.5 秒 $0.031，一致但 track=frame_diff（SAM 在黑方塊上 0/17 格，直打 3.7 秒 $0.010 確認），說明＋標題 model。給 john 的節奏：每案 35–60 秒，偵訊約 15–23 秒、稽核約 22–46 秒。**bug（同分支修好）**：T203 的 `_frame_rgb` 用了 text-mode 管道，真跑第一分散就 UnicodeDecodeError，本輪四案的 audit 內 track_check 全是 `None`（後端有接住，沒炸）。修：byte-mode subprocess＋`image2pipe` muxer（這台 ffmpeg 沒有 `png` muxer），加真 ffmpeg 回歸測試（不打 API），pytest 284 全過；修完直打驗證：same_object=True、5.0 秒、$0.004。$0.288（上限 $0.40），累計 $2.767。Muse 待辦全部結束。
+- 10/31 Codex T210：先同步 T207 的 main（f75d6f1），依 docs/API.md v1.3 增加三個可選欄位與離線 JSON 結構驗證。物體複查明確分同一物體／可能追錯且標 Muse Spark；拒判優先顯示原始 retake_tips，缺資料沿用固定無模型建議，建議移至 Details 外；不一致自由飛行顯示 what_would_fit 原文及 Muse 來源。缺欄位不補結果，不改後端 verdict／numbers，中文 UI 不翻寫模型原句。153 tests、一般／demo build 通過；無 API 請求的明示 UI fixture 驗證 1440／390px、兩語、正負／缺欄位與舊紀錄，截圖 frontend/qa/t210-retake-ui-fixture-1440.jpg。T207 依賴已解除。
 
 - 10/31 23:10 Claude：合併 Muse T203–T206、T208，Antigravity T196、T198、T214、T215，Codex T209、T211–T213；完成 T207。注意：Muse T206 彩排是在 T207 之前跑的，所以那次的結果畫面還沒有 Spark 複查；凍結前 Antigravity T216 會再跑一次全部。
 

@@ -1,3 +1,4 @@
+import {TrackCheck,WhatWouldFit} from './MuseAuditOutputs.js';
 import {EarthAssumption} from './EarthAssumption.js';
 import type {VehicleClass} from './vehiclePresentation.js';
 import {AuditDimensionField,VehicleMeasurements,VehicleClassField} from './VehicleModel.js';
@@ -42,10 +43,13 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
     useEffect(()=>{if(autoFocus)result.current?.focus()},[autoFocus]);
     return <Localize><article ref={result} tabIndex={-1} data-testid="audit-result" aria-label="稽核結果" aria-labelledby={verdictId}>
  <div className={'verdict-banner verdict-'+audit.verdict}><h2 id={verdictId} data-testid="audit-verdict">{verdictLabel(audit.verdict,audit.assumed_model)}</h2></div>
+ <TrackCheck check={audit.track_check}/>
  <VehicleMeasurements audit={audit}/>
  <ModelHeadline headline={audit.headline}/>
  {audit.explanation&&<section data-testid="audit-explanation"><p>{audit.explanation.source==='model'?'由 Muse Spark 產生':'固定模板（未使用模型）'}</p><p><Verbatim text={audit.explanation.text}/></p></section>}
  <section data-testid="audit-reasons"><h3>原因</h3><ul>{audit.reasons.map((reason,i)=><li key={i}><Verbatim text={reason}/></li>)}</ul></section>
+ <WhatWouldFit audit={audit}/>
+ <RetakeGuide verdict={audit.verdict} reasons={audit.reasons} modelTips={audit.retake_tips}/>
  <EarthAssumption numbers={audit.numbers}/>
  <details data-testid="audit-details"><summary>Details</summary>
  {replay&&<p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">SYNTHETIC test example — program-drawn motion.</p>}
@@ -53,7 +57,7 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
  {!replay&&<p><a href={'/audit/'+encodeURIComponent(audit.audit_id)}>Open result link</a><button data-testid="copy-audit-link" onClick={async()=>{try{await navigator.clipboard.writeText(shareAuditUrl(audit.audit_id,location.origin));setCopyStatus('Link copied.')}catch{setCopyStatus('Could not copy. Use the result link.')}}}>Copy link</button><span role="status">{copyStatus}</span></p>}
  <p data-testid="audit-slow-answer">Slow motion or retimed playback (user): {audit.slow_motion===true?'Yes':audit.slow_motion===false?'No':'Not provided'}</p>
  {audit.slow_motion===true&&audit.verdict==='insufficient_data'&&<aside data-testid="audit-timing-limit"><h3>Reported limitations</h3>{audit.reasons.map((r,i)=><blockquote key={i}><Verbatim text={r}/></blockquote>)}</aside>}
- <RetakeGuide verdict={audit.verdict} reasons={audit.reasons}/><ModelUsage audit={audit} interviewSource={interviewSource}/>{audit.assumed_model!=='vehicle'&&<GravityRuler numbers={audit.numbers}/>}<h3>量測數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
+ <ModelUsage audit={audit} interviewSource={interviewSource}/>{audit.assumed_model!=='vehicle'&&<GravityRuler numbers={audit.numbers}/>}<h3>量測數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <GhostReview audit={audit} url={replay ? undefined : videoUrl??mediaUrl(audit.video_url, import.meta.env?.VITE_API_BASE_URL)}/><Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
  {audit.assumed_model==='bounce'&&<BounceChart numbers={audit.numbers}/>}
