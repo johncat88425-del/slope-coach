@@ -173,3 +173,9 @@ svg text{fill:var(--color-text)}
 .tour-view-share .physics-card{max-width:600px;margin:auto}.tour-view-share .share-card-preview{max-width:none}
 @media(max-width:800px){.tour-evidence-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:480px){.recording-tour{width:calc(100vw - 16px);height:calc(100dvh - 16px);border-radius:12px}.tour-header,.tour-controls{padding:12px 16px;gap:12px}.tour-body{padding:16px}.tour-body>h2{font-size:24px}.tour-controls{flex-wrap:wrap}.tour-key-help{flex-basis:100%}.tour-header .eyebrow{font-size:10px}.tour-header button{font-size:12px;padding:8px 12px}.demo-counter{font-size:11px}.tour-slide [data-testid=audit-result]{padding:16px}}
+
+.analysis-waiting{margin-block:24px}.analysis-waiting-label{display:flex;align-items:center;gap:12px;font-size:14px!important;color:var(--color-text)!important}
+.analysis-spinner{display:inline-block;flex:none;width:24px;height:24px;border:2px solid var(--color-field);border-top-color:var(--color-action);border-radius:50%;animation:analysis-wait 900ms linear infinite}
+.analysis-waiting>p:nth-child(2){font-size:13px}.analysis-stages{list-style:none;padding:0;margin:16px 0;display:grid;gap:12px}.analysis-stages li{display:flex;align-items:center;gap:12px;color:var(--color-muted);font-size:14px;line-height:1.6}.analysis-stage-dot{height:6px;width:6px;border:1px solid currentColor;border-radius:50%;flex:none}
+@keyframes analysis-wait{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.analysis-spinner{animation:none}}
