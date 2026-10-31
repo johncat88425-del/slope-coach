@@ -1,3 +1,4 @@
+import {vehicleMetrics} from './vehiclePresentation.js';
 import {earthRulerLines} from './earthRuler.js';
 import {motionLabel} from './verdictLabel.js';
 import {formatNumber} from './formatNumber.js';
@@ -15,15 +16,58 @@ export function physicsCardLines(a:AuditOut){
  if(a.numbers.g_verdict_robust===0)lines.push('CAUTION: a size error could change this result. Check the measured size.');
  lines.push(`Tracking: ${{frame_diff:'motion-based tracking (no model)',color:'colour-based tracking (no model)',sam:'Tracked by SAM 3.1',manual:'manual observations'}[a.track_source]}`,'Reasons:',...a.reasons,'Known limitations:',...a.limits,'This result only checks the selected motion model. It does not explain why the motion happened.');return lines;
 }
-export async function downloadPhysicsCard(a:AuditOut,overlay?:string){
+export const shareCardSize={width:1080,height:1920} as const;
+export const shareCardFooter="Checks motion against a model. Does not say whether a video is real.";
+export function shareCardContent(a:AuditOut){
+ const n=a.numbers,finite=(key:string)=>typeof n[key]==='number'&&Number.isFinite(n[key]);
+ let value='—',unit='',caption='Not enough evidence to compare.';
+ let secondary:{value:string;unit:string;label:string}|null=null,reference:string|null=null;
+ if(a.verdict!=='insufficient_data'){
+  if(a.assumed_model==='vehicle'){
+   const vehicle=vehicleMetrics(a);
+   if(vehicle.speed){value=vehicle.speed;unit='km/h';caption='Vehicle motion on a road.'}
+   else if(vehicle.acceleration){value=vehicle.acceleration;unit='g';caption='Vehicle motion on a road.'}
+   if(vehicle.speed&&vehicle.acceleration)secondary={value:vehicle.acceleration,unit:'g',label:vehicle.accelerationLabel};
+   if(!vehicle.knownLength)reference=vehicle.lengthRange;
+  }
+  else if(a.assumed_model==='free_flight'&&finite('g_vs_earth')&&n.g_vs_earth>=0){value=n.g_vs_earth===0?'0×':n.g_vs_earth.toPrecision(3)+'×';caption="of Earth's gravity."}
+  else if(a.assumed_model==='free_flight'&&finite('g_apparent_m_s2')){value=formatNumber(n.g_apparent_m_s2);unit='m/s²';caption='Apparent gravity under your assumptions.'}
+  else if(a.assumed_model==='pendulum'&&finite('period_s')){value=formatNumber(n.period_s);unit='s';caption='Observed period.'}
+ }
+ return {value,unit,caption,secondary,reference,limit:a.assumed_model==='vehicle'?'Grip limit: 1.2 g':null,verdict:verdictEnglish(a),background:{consistent:'#5ab0f0',inconsistent:'#f5a524',insufficient_data:'#b7bcc5'}[a.verdict],ink:'#0e0f12',tracking:{sam:'Tracked by SAM 3.1',manual:'Manual observations — no model used',color:'Colour-based tracking (no model)',frame_diff:'Motion-based tracking (no model)'}[a.track_source]??'Tracking not recorded',numbers:'Numbers by code',provenance:a.synthetic?'Program simulation — program-drawn moving squares.':a.real_clip?'Recorded by john':a.generated_clip?'Generated test clip':null,footer:shareCardFooter};
+}
+/** Fixed-size summary. Complete original evidence remains in the report and card details. */
+export async function downloadPhysicsCard(a:AuditOut,_overlay?:string,translate:(value:string)=>string=value=>value){
+ await document.fonts?.ready;
  const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');if(!ctx)throw new Error('PNG export is unavailable in this browser.');
- ctx.font='24px system-ui';const lines:string[]=[];
- for(const paragraph of physicsCardLines(a)){let line='';for(const word of paragraph.split(/\s+/)){if(ctx.measureText(line+' '+word).width>800&&line){lines.push(line);line=word}else line+=(line?' ':'')+word}lines.push(line,'')}
- let thumbnail:HTMLImageElement|undefined;
- if(overlay){try{thumbnail=await new Promise<HTMLImageElement>((resolve,reject)=>{const img=new Image();img.crossOrigin='anonymous';const timer=setTimeout(()=>reject(new Error('Thumbnail timed out')),5000);img.onload=()=>{clearTimeout(timer);resolve(img)};img.onerror=()=>{clearTimeout(timer);reject(new Error('Thumbnail unavailable'))};img.src=overlay})}catch{lines.push('Tracking thumbnail unavailable. Inspect the original audit overlay.')}}
- canvas.width=900;canvas.height=120+lines.length*34+(thumbnail?320:0);ctx.fillStyle='#f3f5f1';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#213c3b';ctx.font='24px system-ui';let y=55;
- for(const line of lines){ctx.fillText(line,45,y);y+=34}
- if(thumbnail){const ratio=Math.min(810/thumbnail.width,300/thumbnail.height);ctx.drawImage(thumbnail,45,y,thumbnail.width*ratio,thumbnail.height*ratio)}
+ canvas.width=shareCardSize.width;canvas.height=shareCardSize.height;
+ const card=shareCardContent(a),pad=84,width=canvas.width-pad*2;
+ ctx.fillStyle=card.background;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle=card.ink;
+ function paragraph(text:string,y:number,size:number,lineHeight:number){
+  ctx!.font=`500 ${size}px Inter, "Noto Sans TC", sans-serif`;let line='';
+  const draw=()=>{ctx!.fillText(line.trimEnd(),pad,y);y+=lineHeight;line=''};
+  for(const token of text.match(/\S+\s*|\s+/g)??[]){
+   if(line&&ctx!.measureText(line+token).width>width)draw();
+   for(const character of token){if(line&&ctx!.measureText(line+character).width>width)draw();line+=character}
+  }
+  if(line.trim())draw();return y;
+ }
+ ctx.font='700 28px "Space Grotesk", sans-serif';ctx.fillText('VIDEO PHYSICS AUDIT',pad,120);
+ paragraph(translate(card.verdict),270,42,58);
+ if(card.provenance)paragraph(translate(card.provenance),400,26,38);
+ let valueSize=240;ctx.font=`700 ${valueSize}px "JetBrains Mono", monospace`;
+ while(ctx.measureText(card.value).width>width&&valueSize>36){valueSize-=4;ctx.font=`700 ${valueSize}px "JetBrains Mono", monospace`}
+ ctx.fillText(card.value,pad,710);
+ if(card.unit){ctx.font='500 54px "JetBrains Mono", monospace';ctx.fillText(card.unit,pad,800)}
+ paragraph(translate(card.caption),card.unit?910:835,card.secondary?44:56,card.secondary?60:76);
+ if(card.secondary){paragraph(translate(card.secondary.label)+' · '+translate('Grip limit: 1.2 g'),990,28,40);ctx.font='700 90px "JetBrains Mono", monospace';ctx.fillText(card.secondary.value+' '+card.secondary.unit,pad,1090)}
+ if(card.limit&&!card.secondary)paragraph(translate(card.limit),1060,28,40);
+ let badgeY=1180;
+ for(const badge of [card.tracking,card.numbers]){const text=translate(badge);ctx.font='500 28px Inter, "Noto Sans TC", sans-serif';ctx.fillStyle=card.ink;ctx.fillRect(pad,badgeY-38,width,64);ctx.fillStyle=card.background;ctx.fillText(text,pad+20,badgeY+4);ctx.fillStyle=card.ink;badgeY+=88}
+ if(card.reference)paragraph(translate('Estimated car length range (m):')+' '+card.reference,1420,28,42);
+ paragraph(translate('Full evidence in the audit report.'),1510,28,42);
+ ctx.fillRect(pad,1660,width,2);paragraph(translate(card.footer),1735,30,46);
+ ctx.font='400 20px "JetBrains Mono", monospace';let idSize=20;while(ctx.measureText(a.audit_id).width>width&&idSize>8){idSize--;ctx.font=`400 ${idSize}px "JetBrains Mono", monospace`}ctx.fillText(a.audit_id,pad,1850);
  const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG export failed.')),'image/png'));
  const href=URL.createObjectURL(blob),link=document.createElement('a');link.href=href;link.download=a.audit_id+'-physics.png';link.click();setTimeout(()=>URL.revokeObjectURL(href),1000);
 }
