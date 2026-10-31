@@ -356,6 +356,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 10/31 21:45 Claude：合併 Codex T191–T195（手機、無障礙、分享卡、車子畫面、收尾）。npm test 140、兩個 build 過；新增的前端沒有自己算物理（分享卡的倍數讀後端 `g_vs_earth`），禁用字眼測試涵蓋新頁面。Manus T199–T201 已交，Claude 核對後重寫成最終版（見下一則）。
+
 - 10/31 Codex T195：補齊結果牆／證據連結／SAM 來源等漏翻 key，新增新頁面靜態文字、可及名稱、分享卡狀態的雙語掃描及禁用文案測試。移除舊淺色／重複 CSS，import graph 確認全部 TSX 仍可由 main 到達，未刪使用中的元件。修正上傳影格的 responsive height、換頁回頂端、中文 Earth 詞組斷行與缺資料空狀態；未改任何後端結果或資料檔。瀏覽器逐頁核對 home、wall、how、audit、compare、demo、saved example 及五個 coach 頁：1440px 雙欄與三卡正常，768／390px 單欄、欄位與證據可讀，36 組皆無橫向溢出／小於 44px 的可見按鈕／缺 alt；另驗證中英切換、Tab、卡片二次點擊收合、首頁動畫終態。3 張驗收圖與量測報告在 frontend/qa。npm 140 tests、一般／demo build 通過，入口均 <250 KB；上游 cd6b931 的 pytest 262 passed（未真打 API）。
 
 - 10/31 Codex 工作總結：T182 → T191 → T192 → T193 → T194 → T195 已依序實作、驗證與推送各自分支；只修改 frontend/ 與 STATUS。Codex 沒有待辦了（本批六件）；設計參照載入限制、倒數格式提案與 T186 後端自動場景接線缺口均已註明，手選車種流程可用。
