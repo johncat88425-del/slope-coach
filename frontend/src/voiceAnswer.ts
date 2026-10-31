@@ -9,7 +9,7 @@ export type VoiceFormPatch=Partial<Record<'camera'|'slow'|'size'|'length'|'model
 export function voiceFieldPatch(field:InterviewField,value:unknown):VoiceFormPatch|null{
  if((field==='camera_static'||field==='slow_motion')&&typeof value==='boolean')return {[field==='camera_static'?'camera':'slow']:value?'yes':'no'};
  if((field==='object_size_m'||field==='length_m')&&typeof value==='number'&&Number.isFinite(value)&&value>0&&value<=100)return {[field==='object_size_m'?'size':'length']:String(value)};
- if(field==='assumed_model'&&['free_flight','bounce','pendulum'].includes(value as string))return {model:value as string};
+ if(field==='assumed_model'&&['free_flight','bounce','pendulum','vehicle'].includes(value as string))return {model:value as string};
  if(field==='time_window'&&Array.isArray(value)&&value.length===2&&value.every(v=>typeof v==='number'&&Number.isFinite(v)&&v>=0)&&value[0]<value[1])return {start:String(value[0]),end:String(value[1])};
  return null;
 }
