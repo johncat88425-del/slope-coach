@@ -363,7 +363,8 @@ def test_suggest_object_success(tmp_path, monkeypatch):
     clip, fake = _object_setup(tmp_path, monkeypatch, [payload])
     tracker = _tracker(tmp_path)
     out = spark.suggest_object(clip, tracker=tracker)
-    assert out == {**payload, "source": "muse-spark-1.3"}
+    assert out == {**payload, "assumed_model": None, "judgeable": True,
+                   "vehicle_class": "unknown", "source": "muse-spark-1.3"}
     parts = fake.responses.calls[0]["input"][0]["content"]
     assert parts[0]["type"] == "input_text"
     assert sum(p["type"] == "input_image" for p in parts) == 2
@@ -386,10 +387,74 @@ def test_suggest_object_rejects(tmp_path, monkeypatch):
     for payload, match in cases:
         clip, fake = _object_setup(tmp_path, monkeypatch, [payload] * n_calls)
         if match is None:
-            assert spark.suggest_object(clip) == {**good, "source": "muse-spark-1.3"}
+            assert spark.suggest_object(clip) == {
+                **good, "assumed_model": None, "judgeable": True,
+                "vehicle_class": "unknown", "source": "muse-spark-1.3"}
         else:
             with pytest.raises(ModelOutputError, match=match):
                 spark.suggest_object(clip)
+
+
+def test_suggest_object_side_car(tmp_path, monkeypatch):
+    payload = {"object_name": "gray sedan", "camera_looks_static": True,
+               "reason": "sedan moves left to right, background identical",
+               "assumed_model": "vehicle", "judgeable": True,
+               "vehicle_class": "sedan"}
+    clip, _ = _object_setup(tmp_path, monkeypatch, [payload])
+    assert spark.suggest_object(clip) == {**payload, "source": "muse-spark-1.3"}
+
+
+def test_suggest_object_head_on_car_not_judgeable(tmp_path, monkeypatch):
+    payload = {"object_name": "white car", "camera_looks_static": True,
+               "reason": "car drives toward the camera so a side check cannot measure",
+               "assumed_model": None, "judgeable": False,
+               "vehicle_class": "unknown"}
+    clip, _ = _object_setup(tmp_path, monkeypatch, [payload])
+    out = spark.suggest_object(clip)
+    assert out["judgeable"] is False
+    assert out["assumed_model"] is None
+
+
+def test_suggest_object_moving_camera_not_judgeable(tmp_path, monkeypatch):
+    payload = {"object_name": "blue car", "camera_looks_static": False,
+               "reason": "background shifts between stills, camera pans with car",
+               "assumed_model": None, "judgeable": False,
+               "vehicle_class": "unknown"}
+    clip, _ = _object_setup(tmp_path, monkeypatch, [payload])
+    out = spark.suggest_object(clip)
+    assert out["judgeable"] is False
+    assert out["camera_looks_static"] is False
+
+
+def test_suggest_object_rejects_sneaked_length(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    payload = {"object_name": "gray car", "camera_looks_static": True,
+               "reason": "car drives past",
+               "assumed_model": "vehicle", "judgeable": True,
+               "vehicle_class": "sedan about 4.8 metres long"}
+    clip, _ = _object_setup(tmp_path, monkeypatch, [payload] * 3)
+    with pytest.raises(ModelOutputError, match="must not contain numbers"):
+        spark.suggest_object(clip)
+
+
+def test_suggest_object_off_list_class_becomes_unknown(tmp_path, monkeypatch):
+    payload = {"object_name": "yellow taxi", "camera_looks_static": True,
+               "reason": "taxi drives past",
+               "assumed_model": "vehicle", "judgeable": True,
+               "vehicle_class": "minivan"}
+    clip, _ = _object_setup(tmp_path, monkeypatch, [payload])
+    assert spark.suggest_object(clip)["vehicle_class"] == "unknown"
+
+
+def test_suggest_object_rejects_bad_model(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    payload = {"object_name": "gray car", "camera_looks_static": True,
+               "reason": "car drives past",
+               "assumed_model": "free fall", "judgeable": True,
+               "vehicle_class": "sedan"}
+    clip, _ = _object_setup(tmp_path, monkeypatch, [payload] * 3)
+    with pytest.raises(ModelOutputError, match="assumed_model"):
+        spark.suggest_object(clip)
 
 
 def test_suggest_object_missing_file(tmp_path, monkeypatch):

@@ -14,7 +14,7 @@ test('text tokens and verdict banners meet 4.5:1 contrast, including disabled co
  const token=Object.fromEntries([...css.matchAll(/--color-([\w-]+):(#[\da-f]+)/g)].map(([,key,value])=>[key,value]));
  for(const bg of [token.page,token.surface,token['disabled-bg']])for(const fg of [token.text,token.muted,token.eyebrow])assert.ok(contrast(fg,bg)>=4.5,`${fg} on ${bg}`);
  for(const verdict of ['consistent','inconsistent','insufficient_data']){
-  const bg=css.match(new RegExp('\\.verdict-'+verdict+'\\{background:(#[\\da-f]+)'))?.[1];assert.ok(bg);assert.ok(contrast('#ffffff',bg)>=4.5,verdict);
+  const bg=css.match(new RegExp('\\.verdict-'+verdict+'\\{background:(#[\\da-f]+)'))?.[1];assert.ok(bg);assert.ok(contrast(token.page,bg)>=4.5,verdict);
  }
  assert.ok(contrast(token.focus,token.surface)>=4.5);assert.ok(contrast(token.focus,token.page)>=4.5);
  assert.doesNotMatch(css,/(?:button:disabled|fieldset:disabled)\{[^}]*opacity:\.[0-9]/);
