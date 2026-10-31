@@ -78,7 +78,7 @@
 - [ ] T210 Codex：（10/31 Claude，Muse T203–T205 合併後）把三個新的 Muse 輸出放上畫面，都要標「由 Muse Spark 產生」：(1) 結果頁小標籤「Muse Spark 複查：追蹤的是同一個物體 ✓」或「⚠ 可能追錯物體」（後端欄位 `track_check`，沒有就不顯示）；(2) 不能判斷時，`RetakeGuide` 優先顯示 Spark 的 `retake_tips`，沒有就用現在的固定建議；(3) 不一致時在結果下面顯示「要怎樣才會一致」那一句。欄位名稱以 Claude T207 更新的 `docs/API.md` 為準。push `codex/T210-muse-ui`。
 - [x] T211 Codex：（10/31 Claude）**分享連結的預覽圖**。`frontend/index.html` 加 Open Graph 和 Twitter card 標籤（標題「Does it fall like Earth?」、一句說明、1200×630 預覽圖）；預覽圖照分享卡設計用 SVG 或 canvas 產生一次，存成 `frontend/public/og.png`；加 favicon（logo 那條虛線拋物線加琥珀色點）。不加新套件。push `codex/T211-og`。 — commit 63acb1d（144 tests、兩種 build、Pages base 檢查通過）
 - [x] T212 Codex：（10/31 Claude）**分析中的進度畫面**。上傳後等待時，顯示三步：「Muse Spark 正在看影片」「SAM 3.1 正在追蹤」「程式正在計算」，用現在 API 回傳的狀態決定哪一步亮（`AuditProgress.tsx`）。不准做假的百分比或假進度；拿不到狀態就只顯示一個轉圈和這三行說明。`prefers-reduced-motion` 時不轉圈。push `codex/T212-progress`。 — commit 77f52f7（147 tests、兩種 build；未知階段不假亮）
-- [ ] T213 Codex：（10/31 Claude，Antigravity T196／T198 回報後）修好 Antigravity 寫進 STATUS「缺什麼」的前端問題，每修一個就在那一行打勾。三個 build 都要過。push `codex/T213-fixes`。**到這裡 Codex 的待辦全部結束。**
+- [ ] T213 Codex：（進行中，codex/T213-fixes）（10/31 Claude，Antigravity T196／T198 回報後）修好 Antigravity 寫進 STATUS「缺什麼」的前端問題，每修一個就在那一行打勾。三個 build 都要過。push `codex/T213-fixes`。**到這裡 Codex 的待辦全部結束。**
 - [x] T182 Codex：（10/31 Claude，設計 v4，john 已同意顏色）網站改版。設計稿 https://claude.ai/artifact/81ELAL51WpPCbXJHxnzmzt （看 1 Home、2 Results、3 How it works、Share card 四張）。**顏色**：底 #0E0F12、卡片 #17181C、hover 卡片 #1C1E23、細線 #26282E、文字 #EDEDEF、次要 #8A8F98；地球／一致 = 藍 #5AB0F0；這支影片／不一致／主要按鈕 = 琥珀 #F5A524；資料不足 = 灰。**字體**：標題 Space Grotesk 700，內文 Inter，數字 JetBrains Mono。**分頁**：首頁、Results、How it works、上傳／稽核頁分成不同路由，不要一頁很長；導覽列只有 Results、How it works、中文／English。**首頁**：大標「Does it fall like Earth?」（Earth 藍色）、一句說明、琥珀色「Check a video」和外框「See examples」兩顆按鈕；右邊是 meta_clip4 畫面加動畫：藍色虛線（地球）先出現，琥珀線畫出來，終點彈出，最後出現「Doesn't match Earth gravity.」。**首頁不放數字。** **Results**：三張卡（一致／不一致／不能判斷），滑鼠指到的卡放大到 1.05、顯示數字，其他卡變暗、模糊、縮小；數字從 `data/demo` JSON 讀。**How it works**：四步，指到的那步變寬、編號變琥珀色、顯示說明。動畫只用 CSS transition／keyframes，不加新套件。保留所有 testid、鍵盤操作、中英切換、禁用字眼測試。`npm test`、`npm run build`、`VITE_DEMO_ONLY=1 npm run build` 都要過。push `codex/T182-redesign`。**做完直接接 T191。** — commit a189883（128 tests、一般／demo build 通過）
 - [x] T191 Codex：（10/31 Claude）手機版。每一頁在 390 px 和 768 px 寬檢查：不能橫向捲動、按鈕至少 44 px 高、大標縮到 44–52 px、Results 三張卡改成上下排、How 四步改成上下排。手機沒有滑鼠：卡片改成點一下展開數字（再點一下收起）。加一個前端測試確認 390 px 沒有元素超出畫面寬度。push `codex/T191-mobile`。 — commit 4560248（130 tests、一般／demo build 通過）
 - [x] T192 Codex：（10/31 Claude）無障礙。(1) 所有滑鼠效果用 `:focus-visible` 也要觸發，Tab 鍵可以一張一張看卡片；(2) `prefers-reduced-motion: reduce` 時關掉所有動畫，直接顯示最後畫面；(3) 文字對比至少 4.5:1（#8A8F98 在 #0E0F12 上要量，不夠就調亮）；(4) 判定不能只靠顏色，一定要有文字標籤；(5) 每張圖有 alt。跑現有的 a11y 測試並補新的。push `codex/T192-a11y`。 — commit 1b9a772（133 tests、一般／demo build 通過）
@@ -278,6 +278,11 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
+- [x] [T196 Antigravity E2E 發現 1/3，來源 f3c7410／4950c8d] favicon 404：T211 補 SVG／PNG／ICO；T213 再修 dev 子路徑重複前綴，改由 Vite 正規化根路徑。HTTP 回歸確認根路徑與 /slope-coach/ 的 HTML、favicon 三種格式及 og.png 全部 200；Pages build 亦只有一層前綴。
+- [x] [T196 Antigravity E2E 發現 2/3，來源 f3c7410／4950c8d] 手機卡片無 hover：T191（4560248）已加點擊展開／收合；T213 在 390px 實際點兩次，aria-expanded 依序 true／false，第二次證據區確實收起，頁面無橫向溢出。
+- [x] [T196 Antigravity E2E 發現 3/3，來源 f3c7410／4950c8d] 鍵盤無預覽：T192（1b9a772）已有 focus-visible 對應；T213 在 390／1440px 用 Tab，聚焦卡片後證據區展開。驗收圖 frontend/qa/t213-keyboard-results-390.jpg 與 t213-keyboard-results-desktop.jpg。
+- [x] [T198 Antigravity 報告核對，來源 4950c8d] 原回報確認 iPhone 14／Pixel 7 無阻塞性 UI 問題。T213 沒有改掉既有手機觸控與尺寸修正；僅同步其回報，未冒稱由 Codex 重跑付費流程。
+
 - [x] [README 安裝問題 / T197 發現] Claude 10/31 已修：README 加 macOS ensurepip 失敗的繞法（`--without-pip` 再裝 pip）、註明 Docker 只有 `docker compose up` 才需要；`scripts/dev.sh` 優先用 `python3.11`。
 - [ ] 還沒有可用的真實影片。第一支（IMG_8418.MOV）有四個問題：拍攝角度是斜的、滑塊太小太淡、只滑了 0.75 秒、畫面有人臉。
 - [ ] 影片送 Spark 的實際 token 數和費用：未測。
@@ -289,6 +294,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - [x] Claude 已修（10/31）：`backend/video.py` 的 `probe_fps()` 遇到含 tmcd 軌的 mp4 只取第一行，加測試 `tests/backend/test_video_probe.py`；Pexels 原檔不用再 remux。
 
 ## 待 john 決定
+
+- T210 Codex：T212 完成後已 pull main（065852d），T207 仍未勾選，docs/API.md／backend/schemas.py 尚無 track_check、retake_tips、what_would_fit 的回應契約。依 john 指示先跳過，完成 T213 後再同步重查；不預猜 JSON 形狀、不自行修改後端或捏造 Muse 輸出。
 
 - T194 Codex／Claude：T186 已合併但 backend/schemas.py 尚未接新 suggestion／QuestionField（原有「缺什麼」已記）。前端先完成使用者手選 vehicle_class 並傳既有 POST /api/audits；固定參考車長逐字對應 API v1.2 表，僅供確認／輸入量測值覆蓋，不填入 object_size_m、不算中點。結果範圍照後端 numbers。自動場景建議仍取決於後端接線，未冒稱已可端到端運作。
 
@@ -370,6 +377,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 10/31 Codex T213：讀取 Antigravity T196／T198 已推送的 STATUS 回報（尚未合 main 的報告亦已核對），逐項收進「缺什麼」並打勾。既有手機與鍵盤修正重新在 390／1440px 驗證；新增真實 Vite HTTP 資產回歸，抓到並修正 /slope-coach/ dev favicon 前綴重複。148 tests、一般／demo build、額外 Pages base build 全過；favicon／OG 路徑皆 200，無新依賴、模型呼叫或後端修改。
 
 - 10/31 Codex T212：主偵訊與進階稽核共用 AnalysisStages，等待時只有一個不定量 spinner 與三列流程說明（Spark 查看、SAM 追蹤、程式計算）。同步 API 沒有中間階段回報，所以全部維持 unreported，不按時間／已送出請求假裝某模型正在執行；結果再顯示實際來源。僅真實上傳 bytes 保留百分比，完成傳輸後移除 progressbar；elapsed 只顯示經過秒數，不當 ETA。減少動態效果停用旋轉；表單、錯誤與結果焦點沿用。147 tests、一般／demo build 通過。無 API 請求的實際元件 fixture 已驗證中英／390px，截圖 frontend/qa/t212-waiting-390-zh.jpg，驗證期間三階段始終未自行變更。
 
