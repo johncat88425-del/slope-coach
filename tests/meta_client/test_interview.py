@@ -46,6 +46,16 @@ def test_interview_success(tmp_path, monkeypatch):
     assert tracker.total_usd() > 0
 
 
+def test_interview_asks_vehicle_class(tmp_path, monkeypatch):
+    payload = {"questions": [
+        {"field": "vehicle_class",
+         "text": "What kind of car is visible in the clip?"},
+    ]}
+    clip, _ = _setup(monkeypatch, tmp_path, payload)
+    out = interview.interview_audit(clip)
+    assert out["questions"] == payload["questions"]
+
+
 def test_interview_rejects(tmp_path, monkeypatch):
     monkeypatch.setattr(time, "sleep", lambda s: None)
     q = lambda field, text: {"field": field, "text": text}  # noqa: E731

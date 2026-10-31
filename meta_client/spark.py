@@ -569,12 +569,17 @@ def check_capture_conditions(
     raise ModelOutputError(f"capture check failed validation: {last_error}")
 
 
+VEHICLE_CLASSES = ("compact_car", "sedan", "suv", "pickup", "unknown")
+
 OBJECT_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
         "object_name": {"type": "string"},
         "camera_looks_static": {"type": "boolean"},
         "reason": {"type": "string"},
+        "assumed_model": {"type": ["string", "null"], "enum": ["vehicle", None]},
+        "judgeable": {"type": "boolean"},
+        "vehicle_class": {"type": "string", "enum": list(VEHICLE_CLASSES)},
     },
     "required": ["object_name", "camera_looks_static", "reason"],
     "additionalProperties": False,
@@ -587,10 +592,20 @@ OBJECT_PROMPT = (
     "frame as a short lowercase English noun phrase (colour + kind, e.g. "
     "orange basketball); camera_looks_static is true when the background and "
     "frame edges look the same in both stills. reason is one short English "
-    "phrase saying what you saw. Describe only what is visible; do not claim "
-    "proof or causes (no 'proves', 'confirms', 'must be'). Do not output any "
-    "numbers at all: no times, no frame numbers, no coordinates, no sizes. "
-    "Use exactly these JSON keys: object_name, camera_looks_static, reason."
+    "phrase saying what you saw. When the main moving object is a car seen "
+    "from the side driving past, set assumed_model to vehicle and "
+    "vehicle_class to one of compact_car, sedan, suv, pickup, or unknown "
+    "(pick unknown when unsure); otherwise leave assumed_model null and "
+    "vehicle_class unknown. When the car drives toward or away from the "
+    "camera, or the camera itself moves, set judgeable to false and say why "
+    "in reason (e.g. car drives toward the camera so a side check cannot "
+    "measure); otherwise judgeable is true. Describe only what is visible; "
+    "do not claim proof or causes (no 'proves', 'confirms', 'must be'). Do "
+    "not output any numbers at all: no times, no frame numbers, no "
+    "coordinates, no sizes, not even car lengths — lengths come from a "
+    "program table, never from you. Use exactly these JSON keys: "
+    "object_name, camera_looks_static, reason, assumed_model, judgeable, "
+    "vehicle_class."
 )
 
 MAX_OBJECT_REASON_CHARS = 200
@@ -633,7 +648,23 @@ def _validate_object(data: Any) -> dict[str, Any]:
         checked = check_model_text(text, [])
         if not checked.ok:
             raise ModelOutputError(f"{label} failed checks: " + "; ".join(checked.problems))
-    return {"object_name": name.strip(), "camera_looks_static": static, "reason": reason.strip()}
+    assumed = data.get("assumed_model")
+    if assumed is not None and assumed != "vehicle":
+        raise ModelOutputError('assumed_model must be "vehicle" or null')
+    judgeable = data.get("judgeable", True)
+    if type(judgeable) is not bool:
+        raise ModelOutputError("judgeable must be boolean")
+    vclass = data.get("vehicle_class", "unknown")
+    if not isinstance(vclass, str):
+        raise ModelOutputError("vehicle_class must be a string")
+    if any(c.isdigit() for c in vclass):
+        raise ModelOutputError(
+            "vehicle_class must not contain numbers; car lengths come from the program table")
+    if vclass not in VEHICLE_CLASSES:
+        vclass = "unknown"
+    return {"object_name": name.strip(), "camera_looks_static": static,
+            "reason": reason.strip(), "assumed_model": assumed,
+            "judgeable": judgeable, "vehicle_class": vclass}
 
 
 def suggest_object(
