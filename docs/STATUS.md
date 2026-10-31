@@ -51,7 +51,7 @@
 
 **Muse**（照順序做）
 - [ ] T203 Muse：（10/31 Claude）**Spark 複查 SAM 追蹤**（模型檢查模型，評審最看得到 Meta 用法）。新增 `meta_client/track_check.py` 的 `check_track(video_path, points, object_name)`：從追蹤點裡平均挑 4 個時間點，各截一張影格並在追蹤位置畫圓圈，送給 Spark 問「4 張圖圈起來的是不是同一個 {object_name}？」。只准回傳 JSON `{"same_object": true/false, "note": "一句話"}`；`note` 不准有數字和禁用字眼；失敗最多重試 2 次，再失敗就回 `None`（代表沒檢查）。花費計入 cost tracker。在 `meta_client/hooks.py` 加 `track_check` hook，沒有金鑰時回 `None`。單元測試至少 5 個（同物體、換物體、不是 JSON、note 有數字、逾時），不真打 API。**後端接線由 Claude T207 做，你不要改 backend/。** push `muse/T203-track-check`。
-- [x] T204 Muse：commit 待填。新 `meta_client/retake.py`：拒判時讀 reasons 寫 1–3 條重拍建議，每條 80 字內，數字只能用 reasons 裡的（程式 parse 原因句數字當 allowlist），禁字照舊，失敗回 `None`（前端退回固定建議）。hook `retake_tips`（英文，同 explain）。7 個 mock 測試（成功＋引原因數字＋偷渡數字＋禁字兩種＋非拒判不呼叫＋超長＋壞 lang），pytest 269 全過，未真打 API，未碰 backend。判定是 insufficient_data 時，Spark 讀 `reasons` 寫 1 到 3 條具體的重拍建議（例如「球往鏡頭飛：請站到球飛行路線的正側面」）。新增 `meta_client/retake.py` 的 `write_retake_tips(audit, lang)`，輸出 `{"tips": ["..."]}`；每條 80 字內；不准出現 reasons 裡沒有的數字；禁用字眼照舊；失敗就回 `None`，前端會退回現在的固定建議。hook 名稱 `retake_tips`。測試至少 4 個。push `muse/T204-retake`。
+- [x] T204 Muse：commit c765d18。新 `meta_client/retake.py`：拒判時讀 reasons 寫 1–3 條重拍建議，每條 80 字內，數字只能用 reasons 裡的（程式 parse 原因句數字當 allowlist），禁字照舊，失敗回 `None`（前端退回固定建議）。hook `retake_tips`（英文，同 explain）。7 個 mock 測試（成功＋引原因數字＋偷渡數字＋禁字兩種＋非拒判不呼叫＋超長＋壞 lang），pytest 269 全過，未真打 API，未碰 backend。判定是 insufficient_data 時，Spark 讀 `reasons` 寫 1 到 3 條具體的重拍建議（例如「球往鏡頭飛：請站到球飛行路線的正側面」）。新增 `meta_client/retake.py` 的 `write_retake_tips(audit, lang)`，輸出 `{"tips": ["..."]}`；每條 80 字內；不准出現 reasons 裡沒有的數字；禁用字眼照舊；失敗就回 `None`，前端會退回現在的固定建議。hook 名稱 `retake_tips`。測試至少 4 個。push `muse/T204-retake`。
 - [ ] T205 Muse：（10/31 Claude）**「要怎樣才會一致」一句話**。判定是 inconsistent 的自由飛行，`numbers` 裡有 `implied_time_factor`（如果影片其實被放慢幾倍就會符合地球）和 `implied_object_size_m`（如果物體其實多大就會符合）。寫 `meta_client/explain.py` 的新樣板 `what_would_fit`：Spark 只寫句子，數字用 `{implied_time_factor}`、`{implied_object_size_m}` 欄位由程式填，例如「如果這支影片其實放慢了 {implied_time_factor} 倍，或球其實有 {implied_object_size_m} 公尺寬，才會和地球重力一致。」不准寫「所以是假的」或任何因果字眼。中英文都要。測試至少 4 個。push `muse/T205-what-would-fit`。
 - [ ] T206 Muse：（10/31 Claude，T203–T205 和 Claude T207 都合併後）照最終 demo 腳本的順序（自拍 own_2 → meta_clip4 → meta_clip2 → 合成車子）真打一次完整流程，記錄每一步秒數（Spark 偵訊、SAM、擬合、Spark 說明、Spark 複查）和花費，寫進 STATUS 日誌，給 john 錄影抓節奏。上限 $0.40。push `muse/T206-rehearsal`。
 - [ ] T208 Muse：（10/31 Claude）在 STATUS「已做的決定」下面加一段**「Meta 模型用法總表」**（評審看 Meta 用法占 25%）：每個呼叫點一行，寫模型名稱、做什麼、輸入、輸出格式、驗證方式（schema、禁用字眼、數字不准出現）、失敗時怎麼退回、平均每次花費（從 `data/cost_log.csv` 算，用程式算不要估）。只改 STATUS。push `muse/T208-model-table`。**到這裡 Muse 的待辦全部結束。**
@@ -371,7 +371,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
-- 10/31 Muse 完成 T204（分支 muse/T204-retake，commit 待填）：Spark 重拍建議（1–3 條，數字限原因句，敗回 None）。7 新測試，pytest 269 全過，$0。
+- 10/31 Muse 完成 T204（分支 muse/T204-retake，commit c765d18）：Spark 重拍建議（1–3 條，數字限原因句，敗回 None）。7 新測試，pytest 269 全過，$0。
 
 - 10/31 22:00 Claude：john 要求一次多給。排第二批：Muse T203–T206、T208；Codex T209–T213；Antigravity T214–T216（加在 T196、T198 後面）；Claude T207、T217。都在 11/02 晚上凍結前。
 
