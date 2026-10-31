@@ -38,12 +38,13 @@ The two trackers do not always agree on which clips can be judged; both are repo
 ## Key Features (Currently Working)
 
 ### 1. Video Motion Physics Audit (`POST /api/audits`)
-- **Model Verification**: Tests whether motion in an uploaded video clip is consistent with an assumed physical hypothesis (`free_flight`, `bounce`, or `pendulum`). Free flight is tested on real and generated clips; the bounce and pendulum checks are unit-tested on synthetic tracks but not yet on real clips.
+- **Model Verification**: Tests whether motion in an uploaded video clip is consistent with an assumed physical hypothesis (`free_flight`, `bounce`, `pendulum`, or `vehicle`). Free flight is tested on real and generated clips; the bounce and pendulum checks are unit-tested on synthetic tracks but not yet on real clips.
 - **Deterministic Trajectory Analysis**:
   - Automatically extracts object centroid coordinates across frames (using frame differencing / color tracking, with zero-shot segmentation hooks for Meta SAM 3.1).
   - Fits apparent gravitational acceleration ($g_{\text{apparent}}$) and initial velocities ($v_{x0}, v_{y0}$) via least-squares optimization.
   - Compares the observed acceleration to reference celestial bodies (Earth: $9.81\text{ m/s}^2$, Moon: $1.62\text{ m/s}^2$, Mars: $3.71\text{ m/s}^2$, etc.).
   - Computes the implied time factor, which flags footage that may be slowed down.
+- **Car on a road (`vehicle`)**: the car's own length is the ruler (user-confirmed, or a vehicle class such as sedan or pickup, whose length range comes from published specs in `docs/research/vehicle.md`). Fits speed and acceleration along the road; a track that needs more than 1.2 g of braking or acceleration is inconsistent with an ordinary car on tyres. Without a confirmed length it judges only when both ends of the length range agree. The car demo uses synthetic test clips (50 km/h braking at 0.60 g, consistent; a 3 g launch, inconsistent); the four stock side-on clips we tried were all refused because the whole car was in view for too short a time.
 - **Ghost Trajectory Comparison**:
   - Projects theoretical "ghost" coordinates following standard Earth gravity ($9.81\text{ m/s}^2$) directly alongside real empirical points.
 - **Principled Abstention**:
@@ -56,10 +57,10 @@ The two trackers do not always agree on which clips can be judged; both are repo
 - **Controlled Intervention Recommendations**: When discrepancy exceeds tolerance, recommends falsifiable follow-up tests (`release_check` via barrier release vs `dimension_check` via height re-measurement).
 
 ### 3. Interactive Web UI (`frontend/`)
-- Modern single-page web app built with React, Vite, and TypeScript.
+- React, Vite, and TypeScript, with separate Home, Results, How it works and Check a video pages; dark theme, hover and keyboard focus reveal the numbers; motion turns off with `prefers-reduced-motion`.
 - **Audit Page & Guided Demo**: Upload video or replay pre-computed offline demonstrations (`synthetic_consistent`, `synthetic_inconsistent`, `synthetic_insufficient`, and real benchmark clips).
 - **Trajectory Visualizer & Charts**: High-contrast, accessible 2D plots (cyan dashed lines for predictions, orange solid lines for observations).
-- **Physics Card Export**: Generates and downloads a summary badge with overlay snapshots, empirical numbers, and boundaries.
+- **Share card**: downloads a 1080×1920 PNG (e.g. "0.0146× Earth's gravity" for the Meta AI basketball clip); the multiple comes from the backend's `g_vs_earth`.
 - **Bilingual Interface**: Full support for English and Traditional Chinese.
 
 ---
@@ -183,6 +184,7 @@ python scripts/e2e_audit.py
 
 - One object, fixed camera, roughly side-on view. Handheld footage, objects moving toward the camera (size change over 30%), slow motion, and gaps in tracking are refused rather than guessed.
 - 2D only: no depth, no live streaming.
+- Cars: the 1.2 g limit is a screening threshold for ordinary road cars, not a universal limit; perspective, yaw and a wrong car length all bias the estimate.
 - The metre scale comes from a user-entered object size; a wrong size scales g by the same factor.
 - Generated clips were made with consumer apps at one point in time; results say nothing about other generators or later versions.
 
