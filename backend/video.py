@@ -83,11 +83,11 @@ def blob_diameter(ys: np.ndarray, xs: np.ndarray) -> float:
 
 
 def track_color(rgb_frames: np.ndarray, fps: float, start: float, color: str, thresh: float = 30.0,
-                min_px: int = 15):
+                min_px: int = 15, widths: list | None = None):
     """Pixels that have the object's colour AND differ from the median background; the largest connected
     blob per frame is the object. Static things of the same colour (furniture, floor) drop out because
     they do not move; a moving arm drops out because it is not that colour. Returns points and per-frame
-    diameters (px)."""
+    diameters (px). With widths, also appends each tracked blob's box width (px), for the vehicle check."""
     lo, hi = COLOR_HUES[color]
     bg = np.median(rgb_frames, axis=0)
     pts, sizes = [], []
@@ -106,6 +106,8 @@ def track_color(rgb_frames: np.ndarray, fps: float, start: float, color: str, th
         ys, xs = np.nonzero(lab == k + 1)
         pts.append((start + i / fps, float(xs.mean()), float(ys.mean())))
         sizes.append(blob_diameter(ys, xs))
+        if widths is not None:
+            widths.append(float(xs.max() - xs.min() + 1))
     return pts, sizes
 
 
@@ -114,8 +116,10 @@ def track(frames: np.ndarray, fps: float, start: float, thresh: float = 30.0, mi
     return pts, (float(np.median(sizes)) if sizes else None)
 
 
-def track_with_sizes(frames: np.ndarray, fps: float, start: float, thresh: float = 30.0, min_px: int = 20):
-    """Same tracker as track(), also returning the per-frame object size (sqrt of mask area, px)."""
+def track_with_sizes(frames: np.ndarray, fps: float, start: float, thresh: float = 30.0, min_px: int = 20,
+                     widths: list | None = None):
+    """Same tracker as track(), also returning the per-frame object size (sqrt of mask area, px). With widths,
+    also appends each frame's moving-pixel box width (px), for the vehicle check."""
     bg = np.median(frames, axis=0)
     pts, sizes = [], []
     for i, f in enumerate(frames):
@@ -125,6 +129,8 @@ def track_with_sizes(frames: np.ndarray, fps: float, start: float, thresh: float
         ys, xs = np.nonzero(mask)
         pts.append((start + i / fps, float(xs.mean()), float(ys.mean())))
         sizes.append(float(np.sqrt(mask.sum())))
+        if widths is not None:
+            widths.append(float(xs.max() - xs.min() + 1))
     return pts, sizes
 
 

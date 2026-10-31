@@ -3,7 +3,7 @@
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
 > **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
 > **只讀到「## 封存」為止。** 封存區是已完成的任務和舊日誌，平常不用讀；要查舊紀錄再搜尋。
-> 最後更新：2026-10-29 12:20Z（Claude，STATUS 瘦身）
+> 最後更新：2026-10-31 01:30Z（Claude，新增車子檢查 T175–T178）
 
 ## 一句話現況
 
@@ -15,10 +15,10 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T166 已合併；可選 T171（靜音時回 200 空欄位） |
-| **Codex** | T173（顯示重力當尺）；Figma 收尾不急 |
+| **Muse** | **T176 車子（最優先）** → 可選 T171 |
+| **Codex** | **T177 車子畫面（最優先）** → T173（顯示重力當尺）；Figma 收尾不急 |
 | **Antigravity** | 沒有待辦（T53、T68 已合併；T167 改給 Codex） |
-| **Manus** | T163、T164 完成（Claude 核對後的 v2 在 john 手上）；可選 T22 |
+| **Manus** | **T178 車子影片與資料研究**；可選 T22 |
 | **Claude** | 審查合併 PR；核對 Manus 文字；彈跳球片到了就跑 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
 
@@ -48,6 +48,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
+- [ ] T176 Muse：（最優先，10/31 Claude）讓「車子」模型在 Meta 模型這一側也能用。背景：john 10/31 要加車子檢查。Claude 已做好 `physics/experiments/vehicle.py` 和後端（T175，`assumed_model=vehicle`，車身長度放 `object_size_m`）。後端需要每格的**追蹤框寬度**當尺，但 `meta_client/hooks.py` 現在只回中心點和面積，所以 SAM 追車子一定會被拒判（原因寫「no car widths in pixels」）。**從這裡開始**：(1) `git checkout main`、`git pull origin main`、`git checkout -b muse/T176-vehicle`；(2) `meta_client/hooks.py` 的 `_dense_detections`：`DetectionIn` 多填 `width_px`，值是 `det.box` 的 `x2 - x1`；`normalized=True` 時除以畫面寬 `fw`（跟 `centroid_px` 一樣是 0 到 1 的比例），沒有 box 時不填；加 1 個單元測試（假的 `TrackResult`，box 寬 384 px、畫面 1920 → `width_px == 0.2`）；(3) `meta_client/interview.py` 的 `INTERVIEW_PROMPT`：`assumed_model` 那句改成 free fall, bounce, pendulum, or vehicle (a car driving past side-on)，並加一句：for a vehicle, object_size_m is the car's length；問題文字仍然不准有數字；(4) `meta_client/voice.py`：`assumed_model` 的 enum 和第 359 行的檢查加上 `"vehicle"`，提示詞加 vehicle，`object_size_m` 說明加「for a car, its length」；補 1 個測試（逐字稿 "it's a car driving past, about four and a half metres long" → `assumed_model=vehicle`、`object_size_m=4.5`，用 mock 回傳，不要真打）；(5) `meta_client/headline.py`：vehicle 結果沒有重力數字，現在會回 None，這是對的；**加**車子版：`assumed_model == "vehicle"` 而且有 `speed_km_h` 時，讓 Spark 寫一句標題範本，只能用 `{speed_km_h:0}`、`{accel_g:1}` 兩個空格（例：「這台車在 {accel_g:1} g 下煞車，比賽車還猛」），數字由程式填，照現有的檢查流程；補 mock 測試；(6) 跑 `pytest -q` 全綠；(7) **不准真打 API**（要真打先寫進「待 john 決定」），只改 `meta_client/`、`tests/`、STATUS；(8) **到這裡結束**：在這行打勾附 commit，push `muse/T176-vehicle`，跟 john 說「T176 好了」。
 - [ ] T171 Muse：（可選）錄音是純靜音、轉出空稿時，`/voice` 現在回 502。改成回 200、欄位全空、加一句「沒有聽到內容」的提示；加測試。只改 `meta_client/` 和測試，不要真打 API。push 分支 `muse/T171-empty-voice`。
 - [x] T166 Muse：修語音 502（T119 發現）。在 `meta_client/voice.py` 的 ASR request 補上 `audioEncoding` 欄位（照 Meta API 文件填我們送的格式），加一個單元測試確認 request 帶了這個欄位；再真打一次 `POST /api/audit-drafts/{id}/voice` 確認不是 502，花費上限 $0.05。只改 `meta_client/`、測試、STATUS、cost_log。push 分支 `muse/T166-voice-encoding`。 — commit 006fb55（request 補 audioEncoding WAV＋斷言測試；真打 voice 端點 200。$0.039，累計 $1.771）
 - [x] T119 Muse：真的接上 Meta API 跑一次完整的網站流程（不用瀏覽器，用 curl），確認 demo 時評審看到的 Muse 功能都能動。花費上限 $0.30。(1) `git checkout main`、`git pull origin main`；(2) `set -a; . ./.env; set +a; uvicorn backend.main:app --port 8000`（另開一個終端機跑下面）；(3) 用 `data/gate/clips/meta_clip2.mp4` 依序打：`POST /api/audit-drafts`（看 `interview.source` 是不是 model、`suggestion` 有沒有）→ `POST /api/audit-drafts/{id}/windows` → `POST /api/audit-drafts/{id}/voice`（用 `say -o answer.aiff "the camera did not move and the ball is twenty four centimetres"` 錄一段，轉成 m4a 再送）→ 照 docs/API.md 送出稽核；(4) 每一步記下：成功或失敗、`source` 欄位、花了多少錢、花幾秒；(5) 結果寫進 STATUS 日誌，壞掉的地方寫清楚錯誤訊息，不要自己改後端；(6) 不 commit 任何音檔或影片，push 分支 `muse/T119-live-smoke`（只改 STATUS 和 cost_log）。 — commit 45ab6d3（4 步 3 過：偵訊／時間窗／稽核全通；語音 502——ASR API 現在強制要 audioEncoding 欄位，我方沒送（T24 時不用，API 變了），修法見日誌。$0.046，累計 $1.732）
@@ -58,6 +59,7 @@
 
 
 **Codex**（照順序做）
+- [ ] T177 Codex：（最優先，10/31 Claude）前端加上「車子」模型（後端已好，見 docs/API.md 的 `assumed_model=vehicle`）。**從這裡開始**：(1) `git checkout main`、`git pull origin main`、`git checkout -b codex/T177-vehicle`；(2) `frontend/src/audit.ts`：`AuditModel` 加 `'vehicle'`，`verdictText` 的名字是「車子行駛」，第 15 行的檢查清單加 `'vehicle'`；`voiceAnswer.ts` 第 12 行同樣加上；(3) `InterviewPanel.tsx` 和 `AuditPage.tsx` 的模型選單加一個選項：「車子從側面開過（鏡頭固定）」；選了 vehicle 時，尺寸欄的標籤改成「車身長度（公尺）」，下面一行小字：「一般轎車約 4.5 公尺，休旅車約 4.8，小車約 3.5；知道車型最好查原廠數字。不填也可以，會用 3 到 6 公尺都算一次，兩個答案一樣才判。」（這段的數字是給使用者參考的固定說明，不是測量結果）；另外提示「請選車子整台都在畫面裡、從左開到右的那幾秒」；(4) 結果卡（verdict 下方）在 vehicle 時顯示：車速 `speed_km_h`（km/h，取整數）、加速或煞車 `accel_g`（g，小數 2 位；`accel_m_s2` 負的寫「煞車」，正的寫「加速」）、`speed_car_lengths_s`（「每秒走 X 個車身長」，這個不需要車長）、以及一句「這台車要有 `car_length_for_max_accel_m` 公尺長，這個加速度才剛好是 1.2 g」；**數字只照後端原值顯示，不要自己算**（km/h 後端已給）；欄位不存在就不顯示那一行；固定說明一句：「一般車子的輪胎抓地力大約撐得住 1 g；超過 1.2 g 就和『車子在路上開』這個假設不一致。這不判斷影片真假。」(5) 靜態 demo：`data/demo/synthetic_car_50kmh_braking.json`（一致，約 49 km/h、0.60 g 煞車）和 `synthetic_car_3g_launch.json`（不一致，3.0 g）是程式畫的方塊，要放進 demo 頁或結果牆時**一定要標「程式模擬」**，不准說是真實或生成影片；(6) 測試：`audit.test` 類加 vehicle 的 verdictText 和欄位驗證；結果卡在 vehicle 時顯示 km/h、沒有車長時不顯示 km/h；禁字檢查要過；(7) `npm test`、`npm run build`、`VITE_DEMO_ONLY=1 npm run build` 都要過；只改 `frontend/` 和 STATUS，不改後端；(8) **到這裡結束**：打勾附 commit，push `codex/T177-vehicle`，跟 john 說「T177 好了」，再接 T173。
 - [ ] T173 Codex：在稽核結果和物理名片上顯示「重力當尺」四個新數字（後端已有，見 docs/API.md 的 `if_earth_*`）。標題寫「如果這是地球重力、正常速度」，數字照後端原值顯示，不要自己算。旁邊固定一句說明：「這是假設下的讀數，不是判定；慢動作會讓高度變大。」結果牆和靜態 demo 要能看到（demo JSON 沒有這些欄位時就不顯示）。push 分支 `codex/T173-gravity-ruler`。
 - [x] T167 Codex：已檢查線上 Pages 在 1440／390px 的 demo、wall、audit、compare、how、home（12 張不同截圖，未 commit）；六個頁面／圖片與全部導覽均可用，console 無錯誤。修正 Guided demo 在長頁面看不到下一步、一般導覽被拉回、跨頁焦點遺失；本機 Pages 子路徑版以鍵盤完成六步、固定面板保持可見、結束回到啟動按鈕。npm 118 pass、pytest 224 pass、一般與 Pages build pass；修補待 PR 合併後部署。 — commit 9889f77，PR #97（目標 main）。
 - [ ] T165 Codex（前端完成；Figma 收尾受配額阻擋）：依 john 直接指示完成日本編輯設計改版，14 個 Figma 桌面／手機狀態、47 個 Variables、21 個元件 variants；前端保留 API、原文、數字、testid 與鍵盤流程。npm 115 pass、標準／demo build pass；Figma 手機欄位與清理待配額恢復，故不整項勾完。Figma：https://www.figma.com/design/qXc74pdeiHjVzEV47YrDRQ — frontend commit a624494；同步 main 7e2c8bf，PR #87（目標 main）；本任務原暫編 T164，同步 main 後避開 Manus 的 T164 改為 T165。
@@ -72,12 +74,14 @@
 
 
 **Manus**（不寫程式）
+- [ ] T178 Manus：（10/31 Claude）車子檢查需要的研究，不寫程式。成果整理成一份英文 markdown，交給 john 放到 `docs/research/vehicle.md`。**從這裡開始，依序做五件事**：(1) **找能用的真實影片**：在 Pexels、Pixabay、Wikimedia Commons 找 5 支「鏡頭完全固定（腳架）、正側面、一台車從畫面一邊開到另一邊、整台車入鏡、不是慢動作、看不到清楚車牌和人臉」的影片。每支列：網址、授權（要能免費商用或 CC）、長度、fps、車子大約從第幾秒到第幾秒整台在畫面裡、車型（看得出來的話）。john 10/31 給的三支（Pexels 4064324、4513718、9337511）都是車子往鏡頭開或車內拍攝，**不算**，不要再列。(2) **最好再找 1 支煞車或起步的**（車速有明顯變化），一樣的條件。(3) **Meta AI 生成影片的提示詞**：寫 3 句英文提示詞，讓 john 在 Meta AI app 生成「固定鏡頭、正側面、一台車開過」的影片，要和 (1) 的真實影片畫面類似，方便對照。不准寫「做一支假影片」這類字眼。(4) **常見車長表**：10 款美國最常見的車（例如 Toyota Camry、Honda Civic、Ford F-150、Tesla Model 3/Y、Toyota RAV4）的車身長度（公尺，附原廠或可靠來源網址）。(5) **為什麼 1.2 g 是合理上限**：找 2 到 3 個可靠來源（輪胎抓地力、一般車緊急煞車的減速度、跑車的最大加速度），各寫一句和網址。**不准**寫「能抓假影片」「偵測 AI」「任何影片都能檢查」。**到這裡結束**：把整份交給 john，請他轉給 Claude 核對網址和數字。
 - [x] T164 Manus：三分鐘 demo 的英文旁白和分鏡表（給 john 錄影用）。順序：(1) 0:00–0:20 問題：影片裡的運動符不符合物理，一般人沒辦法量；(2) 0:20–1:00 Muse 偵訊：上傳 → Muse Spark 問問題、建議物體名稱 → 使用者確認；(3) 1:00–1:40 真實影片：john 丟球，SAM 3.1 追蹤，g = 9.45 m/s²，與假設一致；(4) 1:40–2:20 生成影片：g = 0.14 m/s²（像冥王星），與真實重力的自由飛行不一致；另一支因為物體往鏡頭移動而拒判；(5) 2:20–2:50 限制與規則：數字只由程式算、模型不碰數字、不判斷影片真假；(6) 2:50–3:00 結尾。數字只用 README「Results on our test set」的 SAM 欄。每段寫：畫面上要點哪裡、旁白（英文）、秒數。不准說「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude 檢查。
 - [x] T163 Manus：用目前的數字寫提交文字初稿（英文，Cerebral Valley 用）：一段 50 字簡介、一段 200 字說明（問題、做法、Meta 模型用在哪、結果、限制）。數字只用 README 的「Results on our test set」表；SAM 版寫 [TBD]。不准出現「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude。
 - [ ] T22 Manus：使用者測試計畫（招募訊息、任務腳本、記錄表）
 
 
 **Claude**
+- [x] T175 Claude：車子檢查（john 10/31 要求）。`physics/experiments/vehicle.py`：用使用者給的車身長度當尺，擬合沿行進方向的位置 s(t) = s0 + v t + ½ a t²，算車速、加速度；需要超過 1.2 g 或軌跡跳動 → 不一致；沒給車長時 3 m 和 6 m 都算，答案一樣才判。後端 `assumed_model=vehicle`，追蹤框寬度經 `DetectionIn.width_px`（SAM，等 Muse T176）或不用模型的追蹤（已接好）傳進來。說明範本、API.md、2 筆程式模擬 demo 紀錄（49 km/h 煞車 0.60 g 一致；3.0 g 起步不一致）、8 個 physics 測試＋1 個後端端到端測試。john 給的三支 Pexels 影片實跑：街道休旅車和車內拍攝因為車子變大 32%、42%（往鏡頭開）拒判，山路那支車子正面開來、橫向移動不到一個車身長也拒判。三支都不是側面拍，所以還需要一支側面影片（Manus T178 找）。
 - [x] T172 Claude：「重力當尺」：`physics/experiments/freefall.py` 的 `gravity_ruler()`，不需要尺寸，假設地球重力、正常速度，算出飛行時間、垂直距離、出手速度和角度；後端放進 `numbers.if_earth_*`；API.md 已更新；2 個測試。meta_clip4 跑出「如果是地球重力，這顆球掉了 44 m」。
 - [x] T174 Claude：`data/demo/` 裡 9 筆走到擬合的自由飛行紀錄加上 `if_earth_*`。做法：用紀錄裡存的追蹤點重新 `fit_flight`，確認 `a_px_s2` 和點數與原紀錄完全相同才寫入，其他欄位一個字都沒動（判定、g 不變）。拒判的 4 筆（meta_clip2/3/6、moving camera）和 bounce/pendulum 沒有這些欄位，這是對的。demo 的 meta_clip4（窗口 0–2.5 s）：如果是地球重力，垂直距離 28.7 m；自己拍的三支是 0.86、0.67、0.52 m。
 - [ ] T127 Claude：審查並合併所有工具的 PR（每 2 小時巡查一次）
@@ -313,6 +317,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 10/31 01:30 Claude：john 要加車子。T175 完成（physics＋後端＋測試，見 Claude 那一行）。排了 T176 Muse（SAM 追蹤框寬度、偵訊和語音認得車子、車子標題）、T177 Codex（車子的選項和結果卡）、T178 Manus（找側面車子影片、車長表、1.2 g 的來源）。順序：Muse 和 Codex 可以同時做；Manus 找到影片後 john 下載放在 repo 外的 `~/slope-own-clips/`，Claude 跑完再決定 demo 要不要放車子。
 - 10/29 Codex T167／完成核對：PR #87（T165 前端）及 #88（T157）均已合併 main；本輪以 6c2e2c6 為基準，GitHub Pages 與 CI 的最新 run 都成功。實際開啟 https://johncat88425-del.github.io/slope-coach/，1440／390px 各看六頁並保存十二張不同 screenshot（/tmp，不 commit），沒有空白頁、失效圖片、橫向溢出或 console error；結果牆十筆、比較展示十筆、首頁三結果入口可用。品牌、skip link（焦點 workspace）、五個教練分頁亦通過；靜態模式上傳停用、來源提示明確。發現 Guided demo 在長頁面把控制鈕留在頁頂、點一般導覽時會強制跳回、跨頁焦點遺失，已改為啟用時固定面板、直接對齊目標標題、明確換頁即結束導覽，進入／跨步保留控制項焦點、完成／退出返回啟動按鈕。以 Pages 相同 /slope-coach/ base 建置驗證 1440／390px 六步鍵盤操作；手機 ghost 標題 top24px、操作面板在 viewport 內，文字對比受檢最低5.40:1。npm 118 pass、pytest 224 pass，npm run build pass（入口85,449 bytes），Pages 同指令 build pass（入口84,359 bytes），沒有後端／API／測量值改動，沒有付費模型呼叫。修補隨此分支送審，尚未宣稱線上已部署；目前公開網站是儲存紀錄展示版，完整上傳分析需本機完整 app 或另行部署後端。Figma get_metadata 再次回 Starter tool-call quota，無法重新核對手機收尾，T165 維持未勾。
 - 10/29 18:10 Claude：核對 Manus 的提交文字和三分鐘旁白。數字都對，用詞沒有違規。修改三處：自拍的 g 統一用 demo 紀錄的 9.31、9.45、8.68（README 同步改了，PR #95）；拿掉重複的「featured 9.45」；補一句 Muse Code 負責 Meta API 層。也註明 0:00–1:40 要用本機完整版錄（靜態網站沒有上傳功能，也沒有自拍影片）。
 
