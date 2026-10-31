@@ -93,7 +93,7 @@
 
 
 **Antigravity**（照順序做）
-- [ ] T196 Antigravity：（10/31 Claude，等 Codex T182 合併到 main 之後）用內建瀏覽器跑端到端：(1) 首頁、Results、How it works、上傳頁各截 1440 px 和 390 px；(2) 首頁動畫有沒有播完、hover 卡片有沒有放大、其他卡有沒有變暗；(3) 上傳 `data/demo` 有的例子跑到結果頁；(4) 切中文再切回英文；(5) 只用鍵盤（Tab、Enter）走完一次。截圖放 `data/e2e/T196/`（小於 300 KB 一張），問題寫進 STATUS「缺什麼」，push `antigravity/T196-e2e`。
+- [x] T196 Antigravity：（10/31 Claude）端到端驗證完成：首頁、Results、How it works、上傳頁 1440px 與 390px 截圖、首頁動畫播完（地球虛線、琥珀實線、終點彈出、Doesn't match Earth gravity.）、Results 卡片 hover 放大至 1.05 並顯示數值且其他卡模糊變暗、上傳 data/demo 範例成功載入結果頁、中英雙向切換、全鍵盤 Tab/Enter 操作。共產出 13 張截圖存於 data/e2e/T196/，每張皆小於 300 KB（35.5–195.2 KB）且 MD5 互異 — commit 6ce92b7
 - [x] T197 Antigravity：（10/31 Claude）在全新的資料夾 `git clone` repo，照 README 從零啟動實測：git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 通過；cp .env.example 0.01s 通過；npm ci 1.12s 與 npm test (126 pass) 3.16s 通過；pytest 244 pass (17.44s) 與雙 e2e 腳本全數通過。發現 3 項問題（python3.11 ensurepip、docker 未安裝、scripts/dev.sh 寫死 python3）已記錄進「缺什麼」待 Claude 修改 — commit 76f9b92
 - [ ] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測：用瀏覽器的 iPhone 14 和 Pixel 7 模擬，走一次上傳到結果，截圖放 `data/e2e/T198/`，問題寫進 STATUS。push `antigravity/T198-mobile`。**到這裡 Antigravity 的待辦全部結束。**
 - [ ] T214 Antigravity：（10/31 Claude）用 Lighthouse 量 https://johncat88425-del.github.io/slope-coach/ 和本機 `npm run build` 後的 preview：Performance、Accessibility、Best Practices、SEO 四個分數，手機和桌面各一次。低於 90 的項目把 Lighthouse 列出的前 3 個原因寫進 STATUS「缺什麼」給 Codex。push `antigravity/T214-lighthouse`。
@@ -278,6 +278,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
+- [ ] [T196 Antigravity E2E 發現] (1) `/favicon.ico` 於初次載入時 404（缺 favicon link）；(2) Results 三張卡片在 390px 手機檢視下無法觸發 hover 展開數字，待 Codex T191 實作點擊展開；(3) 卡片展開效果目前僅掛在 hover，鍵盤 `:focus-visible` 尚未觸發展開，待 Codex T192 無障礙補齊。
+
 - [x] [README 安裝問題 / T197 發現] Claude 10/31 已修：README 加 macOS ensurepip 失敗的繞法（`--without-pip` 再裝 pip）、註明 Docker 只有 `docker compose up` 才需要；`scripts/dev.sh` 優先用 `python3.11`。
 - [ ] 還沒有可用的真實影片。第一支（IMG_8418.MOV）有四個問題：拍攝角度是斜的、滑塊太小太淡、只滑了 0.75 秒、畫面有人臉。
 - [ ] 影片送 Spark 的實際 token 數和費用：未測。
@@ -412,6 +414,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - 10/31 Codex T192：卡片與 How 滑鼠效果提供 focus-visible 對應；Tab 已實測展開卡片，skip link 保留 #wall 並聚焦 workspace。減少動態效果停用全部動畫／transition 並顯示完整終態。#8A8F98 在四種深色表面皆 ≥4.5:1；未選卡改暗底，不降低文字 opacity。補全站 img alt／鍵盤／配色檢查，圖表文字與軌跡使用深色主題 token，未改數字、擬合或判定。npm 133 tests、一般／demo build 通過。
 
 - 10/31 Codex T191：手機與平板 Results／How 單欄；卡片點一下展開、再次點擊收起，窄螢幕不啟用 hover 鎖定。瀏覽器實測 390／768px：home、wall、how、audit、compare、demo、saved example 與五個 coach 頁，頁面 scrollWidth 不超過 viewport，控制項／section／article 無溢出；手機二次點擊 evidence 高度為 0。新增版面契約與 disclosure 測試（Node 無排版引擎，幾何以瀏覽器實測）；npm 130 tests、一般／demo build 通過。
+- 10/31 Antigravity 完成 T196（分支 antigravity/T196-e2e）：以 Chrome 跑完整端到端驗證（腳本 `scripts/e2e_t196_screens.mjs`）。(1) 4 頁桌面（1440px）與手機（390px）截圖全數完成；(2) 首頁動畫播完確認：地球虛線動畫 0.8s、琥珀實線 1.8s、終點 pop 0.4s、結論「Doesn't match Earth gravity.」正常顯示且 opacity=1、strokeDashoffset=0px；(3) Results 三張卡 hover 驗證：指到的卡 scale=1.05 展開顯示 9.446 m/s² 數值，其餘卡 scale=0.96、blur(1px)、opacity=0.45；(4) How it works 四步驟 hover 展開確認（編號變琥珀色 #F5A524，說明文字展開）；(5) 上傳頁成功匯入 `data/demo/real_own_2.json` 並渲染完整結果頁（一致、說明、原因）；(6) 語言切換中英文雙向核對無誤；(7) 全鍵盤 Tab 與 Enter 完成導覽與卡片選取。共產出 13 張截圖存於 `data/e2e/T196/`，單張大小介於 35.5 KB 至 195.2 KB，全數通過 < 300 KB 規範，MD5 全數互異。3 項細微缺口已記於「缺什麼」。
 - 10/31 07:20 Claude：合併 Muse T184、T186–T189，Antigravity T197，Codex T182。合併後 pytest 262、npm test 128、兩個 build 都過；1440／390 px 首頁截圖正常、沒有橫向捲動。修 `probe_fps` 的 tmcd bug 和 T197 找到的 3 個安裝問題。**車子結果：4 支 Pexels／Pixabay 側面片全部資料不足**（整台車入鏡太短或往鏡頭偏），所以 demo 目前沒有「車子一致」的例子；需要 john 拍一支或用 Meta AI 生成。Meta API 累計 $2.39。
 
 - 10/31 Muse 完成 T184（分支 muse/T184-car-side，commit 8fdb3d5）：4 支側面車子片、6 個窗全跑完，track_source 全是 sam，**全部 insufficient_data**（不挑，全記）。car_side_1 灰色小轎車 1.0–1.5 秒：只追到 0.47 秒、差 0.5 門檻（27 秒，$0.022）；同支 7.5–8.5 秒（青色車）：只追到 73%（車子從左邊出畫面，25 秒，$0.021）；同支 9.25–10.0 秒：只追到 18%（窗內前半沒車、後半是貼很近的黑車，Manus 的時間估計在這支上偏了，23 秒，$0.019）。car_side_2 淺色車 5.0–5.75 秒：尺寸 +43%（往鏡頭方向偏，29 秒，$0.024）。car_side_3 遠車道 3.0–3.75 秒：像素車長變化太大不能當尺（19 秒，$0.018）。car_side_4（Pixabay）4.4–4.6 秒：只追到 3 格、要 8 格，如預期被拒（25 秒，$0.022）。6 個 overlay 都看了：SAM 每次都鎖對車，不用換顏色提示詞。6 次都沒走到擬合，所以沒有 speed_km_h、accel_g、car_length_px、n_points。car_meta_1.mp4 不存在（john 還沒生成），沒跑。下載法：Pexels 頁面被 Cloudflare 擋，改打 `pexels.com/download/video/<id>/?h=1080&w=1920` 拿 HD 直鏈；Pixabay 同樣被擋，用 r.jina.ai 讀頁面挖 cdn 直鏈。後端 bug（已寫進「缺什麼」，沒改後端）：三支 Pexels 檔自帶 tmcd 軌，ffprobe 9 會把 stream_groups＋streams 各印一次，`probe_fps()` 拿兩行 `r_frame_rate` 去 `int()` 炸掉，`/api/audits` 回 422（$0，SAM 前就擋下）。繞法：本地 `ffmpeg -map 0:v:0 -c copy -dn -write_tmcd 0` 重裝（像素完全一樣，只去 tmcd 軌），檔名 `*_clean.mp4`，都在 repo 外。TestClient＋真 API（uvicorn 照樣 EPERM）。$0.125（上限 $0.40），累計 $2.112。
