@@ -182,3 +182,16 @@ svg text{fill:var(--color-text)}
 
 .track-check{margin:16px 0 24px;padding:0;border-left:2px solid var(--color-earth);padding-left:16px}.track-check-uncertain{border-left-color:var(--color-action)}.track-check-label{color:var(--color-earth);font-size:14px;font-weight:600;margin:0 0 8px}.track-check-uncertain .track-check-label{color:var(--color-action)}.track-check-note{font-size:14px;margin:8px 0 0}
 .muse-guidance,.retake-guide{margin:24px 0;padding:24px 0 0!important;border-top:1px solid var(--color-border)!important}.muse-guidance h3,.retake-guide h3{font-size:20px;margin:0 0 12px}.muse-guidance>p,.retake-guide li{line-height:1.7;max-width:78ch}.retake-guide li{margin-block:8px}
+
+/* Result actions stay visible after the result card, without opening evidence. */
+.audit-result-group{min-width:0;max-width:100%}.audit-flow>.audit-result-group{grid-column:1/-1}.result-actions{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-top:16px}.share-download{background:transparent;color:var(--color-text);border:1px solid var(--color-field);min-height:48px}.physics-card-action>p[role=alert]{margin-top:12px}
+.opening-cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+.car-preview{--verdict-color:var(--color-muted)}.car-preview .preview-evidence{display:block}.car-case{padding:16px 0;border-top:1px solid var(--color-border);min-width:0}.car-case:first-child{margin-top:16px}.car-case h4{font-size:14px;font-weight:600;margin:0 0 8px}.car-case .car-outcome{font-size:12px;line-height:1.6;margin:0 0 12px}.car-outcome[data-verdict=consistent]{color:var(--color-earth)}.car-outcome[data-verdict=inconsistent]{color:var(--color-action)}.car-case dl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0}.car-case dl>div{min-width:0}.car-case dt{font-size:11px;line-height:1.5;color:var(--color-muted);margin:0}.car-case dd{font:400 20px/1.6 "JetBrains Mono",monospace;letter-spacing:-.04em;margin:4px 0}.car-case-link{display:flex;justify-content:space-between;align-items:center;min-height:44px;gap:8px;font-size:12px;position:relative;z-index:2;text-decoration:none}
+.car-preview[data-expanded=true] .preview-evidence,.car-preview:has(:focus-visible) .preview-evidence{max-height:600px;opacity:1}
+@media(hover:hover) and (min-width:801px){.car-preview:hover .preview-evidence{max-height:600px;opacity:1}}
+@media(min-width:801px) and (max-width:1100px){.opening-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.opening-cards{grid-template-columns:minmax(0,1fr)}}
+
+.car-preview .preview-mark{font-size:64px;padding-block:16px}
+
+.car-case{padding-block:12px}.car-case:first-child{margin-top:8px}.car-case h4{margin:0}.car-case .car-outcome{margin:0 0 8px}.car-case-link{font-size:14px;font-weight:600}
