@@ -1,3 +1,4 @@
+import {verdictEnglish} from './audit.js';
 import type {AuditOut} from './audit.js';
 import {ModelSource} from './ModelSource.js';
 import {Localize} from './i18n.js';
@@ -10,7 +11,7 @@ export function HomeMotion({audit}:{audit?:AuditOut}){
  <div className="motion-frame"><img src={(import.meta.env?.BASE_URL??'/')+'images/motion-study.jpg'} alt="A frame from a Meta AI–generated test clip (meta_clip4)"/>
  {observed.length>0&&<svg viewBox="0 0 480 270" aria-hidden="true"><polyline className="hero-earth" points={path(earth)}/><polyline className="hero-observed" pathLength="1" points={path(observed)}/>{end&&<circle className="hero-endpoint" cx={end[1]} cy={end[2]} r="5"/>}</svg>}
  <div className="motion-legend"><span><i className="earth-key"/>Earth model</span><span><i className="clip-key"/>This clip</span></div>
- <p className="motion-conclusion">Doesn't match Earth gravity.</p></div>
+ <p className="motion-conclusion">{audit?(audit.verdict==='inconsistent'?"Doesn't match Earth gravity.":verdictEnglish(audit)):'Saved motion evidence unavailable.'}</p></div>
  <figcaption>Generated test clip · saved tracking and model paths {audit&&<ModelSource source={audit.track_source} kind="tracking"/>}</figcaption>
  </figure></Localize>;
 }

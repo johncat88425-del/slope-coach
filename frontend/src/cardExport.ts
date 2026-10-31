@@ -34,7 +34,7 @@ export function shareCardContent(a:AuditOut){
   else if(a.assumed_model==='free_flight'&&finite('g_apparent_m_s2')){value=formatNumber(n.g_apparent_m_s2);unit='m/s²';caption='Apparent gravity under your assumptions.'}
   else if(a.assumed_model==='pendulum'&&finite('period_s')){value=formatNumber(n.period_s);unit='s';caption='Observed period.'}
  }
- return {value,unit,caption,secondary,reference,verdict:verdictEnglish(a),background:{consistent:'#5ab0f0',inconsistent:'#f5a524',insufficient_data:'#b7bcc5'}[a.verdict],ink:'#0e0f12',tracking:{sam:'Tracked by SAM 3.1',manual:'Manual observations — no model used',color:'Colour-based tracking (no model)',frame_diff:'Motion-based tracking (no model)'}[a.track_source]??'Tracking not recorded',numbers:'Numbers by code',provenance:a.synthetic?'Program simulation — program-drawn moving squares.':a.real_clip?'Recorded by john':a.generated_clip?'Generated test clip':null,footer:shareCardFooter};
+ return {value,unit,caption,secondary,reference,limit:a.assumed_model==='vehicle'?'Grip limit: 1.2 g':null,verdict:verdictEnglish(a),background:{consistent:'#5ab0f0',inconsistent:'#f5a524',insufficient_data:'#b7bcc5'}[a.verdict],ink:'#0e0f12',tracking:{sam:'Tracked by SAM 3.1',manual:'Manual observations — no model used',color:'Colour-based tracking (no model)',frame_diff:'Motion-based tracking (no model)'}[a.track_source]??'Tracking not recorded',numbers:'Numbers by code',provenance:a.synthetic?'Program simulation — program-drawn moving squares.':a.real_clip?'Recorded by john':a.generated_clip?'Generated test clip':null,footer:shareCardFooter};
 }
 /** Fixed-size summary. Complete original evidence remains in the report and card details. */
 export async function downloadPhysicsCard(a:AuditOut,_overlay?:string,translate:(value:string)=>string=value=>value){
@@ -61,6 +61,7 @@ export async function downloadPhysicsCard(a:AuditOut,_overlay?:string,translate:
  if(card.unit){ctx.font='500 54px "JetBrains Mono", monospace';ctx.fillText(card.unit,pad,800)}
  paragraph(translate(card.caption),card.unit?910:835,card.secondary?44:56,card.secondary?60:76);
  if(card.secondary){paragraph(translate(card.secondary.label)+' · '+translate('Grip limit: 1.2 g'),990,28,40);ctx.font='700 90px "JetBrains Mono", monospace';ctx.fillText(card.secondary.value+' '+card.secondary.unit,pad,1090)}
+ if(card.limit&&!card.secondary)paragraph(translate(card.limit),1060,28,40);
  let badgeY=1180;
  for(const badge of [card.tracking,card.numbers]){const text=translate(badge);ctx.font='500 28px Inter, "Noto Sans TC", sans-serif';ctx.fillStyle=card.ink;ctx.fillRect(pad,badgeY-38,width,64);ctx.fillStyle=card.background;ctx.fillText(text,pad+20,badgeY+4);ctx.fillStyle=card.ink;badgeY+=88}
  if(card.reference)paragraph(translate('Estimated car length range (m):')+' '+card.reference,1420,28,42);
