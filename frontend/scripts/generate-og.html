@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Generate VPA brand assets</title><style>body{font:16px system-ui;background:#0e0f12;color:#ededef;padding:24px}button{min-height:44px;padding:12px;margin:12px 12px 12px 0}canvas{display:block;max-width:100%;height:auto}#icon{width:64px;height:64px}</style></head><body>
+<h1>Brand asset generator</h1><p>One-time, local canvas export. No audit data or network API is used.</p><p id="status" role="status">Loading local fonts…</p><button id="download-og" disabled>Download 1200 × 630 preview</button><button id="download-icon" disabled>Download favicon PNG</button><canvas id="og" width="1200" height="630" aria-label="Video Physics Audit brand preview"></canvas><canvas id="icon" width="64" height="64" aria-label="Dashed parabola and amber point favicon"></canvas>
+<script type="module">
+const fonts=[['Space Grotesk','../src/assets/space-grotesk-0.ttf','700'],['Inter','../src/assets/inter-0.ttf','400']];
+for(const [name,path,weight] of fonts){const face=new FontFace(name,`url(${new URL(path,import.meta.url).href})`,{weight});await face.load();document.fonts.add(face)}
+const image=new Image();image.src=new URL('../favicon.svg',location.href).href;await image.decode();
+const icon=document.querySelector('#icon'),iconContext=icon.getContext('2d');iconContext.drawImage(image,0,0,64,64);
+const canvas=document.querySelector('#og'),ctx=canvas.getContext('2d');
+ctx.fillStyle='#f5a524';ctx.fillRect(0,0,1200,630);ctx.fillStyle='#0e0f12';
+ctx.font='700 25px "Space Grotesk",sans-serif';ctx.fillText('VIDEO PHYSICS AUDIT',72,88);
+ctx.font='700 88px "Space Grotesk",sans-serif';ctx.fillText('Does it fall',72,215);ctx.fillText('like Earth?',72,309);
+ctx.font='400 31px Inter,sans-serif';ctx.fillText('Check video motion against',72,394);ctx.fillText('your assumed physical model.',72,438);
+ctx.drawImage(image,858,194,264,264);
+ctx.fillRect(72,512,284,58);ctx.fillStyle='#f5a524';ctx.font='400 23px Inter,sans-serif';ctx.fillText('Numbers by code',96,550);
+ctx.fillStyle='#0e0f12';ctx.font='400 19px Inter,sans-serif';ctx.fillText('Checks motion against a model.',400,549);
+function download(target,name){target.toBlob(blob=>{const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)},'image/png')}
+document.querySelector('#download-og').disabled=false;document.querySelector('#download-icon').disabled=false;
+document.querySelector('#download-og').onclick=()=>download(canvas,'vpa-og.png');document.querySelector('#download-icon').onclick=()=>download(icon,'vpa-favicon.png');document.querySelector('#status').textContent='Ready. Preview is 1200 × 630 pixels; favicon is 64 × 64 pixels.';
+</script></body></html>
