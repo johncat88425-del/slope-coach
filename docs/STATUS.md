@@ -15,8 +15,8 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | **T183 凍結前真打檢查** |
-| **Codex** | **T177 車子畫面（最優先）** → T173（顯示重力當尺）→ T182 首頁改版；Figma 收尾不急 |
+| **Muse** | **T184 用 SAM 跑側面車子影片** |
+| **Codex** | **T182 網站改版（分頁、滑鼠效果、動畫）** |
 | **Antigravity** | 沒有待辦（T53、T68 已合併；T167 改給 Codex） |
 | **Manus** | **T178 車子影片與資料研究**；可選 T22 |
 | **Claude** | 審查合併 PR；核對 Manus 文字；彈跳球片到了就跑 |
@@ -48,6 +48,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
+- [ ] T184 Muse：（10/31 Claude）用真的 SAM 跑 Manus 找到的**側面**車子影片（T178），確認一致的例子也能跑通。步驟：(1) john 會把 Manus 的清單貼給你，照清單把影片下載到 repo 外的 `~/slope-own-clips/`，檔名 `car_side_1.mp4`、`car_side_2.mp4`…（**不准 commit**）；(2) 每支用 `POST /api/audits` 跑：`assumed_model=vehicle`、`camera_static=true`、`object_name=car`；時間窗用 Manus 寫的「整台車在畫面裡」那幾秒（最長 30 秒）；`object_size_m` 有車型就用 Manus 車長表的數字，沒有就不填；(3) 每支記下 `track_source`、`verdict`、`reasons`、`speed_km_h`、`accel_g`、`car_length_px`、花費、秒數；(4) 如果 john 也用 Meta AI 生成了側面車子影片（`car_meta_1.mp4`…），一起跑；(5) 花費上限 $0.40；**判定不准挑**，結果是什麼就寫什麼；(6) 結果寫進 STATUS 日誌，只改 STATUS 和 cost_log，push `muse/T184-car-side`，跟 john 說「T184 好了」。
 - [x] T183 Muse：commit b2928bd。凍結前真打 8 步全過（$0.127，上限 $0.40，累計 $1.987）：meta_clip4 偵訊→windows→語音→稽核（inconsistent，g=0.143，headline／explanation 皆 source=model 通過檢查）；3 秒靜音送 /voice 回 200 空欄位（T171 線上確認）；車子 4064324 偵訊（直接問車身長度）→語音→稽核（insufficient_data，sam）。偏差：uvicorn EPERM 改 TestClient；`say` 沙盒空檔，語音改送真實環境音（指定句子抽欄位由 mock 測試覆蓋）。詳見日誌。只改 STATUS 和 cost_log。T176、T179、T181、T171 都合併後，用真的 Meta API 從頭到尾跑一次評審會看到的流程。(1) `git checkout main`、`git pull origin main`，`set -a; . ./.env; set +a`，啟動後端；(2) 用 `data/gate/clips/meta_clip4.mp4` 走完整個偵訊流程：`POST /api/audit-drafts`（記下 `interview.source`、`suggestion`）→ `/windows` → `/voice`（用 `say` 錄一句 "the camera did not move, it is a ball about twenty four centimetres"）→ 送出稽核（時間窗 0–2.5 秒）。確認結果是不一致、g 約 0.14，`headline` 和 `explanation` 是模型寫的、通過檢查；(3) 錄一段 3 秒的靜音送 `/voice`，確認回 200、欄位是空的（T171）；(4) 用 `~/slope-own-clips/4064324-uhd_3840_2160_25fps.mp4` 走一次偵訊流程，語音說 "it's a car driving past, about four and a half metres long"，確認 `assumed_model=vehicle`、`object_size_m=4.5` 被抽出來，送出後被拒判；(5) 每一步記下成功或失敗、`source`、花費、秒數，寫進 STATUS 日誌；壞掉的地方寫清楚錯誤訊息，不要改後端；(6) 只改 STATUS 和 cost_log，push `muse/T183-final-smoke`，跟 john 說「T183 好了」。
 - [x] T179 Muse：（10/31 Claude，T176 已合併 PR #101）用真的 SAM 跑 john 下載的三支 Pexels 車子影片，確認 `width_px` 從頭到尾接得通。三支都是車子朝鏡頭開或車內拍，**預期全部拒判**；這次是要確認 SAM 路徑不會壞，不是要它們判一致。步驟：(1) `git checkout main`、`git pull origin main`；(2) 三支影片 `4064324-uhd_3840_2160_25fps.mp4`、`4513718-uhd_3840_2160_30fps.mp4`、`9337511-hd_1920_1080_30fps.mp4` 放在 repo 外的 `~/slope-own-clips/`（john 下載在 Downloads 的話先搬過去，**不准 commit**）；(3) `set -a; . ./.env; set +a; uvicorn backend.main:app --port 8000`；(4) 每支用 curl 送 `POST /api/audits`：`assumed_model=vehicle`、`object_size_m=4.5`、`camera_static=true`、`object_name=car`，時間窗分別是 6–8.2、0–9、5–8.9 秒；(5) 每支記下 `track_source`（要是 `sam`）、`verdict`、`reasons`、`numbers` 裡有沒有 `car_length_px`、花費和秒數；(6) 花費上限 $0.30；(7) 結果寫進 STATUS 日誌，壞掉的地方寫清楚錯誤訊息，不要改後端；(8) 只改 STATUS 和 cost_log，push `muse/T179-sam-car`，跟 john 說「T179 好了」，再做 T171。 — commit 8c109bd（3 支全 201、track_source=sam、全拒判如預期；拒判理由都不是缺寬度（第 2 支理由本身就用了像素車長），width_px 接通。$0.089，累計 $1.859）
 - [x] T181 Muse：commit 1347aa0。實作：`sam.py` 新增 `MAX_SAM_FRAMES = 900`；`track()` 轉檔探測後格數超標就上傳前丟 `MediaError`（「影片超過 60 秒，請先選時間窗」）；`CostTracker.check()` 加 `extra_usd` 選填參數（預設 0，舊呼叫不變），`track()` 送出前用 `sam_video_cost_usd(n_frames)` 預扣，超上限拒送。2 個新 mock 測試（901 格拒收、900 格＋上限 $0.10 拒送，皆確認未上傳）。pytest 242 全過。未真打 API。
