@@ -27,6 +27,7 @@ from backend.schemas import (
 from . import explain as _explain
 from . import headline as _headline
 from . import interview as _interview
+from . import retake as _retake
 from . import sam as _sam
 from . import spark as _spark
 from . import track_check as _track_check
@@ -135,3 +136,11 @@ class MetaHooks(ModelHooks):
         """One-line headline via Spark (T112, English since T118); None shows no headline."""
         result = _headline.write_headline(audit, lang="en")
         return result["headline"] if result else None
+
+    def retake_tips(self, audit: dict) -> list[str] | None:
+        """Reshoot tips via Spark for a refused audit (T204, English).
+
+        None keeps the frontend's fixed tips.
+        """
+        result = _retake.write_retake_tips(audit, "en")
+        return result["tips"] if result else None
