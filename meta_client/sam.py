@@ -28,12 +28,15 @@ from typing import Any
 
 from . import client as _client
 from .client import SAM_MODEL, call_with_retry, get_client
-from .cost import CostTracker, get_tracker
+from .cost import CostTracker, get_tracker, sam_video_cost_usd
 from .exceptions import MediaError, TrackingError
 
 TARGET_FPS = 15.0
 MASK_ENCODING = "one_bit"
 _FFMPEG_TIMEOUT_S = 300.0
+# Hard per-request cap (T181): 15 fps x 60 s. Longer clips must be windowed
+# first — one uncapped request could otherwise bill tens of dollars.
+MAX_SAM_FRAMES = 900
 
 
 @dataclass(frozen=True)
@@ -324,6 +327,13 @@ def track(
         info = _probe_clip(prepared)
         fps = TARGET_FPS  # constant-frame-rate transcode above
         n_frames = info["n_frames"]
+        if n_frames > MAX_SAM_FRAMES:
+            raise MediaError(
+                f"影片超過 60 秒（{n_frames} 格），請先選時間窗"
+            )
+        # Pre-book the estimate so one long-enough call can't jump the
+        # ceiling between tracker.check() at entry and record() at exit.
+        tracker.check(sam_video_cost_usd(n_frames))
         file_id = _client.upload_file(prepared)
         sdk = get_client()
         response = call_with_retry(
