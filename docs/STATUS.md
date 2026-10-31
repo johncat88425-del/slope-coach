@@ -74,7 +74,7 @@
 
 
 **Codex**（照順序做）
-- [ ] T209 Codex：（10/31 Claude）**錄影用的導覽**。把 `GuidedDemo`／`AutoTour` 改成照最終 demo 腳本的順序：自拍的球（一致 9.45）→ Meta AI 籃球（不一致 0.14，顯示地球鬼影軌跡）→ 往鏡頭飛的球（不能判斷）→ 合成車子兩張（要標「Synthetic test clip」）→ 分享卡。用新設計的樣式；左右方向鍵和空白鍵換下一步；右上角小字顯示「3 / 6」。數字全部從 `data/demo` JSON 讀。push `codex/T209-tour`。
+- [ ] T209 Codex：（進行中，codex/T209-tour）（10/31 Claude）**錄影用的導覽**。把 `GuidedDemo`／`AutoTour` 改成照最終 demo 腳本的順序：自拍的球（一致 9.45）→ Meta AI 籃球（不一致 0.14，顯示地球鬼影軌跡）→ 往鏡頭飛的球（不能判斷）→ 合成車子兩張（要標「Synthetic test clip」）→ 分享卡。用新設計的樣式；左右方向鍵和空白鍵換下一步；右上角小字顯示「3 / 6」。數字全部從 `data/demo` JSON 讀。push `codex/T209-tour`。
 - [ ] T210 Codex：（10/31 Claude，Muse T203–T205 合併後）把三個新的 Muse 輸出放上畫面，都要標「由 Muse Spark 產生」：(1) 結果頁小標籤「Muse Spark 複查：追蹤的是同一個物體 ✓」或「⚠ 可能追錯物體」（後端欄位 `track_check`，沒有就不顯示）；(2) 不能判斷時，`RetakeGuide` 優先顯示 Spark 的 `retake_tips`，沒有就用現在的固定建議；(3) 不一致時在結果下面顯示「要怎樣才會一致」那一句。欄位名稱以 Claude T207 更新的 `docs/API.md` 為準。push `codex/T210-muse-ui`。
 - [ ] T211 Codex：（10/31 Claude）**分享連結的預覽圖**。`frontend/index.html` 加 Open Graph 和 Twitter card 標籤（標題「Does it fall like Earth?」、一句說明、1200×630 預覽圖）；預覽圖照分享卡設計用 SVG 或 canvas 產生一次，存成 `frontend/public/og.png`；加 favicon（logo 那條虛線拋物線加琥珀色點）。不加新套件。push `codex/T211-og`。
 - [ ] T212 Codex：（10/31 Claude）**分析中的進度畫面**。上傳後等待時，顯示三步：「Muse Spark 正在看影片」「SAM 3.1 正在追蹤」「程式正在計算」，用現在 API 回傳的狀態決定哪一步亮（`AuditProgress.tsx`）。不准做假的百分比或假進度；拿不到狀態就只顯示一個轉圈和這三行說明。`prefers-reduced-motion` 時不轉圈。push `codex/T212-progress`。
@@ -370,6 +370,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 10/31 Codex T209：Guided demo 與 Recording tour 共用六段離線手動導覽：own_2 → meta_clip4＋地球鬼影 → meta_clip2 → 兩筆 Synthetic 車子 → 分享卡。原數字／文字／來源直接讀 demo JSON，不再用計時自動跳例子。原生 dialog 保留背景頁狀態，右上步數、左右方向鍵／空白下一步，表單與媒體鍵不攔截；Esc／關閉後回到啟動按鈕。Ghost 使用既有影像座標並註明超出影格會裁切。瀏覽器逐段鍵盤、兩個入口、1440／390px 與返回焦點通過；截圖 frontend/qa/t209-tour-ghost-1440.jpg。npm 142 tests、一般／demo build 通過，無新套件或 API 呼叫。
 
 - 10/31 22:00 Claude：john 要求一次多給。排第二批：Muse T203–T206、T208；Codex T209–T213；Antigravity T214–T216（加在 T196、T198 後面）；Claude T207、T217。都在 11/02 晚上凍結前。
 
