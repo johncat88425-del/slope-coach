@@ -246,6 +246,34 @@ def test_answer_interview_voice_vehicle_car_length(tmp_path, monkeypatch):
     assert out["fields"]["object_size_m"] == {"value": 4.5, "confirmed": False}
 
 
+def test_answer_interview_voice_silence_returns_hint(tmp_path, monkeypatch):
+    monkeypatch.setenv("MODEL_API_KEY", "test-key")
+    _patch_wav(monkeypatch, tmp_path)
+    monkeypatch.setattr(voice, "get_tracker", lambda: _tracker(tmp_path))
+    monkeypatch.setattr(
+        voice.httpx, "post", lambda *a, **k: _Resp(200, {"transcript": "   "}))
+    def boom(text, **kw):
+        raise AssertionError("extract must not run on silence")
+    monkeypatch.setattr(voice, "extract_interview_fields", boom)
+    clip = tmp_path / "quiet.m4a"
+    clip.write_bytes(b"v")
+    out = voice.answer_interview_voice(clip)
+    assert out == {"transcript": "沒有聽到內容", "fields": {}, "mock": False,
+                   "source": {"transcript": "muse-voice-transcribe-1.0", "fields": "none"}}
+
+
+def test_transcribe_empty_is_typed_error(tmp_path, monkeypatch):
+    monkeypatch.setenv("MODEL_API_KEY", "test-key")
+    _patch_wav(monkeypatch, tmp_path)
+    monkeypatch.setattr(voice, "get_tracker", lambda: _tracker(tmp_path))
+    monkeypatch.setattr(
+        voice.httpx, "post", lambda *a, **k: _Resp(200, {"transcript": ""}))
+    clip = tmp_path / "q.m4a"
+    clip.write_bytes(b"v")
+    with pytest.raises(voice.EmptyTranscriptError, match="empty transcript"):
+        voice.transcribe(clip)
+
+
 def test_answer_interview_voice_mock_without_key(tmp_path, monkeypatch):
     monkeypatch.delenv("MODEL_API_KEY", raising=False)
     out = voice.answer_interview_voice(tmp_path / "missing.m4a")
