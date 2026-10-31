@@ -53,6 +53,7 @@ class DetectionIn(BaseModel):
     t_s: float
     centroid_px: Point | None
     area_px: float | None = None
+    width_px: float | None = None  # box width; a fraction of the frame width in the audit contract (vehicle check)
     source: Literal["sam", "manual"] = "sam"
 
 
@@ -271,11 +272,11 @@ class AuditOut(BaseModel):
     """Video physics audit. verdict is relative to assumed_model only; never real vs generated."""
     audit_id: str
     created_at: datetime
-    assumed_model: Literal["free_flight", "bounce", "pendulum"]
+    assumed_model: Literal["free_flight", "bounce", "pendulum", "vehicle"]
     t_start: float
     t_end: float
     camera_static: bool
-    object_size_m: float | None
+    object_size_m: float | None  # vehicle: the car's length, user-confirmed
     length_m: float | None = None  # pendulum only, user-measured
     slow_motion: bool | None = None  # user's answer; True refuses the timing-based checks
     video_url: str

@@ -325,3 +325,32 @@ def test_model_text_may_quote_numbers_from_the_programs_own_reasons():
             "reasons": ["apparent g 1.71 m/s^2 is outside 8.34-11.28"]}
     assert check_model_text("1.71 m/s² is outside the 8.34 to 11.28 range.", _number_sources(view)).ok
     assert not check_model_text("1.71 m/s² is far below 9.5.", _number_sources(view)).ok  # invented number
+
+
+def write_car(path, v_m_s, a_m_s2, seconds=1.2, fps=30, car_px=120, car_m=4.5, w=640, h=480):
+    """Dark 120 x 40 px box (a 4.5 m car side-on) driving left to right, whole car always in frame."""
+    k = car_px / car_m
+    frames = []
+    for i in range(int(seconds * fps)):
+        t = i / fps
+        x = int(20 + k * (v_m_s * t + 0.5 * a_m_s2 * t * t))
+        f = np.full((h, w), 255, np.uint8)
+        f[300:340, x:x + car_px] = 0
+        frames.append(f)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "gray", "-s", f"{w}x{h}",
+                    "-r", str(fps), "-i", "-", "-pix_fmt", "yuv420p", "-c:v", "libx264", "-qp", "0", str(path)],
+                   input=b"".join(f.tobytes() for f in frames), check=True)
+
+
+def test_audit_vehicle_speed_and_grip(tmp_path):
+    write_car(tmp_path / "car.mp4", 13.9, 0.0)
+    write_car(tmp_path / "rocket.mp4", 8.0, 3 * 9.81, seconds=0.8)
+    car = post(tmp_path / "car.mp4", assumed_model="vehicle", t_end="1.15", object_size_m="4.5").json()
+    assert car["verdict"] == "consistent", car
+    assert car["numbers"]["speed_km_h"] == pytest.approx(50, rel=0.05)
+    assert "km/h" in car["explanation"]["text"]
+    rocket = post(tmp_path / "rocket.mp4", assumed_model="vehicle", t_end="0.75", object_size_m="4.5").json()
+    assert rocket["verdict"] == "inconsistent" and " g" in rocket["reasons"][0]
+    assert rocket["numbers"]["accel_g"] == pytest.approx(3, rel=0.1)
+    slow = post(tmp_path / "car.mp4", assumed_model="vehicle", t_end="1.15", slow_motion="true").json()
+    assert slow["verdict"] == "insufficient_data"
