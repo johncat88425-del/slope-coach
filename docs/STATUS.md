@@ -97,7 +97,7 @@
 - [x] T197 Antigravity：（10/31 Claude）在全新的資料夾 `git clone` repo，照 README 從零啟動實測：git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 通過；cp .env.example 0.01s 通過；npm ci 1.12s 與 npm test (126 pass) 3.16s 通過；pytest 244 pass (17.44s) 與雙 e2e 腳本全數通過。發現 3 項問題（python3.11 ensurepip、docker 未安裝、scripts/dev.sh 寫死 python3）已記錄進「缺什麼」待 Claude 修改 — commit 76f9b92
 - [x] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測完成：使用 iPhone 14（390×844）與 Pixel 7（412×915）雙機型模擬，完整走過上傳到結果頁（real_own_2 一致與 meta_clip4 不一致雙案），驗證無橫向捲動、按鈕高度 ≥ 44px、卡片點擊展開與二次收起、Details 展開查看。共 9 張截圖存於 data/e2e/T198/，均 < 300 KB（36.9–94.2 KB）且 MD5 互異。 — commit 60b10c3，PR #117
 - [x] T214 Antigravity：（10/31 Claude）Lighthouse 量測完成（含線上 GitHub Pages 與本機 build preview 雙平台、桌面與手機各跑一次，報表存於 `data/lighthouse/`）：線上 Pages 手機 Performance 91 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）；線上 Pages 桌面 Performance 100 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）。本機 preview 手機 Performance 78 / SEO 83、桌面 SEO 83，低於 90 之主因（LCP 延遲、缺 meta description、本機無 robots.txt）已登錄進「缺什麼」待 Codex 處理。 — commit 9b86ed7
-- [ ] T215 Antigravity：（10/31 Claude）**照最終 demo 腳本彩排**（john 會把腳本貼給你）：在本機後端（有金鑰就真打，沒有就 mock）照腳本每一段操作一次，記錄每段實際花幾秒、哪裡要等太久、哪個按鈕找不到，每段截一張圖放 `data/e2e/T215/`。總時間超過 3 分鐘就寫出建議剪掉哪裡。push `antigravity/T215-rehearsal`。
+- [x] T215 Antigravity：（10/31 Claude）照最終 demo 腳本完整彩排 8 個分段完成（腳本存於 `scripts/e2e_t215_rehearsal.mjs`，包含真打 Muse Spark 偵訊生成 15.6s 與 SAM 3.1 / Numbers by code 標籤核驗）：8 張分段截圖存於 `data/e2e/T215/`（全數 < 300 KB，MD5 互異），完整分段量測報表存於 `data/e2e/T215/rehearsal_summary.json`。互動操作總計 48.0s（預算 180s 內充裕）；若加上 3 支影片現場實跑 SAM 追蹤之耗時（128s）總長度將達 176s，逼近 3 分鐘上限。等太久之處理與按鈕尋找等 4 項剪輯建議已記錄進「缺什麼」供 john 錄影參考。 — commit 0131411
 - [ ] T216 Antigravity：（10/31 Claude，11/02 晚上凍結前最後一件）全部合併後的回歸測試：pytest、npm test、兩個 e2e 腳本、Pages 網站打得開、四個頁面 1440／390 px 截圖。STATUS 寫一張 PASS／FAIL 表。push `antigravity/T216-final`。**到這裡 Antigravity 的待辦全部結束。**
 - [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
 - [x] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖完成（新增 scripts/e2e_ghost_and_physics_card.mjs、tests/backend/test_e2e_ghost_card.py，產出桌面與 390px 手機截圖存於 docs/screens/）— commit 00036aa
@@ -280,6 +280,16 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 - [ ] [T196 Antigravity E2E 發現] (1) `/favicon.ico` 於初次載入時 404（缺 favicon link）；(2) Results 三張卡片在 390px 手機檢視下無法觸發 hover 展開數字，待 Codex T191 實作點擊展開；(3) 卡片展開效果目前僅掛在 hover，鍵盤 `:focus-visible` 尚未觸發展開，待 Codex T192 無障礙補齊。
 - [ ] [T214 Antigravity Lighthouse 發現] 本機 preview 環境中未達 90 之項目及前 3 原因（供 Codex 參考修復）：
+- [ ] [T215 Antigravity 3 分鐘 demo 實測彩排發現與錄影建議]
+  1. **等太久之處（Live 追蹤耗時）**：Live 呼叫 Muse Spark 偵訊生成耗時約 12.5–15.6s，可完全容納於 0:15–0:45（30s）時間段；但現場跑 SAM 3.1 追蹤耗時極長（own_2 約 45s、meta_clip4 約 48s、meta_clip2 約 35s，3 支合計 128s）。若錄影時全程等待真實追蹤，總時間將達約 4 分 40 秒（超標 100 秒）。
+  2. **按鈕尋找注意**：
+     (a) 「Download physics card PNG」下載按鈕與 Share Card 位於稽核結果頁的 `<details data-testid="audit-details">` 內，預設為折疊狀態，錄影操作時需先點擊展開「Details」才能看到並點擊下載。
+     (b) 車子合成測試範例（50 km/h 煞車 0.60 g 與 3.0 g 起步）位於展示頁（`/#demo`）底部的 `<details data-testid="synthetic-demo">` 內，需展開該區塊。
+  3. **剪輯與節奏建議（若總長度需嚴格壓在 180 秒內）**：
+     - **建議 1（關鍵）**：影片後製時，對 own_2 的 SAM 追蹤轉圈畫面進行快轉或跳接（jump cut 縮減為 2–3 秒），可省下約 42 秒。
+     - **建議 2**：展示 meta_clip4（不一致 0.14）與 meta_clip2（資料不足）時，可直接載入已跑好的 demo 紀錄或預留跳接，避免畫面持續等待旋轉進度條。
+     - **建議 3**：首頁開場動畫約 2.5 秒即可展示完畢，旁白唸完後可於 0:10–0:12 提前點擊 Check a video，為後續預留 3–5 秒彈性。
+     - **建議 4**：車子結果卡片（2:05–2:30）展示 18 秒即足夠說明「以車長當尺、一般車輛輪胎無法承受 3 g 加速度」，無需停留整整 25 秒。
   1. Local Mobile Performance (78)：(a) Largest Contentful Paint (6.2s)；(b) Improve image delivery（預估可省 32 KiB 圖片傳輸）；(c) LCP request discovery（Hero 動畫/縮圖預先探索載入）。（註：線上 GitHub Pages Mobile 得分為 91，已全數達標）
   2. Local Mobile / Desktop SEO (83)：(a) Document does not have a meta description（缺少 `<meta name="description">`，待 Codex T211 加入）；(b) robots.txt is not valid（本機 vite preview 對 /robots.txt 回應 index.html 404；線上 Pages 得分 91 正常）。
 
