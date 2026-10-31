@@ -24,6 +24,28 @@ def new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
 
 
+MAX_UPLOAD_BYTES = 500 * 1024 * 1024  # a 1080p phone clip of a few minutes; larger uploads are refused
+
+
+class UploadTooLarge(Exception):
+    pass
+
+
+def copy_limited(src, path: Path, max_bytes: int = MAX_UPLOAD_BYTES) -> None:
+    """Stream an upload to disk in chunks; past max_bytes the partial file is deleted and UploadTooLarge raised,
+    so one request can neither fill memory nor the disk."""
+    written = 0
+    with path.open("wb") as out:
+        while chunk := src.read(1024 * 1024):
+            written += len(chunk)
+            if written > max_bytes:
+                break
+            out.write(chunk)
+    if written > max_bytes:
+        path.unlink(missing_ok=True)
+        raise UploadTooLarge(f"upload is larger than {max_bytes // (1024 * 1024)} MB")
+
+
 @dataclass
 class TrialRecord:
     trial_id: str

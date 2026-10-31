@@ -24,12 +24,13 @@ from . import schemas as S
 from .explain import explain_audit
 from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
 from .output_check import check_model_text, extract_numbers
-from .store import UPLOAD_ROOT, new_id, now, store
+from .store import UPLOAD_ROOT, UploadTooLarge, copy_limited, new_id, now, store
 from .video import color_for, probe_fps, read_frames, read_frames_rgb, save_overlay, track_color, track_with_sizes
 
 router = APIRouter()
 
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
+MAX_WINDOW_S = 30.0  # every frame of the window is held in memory; real motions here last a few seconds
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
 SIZE_ERROR = 0.3  # assumed worst-case error of the object's pixel size, same as gate question 2
 MODELS = ("free_flight", "bounce", "pendulum", "vehicle")
@@ -89,8 +90,10 @@ def _save_upload(file: UploadFile, d: Path) -> Path:
     d.mkdir(parents=True, exist_ok=True)
     suffix = "".join(c for c in (file.filename or "").rsplit(".", 1)[-1:] if c.isalnum())[:5] or "bin"
     video = d / f"video.{suffix}"
-    with video.open("wb") as out:
-        out.write(file.file.read())
+    try:
+        copy_limited(file.file, video)
+    except UploadTooLarge as e:
+        raise HTTPException(413, str(e))
     return video
 
 
@@ -274,6 +277,8 @@ def create_audit(
         raise HTTPException(422, f"assumed_model must be one of {MODELS}")
     if not 0 <= t_start < t_end:
         raise HTTPException(422, "need 0 <= t_start < t_end")
+    if t_end - t_start > MAX_WINDOW_S:
+        raise HTTPException(422, f"time window is longer than {MAX_WINDOW_S:.0f} s; pick the seconds where the motion happens")
     if object_size_m is not None and object_size_m <= 0:
         raise HTTPException(422, "object_size_m must be positive")
     if length_m is not None and length_m <= 0:
