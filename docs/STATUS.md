@@ -19,7 +19,7 @@
 | --- | --- |
 | **Muse** | **T184 側面車子 SAM** → T186 Spark 認得車 → T187 車子說明 → T188 失敗測試 → T189 最後真打 |
 | **Codex** | **T182 網站改版** → T191 手機版 → T192 無障礙 → T193 分享卡 → T194 車子畫面 → T195 收尾 |
-| **Antigravity** | T197 從零安裝 → T196 新設計端到端（等 T182）→ T198 手機實測（等 T191） |
+| **Antigravity** | T197 從零安裝（已完成） → T196 新設計端到端（等 T182）→ T198 手機實測（等 T191） |
 | **Manus** | T199 demo 旁白新版 → T200 提交文字新版 → T201 評審角度檢查；可選 T22 |
 | **Claude** | T190 車種換算表 → 審查合併 → T202 每次合併後瀏覽器檢查、README、提交前檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -84,7 +84,7 @@
 
 **Antigravity**（照順序做）
 - [ ] T196 Antigravity：（10/31 Claude，等 Codex T182 合併到 main 之後）用內建瀏覽器跑端到端：(1) 首頁、Results、How it works、上傳頁各截 1440 px 和 390 px；(2) 首頁動畫有沒有播完、hover 卡片有沒有放大、其他卡有沒有變暗；(3) 上傳 `data/demo` 有的例子跑到結果頁；(4) 切中文再切回英文；(5) 只用鍵盤（Tab、Enter）走完一次。截圖放 `data/e2e/T196/`（小於 300 KB 一張），問題寫進 STATUS「缺什麼」，push `antigravity/T196-e2e`。
-- [ ] T197 Antigravity：（10/31 Claude）在全新的資料夾 `git clone` repo，照 README 從零啟動（python3.11 venv、`npm install`、`docker compose up`），記錄每一步花多久、哪一步失敗、錯誤訊息。README 有錯的地方寫進 STATUS 給 Claude 改（不要自己改 README）。push `antigravity/T197-fresh-install`。
+- [x] T197 Antigravity：（10/31 Claude）在全新的資料夾 `git clone` repo，照 README 從零啟動實測：git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 通過；cp .env.example 0.01s 通過；npm ci 1.12s 與 npm test (126 pass) 3.16s 通過；pytest 244 pass (17.44s) 與雙 e2e 腳本全數通過。發現 3 項問題（python3.11 ensurepip、docker 未安裝、scripts/dev.sh 寫死 python3）已記錄進「缺什麼」待 Claude 修改 — commit 76f9b92
 - [ ] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測：用瀏覽器的 iPhone 14 和 Pixel 7 模擬，走一次上傳到結果，截圖放 `data/e2e/T198/`，問題寫進 STATUS。push `antigravity/T198-mobile`。**到這裡 Antigravity 的待辦全部結束。**
 - [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
 - [x] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖完成（新增 scripts/e2e_ghost_and_physics_card.mjs、tests/backend/test_e2e_ghost_card.py，產出桌面與 390px 手機截圖存於 docs/screens/）— commit 00036aa
@@ -263,6 +263,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
+- [ ] [README 安裝問題 / T197 發現] (1) macOS Homebrew 環境下 `python3.11 -m venv .venv` 在 ensurepip 時因 truststore 呼叫 `platform.mac_ver()` 回傳空字串造成 `ValueError` 失敗，建置 venv 建議補充 `--without-pip` 或手動 bootstrap 解法；(2) README 提到了 `docker compose up` 但前置需求未列出 Docker，且環境未預裝 Docker；(3) `scripts/dev.sh` 第 11 行寫死 `python3 -m venv .venv`（呼叫到系統預設 3.14），與 README 指定的 `python3.11` 不符，建議改為優先檢測 `python3.11`。
 - [ ] 還沒有可用的真實影片。第一支（IMG_8418.MOV）有四個問題：拍攝角度是斜的、滑塊太小太淡、只滑了 0.75 秒、畫面有人臉。
 - [ ] 影片送 Spark 的實際 token 數和費用：未測。
 - [ ] `tests/scripts/test_gate_prepare.py` 在乾淨 main 上也失敗（Muse 10/29 驗證過，與 Muse 改動無關）：gate_prepare 處理真片時 exit 1。請 Claude/Antigravity 修，T52 CI 會踩到。
@@ -344,6 +345,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T183：凍結前真打（2 draft $0.058＋語音 3 次 $0.007＋SAM 稽核 2 次 $0.063 含解說標題） | 0.127 | 1.987 |
 
 ## 工作日誌（最新在上）
+
+- 10/31 Antigravity 完成 T197（分支 antigravity/T197-fresh-install）：在全新目錄從零 clone 依 README 步驟驗證。git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 依賴確認；npm ci 1.12s、npm test 126 pass (3.16s)；pytest 244 pass (17.44s)；scripts/e2e_slope_demo.py 與 scripts/e2e_audit.py 均通過。發現 3 項問題（python3.11 ensurepip 遇 truststore 異常、docker compose 缺前置需求、dev.sh 寫死 python3）已寫進「缺什麼」待 Claude 修改。下一項 T196 待 Codex T182 合併。
 
 - 10/31 02:45 Claude：john 要求一次給多件。Manus T178 收進 `docs/research/vehicle.md` 並核對（T185）。排了 Muse T184、T186–T189，Codex T182（改成設計 v4 規格）、T191–T195，Antigravity T196–T198，Manus T199–T201，Claude T190、T202。
 
