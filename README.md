@@ -107,6 +107,14 @@ python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+If `python3.11 -m venv .venv` fails on macOS with a `ValueError` from `ensurepip`, create it without pip and bootstrap pip inside it:
+```bash
+python3.11 -m venv --without-pip .venv
+source .venv/bin/activate
+curl -sS https://bootstrap.pypa.io/get-pip.py | python
+pip install -r requirements.txt
+```
+Docker is optional: only `docker compose up` needs it, and the steps above run without it.
 
 ### 5. Install Frontend Dependencies
 ```bash
