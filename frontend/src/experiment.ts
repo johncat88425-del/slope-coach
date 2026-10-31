@@ -51,6 +51,7 @@ export function auditIdFromHash(hash:string):string|null {
 export function auditHash(id:string){return '#/audits/'+encodeURIComponent(id)}
 export function exampleKeyFromHash(hash:string){const m=/^#examples\/([^/?#]+)$/.exec(hash);try{return m?decodeURIComponent(m[1]):null}catch{return null}}
 export function resolveRoute(hash: string): Route {
+ if(!hash||hash==='#')return 'home';
  if(exampleKeyFromHash(hash))return 'examples';
   if(auditIdFromHash(hash)!==null)return 'audit';
   const route = hash.replace(/^#\/?/, '');

@@ -1,4 +1,4 @@
-import {SiteHeader} from './SiteHeader';
+import {SiteHeader,SiteFooter} from './SiteHeader';
 import {DEMO_ONLY,demoUploadMessage} from './mode';
 import { Localize, LanguageRoot } from './i18n.js';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
@@ -16,13 +16,12 @@ const HowItWorks=lazy(()=>import('./HowItWorks').then(m=>({default:m.HowItWorks}
 const TrialEditor=lazy(()=>import('./TrialEditor').then(m=>({default:m.TrialEditor})));
 const CurveChart=lazy(()=>import('./CurveChart').then(m=>({default:m.CurveChart})));
 const AuditPage=lazy(()=>import('./AuditPage').then(m=>({default:m.AuditPage})));
-const OpeningCards=lazy(()=>import('./OpeningCards').then(m=>({default:m.OpeningCards})));
 const SavedExample=lazy(()=>import('./OpeningCards').then(m=>({default:m.SavedExample})));
 const AutoTour=lazy(()=>import('./AutoTour').then(m=>({default:m.AutoTour})));
 const PairComparison=lazy(()=>import('./PairComparison').then(m=>({default:m.PairComparison})));
 const ResultsWall=lazy(()=>import('./ResultsWall').then(m=>({default:m.ResultsWall})));
 const DemoPage=lazy(()=>import('./DemoPage').then(m=>({default:m.DemoPage})));
-const Home=lazy(()=>import('./Home').then(m=>({default:m.Home})));
+const Home=lazy(()=>import('./HomePage').then(m=>({default:m.HomePage})));
 const VideoOverlay=lazy(()=>import('./VideoOverlay').then(m=>({default:m.VideoOverlay})));
 const api = createApi(import.meta.env.VITE_API_BASE_URL ?? '');
 const markerNames = ['尺的第一端', '尺的第二端', '滑塊位置（路徑起點）', '路徑終點（坡底）'];
@@ -174,7 +173,7 @@ function App() {
  </>}
  {route === 'report' && <><h2>匯出後端實驗紀錄</h2><p>校準 {record?.calibrations.length ?? 0} 版 · 試驗 {record?.trials.length ?? 0} 段 · 預測 {record?.predictions.length ?? 0} 筆 · 比較 {record?.comparisons.length ?? 0} 筆。來源與人工修正保留於報告。</p><button data-testid="report-markdown" onClick={() => void run(() => download('md'))}>下載 Markdown 報告</button><button data-testid="report-csv" onClick={() => void run(() => download('csv'))}>下載 CSV 資料</button><details><summary>完整後端紀錄</summary><pre>{JSON.stringify(record, null, 2)}</pre></details></>}
  </fieldset>}
- <div className="notice">{DEMO_ONLY?'Saved results only — no new model call. Private videos are not loaded.':'照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。'}</div>{route==='audit'&&<><OpeningCards/><AutoTour/></>}<footer><a href="#setup">返回場景設定</a><span>各頁共用同一份後端實驗紀錄。</span></footer></section></main></>}</Localize>;
+ {!['home','wall','how'].includes(route)&&<div className="notice">{DEMO_ONLY?'Saved results only — no new model call. Private videos are not loaded.':'照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。'}</div>}{route==='audit'&&<AutoTour/>}<SiteFooter api={api} route={route}/></section></main></>}</Localize>;
 }
 function PredictionSelect({ record, value, onChange }: {
     record: ExperimentRecord | null;
