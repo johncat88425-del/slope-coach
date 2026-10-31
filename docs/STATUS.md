@@ -263,7 +263,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
-- [ ] [README 安裝問題 / T197 發現] (1) macOS Homebrew 環境下 `python3.11 -m venv .venv` 在 ensurepip 時因 truststore 呼叫 `platform.mac_ver()` 回傳空字串造成 `ValueError` 失敗，建置 venv 建議補充 `--without-pip` 或手動 bootstrap 解法；(2) README 提到了 `docker compose up` 但前置需求未列出 Docker，且環境未預裝 Docker；(3) `scripts/dev.sh` 第 11 行寫死 `python3 -m venv .venv`（呼叫到系統預設 3.14），與 README 指定的 `python3.11` 不符，建議改為優先檢測 `python3.11`。
+- [x] [README 安裝問題 / T197 發現] Claude 10/31 已修：README 加 macOS ensurepip 失敗的繞法（`--without-pip` 再裝 pip）、註明 Docker 只有 `docker compose up` 才需要；`scripts/dev.sh` 優先用 `python3.11`。
 - [ ] 還沒有可用的真實影片。第一支（IMG_8418.MOV）有四個問題：拍攝角度是斜的、滑塊太小太淡、只滑了 0.75 秒、畫面有人臉。
 - [ ] 影片送 Spark 的實際 token 數和費用：未測。
 - [ ] `tests/scripts/test_gate_prepare.py` 在乾淨 main 上也失敗（Muse 10/29 驗證過，與 Muse 改動無關）：gate_prepare 處理真片時 exit 1。請 Claude/Antigravity 修，T52 CI 會踩到。
@@ -271,7 +271,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - [ ] 用其他工具生成的影片當測試素材是否可以：請 john 在 Discord 確認。
 - [ ] T188 Muse：空追蹤的原因字樣（Claude）：T188 要求空追蹤時原因寫「追蹤缺失」，但後端現在是英文「object tracked in only 0% of frames」（後端原因全英文，突然一句中文很怪）。請 Claude 決定字樣／是否改，Muse 不碰後端。
 - [ ] 是否允許用其他 AI 寫程式：Discord 原文未取得。
-- [ ] T184 Muse：`backend/video.py` 的 `probe_fps()` 在 ffprobe 9 下遇到含 tmcd 軌的 mp4 會壞（ffprobe 把 stream_groups 和 streams 各印一次，`r_frame_rate` 變成兩行，`int('1001\n24000')` 炸掉），`/api/audits` 回 422「could not read video frames in that window」。T184 用本地 remux 繞過（見日誌），請 Claude 修 `probe_fps`（只取第一行），Muse 不碰後端。
+- [x] Claude 已修（10/31）：`backend/video.py` 的 `probe_fps()` 遇到含 tmcd 軌的 mp4 只取第一行，加測試 `tests/backend/test_video_probe.py`；Pexels 原檔不用再 remux。
 
 ## 待 john 決定
 
@@ -351,6 +351,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 10/31 07:20 Claude：合併 Muse T184、T186–T189，Antigravity T197，Codex T182。合併後 pytest 262、npm test 128、兩個 build 都過；1440／390 px 首頁截圖正常、沒有橫向捲動。修 `probe_fps` 的 tmcd bug 和 T197 找到的 3 個安裝問題。**車子結果：4 支 Pexels／Pixabay 側面片全部資料不足**（整台車入鏡太短或往鏡頭偏），所以 demo 目前沒有「車子一致」的例子；需要 john 拍一支或用 Meta AI 生成。Meta API 累計 $2.39。
 
 - 10/31 Muse 完成 T184（分支 muse/T184-car-side，commit 8fdb3d5）：4 支側面車子片、6 個窗全跑完，track_source 全是 sam，**全部 insufficient_data**（不挑，全記）。car_side_1 灰色小轎車 1.0–1.5 秒：只追到 0.47 秒、差 0.5 門檻（27 秒，$0.022）；同支 7.5–8.5 秒（青色車）：只追到 73%（車子從左邊出畫面，25 秒，$0.021）；同支 9.25–10.0 秒：只追到 18%（窗內前半沒車、後半是貼很近的黑車，Manus 的時間估計在這支上偏了，23 秒，$0.019）。car_side_2 淺色車 5.0–5.75 秒：尺寸 +43%（往鏡頭方向偏，29 秒，$0.024）。car_side_3 遠車道 3.0–3.75 秒：像素車長變化太大不能當尺（19 秒，$0.018）。car_side_4（Pixabay）4.4–4.6 秒：只追到 3 格、要 8 格，如預期被拒（25 秒，$0.022）。6 個 overlay 都看了：SAM 每次都鎖對車，不用換顏色提示詞。6 次都沒走到擬合，所以沒有 speed_km_h、accel_g、car_length_px、n_points。car_meta_1.mp4 不存在（john 還沒生成），沒跑。下載法：Pexels 頁面被 Cloudflare 擋，改打 `pexels.com/download/video/<id>/?h=1080&w=1920` 拿 HD 直鏈；Pixabay 同樣被擋，用 r.jina.ai 讀頁面挖 cdn 直鏈。後端 bug（已寫進「缺什麼」，沒改後端）：三支 Pexels 檔自帶 tmcd 軌，ffprobe 9 會把 stream_groups＋streams 各印一次，`probe_fps()` 拿兩行 `r_frame_rate` 去 `int()` 炸掉，`/api/audits` 回 422（$0，SAM 前就擋下）。繞法：本地 `ffmpeg -map 0:v:0 -c copy -dn -write_tmcd 0` 重裝（像素完全一樣，只去 tmcd 軌），檔名 `*_clean.mp4`，都在 repo 外。TestClient＋真 API（uvicorn 照樣 EPERM）。$0.125（上限 $0.40），累計 $2.112。
 - 10/31 Muse 完成 T186（分支 muse/T186-vehicle-scene，commit 6cb4f5a）：`suggest_object` 多回三個鍵（側面車給 vehicle＋車種；朝鏡頭或鏡頭動給 judgeable=false＋原因；車種限四類＋unknown，帶數字退件）；偵訊可問 vehicle_class。缺的三鍵後端 `ObjectSuggestion` 還沒收（Pydantic 會靜默丟掉）、`QuestionField` 還沒加 vehicle_class（模型若問了會整組掉回 mock，不會 500），已寫進「缺什麼」請 Claude 接。pytest 252 全過，$0。
