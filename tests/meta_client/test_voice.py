@@ -274,6 +274,20 @@ def test_transcribe_empty_is_typed_error(tmp_path, monkeypatch):
         voice.transcribe(clip)
 
 
+def test_answer_interview_voice_digit_transcript_stays_unconfirmed(tmp_path, monkeypatch):
+    # T188: digits straight from the transcript are still only suggestions.
+    monkeypatch.setenv("MODEL_API_KEY", "test-key")
+    monkeypatch.setattr(voice, "transcribe",
+                        lambda path, **kw: {"transcript": "ball 24 centimetres",
+                                            "audio_seconds": 2.0})
+    payload = dict(ANSWER_OK, object_size={"value": 24, "unit": "cm"})
+    fake = FakeClient([fake_response(json.dumps(payload), fake_usage())])
+    monkeypatch.setattr(voice, "get_client", lambda: fake)
+    monkeypatch.setattr(voice, "get_tracker", lambda: _tracker(tmp_path))
+    out = voice.answer_interview_voice(tmp_path / "a.m4a")
+    assert out["fields"]["object_size_m"] == {"value": 0.24, "confirmed": False}
+
+
 def test_answer_interview_voice_mock_without_key(tmp_path, monkeypatch):
     monkeypatch.delenv("MODEL_API_KEY", raising=False)
     out = voice.answer_interview_voice(tmp_path / "missing.m4a")

@@ -64,7 +64,7 @@ def test_tracker_refuses_at_limit_without_logging(tmp_path):
     # already made are always logged (the money was spent), later calls stop.
     tracker = cost.CostTracker(tmp_path / "cost_log.csv", limit_usd=0.01)
     tracker.record("muse-spark-1.3", "over", input_tokens=1_000_000, output_tokens=0)
-    with pytest.raises(SpendLimitExceeded):
+    with pytest.raises(SpendLimitExceeded, match="refusing new paid calls"):
         tracker.record("muse-spark-1.3", "next", input_tokens=100, output_tokens=0)
     with open(tmp_path / "cost_log.csv", encoding="utf-8") as f:
         assert len(list(csv.DictReader(f))) == 1  # refused call left no row
