@@ -150,3 +150,12 @@ svg text{fill:var(--color-text)}
 
 .share-card-preview{max-width:420px;min-height:600px;padding:32px;border-radius:10px;display:flex;flex-direction:column;gap:24px;margin:24px 0}
 .share-card-preview p{color:inherit;margin:0;line-height:1.5}.share-value{font-family:"JetBrains Mono",monospace;font-size:clamp(32px,6vw,64px);line-height:1.15;overflow-wrap:anywhere}.share-value small{font-size:20px}.share-caption{font-size:28px;font-weight:600}.share-badges{display:flex;flex-wrap:wrap;gap:12px;margin-top:auto}.share-badges span{font-size:12px;border:1px solid currentColor;border-radius:4px;padding:6px 10px}.share-card-preview .share-footer{font-size:12px;border-top:1px solid currentColor;padding-top:20px}.physics-card>button{margin-top:16px}
+
+.vehicle-measurements{--vehicle-tone:var(--color-muted);padding:24px 0}
+.vehicle-measurements[data-verdict=consistent]{--vehicle-tone:var(--color-earth)}
+.vehicle-measurements[data-verdict=inconsistent]{--vehicle-tone:var(--color-action)}
+.vehicle-statistics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:32px;margin:32px 0}
+.vehicle-statistics dt{color:var(--color-muted);font-size:14px;margin:0}
+.vehicle-statistics dd{color:var(--vehicle-tone);font-size:clamp(32px,4vw,56px);line-height:1.25;margin:12px 0;letter-spacing:-.04em}
+.vehicle-statistics .grip-limit{font-size:12px;margin:0}.vehicle-class-field{margin:24px 0}.vehicle-class-field p{font-size:13px}
+.share-secondary p{font-size:12px}.share-secondary strong{display:block;font:700 32px "JetBrains Mono",monospace;margin-top:12px}
