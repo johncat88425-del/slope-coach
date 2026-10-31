@@ -1,3 +1,4 @@
+import {AuditDimensionField} from './VehicleModel.js';
 import {voiceFieldPatch} from './voiceAnswer.js';
 import {ObjectSuggestionHint,suggestedObjectName} from './ObjectSuggestion.js';
 import {createRequestGate} from './requestFeedback.js';
@@ -57,8 +58,8 @@ export function InterviewPanel({api,onResult,disabled=false,onBusyChange,hasResu
      <ObjectSuggestionHint suggestion={draft.suggestion}/>
      <label>Camera remained fixed<select data-testid="interview-camera" value={camera} onChange={e=>setCamera(e.target.value)}><option value="">Choose…</option><option value="yes">Yes</option><option value="no">No</option></select></label>
      <label>Slow motion or retimed playback<select data-testid="interview-slow" value={slow} onChange={e=>setSlow(e.target.value)}><option value="">Choose…</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-     <label>Motion model<select data-testid="interview-model" value={model} onChange={e=>setModel(e.target.value)}><option value="">Choose…</option><option value="free_flight">Free flight</option><option value="bounce">Bounce</option><option value="pendulum">Pendulum</option></select></label>
-     <label>Measured object size (metres, optional)<input type="number" step="any" min="0" value={size} onChange={e=>setSize(e.target.value)}/></label>
+     <label>Motion model<select data-testid="interview-model" value={model} onChange={e=>setModel(e.target.value)}><option value="">Choose…</option><option value="free_flight">Free flight</option><option value="bounce">Bounce</option><option value="pendulum">Pendulum</option><option value="vehicle">Car driving past side-on (fixed camera)</option></select></label>
+     <AuditDimensionField model={model} value={size} onChange={setSize}/>
      {model==='pendulum'&&<label>Pendulum length (metres, optional)<input type="number" step="any" min="0" value={length} onChange={e=>setLength(e.target.value)}/></label>}
      <button className="primary" data-testid="interview-submit" disabled={!windowConfirmed||!draftUsable||busy||disabled} onClick={()=>void submit()}>Confirm and check</button>
     </div>
