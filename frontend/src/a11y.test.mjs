@@ -11,7 +11,7 @@ function luminance(hex){const rgb=hex.slice(1).match(/.{2}/g).map(v=>parseInt(v,
 function contrast(a,b){const x=luminance(a.length===4?'#'+a.slice(1).split('').map(c=>c+c).join(''):a),y=luminance(b.length===4?'#'+b.slice(1).split('').map(c=>c+c).join(''):b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
 test('text tokens and verdict banners meet 4.5:1 contrast, including disabled controls',async()=>{
  const css=await readFile(new URL('./style.css',import.meta.url),'utf8');
- const token=Object.fromEntries([...css.matchAll(/--color-([\w-]+):(#[\da-f]+)/g)].map(([,key,value])=>[key,value]));
+ const token=Object.fromEntries([...css.match(/:root\{([\s\S]*?)\}/)[1].matchAll(/--color-([\w-]+):(#[\da-f]+)/g)].map(([,key,value])=>[key,value]));
  for(const bg of [token.page,token.surface,token['disabled-bg']])for(const fg of [token.text,token.muted,token.eyebrow])assert.ok(contrast(fg,bg)>=4.5,`${fg} on ${bg}`);
  for(const verdict of ['consistent','inconsistent','insufficient_data']){
   const bg=css.match(new RegExp('\\.verdict-'+verdict+'\\{background:(#[\\da-f]+)'))?.[1];assert.ok(bg);assert.ok(contrast(token.page,bg)>=4.5,verdict);
