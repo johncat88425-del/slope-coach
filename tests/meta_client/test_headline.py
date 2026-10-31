@@ -97,3 +97,42 @@ def test_headline_english_rejects(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="lang must be"):
         headline.write_headline(_audit(), lang="fr")
     assert fake.responses.calls == []
+
+
+def _vehicle_audit(**over):
+    audit = {
+        "assumed_model": "vehicle",
+        "verdict": "consistent",
+        "numbers": {"speed_km_h": 49.4, "accel_g": 0.6},
+        "nearest_body": None,
+    }
+    audit.update(over)
+    return audit
+
+
+def test_headline_vehicle_uses_speed_slots(tmp_path, monkeypatch):
+    payload = {"headline_template": "這台車以{speed_km_h:0}公里時速開過，加速度{accel_g:1}g"}
+    fake = _setup(monkeypatch, tmp_path, [payload])
+    out = headline.write_headline(_vehicle_audit(), tracker=_tracker(tmp_path))
+    assert out == {"headline": "這台車以49公里時速開過，加速度0.6g",
+                   "source": "muse-spark-1.3"}
+    assert len(fake.responses.calls) == 1
+
+
+def test_headline_vehicle_english_and_rejects(tmp_path, monkeypatch):
+    payload = {"headline_template": "This car braked at {accel_g:1} g, harder than a race car"}
+    _setup(monkeypatch, tmp_path, [payload])
+    out = headline.write_headline(_vehicle_audit(), lang="en")
+    assert out["headline"] == "This car braked at 0.6 g, harder than a race car"
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    bad = {"headline_template": "這台車像在{g_vs_earth:2}重力下開"}
+    fake = _setup(monkeypatch, tmp_path, [bad] * (MAX_RETRIES + 1))
+    assert headline.write_headline(_vehicle_audit()) is None
+    assert len(fake.responses.calls) == MAX_RETRIES + 1
+
+
+def test_headline_vehicle_without_speed_returns_none(tmp_path, monkeypatch):
+    fake = _setup(monkeypatch, tmp_path, [])
+    audit = _vehicle_audit(numbers={"speed_km_h": None})
+    assert headline.write_headline(audit) is None
+    assert fake.responses.calls == []
