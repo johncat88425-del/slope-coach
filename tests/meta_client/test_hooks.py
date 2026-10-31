@@ -108,6 +108,16 @@ def test_track_object_width_px_normalized(tmp_path, monkeypatch):
     assert dets[0].width_px == pytest.approx(0.2)
 
 
+def test_track_object_empty_track_is_all_missing(tmp_path, monkeypatch):
+    # T188: zero detections -> dense missing markers, never invented points.
+    result = sam.TrackResult(detections=[], fps=15.0, n_frames=3,
+                             billed_frames=50, cost_usd=0.01)
+    monkeypatch.setattr(sam, "track", lambda path, prompt, **kw: result)
+    dets = hooks.MetaHooks().track_object(tmp_path / "c.mp4", "ball", 1.0, 2.0)
+    assert len(dets) == 3
+    assert [d.centroid_px for d in dets] == [None, None, None]
+
+
 def test_track_object_failure_becomes_501_signal(tmp_path, monkeypatch):
     def boom(path, prompt, **kwargs):
         raise MediaError("ffmpeg not found")

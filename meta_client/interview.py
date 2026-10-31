@@ -2,7 +2,7 @@
 to 3 questions before an audit.
 
 The questions clarify `camera_static`, `slow_motion`, `object_size_m`,
-`time_window`, `assumed_model`, or `length_m`. The user's answers become
+`time_window`, `assumed_model`, `length_m`, or `vehicle_class`. The user's answers become
 confirmed inputs; Spark itself never fills in numbers. Validation mirrors
 backend/audits.py checked_interview exactly (1-3 questions, unique fields,
 check_model_text per question, 200-char cap), so anything returned here
@@ -32,6 +32,7 @@ FIELDS = (
     "time_window",
     "assumed_model",
     "length_m",
+    "vehicle_class",
 )
 MAX_QUESTIONS = 3
 N_FRAMES = 3
@@ -68,8 +69,10 @@ INTERVIEW_PROMPT = (
     "the user know the object's real size), time_window (which segment to "
     "check), assumed_model (which motion the user assumes: free fall, "
     "bounce, pendulum, or vehicle (a car driving past side-on)), length_m "
-    "(pendulum string length, if relevant); for a vehicle, object_size_m is "
-    "the car's length. "
+    "(pendulum string length, if relevant), vehicle_class (what kind of car "
+    "is visible: compact car, sedan, SUV, pickup, or unknown — the user "
+    "picks from that list, never the model); for a vehicle, object_size_m "
+    "is the car's length. "
     "Ask only what the frames leave unclear; skip what is obvious. Each "
     "question text must be plain words under 200 characters: no numbers "
     "except small counting integers, no claims about real vs generated "

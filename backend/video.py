@@ -14,7 +14,8 @@ def probe_fps(path: str) -> float:
     probe = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=r_frame_rate",
          "-of", "csv=p=0", path], capture_output=True, text=True, check=True).stdout.strip()
-    num, den = map(int, probe.split(",")[0].split("/"))
+    # ffprobe 7+ can print the stream twice when the file has a timecode (tmcd) track; use the first line
+    num, den = map(int, probe.splitlines()[0].split(",")[0].split("/"))
     return num / den
 
 

@@ -6,11 +6,11 @@ function validExperiment() {
   e.draft = {...e.draft, photo: {name: 'slope.png', url: 'blob:test'}, size: {width: 1000, height: 500}, points: [{x:0,y:0},{x:500,y:0},{x:100,y:100},{x:1000,y:0}], length:'1', height:'0.2', rulerLength:'0.3', captureConfirmed:true};
   return e;
 }
-test('home, five coaching routes and audit resolve; unknown and empty routes open the audit', () => {
+test('home, five coaching routes and audit resolve; unknown routes open the audit and the empty route opens home', () => {
   assert.equal(pages.length, 12);
   for (const {route} of pages) assert.equal(resolveRoute('#' + route), route);
   assert.equal(resolveRoute('#unknown'), 'audit');
-  assert.equal(resolveRoute(''), 'audit');
+  assert.equal(resolveRoute(''), 'home');
 });
 test('saves a valid user-confirmed snapshot without mutating the draft', () => {
   const e = validExperiment(); const saved = saveCalibration(e);

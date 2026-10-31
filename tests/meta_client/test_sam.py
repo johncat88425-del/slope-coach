@@ -273,3 +273,16 @@ def test_track_refuses_when_estimate_breaks_ceiling(tmp_path, monkeypatch):
     tracker = CostTracker(tmp_path / "cost.csv", limit_usd=0.10)
     with pytest.raises(SpendLimitExceeded):
         sam.track(clip, "sliding block", tracker=tracker)
+
+
+def test_track_empty_response_is_valid_empty_result(tmp_path, monkeypatch):
+    # T188: SAM finding nothing is a valid answer, not a crash; the audit
+    # refuses downstream on tracked fraction.
+    clip = _patch_media(monkeypatch, tmp_path)
+    fake = FakeClient([fake_response("", usage=None)])
+    monkeypatch.setattr(sam, "get_client", lambda: fake)
+    tracker = CostTracker(tmp_path / "cost.csv", limit_usd=120)
+    result = sam.track(clip, "sliding block", tracker=tracker)
+    assert result.detections == []
+    assert result.n_frames == 150
+    assert result.billed_frames == 150

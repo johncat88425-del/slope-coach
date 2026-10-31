@@ -4,6 +4,8 @@ import type {ReactNode,ReactElement} from 'react';
 export type Language='en'|'zh';
 const Context=createContext<Language>('en');
 export const LanguageProvider=Context.Provider;
+const LanguageControl=createContext<{language:Language;setLanguage:(value:Language)=>void}|null>(null);
+export function LanguageSwitch(){const control=useContext(LanguageControl);return control?<label className="language-control"><span className="sr-only">Language / 語言</span><select aria-label="Language / 語言" value={control.language} onChange={e=>control.setLanguage(e.target.value as Language)}><option value="en">English</option><option value="zh">中文</option></select></label>:null}
 export const dictionary:Record<string,string>={
 '固定模板（未使用模型）':'Prepared explanation (no model)',
 '由 SAM 3.1 追蹤':'Tracked by SAM 3.1','動作追蹤（未使用模型）':'motion-based tracking (no model)','顏色＋移動追蹤（未使用模型）':'colour-based tracking (no model)',
@@ -78,7 +80,7 @@ export function Localize({children}:{children:ReactNode}){const language=useCont
 export function LanguageRoot({children}:{children:ReactNode}){
  const [language,setLanguage]=useState<Language>(()=>{try{return localStorage.getItem('slope-language')==='zh'?'zh':'en'}catch{return 'en'}});
  useEffect(()=>{document.documentElement.lang=language==='en'?'en':'zh-Hant';try{localStorage.setItem('slope-language',language)}catch{}},[language]);
- return <LanguageProvider value={language}><div className="language-switch"><label>Language / 語言 <select value={language} onChange={e=>setLanguage(e.target.value as Language)}><option value="en">English</option><option value="zh">繁體中文</option></select></label></div>{children}</LanguageProvider>;
+ return <LanguageControl.Provider value={{language,setLanguage}}><LanguageProvider value={language}>{children}</LanguageProvider></LanguageControl.Provider>;
 }
 
 export function useTranslation(){const language=useContext(Context);return (text:string)=>translateText(text,language)}
