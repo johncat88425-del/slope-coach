@@ -83,7 +83,7 @@
 
 
 **Antigravity**（照順序做）
-- [x] T196 Antigravity：（10/31 Claude）端到端驗證完成：首頁、Results、How it works、上傳頁 1440px 與 390px 截圖、首頁動畫播完（地球虛線、琥珀實線、終點彈出、Doesn't match Earth gravity.）、Results 卡片 hover 放大至 1.05 並顯示數值且其他卡模糊變暗、上傳 data/demo 範例成功載入結果頁、中英雙向切換、全鍵盤 Tab/Enter 操作。共產出 13 張截圖存於 data/e2e/T196/，每張皆小於 300 KB（35.5–195.2 KB）且 MD5 互異 — commit 3c7637c
+- [x] T196 Antigravity：（10/31 Claude）端到端驗證完成：首頁、Results、How it works、上傳頁 1440px 與 390px 截圖、首頁動畫播完（地球虛線、琥珀實線、終點彈出、Doesn't match Earth gravity.）、Results 卡片 hover 放大至 1.05 並顯示數值且其他卡模糊變暗、上傳 data/demo 範例成功載入結果頁、中英雙向切換、全鍵盤 Tab/Enter 操作。共產出 13 張截圖存於 data/e2e/T196/，每張皆小於 300 KB（35.5–195.2 KB）且 MD5 互異 — commit 6ce92b7
 - [x] T197 Antigravity：（10/31 Claude）在全新的資料夾 `git clone` repo，照 README 從零啟動實測：git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 通過；cp .env.example 0.01s 通過；npm ci 1.12s 與 npm test (126 pass) 3.16s 通過；pytest 244 pass (17.44s) 與雙 e2e 腳本全數通過。發現 3 項問題（python3.11 ensurepip、docker 未安裝、scripts/dev.sh 寫死 python3）已記錄進「缺什麼」待 Claude 修改 — commit 76f9b92
 - [ ] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測：用瀏覽器的 iPhone 14 和 Pixel 7 模擬，走一次上傳到結果，截圖放 `data/e2e/T198/`，問題寫進 STATUS。push `antigravity/T198-mobile`。**到這裡 Antigravity 的待辦全部結束。**
 - [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
