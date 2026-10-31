@@ -27,7 +27,7 @@ import httpx
 from . import client as _client
 from .client import BASE_URL, MAX_RETRIES, call_with_retry, get_client
 from .cost import CostTracker, get_tracker
-from .exceptions import AuthError, MediaError, MetaClientError, ModelOutputError
+from .exceptions import AuthError, EmptyTranscriptError, MediaError, MetaClientError, ModelOutputError
 from .spark import _check_priced, _text_format, _usage_to_dict
 
 VOICE_MODEL = "muse-voice-transcribe-1.0"
@@ -148,7 +148,7 @@ def transcribe(
             wav.unlink(missing_ok=True)
     transcript = data.get("transcript")
     if not isinstance(transcript, str) or not transcript.strip():
-        raise ModelOutputError("transcribe returned an empty transcript")
+        raise EmptyTranscriptError("transcribe returned an empty transcript")
     duration_ms = data.get("audioDurationMs", 0)
     if isinstance(duration_ms, bool) or not isinstance(duration_ms, (int, float)):
         raise ModelOutputError("transcribe returned a bad audioDurationMs")
@@ -309,6 +309,8 @@ def _parse_spoken_size(text: str, key: str) -> dict[str, Any]:
 
 MOCK_NO_KEY_TRANSCRIPT = "(mock answer: MODEL_API_KEY is not set, nothing was transcribed)"
 
+NO_SPEECH_HEARD = "沒有聽到內容"
+
 
 def _validate_size(data: Any, key: str) -> dict[str, Any] | None:
     if data is None:
@@ -424,12 +426,21 @@ def answer_interview_voice(
     {"value", "confirmed": False}: the UI must show every value for
     confirmation and only submits confirmed ones. "source" names the model
     behind each part. Without MODEL_API_KEY returns a mock with no fields
-    and no API call.
+    and no API call. Silence (empty transcript) returns the NO_SPEECH_HEARD
+    hint with empty fields instead of raising, so the endpoint is 200.
     """
     if not os.environ.get("MODEL_API_KEY"):
         return {"transcript": MOCK_NO_KEY_TRANSCRIPT, "fields": {}, "mock": True,
                 "source": {"transcript": "mock", "fields": "mock"}}
-    spoken = transcribe(audio_path, timeout=VOICE_TIMEOUT_S, tracker=tracker)
+    try:
+        spoken = transcribe(audio_path, timeout=VOICE_TIMEOUT_S, tracker=tracker)
+    except EmptyTranscriptError:
+        # Silence is a valid result, not a model failure (T171): empty
+        # fields with a hint, so the endpoint returns 200, not 502.
+        # fields-source "none" (never "mock": the UI disables voice input
+        # when it sees "mock").
+        return {"transcript": NO_SPEECH_HEARD, "fields": {}, "mock": False,
+                "source": {"transcript": VOICE_MODEL, "fields": "none"}}
     raw = extract_interview_fields(spoken["transcript"], model=model,
                                    timeout=timeout, tracker=tracker)
     fields: dict[str, Any] = {}

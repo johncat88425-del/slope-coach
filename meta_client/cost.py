@@ -108,12 +108,17 @@ class CostTracker:
                     continue
         return total
 
-    def check(self) -> float:
-        """Return current total, or raise SpendLimitExceeded at the ceiling."""
+    def check(self, extra_usd: float = 0.0) -> float:
+        """Return current total, or raise SpendLimitExceeded at the ceiling.
+
+        extra_usd pre-books a known upcoming cost (T181): the call is
+        refused when total + extra would reach the ceiling.
+        """
         total = self.total_usd()
-        if total >= self.limit_usd:
+        if total + extra_usd >= self.limit_usd:
             raise SpendLimitExceeded(
-                f"cumulative Meta API spend ${total:.4f} reached the "
+                f"cumulative Meta API spend ${total:.4f} plus this "
+                f"${extra_usd:.4f} call reached the "
                 f"${self.limit_usd:.2f} limit; refusing new paid calls."
             )
         return total
