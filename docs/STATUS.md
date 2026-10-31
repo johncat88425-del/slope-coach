@@ -83,9 +83,9 @@
 
 
 **Antigravity**（照順序做）
-- [ ] T196 Antigravity：（10/31 Claude，等 Codex T182 合併到 main 之後）用內建瀏覽器跑端到端：(1) 首頁、Results、How it works、上傳頁各截 1440 px 和 390 px；(2) 首頁動畫有沒有播完、hover 卡片有沒有放大、其他卡有沒有變暗；(3) 上傳 `data/demo` 有的例子跑到結果頁；(4) 切中文再切回英文；(5) 只用鍵盤（Tab、Enter）走完一次。截圖放 `data/e2e/T196/`（小於 300 KB 一張），問題寫進 STATUS「缺什麼」，push `antigravity/T196-e2e`。
+- [x] T196 Antigravity：（10/31 Claude）端到端驗證完成：首頁、Results、How it works、上傳頁 1440px 與 390px 截圖、首頁動畫、卡片 hover、demo 匯入、中英切換、全鍵盤操作。13 張截圖存於 data/e2e/T196/，均 < 300 KB — commit 6ce92b7，PR #115
 - [x] T197 Antigravity：（10/31 Claude）在全新的資料夾 `git clone` repo，照 README 從零啟動實測：git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 通過；cp .env.example 0.01s 通過；npm ci 1.12s 與 npm test (126 pass) 3.16s 通過；pytest 244 pass (17.44s) 與雙 e2e 腳本全數通過。發現 3 項問題（python3.11 ensurepip、docker 未安裝、scripts/dev.sh 寫死 python3）已記錄進「缺什麼」待 Claude 修改 — commit 76f9b92
-- [ ] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測：用瀏覽器的 iPhone 14 和 Pixel 7 模擬，走一次上傳到結果，截圖放 `data/e2e/T198/`，問題寫進 STATUS。push `antigravity/T198-mobile`。**到這裡 Antigravity 的待辦全部結束。**
+- [x] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測完成：使用 iPhone 14（390×844）與 Pixel 7（412×915）雙機型模擬，完整走過上傳到結果頁（real_own_2 一致與 meta_clip4 不一致雙案），驗證無橫向捲動、按鈕高度 ≥ 44px、卡片點擊展開與二次收起、Details 展開查看。共 9 張截圖存於 data/e2e/T198/，均 < 300 KB（36.9–94.2 KB）且 MD5 互異。至此 Antigravity 待辦全部結束 — commit [commit-placeholder]
 - [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
 - [x] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖完成（新增 scripts/e2e_ghost_and_physics_card.mjs、tests/backend/test_e2e_ghost_card.py，產出桌面與 390px 手機截圖存於 docs/screens/）— commit 00036aa
 - [x] T121 Antigravity：效能量測：10 秒 1080p 影片 `/api/audits` 跑完耗時：顏色追蹤 1.13s、frame differencing 0.36s（目標 < 20s，通過；Claude 在雲端重跑 6.65s／1.53s，也通過。註：腳本只量 0–5 秒的時間窗）— commit b83b4d1
@@ -263,6 +263,9 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
+- [x] [T198 Antigravity 手機實測檢核] iPhone 14 (390px) 與 Pixel 7 (412px) 兩機型走完完整「上傳到結果」流程（包含 Consistent 與 Inconsistent 雙範例），頁面無水平溢出橫向捲動（`scrollWidth <= clientWidth`）；可見操作按鈕（Check segment, Load audit, Print report 等）高度均為 48px / 44px（符合 touch target >= 44px 規範）；Results 卡片點擊成功展開數值、再次點擊成功收起。未發現阻塞性 UI 問題。
+- [ ] [T196 Antigravity E2E 發現] (1) `/favicon.ico` 於初次載入時 404（缺 favicon link）；(2) Results 三張卡片在 390px 手機檢視下無法觸發 hover 展開數字，待 Codex T191 實作點擊展開（T191 已實作）；(3) 卡片展開效果目前僅掛在 hover，鍵盤 `:focus-visible` 尚未觸發展開，待 Codex T192 無障礙補齊（T192 已補齊）。
+
 - [x] [README 安裝問題 / T197 發現] Claude 10/31 已修：README 加 macOS ensurepip 失敗的繞法（`--without-pip` 再裝 pip）、註明 Docker 只有 `docker compose up` 才需要；`scripts/dev.sh` 優先用 `python3.11`。
 - [ ] 還沒有可用的真實影片。第一支（IMG_8418.MOV）有四個問題：拍攝角度是斜的、滑塊太小太淡、只滑了 0.75 秒、畫面有人臉。
 - [ ] 影片送 Spark 的實際 token 數和費用：未測。
@@ -355,6 +358,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 10/31 Antigravity 完成 T198（分支 antigravity/T198-mobile）：使用 iPhone 14（390×844，iOS Safari UA）與 Pixel 7（412×915，Android Chrome UA）執行端到端手機實測（腳本 `scripts/e2e_t198_mobile.mjs`）。(1) 上傳畫面檢驗：兩機型均無水平溢出橫向捲動（`scrollWidth <= clientWidth`）；(2) 上傳 demo 案例至結果頁實測：real_own_2 自由落體一致案例（g=9.44 m/s²）與 meta_clip4 不一致案例（g=0.14 m/s²）皆正常渲染結果橫幅、模型解說、原因與 Details；(3) 按鈕尺寸檢驗：按鈕 touch target 均達 44–48px 高度；(4) 卡片點擊互動：Results 壁面卡片點擊展開數值（maxHeight 180px, opacity 1）、二次點擊成功收起（maxHeight 0px, opacity 0）。共產出 9 張截圖存於 `data/e2e/T198/`，單張大小介於 36.9 KB 至 94.2 KB，全數通過 < 300 KB 規範，MD5 全數互異。至此 Antigravity 待辦項目全部結束。
 
 - 10/31 21:45 Claude：合併 Codex T191–T195（手機、無障礙、分享卡、車子畫面、收尾）。npm test 140、兩個 build 過；新增的前端沒有自己算物理（分享卡的倍數讀後端 `g_vs_earth`），禁用字眼測試涵蓋新頁面。Manus T199–T201 已交，Claude 核對後重寫成最終版（見下一則）。
 
