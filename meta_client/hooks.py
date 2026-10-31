@@ -144,3 +144,8 @@ class MetaHooks(ModelHooks):
         """
         result = _retake.write_retake_tips(audit, "en")
         return result["tips"] if result else None
+
+    def what_would_fit(self, audit: dict) -> str | None:
+        """Counterfactual sentence via Spark (T205, English); None shows nothing."""
+        result = _explain.what_would_fit(audit, "en")
+        return result["sentence"] if result else None
