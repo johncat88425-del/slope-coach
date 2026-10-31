@@ -16,6 +16,7 @@ client = TestClient(app)
 
 def post(path, **form):
     data = {"t_start": "0", "t_end": "0.6", "camera_static": "true", "object_size_m": "0.06", **form}
+    data = {k: v for k, v in data.items() if v is not None}  # None leaves a default field out
     with open(path, "rb") as f:
         return client.post("/api/audits", data=data, files={"file": ("clip.mp4", f, "video/mp4")})
 
@@ -354,6 +355,12 @@ def test_audit_vehicle_speed_and_grip(tmp_path):
     assert rocket["numbers"]["accel_g"] == pytest.approx(3, rel=0.1)
     slow = post(tmp_path / "car.mp4", assumed_model="vehicle", t_end="1.15", slow_motion="true").json()
     assert slow["verdict"] == "insufficient_data"
+    sedan = post(tmp_path / "car.mp4", assumed_model="vehicle", t_end="1.15", vehicle_class="sedan", object_size_m=None).json()
+    assert sedan["verdict"] == "consistent" and sedan["vehicle_class"] == "sedan"
+    n = sedan["numbers"]
+    assert (n["car_length_low_m"], n["car_length_high_m"]) == (4.6, 5.0) and "speed_km_h" not in n
+    assert n["speed_km_h_low"] == pytest.approx(50 * 4.6 / 4.5, rel=0.05)
+    assert post(tmp_path / "car.mp4", assumed_model="vehicle", t_end="1.15", vehicle_class="bus").status_code == 422
 
 
 def test_audit_refuses_long_windows_and_oversized_uploads(tmp_path, monkeypatch):
