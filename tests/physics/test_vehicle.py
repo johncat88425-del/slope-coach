@@ -3,7 +3,7 @@ import math
 import pytest
 
 from physics.errors import PhysicsInputError
-from physics.experiments.vehicle import car_length_px, check_drive, fit_drive
+from physics.experiments.vehicle import TYPICAL_LENGTH_M, car_length_px, check_drive, fit_drive, length_range_for
 
 L_PX = 120.0  # car drawn 120 px long; a 4.5 m car makes 1 px = 3.75 cm
 
@@ -64,6 +64,19 @@ def test_without_length_judges_only_when_3_and_6_m_agree():
     c = check_drive(fit_drive(pts), widths(len(pts)))
     assert c.verdict == "insufficient_data"
     assert c.length_for_max_accel_m == pytest.approx(4.5 * 1.2, rel=0.03)
+
+
+
+def test_confirmed_vehicle_class_narrows_the_length_range():
+    pts = drive(v_m_s=2.0, a_m_s2=1.0 * 9.81, seconds=1.5)  # undecided with 3-6 m (test above)
+    c = check_drive(fit_drive(pts), widths(len(pts)), vehicle_class="sedan")  # 4.6-5.0 m: 1.02-1.11 g
+    assert c.verdict == "consistent" and c.length_range_m == (4.6, 5.0)
+    assert c.speed_m_s is None  # still no single metre value without an exact length
+    pts = drive(v_m_s=2.0, a_m_s2=1.15 * 9.81, seconds=1.5)  # a pickup (5.3 m or more) would need 1.35 g
+    c = check_drive(fit_drive(pts), widths(len(pts)), vehicle_class="pickup")
+    assert c.verdict == "inconsistent" and "5.3 m" in c.reasons[0]
+    assert length_range_for("unknown") == length_range_for(None) == TYPICAL_LENGTH_M
+    assert check_drive(fit_drive(pts), widths(len(pts)), car_length_m=4.5).length_range_m is None
 
 
 def test_jittery_track_is_flagged():

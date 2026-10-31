@@ -5,7 +5,8 @@ gives its length in pixels, so speeds and accelerations come out in metres and s
 check is grip: an ordinary road car on tyres cannot speed up, brake or swerve harder than about
 1 g, so a track that needs more than MAX_ACCEL_G is inconsistent with a car driving on a road.
 Without a confirmed length the check uses the shortest and longest ordinary cars (3-6 m) and only
-judges when both give the same answer.
+judges when both give the same answer. A vehicle class the user confirmed (compact car, sedan, SUV,
+pickup) narrows that range with VEHICLE_CLASS_LENGTH_M.
 
 Perspective, slow motion and a moving camera are refused upstream; the verdict only says whether the
 track is consistent with a car on tyres, never whether a video is real or fake.
@@ -24,6 +25,15 @@ MIN_POINTS = 8
 MIN_SPAN_S = 0.5
 MAX_ACCEL_G = 1.2  # beyond hard braking of ordinary road cars on dry asphalt (about 0.8-1.1 g)
 TYPICAL_LENGTH_M = (3.0, 6.0)  # shortest city car to longest pickup or van
+# Length ranges per class from published U.S. specs (docs/research/vehicle.md): compact = Corolla 4.63,
+# Civic 4.69; sedan = Model 3 4.72, Camry 4.92; SUV = RAV4 4.60, Equinox 4.65, CR-V 4.69, Model Y 4.79;
+# pickup = Tacoma double cab 5.41, F-150 5.89. Each range is padded a little for other trims.
+VEHICLE_CLASS_LENGTH_M = {
+    "compact_car": (4.3, 4.75),
+    "sedan": (4.6, 5.0),
+    "suv": (4.5, 4.85),
+    "pickup": (5.3, 5.95),
+}
 WIDTH_AGREEMENT = 0.1  # widths within 10% of the median count as the whole car in view
 
 
@@ -89,10 +99,16 @@ class DriveCheck:
     speed_m_s: float | None  # only with a user-confirmed car length
     accel_m_s2: float | None
     accel_g: float | None
+    length_range_m: tuple[float, float] | None = None  # car lengths tried when no exact length was given
+
+
+def length_range_for(vehicle_class: str | None) -> tuple[float, float]:
+    """Range of car lengths for a user-confirmed class; unknown or missing falls back to 3-6 m."""
+    return VEHICLE_CLASS_LENGTH_M.get(vehicle_class or "", TYPICAL_LENGTH_M)
 
 
 def check_drive(fit: DriveFit, widths_px: list[float], *, car_length_m: float | None = None,
-                max_accel_g: float = MAX_ACCEL_G, max_rms_fraction: float = 0.03) -> DriveCheck:
+                vehicle_class: str | None = None, max_accel_g: float = MAX_ACCEL_G, max_rms_fraction: float = 0.03) -> DriveCheck:
     """car_length_m must come from the user (a known model or a tape), never from a model."""
     if car_length_m is not None and car_length_m <= 0:
         raise PhysicsInputError("car_length_m must be positive")
@@ -115,13 +131,15 @@ def check_drive(fit: DriveFit, widths_px: list[float], *, car_length_m: float | 
             reasons.append(f"needs {accel_g:.1f} g of {'braking' if accel < 0 else 'acceleration'}; "
                            f"road cars on tyres stay under about {max_accel_g:.1f} g")
     else:
-        lo_m, hi_m = TYPICAL_LENGTH_M
+        lo_m, hi_m = length_range_for(vehicle_class)
         if a * lo_m / L_px > limit:
-            reasons.append(f"even a {lo_m:.0f} m car would need {a * lo_m / L_px / G:.1f} g; "
+            reasons.append(f"even a {lo_m:.1f} m car would need {a * lo_m / L_px / G:.1f} g; "
                            f"road cars on tyres stay under about {max_accel_g:.1f} g")
         elif a * hi_m / L_px > limit and not reasons:
             return DriveCheck("insufficient_data", ("car length not confirmed and the answer depends on it",),
-                              L_px, fit.v_px_s / L_px, fit.a_px_s2 / L_px, length_for_limit, None, None, None)
+                              L_px, fit.v_px_s / L_px, fit.a_px_s2 / L_px, length_for_limit, None, None, None,
+                              (lo_m, hi_m))
 
     return DriveCheck("inconsistent" if reasons else "consistent", tuple(reasons), L_px, fit.v_px_s / L_px,
-                      fit.a_px_s2 / L_px, length_for_limit, speed, accel, accel_g)
+                      fit.a_px_s2 / L_px, length_for_limit, speed, accel, accel_g,
+                      None if car_length_m is not None else (lo_m, hi_m))
