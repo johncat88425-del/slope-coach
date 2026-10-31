@@ -12,6 +12,7 @@ keeps its documented 501 ("upload detections manually") behavior.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from backend.model_hooks import ModelHooks, TrackingUnavailable
@@ -28,6 +29,7 @@ from . import headline as _headline
 from . import interview as _interview
 from . import sam as _sam
 from . import spark as _spark
+from . import track_check as _track_check
 from . import voice as _voice
 from .exceptions import MetaClientError, ModelOutputError
 
@@ -104,6 +106,19 @@ class MetaHooks(ModelHooks):
     def suggest_object(self, video_path: Path) -> dict:
         """First-frame object guess via Spark (T108); the backend checks it and the user confirms it."""
         return _spark.suggest_object(video_path)
+
+    def track_check(
+        self, video_path: Path, points: list, object_name: str
+    ) -> dict | None:
+        """Spark re-check of the SAM track on 4 ringed frames (T203).
+
+        Points are (t_s, x, y) in the backend 480 px frame. Returns
+        {"same_object", "note", "source"}, or None when there is no key,
+        too few points, or the check fails (the backend shows no label).
+        """
+        if not os.environ.get("MODEL_API_KEY"):
+            return None
+        return _track_check.check_track(video_path, points, object_name)
 
     def answer_voice(self, audio_path: Path) -> dict:
         """Spoken interview answer via Voice Transcribe + Spark (T109); every field stays unconfirmed."""
