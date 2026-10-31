@@ -18,7 +18,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | 全部完成；等凍結前 T216 一起回歸 |
-| **Codex** | **T210 Muse 新輸出上畫面（T207 已合併，可以做了）** → T218 分享卡按鈕和車子卡拿出來 |
+| **Codex** | **T210、T218 已完成並 push**，等 Claude 審查合併；本輪沒有待辦 |
 | **Antigravity** | T196 新設計端到端 → T198 手機實測 → T214 Lighthouse → T215 照腳本彩排 → T216 凍結前回歸測試 |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
@@ -413,7 +413,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
-- 10/31 Codex T218：結果卡下方直接提供外框分享 PNG 下載，保留單一 testid、等待／錯誤狀態及原 Details 證據。Results 增加明示「程式模擬／Synthetic test clips」的 Cars 卡，重用原始 demo JSON 與車子數值格式，保留舊 demo／錄影路由，不新增測量、不改後端。1440px hover 顯示兩案，390px 點擊展開／收起與鍵盤 Enter 連至範例，無橫向捲動；Details 收合時成功下載 1080×1920 PNG，按鈕高 48px。156 前端 tests、一般／demo build、pytest 283 全過；截圖 frontend/qa/t218-cars-1440.jpg、frontend/qa/t218-visible-download.jpg。T215 僅兩項入口問題已解，真實模型等待時間與錄影建議保留。Codex 沒有待辦了。
+- 10/31 Codex T218：結果卡下方直接提供外框分享 PNG 下載，保留單一 testid、等待／錯誤狀態及原 Details 證據。Results 增加明示「程式模擬／Synthetic test clips」的 Cars 卡，重用原始 demo JSON 與車子數值格式，保留舊 demo／錄影路由，不新增測量、不改後端。1440px hover 顯示兩案，390px 點擊展開／收起與鍵盤 Enter 連至範例，無橫向捲動；Details 收合時成功下載 1080×1920 PNG，按鈕高 48px。156 前端 tests、一般／demo build、pytest 283 全過；截圖 frontend/qa/t218-cars-1440.jpg、frontend/qa/t218-visible-download.jpg。T215 僅兩項入口問題已解，真實模型等待時間與錄影建議保留。本輪 T210／T218 全部完成；舊 T165 的 Figma 配額阻擋仍照原紀錄保留。
 
 - 10/31 Codex T210：先同步 T207 的 main（f75d6f1），依 docs/API.md v1.3 增加三個可選欄位與離線 JSON 結構驗證。物體複查明確分同一物體／可能追錯且標 Muse Spark；拒判優先顯示原始 retake_tips，缺資料沿用固定無模型建議，建議移至 Details 外；不一致自由飛行顯示 what_would_fit 原文及 Muse 來源。缺欄位不補結果，不改後端 verdict／numbers，中文 UI 不翻寫模型原句。153 tests、一般／demo build 通過；無 API 請求的明示 UI fixture 驗證 1440／390px、兩語、正負／缺欄位與舊紀錄，截圖 frontend/qa/t210-retake-ui-fixture-1440.jpg。T207 依賴已解除。
 
