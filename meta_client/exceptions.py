@@ -19,6 +19,10 @@ class ModelOutputError(MetaClientError):
     """Model output failed schema/range validation after retries."""
 
 
+class EmptyTranscriptError(ModelOutputError):
+    """Transcription succeeded but heard no speech (T171). Callers may treat this as an empty answer instead of a failure."""
+
+
 class MediaError(MetaClientError):
     """Local media problem: missing file, bad format, ffmpeg/ffprobe missing."""
 
