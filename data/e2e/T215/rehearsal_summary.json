@@ -1,0 +1,76 @@
+{
+  "rehearsalDate": "2026-10-31T22:43:24.822Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "budgetedTotalSec": 180,
+  "interactiveActualTotalSec": 48,
+  "liveEstimateTotalSec": 176,
+  "timings": [
+    {
+      "segmentName": "0:00–0:15 Home page animation",
+      "budgetedSec": 15,
+      "actualSec": 6.31,
+      "notes": "Hero animation completed smoothly, Check a video button highlighted."
+    },
+    {
+      "segmentName": "0:15–0:45 Upload own_2 & Muse interview",
+      "budgetedSec": 30,
+      "actualSec": 18.045,
+      "notes": "Live draft API took 15.6s; answers tapped, voice drawer displayed."
+    },
+    {
+      "segmentName": "0:45–1:10 Result own_2 Consistent (g = 9.45 m/s²)",
+      "budgetedSec": 25,
+      "actualSec": 3.354,
+      "notes": "Verified Consistent banner, g = 9.45 m/s², SAM 3.1 track overlay, Numbers by code."
+    },
+    {
+      "segmentName": "1:10–1:45 Result meta_clip4 Inconsistent (g = 0.14 m/s²)",
+      "budgetedSec": 35,
+      "actualSec": 2.306,
+      "notes": "Verified Inconsistent banner, g = 0.14 m/s², Earth ghost path falling away (28.7m drop)."
+    },
+    {
+      "segmentName": "1:45–2:05 Result meta_clip2 Can't tell",
+      "budgetedSec": 20,
+      "actualSec": 2.311,
+      "notes": "Verified Can't tell verdict, size changes -48% along track, perspective limit reason."
+    },
+    {
+      "segmentName": "2:05–2:30 Results car cards (50 km/h braking & 3 g launch)",
+      "budgetedSec": 25,
+      "actualSec": 5.67,
+      "notes": "Synthetic test examples hovered for 2s each; vehicle length ruler shown."
+    },
+    {
+      "segmentName": "2:30–2:50 How it works 4 steps",
+      "budgetedSec": 20,
+      "actualSec": 6.996,
+      "notes": "Hovered all 4 steps (Confirm, Track, Measure, Explain) sequentially."
+    },
+    {
+      "segmentName": "2:50–3:00 Download share card (1/69 gravity)",
+      "budgetedSec": 10,
+      "actualSec": 2.962,
+      "notes": "Share card preview verified, download PNG clicked (Details expanded)."
+    }
+  ],
+  "observations": {
+    "waitingTooLong": [
+      "Live SAM 3.1 tracking takes 35-48s per video (own_2 ~45s, meta_clip4 ~48s, meta_clip2 ~35s). If executed fully live without video cuts, total time is ~280s (~4m40s), blowing past the 3-minute limit.",
+      "Live Muse Spark interview draft generation takes 12-13s. This fits nicely within the 30s budget for Segment 2 (0:15-0:45)."
+    ],
+    "buttonFindings": [
+      "The Share Card (Physics card) and \"Download physics card PNG\" button are hidden inside <details data-testid=\"audit-details\">, which is collapsed by default on results. The presenter must expand \"Details\" to reach the download button.",
+      "Car synthetic test clips are located inside <details data-testid=\"synthetic-demo\"> on the Demo page (/#demo); this must be expanded to view the 50 km/h braking and 3.0 g launch cards."
+    ],
+    "cuttingRecommendations": [
+      "Recommendation 1 (Essential for video recording): In video post-production, fast-forward or jump-cut the 45-second SAM tracking progress spinner down to 2-3 seconds for own_2 (saves ~42 seconds).",
+      "Recommendation 2: For meta_clip4 and meta_clip2, load the pre-calculated demo results or use jump cuts across tracking so the presenter speaks the narration without dead air (saves ~80 seconds).",
+      "Recommendation 3: Keep the Home page opening concise (finish narration and click Check a video by 0:12 instead of 0:15).",
+      "Recommendation 4: In the Car results segment (2:05-2:30), 18 seconds is plenty to explain that car length is the ruler and tires cannot exceed 1.2 g."
+    ]
+  }
+}
