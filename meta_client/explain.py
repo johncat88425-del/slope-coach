@@ -32,6 +32,7 @@ EXPLAIN_SCHEMA: dict[str, Any] = {
 AUTHENTICITY_BANNED = (
     "真影片",
     "假影片",
+    "假的",
     "真偽",
     "AI生成",
     "AI 生成",
@@ -108,6 +109,26 @@ _RULES_EN = (
     'the schema: exactly one key, "explanation".'
 )
 
+# Extra guidance when the audit assumes a car driving past side-on (T187).
+# The fitted acceleration and the tyre-grip screening limit both live in the
+# payload (numbers + reason sentences), so the model may quote them; it must
+# never frame the result as fake/real video.
+_VEHICLE_RULES = (
+    "This audit assumes a car driving past side-on. When the verdict is 不一致, "
+    "state the fitted acceleration in g and compare it with the tyre-grip "
+    "screening limit stated in the payload reasons, phrased as 加速度約 X g，"
+    "超過一般輪胎抓地力上限，與正常路上行駛不一致, quoting both numbers from "
+    "the payload. Never write 假的, AI生成, or 證實."
+)
+
+_VEHICLE_RULES_EN = (
+    "This audit assumes a car driving past side-on. When the verdict is "
+    "inconsistent, state the fitted acceleration in g and compare it with "
+    "the tyre-grip screening limit stated in the payload reasons, quoting "
+    "both numbers from the payload. Never write fake video, AI-generated, "
+    "or any claim of proof."
+)
+
 
 def _summary_view(result: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(result, Mapping):
@@ -170,6 +191,8 @@ def explain_result(
     tracker.check()
     sdk = get_client()
     lead, rules = (_PROMPTS[kind], _RULES) if lang == "zh" else (_PROMPTS_EN[kind], _RULES_EN)
+    if kind == "audit" and view.get("assumed_model") == "vehicle":
+        rules += _VEHICLE_RULES if lang == "zh" else _VEHICLE_RULES_EN
     prompt = lead + rules + "\nPayload:\n" + json.dumps(view, ensure_ascii=False, default=str)
     last_error: Exception | None = None
     for _ in range(MAX_RETRIES + 1):
