@@ -1,3 +1,4 @@
+import {EarthAssumption} from './EarthAssumption.js';
 import {AuditSteps,type AuditStep} from './AuditSteps.js';
 import {createRequestGate} from './requestFeedback.js';
 import {verdictLabel,motionLabel} from './verdictLabel.js';
@@ -42,6 +43,7 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
  <ModelHeadline headline={audit.headline}/>
  {audit.explanation&&<section data-testid="audit-explanation"><p>{audit.explanation.source==='model'?'由 Muse Spark 產生':'固定模板（未使用模型）'}</p><p><Verbatim text={audit.explanation.text}/></p></section>}
  <section data-testid="audit-reasons"><h3>原因</h3><ul>{audit.reasons.map((reason,i)=><li key={i}><Verbatim text={reason}/></li>)}</ul></section>
+ <EarthAssumption numbers={audit.numbers}/>
  <details data-testid="audit-details"><summary>Details</summary>
  {replay&&<p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">SYNTHETIC test example — program-drawn motion.</p>}
  <p>稽核 {audit.audit_id} · 假設：{motionLabel(audit.assumed_model)} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
