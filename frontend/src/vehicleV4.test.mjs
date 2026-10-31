@@ -22,6 +22,7 @@ test('vehicle results and share cards display only backend speed and acceleratio
  const card=shareCardContent(a);assert.equal(card.value,'41–83');assert.equal(card.unit,'km/h');assert.equal(card.reference,'3–6');assert.equal(card.secondary.value,'0.23–0.57');assert.equal(JSON.stringify(a),before);
  assert.equal(vehicleMetrics({...a,numbers:{speed_km_h:99}}).speed,null);
  const known=shareCardContent({...car,numbers:{speed_km_h:72.4,accel_g:.6543,accel_m_s2:-1000}});assert.equal(known.value,'72');assert.equal(known.secondary.value,'0.65');assert.equal(known.secondary.label,'Braking');
+ const onlyAcceleration=shareCardContent({...car,numbers:{accel_g:.5}});assert.equal(onlyAcceleration.unit,'g');assert.equal(onlyAcceleration.value,'0.50');assert.equal(onlyAcceleration.limit,'Grip limit: 1.2 g');
 });
 test('both upload paths send the confirmed class with optional user measurement untouched',async()=>{
  const bodies=[],api=createApi('',async(url,init)=>{bodies.push(init.body);return Response.json(car)});
