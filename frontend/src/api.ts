@@ -1,12 +1,13 @@
 import {DEMO_ONLY,demoUploadMessage} from './mode.js';
+import type {VehicleClass} from './vehiclePresentation.js';
 import type {AuditModel,AuditOut} from './audit';
 export type FlightWindows={draft_id:string;source:'physics';track_source:'frame_diff'|'color';windows:{t_start:number;t_end:number}[];scanned_until_s:number};
 export type InterviewField='camera_static'|'slow_motion'|'object_size_m'|'time_window'|'assumed_model'|'length_m';
 export type VoiceField={value:boolean|number|string|number[];confirmed:false};
 export type VoiceAnswer={source:{transcript:string;fields:string};transcript:string;fields:Partial<Record<InterviewField,VoiceField>>};
 export type ObjectSuggestion={source:string;object_name:string;camera_looks_static:boolean|null;reason:string};
-export type AuditDraft={draft_id:string;video_url:string;interview:{source:'model'|'mock';note?:string|null;questions:{field:InterviewField;text:string}[]};suggestion?:ObjectSuggestion|null};
-export type InterviewAnswers={object_name?:string;t_start:number;t_end:number;camera_static:boolean;slow_motion?:boolean;assumed_model:AuditModel;object_size_m?:number;length_m?:number};
+export type AuditDraft={draft_id:string;video_url:string;interview:{source:'model'|'mock';note?:string|null;questions:{field:InterviewField|'vehicle_class';text:string}[]};suggestion?:ObjectSuggestion|null};
+export type InterviewAnswers={object_name?:string;t_start:number;t_end:number;camera_static:boolean;slow_motion?:boolean;assumed_model:AuditModel;object_size_m?:number;length_m?:number;vehicle_class?:VehicleClass};
 export type Pixel = [number, number];
 export type ScenePhoto = {photo_id: string; photo_url?: string|null; scene_check: {source: 'model'|'mock'; needs_retake: boolean; retake_reasons: string[]}};
 export type CalibrationInput = {ruler_px: [Pixel,Pixel]; ruler_length_m: number; path_start_px: Pixel; path_end_px: Pixel; slope_length_m: number; slope_height_m: number; reason?: string};
@@ -64,7 +65,7 @@ export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnl
   function json<T>(method:string,path:string,body:unknown) {return request<T>(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
   const e=(id:string)=>'/experiments/'+encodeURIComponent(id), t=(id:string)=>'/trials/'+encodeURIComponent(id);
   return {
-    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight',onProgress?:UploadProgress,length_m?:number,object_name='ball',slow_motion?:boolean)=>{if(demoOnly)return Promise.reject(new Error(demoUploadMessage));const data=new FormData();data.append('file',file);data.append('object_name',object_name.trim()||'ball');if(slow_motion!==undefined)data.append('slow_motion',String(slow_motion));data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));if(length_m!==undefined)data.append('length_m',String(length_m));return onProgress?uploadAudit(root+'/api/audits',data,onProgress):request<AuditOut>('/audits',{method:'POST',body:data})},
+    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight',onProgress?:UploadProgress,length_m?:number,object_name='ball',slow_motion?:boolean,vehicle_class?:VehicleClass)=>{if(demoOnly)return Promise.reject(new Error(demoUploadMessage));const data=new FormData();data.append('file',file);data.append('object_name',object_name.trim()||'ball');if(slow_motion!==undefined)data.append('slow_motion',String(slow_motion));data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(assumed_model==='vehicle'&&vehicle_class)data.append('vehicle_class',vehicle_class);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));if(length_m!==undefined)data.append('length_m',String(length_m));return onProgress?uploadAudit(root+'/api/audits',data,onProgress):request<AuditOut>('/audits',{method:'POST',body:data})},
     flightWindows:(id:string,object_name:string)=>{const body=new FormData();body.append('object_name',object_name.trim()||'ball');return request<FlightWindows>('/audit-drafts/'+encodeURIComponent(id)+'/windows',{method:'POST',body})},
     auditDraft:(file:File)=>{const data=new FormData();data.append('file',file);return request<AuditDraft>('/audit-drafts',{method:'POST',body:data})},
     voiceAnswer:(id:string,audio:File)=>{const body=new FormData();body.append('audio',audio);return request<VoiceAnswer>('/audit-drafts/'+encodeURIComponent(id)+'/voice',{method:'POST',body})},
