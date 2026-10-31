@@ -40,7 +40,7 @@
 
 | 步驟 | 方法與路徑 | 送出 | 回傳 |
 | --- | --- | --- | --- |
-| 建立稽核 | `POST /api/audits` | multipart：`file`（影片）、`t_start`、`t_end`（秒，由使用者確認）、`camera_static`（true/false）、`assumed_model`（`free_flight` 或 `bounce`）、`object_size_m`（選填，使用者提供） | `AuditOut` |
+| 建立稽核 | `POST /api/audits` | multipart：`file`（影片）、`t_start`、`t_end`（秒，由使用者確認）、`camera_static`（true/false）、`assumed_model`（`free_flight`、`bounce`、`pendulum` 或 `vehicle`）、`object_size_m`（選填，使用者提供；`vehicle` 時是車身長度） | `AuditOut` |
 | 讀取稽核 | `GET /api/audits/{aid}` | | `AuditOut` |
 
 `AuditOut` 的欄位：
@@ -49,6 +49,8 @@
 - `numbers{}`：程式算出的數字。可能有 `g_apparent_m_s2`、`implied_time_factor`、`implied_object_size_m`、`tilt_deg`、`rms_over_travel`、`tracked_fraction`、`n_points`。沒算出來的就不會出現。自由飛行另有「重力當尺」四個數（不需要尺寸，**假設**是地球重力、正常速度、正側面）：`if_earth_flight_time_s`、`if_earth_vertical_extent_m`（軌跡最高到最低的垂直距離）、`if_earth_launch_speed_m_s`、`if_earth_launch_angle_deg`（第一個追蹤點相對水平的角度，負的是往下）。這是在假設下的讀數，不是判定；慢動作 2 倍會讓高度讀成 4 倍。
 - `points[]`：`[t, x_px, y_px]`，座標以寬 480 px 的畫面為準。
 - `assumed_model=pendulum`（v0.3）：單擺。可另外送 `length_m`（使用者自己量的擺長，公尺）。`numbers` 會有 `period_s`、`period_spread`（各次擺動週期的差異比例）、`implied_length_m`（由週期推算的擺長），有給 `length_m` 時還有 `predicted_period_s`。週期只用水平位置算，不需要尺寸。
+- `assumed_model=vehicle`（v1.1，T175）：車子從側面開過、鏡頭固定。`object_size_m` 是**使用者確認的車身長度**（公尺；一般轎車約 4.5）。車身在畫面上的像素長度由追蹤框寬度算（取和中位數差 10% 以內的影格，車頭被畫面切到的影格不算）。判定：需要超過 1.2 g 的加速或煞車、或軌跡跳動不平順 → `inconsistent`；沒給車長時用 3 m 和 6 m 兩種車長都算，兩個答案一樣才判，不一樣回 `insufficient_data`。慢動作、鏡頭在動、車子變大變小超過 30%（往鏡頭開）、車子移動不到一個車身長 → `insufficient_data`。`numbers` 會有 `car_length_px`、`speed_car_lengths_s`（每秒幾個車身，不需要公尺）、`accel_car_lengths_s2`、`car_length_for_max_accel_m`（車要多長，這個加速度才剛好是 1.2 g）、`n_points`，有車長時還有 `speed_m_s`、`speed_km_h`、`accel_m_s2`（負的是減速）、`accel_g`（絕對值）。
+- `DetectionIn.width_px`（v1.1，T175，選填）：追蹤框寬度。稽核用的 SAM 回傳跟 `centroid_px` 一樣是**畫面寬度的比例**（0 到 1）。只有 `vehicle` 會用到。
 - `ghost_points[]`（v0.3）：「鬼影軌跡」。物體從同一點、用同樣的初速度出發，但以 9.81 m/s² 往畫面正下方落下時，每個時間點應該在的位置。只有填了 `object_size_m` 才會有。前端畫成虛線，和實測點並排。
 - `nearest_body`（v0.3）：表觀重力最接近的星球（Pluto、Moon、Mars、Earth、Jupiter），搭配 `numbers.g_vs_earth`（表觀 g 是地球的幾倍）。只是幫助理解的比喻，不是判定。
 - `numbers.g_apparent_low`、`g_apparent_high`、`g_verdict_robust`（v0.3）：物體像素大小估錯 ±30% 時，表觀 g 的範圍。`g_verdict_robust` 為 1 表示判定在這個範圍內都不變，0 表示判定會因尺寸誤差翻轉，畫面要提醒使用者。

@@ -6,7 +6,7 @@ from __future__ import annotations
 from .output_check import fill_numbers
 
 EARTH_G = 9.81
-MODEL_NAMES = {"free_flight": "free flight", "bounce": "bouncing", "pendulum": "pendulum"}
+MODEL_NAMES = {"free_flight": "free flight", "bounce": "bouncing", "pendulum": "pendulum", "vehicle": "car driving"}
 
 TEMPLATES = {
     "flight_consistent": "Assuming free flight, the object falls with an apparent gravity of {g:1} m/s², "
@@ -14,6 +14,8 @@ TEMPLATES = {
     "flight_inconsistent_g": "Assuming free flight, the object falls as if gravity were {g:2} m/s², "
                              "{ratio:2} times Earth's, closest to {body}. The motion is inconsistent with "
                              "real-time free flight on Earth. This does not say why.",
+    "vehicle_consistent": "Assuming a car driving on a road, it moves at about {kmh:0} km/h and speeds up or "
+                          "slows down at {ag:2} g, within what tyres can grip. The motion is consistent with that model.",
     "inconsistent": "The motion is inconsistent with the {model} model. Main reason: {reason}. This does not say why.",
     "consistent": "The motion is consistent with the {model} model.",
     "insufficient_data": "This clip cannot be judged against the {model} model: {reason}.",
@@ -33,6 +35,9 @@ def explain_audit(rec: dict) -> dict:
             key = "flight_consistent"
         elif key == "inconsistent" and not 0.85 <= g / EARTH_G <= 1.15:
             key = "flight_inconsistent_g"
+    if rec["assumed_model"] == "vehicle" and key == "consistent" and n.get("speed_km_h") is not None:
+        slots |= {"kmh": abs(n["speed_km_h"]), "ag": n["accel_g"]}
+        key = "vehicle_consistent"
     text, chk = fill_numbers(TEMPLATES[key], slots)
     if text is None:  # cannot happen with the fixed templates; keep the result honest if it does
         return {"source": "template", "text": f"Result: {rec['verdict']}."}
