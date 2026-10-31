@@ -4,7 +4,6 @@ from __future__ import annotations
 import dataclasses
 import math
 import os
-import shutil
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,7 +24,7 @@ from .audits import router as audits_router
 from .interventions import CATALOG
 from .model_hooks import TrackingUnavailable, get_hooks, set_hooks
 from .output_check import check_model_text
-from .store import UPLOAD_ROOT, ExperimentRecord, TrialRecord, new_id, now, store
+from .store import UPLOAD_ROOT, ExperimentRecord, TrialRecord, UploadTooLarge, copy_limited, new_id, now, store
 
 def _wire_model_hooks() -> str:
     """Use real Meta hooks when a key is configured; else stay on mocks.
@@ -102,8 +101,10 @@ def _save_upload(eid: str, f: UploadFile, prefix: str):
     d.mkdir(parents=True, exist_ok=True)
     suffix = "".join(c for c in (f.filename or "").rsplit(".", 1)[-1:] if c.isalnum())[:5]
     path = d / f"{new_id(prefix)}.{suffix or 'bin'}"
-    with path.open("wb") as out:
-        shutil.copyfileobj(f.file, out)
+    try:
+        copy_limited(f.file, path)
+    except UploadTooLarge as e:
+        raise HTTPException(413, str(e))
     return path
 
 
