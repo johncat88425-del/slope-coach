@@ -373,3 +373,62 @@ def test_audit_refuses_long_windows_and_oversized_uploads(tmp_path, monkeypatch)
     r = client.post("/api/audits", data={"t_start": "0", "t_end": "0.6", "camera_static": "true"},
                     files={"file": ("big.mp4", io.BytesIO(b"x" * 5000), "video/mp4")})
     assert r.status_code == 413
+
+
+def test_spark_track_check_retake_tips_and_what_would_fit(tmp_path):
+    """T207: Muse Spark's re-check of the SAM track can only refuse (never change a number); retake tips and the
+    'what would fit' sentence are attached when they pass the output check, dropped when they don't."""
+    from backend import schemas as S
+    from backend.model_hooks import MockHooks, get_hooks, set_hooks
+
+    def sam_track(g):
+        out = []
+        for i in range(36):
+            t = i / 60
+            x = (40 + t / 0.003 + 10) / 640
+            y = (300 - 2.0 / 0.003 * t + 0.5 * g / 0.003 * t * t + 10) / 480
+            out.append(S.DetectionIn(t_s=t, centroid_px=(x, y), area_px=400 / (640 * 480)))
+        return out
+
+    class FakeSpark(MockHooks):
+        same, note, tips, fit = True, "Same black square in all four frames.", None, None
+        g = 9.81
+
+        def track_object(self, video_path, text_prompt, t_start, t_end):
+            return sam_track(self.g)
+
+        def track_check(self, video_path, points, object_name):
+            assert len(points) > 4 and object_name == "black square"
+            return {"same_object": self.same, "note": self.note}
+
+        def retake_tips(self, audit):
+            return self.tips
+
+        def what_would_fit(self, audit):
+            return self.fit
+
+    write_clip(tmp_path / "real.mp4", 9.81)
+    write_clip(tmp_path / "slow.mp4", 9.81 / 4)
+    hooks, old = FakeSpark(), get_hooks()
+    set_hooks(hooks)
+    try:
+        ok = post(tmp_path / "real.mp4", object_name="black square").json()
+        assert ok["verdict"] == "consistent" and ok["track_check"]["same_object"] is True
+        assert ok["track_check"]["source"] == "model" and ok["retake_tips"] is None
+
+        hooks.same, hooks.note, hooks.tips = False, "Frame 3 rings a different object 99 cm away.", ["Keep one object in view."]
+        wrong = post(tmp_path / "real.mp4", object_name="black square").json()
+        assert wrong["verdict"] == "insufficient_data" and "Muse Spark re-check" in wrong["reasons"][0]
+        assert wrong["track_check"]["note"] == ""  # an invented number in the note is dropped
+        assert wrong["retake_tips"] == ["Keep one object in view."]
+        assert "g_apparent_m_s2" not in wrong["numbers"]
+
+        hooks.same, hooks.tips = True, ["Film it 12 times slower."]  # number not in the result: rejected
+        hooks.g, hooks.fit = 9.81 / 4, "This would match Earth only if the clip were slowed down."
+        slow = post(tmp_path / "slow.mp4", object_name="black square").json()
+        assert slow["verdict"] == "inconsistent" and slow["retake_tips"] is None
+        assert slow["what_would_fit"] == {"source": "model", "text": hooks.fit}
+        hooks.fit = "This proves the clip is fake."
+        assert post(tmp_path / "slow.mp4", object_name="black square").json()["what_would_fit"] is None
+    finally:
+        set_hooks(old)
