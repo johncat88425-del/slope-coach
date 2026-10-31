@@ -104,6 +104,65 @@ def test_explain_rejects_authenticity_language(tmp_path, monkeypatch):
         explain.explain_result(PAYLOAD)
 
 
+VEHICLE_CONSISTENT = {
+    "assumed_model": "vehicle",
+    "verdict": "consistent",
+    "numbers": {"speed_km_h": 49.0, "accel_g": 0.6, "car_length_px": 210.5},
+    "reasons": [],
+}
+
+VEHICLE_INCONSISTENT = {
+    "assumed_model": "vehicle",
+    "verdict": "inconsistent",
+    "numbers": {"speed_km_h": 30.0, "accel_g": 3.0},
+    "reasons": ["needs 3.0 g of acceleration; road cars on tyres stay under about 1.2 g"],
+}
+
+VEHICLE_REFUSED = {
+    "assumed_model": "vehicle",
+    "verdict": "insufficient_data",
+    "numbers": {"tracked_fraction": 0.73},
+    "reasons": ["object tracked in only 73% of frames"],
+}
+
+
+def test_explain_vehicle_consistent(tmp_path, monkeypatch):
+    fake = _setup(monkeypatch, tmp_path,
+                  "車速約 49 公里每小時，加速度約 0.6 g，與正常路上行駛一致。")
+    out = explain.explain_result(VEHICLE_CONSISTENT, kind="audit")
+    assert out["source"] == "muse-spark-1.3"
+    assert "tyre-grip" in fake.responses.calls[0]["input"]
+
+
+def test_explain_vehicle_inconsistent_quotes_limit(tmp_path, monkeypatch):
+    fake = _setup(monkeypatch, tmp_path,
+                  "加速度約 3.0 g，超過一般輪胎抓地力上限 1.2 g，與正常路上行駛不一致。")
+    out = explain.explain_result(VEHICLE_INCONSISTENT, kind="audit")
+    assert "不一致" in out["explanation"]
+    assert len(fake.responses.calls) == 1  # 1.2 comes from the reason sentence
+
+
+def test_explain_vehicle_insufficient(tmp_path, monkeypatch):
+    _setup(monkeypatch, tmp_path, "只追到 73%，目前無法判斷。")
+    out = explain.explain_result(VEHICLE_REFUSED, kind="audit")
+    assert "無法判斷" in out["explanation"]
+
+
+def test_explain_vehicle_rejects_sneaked_number(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    fake = _setup(monkeypatch, tmp_path, "加速度約 99.9 g，與正常路上行駛不一致。")
+    with pytest.raises(ModelOutputError, match="output check failed"):
+        explain.explain_result(VEHICLE_INCONSISTENT, kind="audit")
+    assert len(fake.responses.calls) == 3
+
+
+def test_explain_vehicle_rejects_fake_word(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    _setup(monkeypatch, tmp_path, "這支影片是假的，與假設不一致。")
+    with pytest.raises(ModelOutputError, match="authenticity"):
+        explain.explain_result(VEHICLE_INCONSISTENT, kind="audit")
+
+
 def test_explain_rejects_bad_kind_without_call(tmp_path, monkeypatch):
     monkeypatch.setattr(explain, "get_tracker", lambda: _tracker(tmp_path))
     with pytest.raises(ValueError, match="kind"):
