@@ -290,6 +290,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T206 Muse：最後彩排真打在等 Claude T207（後端接 track_check／retake_tips／what_would_fit）合併。沒合併就跑，秒數和流程都不是最終版，白花錢，所以先不跑。T207 合併後 Muse 再跑 T206（上限 $0.40）。
+
 - T194 Codex／Claude：T186 已合併但 backend/schemas.py 尚未接新 suggestion／QuestionField（原有「缺什麼」已記）。前端先完成使用者手選 vehicle_class 並傳既有 POST /api/audits；固定參考車長逐字對應 API v1.2 表，僅供確認／輸入量測值覆蓋，不填入 object_size_m、不算中點。結果範圍照後端 numbers。自動場景建議仍取決於後端接線，未冒稱已可端到端運作。
 
 - T193 Codex／Claude：已有 `numbers.g_vs_earth`，分享卡直接格式化為十進位倍率（例如現有資料 0.0146×）；缺此欄就顯示後端 `g_apparent_m_s2`，不自行用 g/9.81 或 1/g 算比例。若設計一定要「1/69」，請後端新增經驗證的顯示字串／倒數欄位；前端未捏造倒數。
