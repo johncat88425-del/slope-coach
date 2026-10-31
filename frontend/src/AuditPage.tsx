@@ -18,7 +18,7 @@ import {GravityRuler} from './GravityRuler.js';
 import {InterviewPanel} from './InterviewPanel.js';
 import {BounceChart} from './BounceChart.js';
 import {formatNumber} from './formatNumber.js';
-import {PhysicsCard} from './PhysicsCard.js';
+import {PhysicsCard,PhysicsCardDownload} from './PhysicsCard.js';
 import {GhostReview} from './GhostReview.js';
 import {auditHash,shareAuditUrl} from './experiment.js';
 import { Localize } from './i18n.js';
@@ -41,7 +41,7 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
     const [copyStatus,setCopyStatus]=useState('');
     const result=useRef<HTMLElement>(null),verdictId=useId();
     useEffect(()=>{if(autoFocus)result.current?.focus()},[autoFocus]);
-    return <Localize><article ref={result} tabIndex={-1} data-testid="audit-result" aria-label="稽核結果" aria-labelledby={verdictId}>
+    return <Localize><div className="audit-result-group"><article ref={result} tabIndex={-1} data-testid="audit-result" aria-label="稽核結果" aria-labelledby={verdictId}>
  <div className={'verdict-banner verdict-'+audit.verdict}><h2 id={verdictId} data-testid="audit-verdict">{verdictLabel(audit.verdict,audit.assumed_model)}</h2></div>
  <TrackCheck check={audit.track_check}/>
  <VehicleMeasurements audit={audit}/>
@@ -63,8 +63,8 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
  {audit.assumed_model==='bounce'&&<BounceChart numbers={audit.numbers}/>}
  {audit.assumed_model==='bounce' && <p>Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.</p>}<EventTimeline events={audit.events}/>
  {audit.verdict==='insufficient_data' && audit.numbers.size_trend!==undefined && <aside data-testid="audit-size-trend" aria-label="Size trend limitation"><h3>Size trend limitation</h3><p>size_trend: <span title={String(audit.numbers.size_trend)}>{formatNumber(audit.numbers.size_trend)}</span></p><p>A changing apparent size can make the 2D motion check unreliable. The backend rejects changes beyond its quality threshold. Review the backend reasons above; this value alone does not establish a cause.</p></aside>}
- <PrintReport audit={audit}/><PhysicsCard audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/><button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json", "application/json;charset=utf-8")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}><Verbatim text={r}/></li>)}</ul>
- </details></article></Localize>;
+ <PrintReport audit={audit}/><PhysicsCard showDownload={false} audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/><button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json", "application/json;charset=utf-8")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}><Verbatim text={r}/></li>)}</ul>
+ </details></article><div className="result-actions" data-testid="audit-result-actions"><PhysicsCardDownload audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)} label="Download share card PNG"/></div></div></Localize>;
 }
 
 export function AuditPage({ api, auditId = null }: {
