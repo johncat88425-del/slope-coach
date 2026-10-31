@@ -85,6 +85,7 @@ function App() {
     } adopt(value); setScene(value.scene_photos.at(-1) ?? null); setCalVersion(value.calibrations.at(-1)?.version ?? 0); setBaseVersion(value.baselines.at(-1)?.version ?? 0); setPredictionId(value.predictions.at(-1)?.prediction_id ?? ''); setTrialId(value.trials.at(-1)?.trial_id ?? ''); setComparisonId(value.comparisons.at(-1)?.comparison_id ?? ''); setInterventionId(value.interventions.at(-1)?.intervention_id ?? ''); setBaselineIds([]); }
     useEffect(() => { const update = () => {setRoute((location.hash?resolveRoute(location.hash):auditIdFromPath(location.pathname)?'audit':resolveRoute('')));setAuditRouteId((auditIdFromHash(location.hash)??(!location.hash?auditIdFromPath(location.pathname):null)));setExampleKey(exampleKeyFromHash(location.hash));}; window.addEventListener('hashchange', update);window.addEventListener('popstate',update);return ()=>{window.removeEventListener('hashchange',update);window.removeEventListener('popstate',update)}; }, []);
     useEffect(() => { document.title = active.title + ' · Motion Audit'; }, [active.title]);
+    useEffect(()=>{const frame=requestAnimationFrame(()=>{window.scrollTo({top:0,left:0,behavior:'auto'})});return()=>cancelAnimationFrame(frame)},[route,auditRouteId,exampleKey]);
     useEffect(() => { setRestConfirmed(false); setTrialFile(null); setTrialPreview(''); }, [predictionId, calVersion]);
     useEffect(() => () => allocatedUrls.current.forEach(value => URL.revokeObjectURL(value)), []);
     // Read-only resume: never auto-create or repeat a mutation after refresh.

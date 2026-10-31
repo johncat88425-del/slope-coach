@@ -1,4 +1,12 @@
 export const newUiCopy:Record<string,string>={
+  "Review evidence": "核對證據",
+  "Every clip, the same rules": "每支影片，相同的檢查規則",
+  "Each clip is checked with the same rules; results describe only consistency with the assumed motion model.": "每支影片都使用相同規則；結果只描述運動是否符合假設的模型。",
+  "Nearest gravity analogy:": "最接近的重力參考：",
+  "Backend tracking overlay thumbnail": "後端追蹤疊加圖縮圖",
+  "Tracked by SAM 3.1": "由 SAM 3.1 追蹤",
+  "Saved motion evidence unavailable.": "目前沒有已儲存的運動證據。",
+
   "What kind of car is this?": "這是什麼車？",
   "API reference length range (m):": "API 固定表的參考車長範圍（m）：",
   "Confirm this reference range, or enter a measured car length below to override it. The reference is not a user measurement.": "請確認這個參考範圍，或在下方輸入實際量測的車長來覆蓋它。參考值不是使用者量測值。",
@@ -85,7 +93,7 @@ export const newUiCopy:Record<string,string>={
   "Car body lengths per second": "每秒走幾個車身長",
   "This car would need to be": "這台車要有",
   "metres long for this acceleration to be exactly 1.2 g.": "公尺長，這個加速度才剛好是 1.2 g",
-  "Typical car tyres support about 1 g of grip; above 1.2 g is inconsistent with the assumption of a car driving on a road. This does not determine video authenticity.": "一般車子的輪胎抓地力大約撐得住 1 g；超過 1.2 g 就和「車子在路上開」這個假設不一致。這不判斷影片真假。",
+  "Typical car tyres support about 1 g of grip; above 1.2 g is inconsistent with the assumption of a car driving on a road. This does not determine video authenticity.": "一般車子的輪胎抓地力大約撐得住 1 g；超過 1.2 g 就和「車子在路上開」這個假設不一致。這不據此判定影片是否實拍。",
   "Program simulation — program-drawn moving squares.": "程式模擬：程式繪製的移動方塊。",
 
   "Same rules, two clips": "同一套規則，兩段影片",
