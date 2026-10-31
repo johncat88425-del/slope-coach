@@ -120,3 +120,8 @@ class MetaHooks(ModelHooks):
         """One-line headline via Spark (T112, English since T118); None shows no headline."""
         result = _headline.write_headline(audit, lang="en")
         return result["headline"] if result else None
+
+    def what_would_fit(self, audit: dict) -> str | None:
+        """Counterfactual sentence via Spark (T205, English); None shows nothing."""
+        result = _explain.what_would_fit(audit, "en")
+        return result["sentence"] if result else None
