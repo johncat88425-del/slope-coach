@@ -12,7 +12,7 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from backend.output_check import check_model_text, extract_numbers
+from backend.output_check import check_model_text, extract_numbers, fill_numbers
 
 from . import client as _client
 from .client import MAX_RETRIES, SPARK_MODEL, call_with_retry, get_client
@@ -163,6 +163,128 @@ def _string_numbers(view: Mapping[str, Any]) -> list[float]:
 def _find_authenticity_words(text: str) -> list[str]:
     low = text.lower()
     return [w for w in AUTHENTICITY_BANNED if w.lower() in low]
+
+
+WHAT_WOULD_FIT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"sentence_template": {"type": "string"}},
+    "required": ["sentence_template"],
+    "additionalProperties": False,
+}
+
+MAX_FIT_CHARS = 200
+
+_FIT_PROMPTS = {
+    "zh": (
+        "一支影片的自由飛行稽核結果是不一致：球掉得太慢或太快，和地球重力對不上。"
+        "程式已算出兩個反事實數字：如果影片其實被放慢 {implied_time_factor} 倍就會符合，"
+        "或如果球其實有 {implied_object_size_m} 公尺寬就會符合。請寫一句話當樣板："
+        "照抄至少一個槽位（含大括號和名稱），自己不准寫任何數字。例如：如果這支影片其實放慢了 "
+        "{implied_time_factor} 倍，或球其實有 {implied_object_size_m} 公尺寬，才會和地球重力一致。"
+        "規則：一句話，不超過 200 個字；不准寫「所以是假的」或任何因果字眼（不准證實、真因、"
+        "一定是），不准寫真假影片或 AI 生成。只回傳 JSON，恰好一個鍵 \"sentence_template\"。"
+    ),
+    "en": (
+        "A clip's free-flight audit came back inconsistent: the ball falls too "
+        "slowly or too fast to match Earth gravity. The program computed two "
+        "counterfactual numbers: the slowdown factor that would fit "
+        "({implied_time_factor}) and the ball width that would fit "
+        "({implied_object_size_m} metres). Write one sentence as a TEMPLATE: "
+        "copy at least one slot exactly as written (braces and name), never "
+        "write any digits yourself. Example shape: This would match Earth "
+        "gravity if the clip were slowed by {implied_time_factor}x, or the "
+        "ball were {implied_object_size_m} metres wide. Rules. One sentence, "
+        "under 200 characters; never claim proof or causes, never frame this "
+        "as real-vs-fake video. Return JSON only with exactly one key, "
+        "\"sentence_template\"."
+    ),
+}
+
+
+def _validate_fit_template(raw: Any, slots: dict[str, float]) -> str:
+    if not isinstance(raw, dict):
+        raise ModelOutputError("fit sentence must be a JSON object")
+    template = raw.get("sentence_template")
+    if not isinstance(template, str) or not template.strip():
+        raise ModelOutputError("sentence_template must be a non-empty string")
+    template = template.strip()
+    if len(template) > MAX_FIT_CHARS:
+        raise ModelOutputError("sentence_template must be under 200 characters")
+    if "{implied_time_factor" not in template and "{implied_object_size_m" not in template:
+        raise ModelOutputError("fit sentence must use an implied_* slot")
+    filled, fill_check = fill_numbers(template, slots)
+    if not fill_check.ok:
+        raise ModelOutputError("fit slots failed: " + "; ".join(fill_check.problems))
+    assert filled is not None
+    text_check = check_model_text(filled, [dict(slots)])
+    if not text_check.ok:
+        raise ModelOutputError("fit sentence failed checks: " + "; ".join(text_check.problems))
+    bad = _find_authenticity_words(filled)
+    if bad:
+        raise ModelOutputError("forbidden authenticity language: " + ", ".join(bad))
+    return filled
+
+
+def what_would_fit(
+    audit: Mapping[str, Any],
+    lang: str = "zh",
+    *,
+    model: str | None = None,
+    timeout: float = _client.SPARK_TIMEOUT_S,
+    tracker: CostTracker | None = None,
+) -> dict[str, str] | None:
+    """One counterfactual sentence for an inconsistent free flight (T205).
+
+    Spark writes the sentence shape; the program fills {implied_time_factor}
+    and {implied_object_size_m} from the audit numbers and verifies the
+    result. Returns {"sentence", "source"}, or None when the audit is not an
+    inconsistent free flight, the numbers are missing, or no valid sentence
+    passes after retries. Raises ValueError for a bad lang without calling
+    the API.
+    """
+    if lang not in _FIT_PROMPTS:
+        raise ValueError("lang must be 'zh' or 'en'")
+    if not isinstance(audit, Mapping):
+        raise ModelOutputError("audit must be a mapping")
+    if audit.get("verdict") != "inconsistent":
+        return None
+    if audit.get("assumed_model") != "free_flight":
+        return None
+    numbers = audit.get("numbers") or {}
+    slots = {k: numbers[k] for k in ("implied_time_factor", "implied_object_size_m")
+             if isinstance(numbers.get(k), (int, float))}
+    if len(slots) < 2:
+        return None
+    resolved = model or SPARK_MODEL
+    _check_priced(resolved)
+    tracker = tracker or get_tracker()
+    tracker.check()
+    sdk = get_client()
+    for _ in range(MAX_RETRIES + 1):
+        response = call_with_retry(
+            lambda: sdk.responses.create(
+                model=resolved,
+                input=_FIT_PROMPTS[lang],
+                text=_text_format("what_would_fit", WHAT_WOULD_FIT_SCHEMA),
+                timeout=timeout,
+            ),
+            op="spark.what_would_fit",
+        )
+        usage = _usage_to_dict(getattr(response, "usage", None))
+        tracker.record(
+            resolved,
+            "spark.what_would_fit",
+            input_tokens=usage["input_tokens"],
+            cached_tokens=usage["cached_tokens"],
+            output_tokens=usage["output_tokens"],
+        )
+        try:
+            filled = _validate_fit_template(
+                json.loads(response.output_text or ""), slots)
+            return {"sentence": filled, "source": resolved}
+        except (json.JSONDecodeError, ModelOutputError, ValueError):
+            continue
+    return None
 
 
 def explain_result(

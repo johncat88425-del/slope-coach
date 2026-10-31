@@ -1,7 +1,2 @@
-import {useEffect,useState} from 'react';
-import {demoRecords} from './DemoCatalog';
-import {AuditResult} from './AuditPage';
-import {autoTourKeys,tourIndex} from './tourTiming';
-import {savedOutcomeCaption} from './demoSelection.js';
-import {Localize} from './i18n.js';
-export function AutoTour(){const [open,setOpen]=useState(false),[playing,setPlaying]=useState(false),[elapsed,setElapsed]=useState(0);useEffect(()=>{if(!playing)return;let id=0,previous=performance.now();const tick=(now:number)=>{const delta=now-previous;previous=now;setElapsed(t=>Math.min(30000,t+delta));id=requestAnimationFrame(tick)};id=requestAnimationFrame(tick);return()=>cancelAnimationFrame(id)},[playing]);useEffect(()=>{if(elapsed>=30000)setPlaying(false)},[elapsed]);const index=tourIndex(elapsed),entry=demoRecords.find(r=>r.key===autoTourKeys[index]);return <Localize><section data-testid="auto-tour"><button onClick={()=>{setOpen(true);setElapsed(0);setPlaying(true)}}>30-second tour</button>{open&&<><p role="status">{index+1} / 3 · {entry?savedOutcomeCaption(entry.audit):'The saved result is unavailable.'}</p><p>Saved results only — no new model call. Private videos are not loaded.</p><button data-testid="auto-tour-pause" disabled={elapsed>=30000} onClick={()=>setPlaying(p=>!p)}>{playing?'Pause':'Resume'}</button><button onClick={()=>{setPlaying(false);setOpen(false)}}>Close tour</button>{entry?<AuditResult key={entry.key} audit={entry.audit} replay/>:<p>The saved result is unavailable.</p>}</>}</section></Localize>}
+import {GuidedDemo} from './GuidedDemo.js';
+export function AutoTour(){return <section data-testid="auto-tour" className="auto-tour"><GuidedDemo route="audit" recording/></section>}

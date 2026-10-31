@@ -1,2 +1,6 @@
-import test from 'node:test';import assert from 'node:assert/strict';import {demoSteps,GuidedDemo} from '../.test-dist/GuidedDemo.js';import {createElement} from 'react';import {renderToStaticMarkup} from 'react-dom/server';
-test('guided demo uses final saved evidence and retains model provenance',()=>{assert.deepEqual(demoSteps.map(s=>s.route),['home','audit','demo','demo','demo','demo']);assert.match(demoSteps[1].text,/mock/);assert.match(demoSteps[2].text,/final saved results/);assert.match(demoSteps[3].target,/generated_meta_clip4/);assert.match(demoSteps[4].text,/saved headline/);assert.match(demoSteps[5].text,/SYNTHETIC.*separate/);assert.doesNotMatch(demoSteps.map(s=>s.text).join(' '),/two consistent|unknown cause|pending/);assert.match(renderToStaticMarkup(createElement(GuidedDemo,{route:'home'})),/Guided demo/)});
+import test from 'node:test';import assert from 'node:assert/strict';import {demoSteps,GuidedDemo} from '../.test-dist/GuidedDemo.js';import {recordingSteps} from '../.test-dist/tourSteps.js';import {createElement} from 'react';import {renderToStaticMarkup} from 'react-dom/server';
+test('both tour launch points share the final recording order and load evidence only on request',()=>{
+ assert.equal(demoSteps,recordingSteps);assert.equal(demoSteps.length,6);
+ assert.match(renderToStaticMarkup(createElement(GuidedDemo,{route:'home'})),/Guided demo/);
+ assert.match(renderToStaticMarkup(createElement(GuidedDemo,{route:'audit',recording:true})),/Recording tour/);
+});

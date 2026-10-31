@@ -163,6 +163,69 @@ def test_explain_vehicle_rejects_fake_word(tmp_path, monkeypatch):
         explain.explain_result(VEHICLE_INCONSISTENT, kind="audit")
 
 
+FIT_AUDIT = {
+    "verdict": "inconsistent",
+    "assumed_model": "free_flight",
+    "numbers": {"implied_time_factor": 8.2839, "implied_object_size_m": 16.4698},
+}
+
+
+def _fit_setup(monkeypatch, tmp_path, template):
+    payload = json.dumps({"sentence_template": template})
+    fake = FakeClient([fake_response(payload, fake_usage())])
+    monkeypatch.setattr(explain, "get_client", lambda: fake)
+    monkeypatch.setattr(explain, "get_tracker", lambda: _tracker(tmp_path))
+    return fake
+
+
+def test_what_would_fit_zh_fills_slots(tmp_path, monkeypatch):
+    template = ("如果這支影片其實放慢了 {implied_time_factor} 倍，或球其實有 "
+                "{implied_object_size_m} 公尺寬，才會和地球重力一致。")
+    fake = _fit_setup(monkeypatch, tmp_path, template)
+    out = explain.what_would_fit(FIT_AUDIT)
+    assert out == {"sentence": "如果這支影片其實放慢了 8.28 倍，或球其實有 "
+                               "16.47 公尺寬，才會和地球重力一致。",
+                   "source": "muse-spark-1.3"}
+    assert len(fake.responses.calls) == 1
+
+
+def test_what_would_fit_en(tmp_path, monkeypatch):
+    template = ("This would match Earth gravity if the clip were slowed by "
+                "{implied_time_factor}x, or the ball were "
+                "{implied_object_size_m} metres wide.")
+    _fit_setup(monkeypatch, tmp_path, template)
+    out = explain.what_would_fit(FIT_AUDIT, "en")
+    assert "8.28x" in out["sentence"] and "16.47 metres" in out["sentence"]
+
+
+def test_what_would_fit_rejects_own_digits(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    template = ("如果放慢了 {implied_time_factor} 倍，或球有 20 公尺寬，才會一致。")
+    fake = _fit_setup(monkeypatch, tmp_path, template)
+    assert explain.what_would_fit(FIT_AUDIT) is None
+    assert len(fake.responses.calls) == 3
+
+
+def test_what_would_fit_rejects_fake_word(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    template = "放慢 {implied_time_factor} 倍才一致，所以是假的。"
+    fake = _fit_setup(monkeypatch, tmp_path, template)
+    assert explain.what_would_fit(FIT_AUDIT) is None
+    assert len(fake.responses.calls) == 3
+
+
+def test_what_would_fit_skips_without_call(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        explain, "get_client",
+        lambda: (_ for _ in ()).throw(AssertionError("must not call API")))
+    monkeypatch.setattr(explain, "get_tracker", lambda: _tracker(tmp_path))
+    assert explain.what_would_fit({**FIT_AUDIT, "verdict": "consistent"}) is None
+    assert explain.what_would_fit({**FIT_AUDIT, "assumed_model": "vehicle"}) is None
+    assert explain.what_would_fit({**FIT_AUDIT, "numbers": {}}) is None
+    with pytest.raises(ValueError, match="lang"):
+        explain.what_would_fit(FIT_AUDIT, "fr")
+
+
 def test_explain_rejects_bad_kind_without_call(tmp_path, monkeypatch):
     monkeypatch.setattr(explain, "get_tracker", lambda: _tracker(tmp_path))
     with pytest.raises(ValueError, match="kind"):

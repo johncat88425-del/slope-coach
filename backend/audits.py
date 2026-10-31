@@ -75,9 +75,50 @@ def _model_text(hook_name: str, view: dict) -> str | None:
     return text.strip()
 
 
+def _track_check(video: Path, points: list, object_name: str) -> dict | None:
+    """Muse Spark looks at 4 ringed frames of the SAM track (T203/T207). Only a yes/no and a short note come
+    back; a failure, a missing hook or a malformed answer means no check (None), never a changed number."""
+    hook = getattr(get_hooks(), "track_check", None)
+    if hook is None or os.environ.get("SLOPE_MODEL_TEXT") == "0":
+        return None
+    try:
+        out = hook(video, points, object_name)
+    except Exception:
+        return None
+    if not isinstance(out, dict) or not isinstance(out.get("same_object"), bool):
+        return None
+    note = out.get("note") if isinstance(out.get("note"), str) else ""
+    if note and not check_model_text(note, []).ok:
+        note = ""
+    return {"same_object": out["same_object"], "note": note, "source": "model"}
+
+
+def _model_list(hook_name: str, view: dict) -> list[str] | None:
+    """Like _model_text, for a hook that returns a few short lines (retake tips); every line must pass."""
+    hook = getattr(get_hooks(), hook_name, None)
+    if hook is None or os.environ.get("SLOPE_MODEL_TEXT") == "0":
+        return None
+    try:
+        lines = hook(dict(view))
+    except Exception:
+        return None
+    if not isinstance(lines, list) or not lines or not all(isinstance(x, str) and x.strip() for x in lines):
+        return None
+    if not all(check_model_text(x, _number_sources(view)).ok for x in lines):
+        return None
+    return [x.strip() for x in lines[:3]]
+
+
 def _finish(rec: dict) -> dict:
     rec["explanation"] = explain_audit(rec)
+    rec.setdefault("track_check", None)
     view = _model_view(rec)
+    rec["retake_tips"] = _model_list("retake_tips", view) if rec["verdict"] == "insufficient_data" else None
+    fit = None
+    if rec["verdict"] == "inconsistent" and rec["assumed_model"] == "free_flight":
+        text = _model_text("what_would_fit", view)
+        fit = {"source": "model", "text": text} if text else None
+    rec["what_would_fit"] = fit
     text = _model_text("explain_audit", view)
     if text:
         rec["explanation"] = {"source": "model", "text": text}
@@ -330,6 +371,13 @@ def create_audit(
     rec["events"] = [e.__dict__ for e in persistence_events(dets)]
     frac = len(pts) / max(len(times), 1)
     rec["numbers"]["tracked_fraction"] = frac
+    if source == "sam" and frac >= MIN_TRACKED_FRACTION:
+        rec["track_check"] = _track_check(video, rec["points"], object_name)
+        if rec["track_check"] and rec["track_check"]["same_object"] is False:
+            rec["reasons"] = ["Muse Spark re-check: the tracker may have followed a different object; "
+                              "check the overlay or retake with one clear object"]
+            store.audits[aid] = _finish(rec)
+            return rec
     if frac < MIN_TRACKED_FRACTION:
         rec["reasons"] = [f"object tracked in only {frac:.0%} of frames"]
         store.audits[aid] = _finish(rec)

@@ -17,11 +17,11 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T203 Spark 複查追蹤 → T204 Spark 重拍建議 → T205 要怎樣才會一致 → T208 Meta 用法總表 → T206 最後彩排真打 |
-| **Codex** | T209 錄影導覽 → T211 分享預覽圖 → T212 分析中進度 → T210 Muse 新輸出上畫面（等 T207）→ T213 修 Antigravity 找到的問題 |
+| **Muse** | 全部完成；等凍結前 T216 一起回歸 |
+| **Codex** | **T210 Muse 新輸出上畫面（T207 已合併，可以做了）** → T218 分享卡按鈕和車子卡拿出來 |
 | **Antigravity** | T196 新設計端到端 → T198 手機實測 → T214 Lighthouse → T215 照腳本彩排 → T216 凍結前回歸測試 |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
-| **Claude** | 審查合併 → T207 後端接 Spark 複查 → T217 凍結前提交檢查 |
+| **Claude** | 審查合併 → T217 凍結前提交檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
 
 ## 提交前路線圖（10/29 09:30 Claude，john 要求一次列完；截止 11/04 21:00 ET，我們目標 11/03 交）
@@ -50,11 +50,11 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
-- [ ] T203 Muse：（10/31 Claude）**Spark 複查 SAM 追蹤**（模型檢查模型，評審最看得到 Meta 用法）。新增 `meta_client/track_check.py` 的 `check_track(video_path, points, object_name)`：從追蹤點裡平均挑 4 個時間點，各截一張影格並在追蹤位置畫圓圈，送給 Spark 問「4 張圖圈起來的是不是同一個 {object_name}？」。只准回傳 JSON `{"same_object": true/false, "note": "一句話"}`；`note` 不准有數字和禁用字眼；失敗最多重試 2 次，再失敗就回 `None`（代表沒檢查）。花費計入 cost tracker。在 `meta_client/hooks.py` 加 `track_check` hook，沒有金鑰時回 `None`。單元測試至少 5 個（同物體、換物體、不是 JSON、note 有數字、逾時），不真打 API。**後端接線由 Claude T207 做，你不要改 backend/。** push `muse/T203-track-check`。
-- [ ] T204 Muse：（10/31 Claude）**Spark 重拍建議**。判定是 insufficient_data 時，Spark 讀 `reasons` 寫 1 到 3 條具體的重拍建議（例如「球往鏡頭飛：請站到球飛行路線的正側面」）。新增 `meta_client/retake.py` 的 `write_retake_tips(audit, lang)`，輸出 `{"tips": ["..."]}`；每條 80 字內；不准出現 reasons 裡沒有的數字；禁用字眼照舊；失敗就回 `None`，前端會退回現在的固定建議。hook 名稱 `retake_tips`。測試至少 4 個。push `muse/T204-retake`。
-- [ ] T205 Muse：（10/31 Claude）**「要怎樣才會一致」一句話**。判定是 inconsistent 的自由飛行，`numbers` 裡有 `implied_time_factor`（如果影片其實被放慢幾倍就會符合地球）和 `implied_object_size_m`（如果物體其實多大就會符合）。寫 `meta_client/explain.py` 的新樣板 `what_would_fit`：Spark 只寫句子，數字用 `{implied_time_factor}`、`{implied_object_size_m}` 欄位由程式填，例如「如果這支影片其實放慢了 {implied_time_factor} 倍，或球其實有 {implied_object_size_m} 公尺寬，才會和地球重力一致。」不准寫「所以是假的」或任何因果字眼。中英文都要。測試至少 4 個。push `muse/T205-what-would-fit`。
+- [x] T203 Muse：commit af69bb6。新 `meta_client/track_check.py`：軌跡平均挑 4 個時刻，480 寬影格追蹤處畫紅圈（numpy 畫圈＋ffmpeg 編 PNG，無 PIL），問 Spark 圈的是不是同一個物體；回 `{"same_object", "note", "source"}`，note 嚴禁數字（後端檢查放行 10 以下整數，這裡額外擋）＋禁字；重試 2 次，再敗回 `None`；花費計 tracker。hooks 加 `track_check`，無金鑰回 `None`。點格式走 AuditOut 的 480 框 `(t,x,y)`，少於 4 點回 `None`。8 個 mock 測試（任務 5 個＋點太少＋無金鑰＋缺檔），pytest 270 全過，未真打 API。後端接線等 Claude T207。新增 `meta_client/track_check.py` 的 `check_track(video_path, points, object_name)`：從追蹤點裡平均挑 4 個時間點，各截一張影格並在追蹤位置畫圓圈，送給 Spark 問「4 張圖圈起來的是不是同一個 {object_name}？」。只准回傳 JSON `{"same_object": true/false, "note": "一句話"}`；`note` 不准有數字和禁用字眼；失敗最多重試 2 次，再失敗就回 `None`（代表沒檢查）。花費計入 cost tracker。在 `meta_client/hooks.py` 加 `track_check` hook，沒有金鑰時回 `None`。單元測試至少 5 個（同物體、換物體、不是 JSON、note 有數字、逾時），不真打 API。**後端接線由 Claude T207 做，你不要改 backend/。** push `muse/T203-track-check`。
+- [x] T204 Muse：commit c765d18。新 `meta_client/retake.py`：拒判時讀 reasons 寫 1–3 條重拍建議，每條 80 字內，數字只能用 reasons 裡的（程式 parse 原因句數字當 allowlist），禁字照舊，失敗回 `None`（前端退回固定建議）。hook `retake_tips`（英文，同 explain）。7 個 mock 測試（成功＋引原因數字＋偷渡數字＋禁字兩種＋非拒判不呼叫＋超長＋壞 lang），pytest 269 全過，未真打 API，未碰 backend。判定是 insufficient_data 時，Spark 讀 `reasons` 寫 1 到 3 條具體的重拍建議（例如「球往鏡頭飛：請站到球飛行路線的正側面」）。新增 `meta_client/retake.py` 的 `write_retake_tips(audit, lang)`，輸出 `{"tips": ["..."]}`；每條 80 字內；不准出現 reasons 裡沒有的數字；禁用字眼照舊；失敗就回 `None`，前端會退回現在的固定建議。hook 名稱 `retake_tips`。測試至少 4 個。push `muse/T204-retake`。
+- [x] T205 Muse：commit 660dd41。`explain.py` 新 `what_would_fit(audit, lang)`：只接 inconsistent 自由飛行；Spark 寫句型，`{implied_time_factor}`、`{implied_object_size_m}` 由程式填（至少用一槽，缺數字回 `None`）；禁自寫數字、禁「假的」與因果字眼；重試 2 次，再敗回 `None`。hook `what_would_fit`（英文）。5 個 mock 測試（中英成功＋偷渡數字＋假的＋跳過條件），pytest 267 全過，未真打 API，未碰 backend。判定是 inconsistent 的自由飛行，`numbers` 裡有 `implied_time_factor`（如果影片其實被放慢幾倍就會符合地球）和 `implied_object_size_m`（如果物體其實多大就會符合）。寫 `meta_client/explain.py` 的新樣板 `what_would_fit`：Spark 只寫句子，數字用 `{implied_time_factor}`、`{implied_object_size_m}` 欄位由程式填，例如「如果這支影片其實放慢了 {implied_time_factor} 倍，或球其實有 {implied_object_size_m} 公尺寬，才會和地球重力一致。」不准寫「所以是假的」或任何因果字眼。中英文都要。測試至少 4 個。push `muse/T205-what-would-fit`。
 - [ ] T206 Muse：（10/31 Claude，T203–T205 和 Claude T207 都合併後）照最終 demo 腳本的順序（自拍 own_2 → meta_clip4 → meta_clip2 → 合成車子）真打一次完整流程，記錄每一步秒數（Spark 偵訊、SAM、擬合、Spark 說明、Spark 複查）和花費，寫進 STATUS 日誌，給 john 錄影抓節奏。上限 $0.40。push `muse/T206-rehearsal`。
-- [ ] T208 Muse：（10/31 Claude）在 STATUS「已做的決定」下面加一段**「Meta 模型用法總表」**（評審看 Meta 用法占 25%）：每個呼叫點一行，寫模型名稱、做什麼、輸入、輸出格式、驗證方式（schema、禁用字眼、數字不准出現）、失敗時怎麼退回、平均每次花費（從 `data/cost_log.csv` 算，用程式算不要估）。只改 STATUS。push `muse/T208-model-table`。**到這裡 Muse 的待辦全部結束。**
+- [x] T208 Muse：commit 245eb95。「已做的決定」下加了「Meta 模型用法總表」：12 行呼叫點（稽核 10＋斜坡／代理各 1 組），平均花費用程式從 cost_log 算（Spark 偵訊 $0.0132、建議 $0.0095、說明 $0.0154、標題 $0.0096、語音抽欄 $0.0173、SAM $0.0109、轉錄 $0.0001；T203–T205 新呼叫尚無真打紀錄）。只改 STATUS，$0。
 - [x] T184 Muse：（10/31 Claude，Manus T178 清單已到，見 `docs/research/vehicle.md`）用真的 SAM 跑**側面**車子影片。(1) 下載到 repo 外的 `~/slope-own-clips/`（**不准 commit**）：`car_side_1.mp4` = Pexels 36330662（Cars Passing on Suburban Road in Autumn，時間窗 1.0–1.5 s 灰色小轎車；另外 7.5–8.5 s、9.25–10.0 s 各跑一次）；`car_side_2.mp4` = Pexels 35089647（Black and White Urban Street，時間窗 5.0–5.75 s 淺色車）；`car_side_3.mp4` = Pexels 35527369（時間窗 3.0–3.75 s，遠車道淺色轎車，條件式）；`car_side_4.mp4` = Pixabay 31625（4.4–4.6 s，預期因為太短被拒判）。都下載 HD（1920 寬）版本就好，不要 4K。時間窗照 Manus 寫的「整台車在畫面裡」，不要放寬，車子被畫面邊緣切到時位置會偏。(2) 每支 `POST /api/audits`：`assumed_model=vehicle`、`camera_static=true`、`object_name=car`、**不填** `object_size_m`（讓程式用 3 m 和 6 m 兩種車長都判一次）。如果 SAM 抓到別台車，`object_name` 改成 `gray car` 或 `white car` 再跑一次，兩次都記。(3) 每次記 `track_source`、`verdict`、`reasons`、`speed_km_h`、`accel_g`、`car_length_px`、`n_points`、花費、秒數。(4) john 如果用 Meta AI 生成了 `car_meta_1.mp4`…，一起跑。(5) 花費上限 $0.40，判定不准挑。(6) 結果寫進 STATUS 日誌，push `muse/T184-car-side`。**做完直接接 T186。** — commit 8fdb3d5（6 窗全 sam、全拒判：0.47s 差門檻／73%／18%／尺寸+43%／像素車長漂／3 格；overlay 全鎖對車；tmcd 軌繞過；$0.125，累計 $2.112）
 - [x] T186 Muse：commit 6cb4f5a。場景建議（註：實際在 `spark.py` 的 `suggest_object`，不在 interview.py）：側面行駛的車 → `assumed_model=vehicle`＋`vehicle_class`（四種＋unknown，清單外轉 unknown）；朝鏡頭／鏡頭動 → `judgeable=false`＋原因；`vehicle_class` 帶數字直接退件（不轉 unknown，避免把偷渡的車長吃掉）；`assumed_model` 只能是 vehicle 或 null。偵訊 FIELDS 加 `vehicle_class`（「這是什麼車」，使用者選，模型不填）。7 個新 mock 測試（任務要的 5 個＋壞 assumed_model＋偵訊問車種），pytest 252 全過，未真打 API。後端還沒接（見「缺什麼」）。(1) `meta_client/interview.py` 的場景建議：畫面主體是側面行駛的車時，建議 `assumed_model=vehicle`；如果車是朝鏡頭開或鏡頭在動，就建議不能判，並說原因（例如「車子朝鏡頭開，側面檢查量不到」）。(2) 偵訊多問一題「這是什麼車？」，回傳欄位 `vehicle_class`，只能是固定清單其中一個：`compact_car`、`sedan`、`suv`、`pickup`、`unknown`。**模型不准回傳車長數字**；長度由 Claude T190 的程式表換算，使用者在畫面上確認。(3) 輸出要過 JSON schema，清單外的值就當 `unknown`；失敗最多重試 2 次。(4) 用假的模型回應寫單元測試（至少 5 個：側面車、朝鏡頭車、移動鏡頭、亂回傳車長、清單外的車種），`pytest` 全過，不真打 API。(5) push `muse/T186-vehicle-scene`。
 - [x] T187 Muse：commit c3b98e3。檢查結果：explain 本來就支援三種判定（payload 驅動）；補了車子專用提示（不一致時講「加速度約 X g，超過一般輪胎抓地力上限，與正常路上行駛不一致」，數字只能引 payload，1.2 由原因句提供）；禁字表加「假的」（後端只禁「假影片」，bare 假的之前漏網，標題本來就禁真／假單字不受影響）。headline 車子路徑（T176）已符合要求（只有程式填的槽位＋檢查），沒動。5 個新 mock 測試（三種判定＋偷渡數字＋假的），pytest 250 全過，未真打 API。來源欄位：explain／headline 都回 source=模型名，後端標 model（和自由落體一樣），不用改。(1) 檢查 `meta_client/explain.py` 和 `headline.py`：vehicle 的一致、不一致、資料不足三種都要有 Spark 寫的說明，數字只能用 `{speed_km_h}`、`{accel_g}`、`{car_length_px}` 這類欄位讓程式填入；缺哪種就補。(2) 不一致的說明要講「加速度約 X g，超過一般輪胎抓地力上限 1.2 g，與正常路上行駛不一致」，不准說「假的」「AI 生成」「證實」。(3) 輸出都標 `由 Muse Spark 產生` 的來源欄位（和自由落體一樣）。(4) 單元測試：三種判定各一個、模型偷寫數字要被擋、出現禁用字眼要被擋。(5) push `muse/T187-vehicle-explain`。
@@ -74,11 +74,12 @@
 
 
 **Codex**（照順序做）
-- [ ] T209 Codex：（10/31 Claude）**錄影用的導覽**。把 `GuidedDemo`／`AutoTour` 改成照最終 demo 腳本的順序：自拍的球（一致 9.45）→ Meta AI 籃球（不一致 0.14，顯示地球鬼影軌跡）→ 往鏡頭飛的球（不能判斷）→ 合成車子兩張（要標「Synthetic test clip」）→ 分享卡。用新設計的樣式；左右方向鍵和空白鍵換下一步；右上角小字顯示「3 / 6」。數字全部從 `data/demo` JSON 讀。push `codex/T209-tour`。
+- [x] T209 Codex：（10/31 Claude）**錄影用的導覽**。把 `GuidedDemo`／`AutoTour` 改成照最終 demo 腳本的順序：自拍的球（一致 9.45）→ Meta AI 籃球（不一致 0.14，顯示地球鬼影軌跡）→ 往鏡頭飛的球（不能判斷）→ 合成車子兩張（要標「Synthetic test clip」）→ 分享卡。用新設計的樣式；左右方向鍵和空白鍵換下一步；右上角小字顯示「3 / 6」。數字全部從 `data/demo` JSON 讀。push `codex/T209-tour`。 — commit c999fc8（142 tests、兩種 build、鍵盤／手機檢查通過）
 - [ ] T210 Codex：（10/31 Claude，Muse T203–T205 合併後）把三個新的 Muse 輸出放上畫面，都要標「由 Muse Spark 產生」：(1) 結果頁小標籤「Muse Spark 複查：追蹤的是同一個物體 ✓」或「⚠ 可能追錯物體」（後端欄位 `track_check`，沒有就不顯示）；(2) 不能判斷時，`RetakeGuide` 優先顯示 Spark 的 `retake_tips`，沒有就用現在的固定建議；(3) 不一致時在結果下面顯示「要怎樣才會一致」那一句。欄位名稱以 Claude T207 更新的 `docs/API.md` 為準。push `codex/T210-muse-ui`。
-- [ ] T211 Codex：（10/31 Claude）**分享連結的預覽圖**。`frontend/index.html` 加 Open Graph 和 Twitter card 標籤（標題「Does it fall like Earth?」、一句說明、1200×630 預覽圖）；預覽圖照分享卡設計用 SVG 或 canvas 產生一次，存成 `frontend/public/og.png`；加 favicon（logo 那條虛線拋物線加琥珀色點）。不加新套件。push `codex/T211-og`。
-- [ ] T212 Codex：（10/31 Claude）**分析中的進度畫面**。上傳後等待時，顯示三步：「Muse Spark 正在看影片」「SAM 3.1 正在追蹤」「程式正在計算」，用現在 API 回傳的狀態決定哪一步亮（`AuditProgress.tsx`）。不准做假的百分比或假進度；拿不到狀態就只顯示一個轉圈和這三行說明。`prefers-reduced-motion` 時不轉圈。push `codex/T212-progress`。
-- [ ] T213 Codex：（10/31 Claude，Antigravity T196／T198 回報後）修好 Antigravity 寫進 STATUS「缺什麼」的前端問題，每修一個就在那一行打勾。三個 build 都要過。push `codex/T213-fixes`。**到這裡 Codex 的待辦全部結束。**
+- [x] T211 Codex：（10/31 Claude）**分享連結的預覽圖**。`frontend/index.html` 加 Open Graph 和 Twitter card 標籤（標題「Does it fall like Earth?」、一句說明、1200×630 預覽圖）；預覽圖照分享卡設計用 SVG 或 canvas 產生一次，存成 `frontend/public/og.png`；加 favicon（logo 那條虛線拋物線加琥珀色點）。不加新套件。push `codex/T211-og`。 — commit 63acb1d（144 tests、兩種 build、Pages base 檢查通過）
+- [x] T212 Codex：（10/31 Claude）**分析中的進度畫面**。上傳後等待時，顯示三步：「Muse Spark 正在看影片」「SAM 3.1 正在追蹤」「程式正在計算」，用現在 API 回傳的狀態決定哪一步亮（`AuditProgress.tsx`）。不准做假的百分比或假進度；拿不到狀態就只顯示一個轉圈和這三行說明。`prefers-reduced-motion` 時不轉圈。push `codex/T212-progress`。 — commit 77f52f7（147 tests、兩種 build；未知階段不假亮）
+- [x] T213 Codex：（10/31 Claude，Antigravity T196／T198 回報後）修好 Antigravity 寫進 STATUS「缺什麼」的前端問題，每修一個就在那一行打勾。三個 build 都要過。push `codex/T213-fixes`。**到這裡 Codex 的待辦全部結束。** — commit 94cf870（148 tests、兩種 build、Pages base 與三項回報核對通過）
+- [ ] T218 Codex：（10/31 Claude，Antigravity T215 彩排發現）錄影時找不到兩個東西，請拿出來：(1) 結果頁的「下載分享卡」按鈕現在藏在收合的 Details 裡，改成結果卡正下方一顆看得到的按鈕（外框樣式，不要搶「Check a video」的琥珀色）；(2) 兩個合成車子例子（50 km/h 煞車、3 g 起步）現在藏在 `/#demo` 底部收合區，改成 Results 頁第四張卡「Cars」，標「Synthetic test clips」，滑鼠指到時顯示兩個例子的 km/h 和 g（數字從 `data/demo` JSON 讀）。三個 build 都要過。push `codex/T218-visible`。
 - [x] T182 Codex：（10/31 Claude，設計 v4，john 已同意顏色）網站改版。設計稿 https://claude.ai/artifact/81ELAL51WpPCbXJHxnzmzt （看 1 Home、2 Results、3 How it works、Share card 四張）。**顏色**：底 #0E0F12、卡片 #17181C、hover 卡片 #1C1E23、細線 #26282E、文字 #EDEDEF、次要 #8A8F98；地球／一致 = 藍 #5AB0F0；這支影片／不一致／主要按鈕 = 琥珀 #F5A524；資料不足 = 灰。**字體**：標題 Space Grotesk 700，內文 Inter，數字 JetBrains Mono。**分頁**：首頁、Results、How it works、上傳／稽核頁分成不同路由，不要一頁很長；導覽列只有 Results、How it works、中文／English。**首頁**：大標「Does it fall like Earth?」（Earth 藍色）、一句說明、琥珀色「Check a video」和外框「See examples」兩顆按鈕；右邊是 meta_clip4 畫面加動畫：藍色虛線（地球）先出現，琥珀線畫出來，終點彈出，最後出現「Doesn't match Earth gravity.」。**首頁不放數字。** **Results**：三張卡（一致／不一致／不能判斷），滑鼠指到的卡放大到 1.05、顯示數字，其他卡變暗、模糊、縮小；數字從 `data/demo` JSON 讀。**How it works**：四步，指到的那步變寬、編號變琥珀色、顯示說明。動畫只用 CSS transition／keyframes，不加新套件。保留所有 testid、鍵盤操作、中英切換、禁用字眼測試。`npm test`、`npm run build`、`VITE_DEMO_ONLY=1 npm run build` 都要過。push `codex/T182-redesign`。**做完直接接 T191。** — commit a189883（128 tests、一般／demo build 通過）
 - [x] T191 Codex：（10/31 Claude）手機版。每一頁在 390 px 和 768 px 寬檢查：不能橫向捲動、按鈕至少 44 px 高、大標縮到 44–52 px、Results 三張卡改成上下排、How 四步改成上下排。手機沒有滑鼠：卡片改成點一下展開數字（再點一下收起）。加一個前端測試確認 390 px 沒有元素超出畫面寬度。push `codex/T191-mobile`。 — commit 4560248（130 tests、一般／demo build 通過）
 - [x] T192 Codex：（10/31 Claude）無障礙。(1) 所有滑鼠效果用 `:focus-visible` 也要觸發，Tab 鍵可以一張一張看卡片；(2) `prefers-reduced-motion: reduce` 時關掉所有動畫，直接顯示最後畫面；(3) 文字對比至少 4.5:1（#8A8F98 在 #0E0F12 上要量，不夠就調亮）；(4) 判定不能只靠顏色，一定要有文字標籤；(5) 每張圖有 alt。跑現有的 a11y 測試並補新的。push `codex/T192-a11y`。 — commit 1b9a772（133 tests、一般／demo build 通過）
@@ -93,11 +94,11 @@
 
 
 **Antigravity**（照順序做）
-- [ ] T196 Antigravity：（10/31 Claude，等 Codex T182 合併到 main 之後）用內建瀏覽器跑端到端：(1) 首頁、Results、How it works、上傳頁各截 1440 px 和 390 px；(2) 首頁動畫有沒有播完、hover 卡片有沒有放大、其他卡有沒有變暗；(3) 上傳 `data/demo` 有的例子跑到結果頁；(4) 切中文再切回英文；(5) 只用鍵盤（Tab、Enter）走完一次。截圖放 `data/e2e/T196/`（小於 300 KB 一張），問題寫進 STATUS「缺什麼」，push `antigravity/T196-e2e`。
+- [x] T196 Antigravity：（10/31 Claude）端到端驗證完成：首頁、Results、How it works、上傳頁 1440px 與 390px 截圖、首頁動畫播完（地球虛線、琥珀實線、終點彈出、Doesn't match Earth gravity.）、Results 卡片 hover 放大至 1.05 並顯示數值且其他卡模糊變暗、上傳 data/demo 範例成功載入結果頁、中英雙向切換、全鍵盤 Tab/Enter 操作。共產出 13 張截圖存於 data/e2e/T196/，每張皆小於 300 KB（35.5–195.2 KB）且 MD5 互異 — commit 6ce92b7
 - [x] T197 Antigravity：（10/31 Claude）在全新的資料夾 `git clone` repo，照 README 從零啟動實測：git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 通過；cp .env.example 0.01s 通過；npm ci 1.12s 與 npm test (126 pass) 3.16s 通過；pytest 244 pass (17.44s) 與雙 e2e 腳本全數通過。發現 3 項問題（python3.11 ensurepip、docker 未安裝、scripts/dev.sh 寫死 python3）已記錄進「缺什麼」待 Claude 修改 — commit 76f9b92
-- [ ] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測：用瀏覽器的 iPhone 14 和 Pixel 7 模擬，走一次上傳到結果，截圖放 `data/e2e/T198/`，問題寫進 STATUS。push `antigravity/T198-mobile`。**到這裡 Antigravity 的待辦全部結束。**
-- [ ] T214 Antigravity：（10/31 Claude）用 Lighthouse 量 https://johncat88425-del.github.io/slope-coach/ 和本機 `npm run build` 後的 preview：Performance、Accessibility、Best Practices、SEO 四個分數，手機和桌面各一次。低於 90 的項目把 Lighthouse 列出的前 3 個原因寫進 STATUS「缺什麼」給 Codex。push `antigravity/T214-lighthouse`。
-- [ ] T215 Antigravity：（10/31 Claude）**照最終 demo 腳本彩排**（john 會把腳本貼給你）：在本機後端（有金鑰就真打，沒有就 mock）照腳本每一段操作一次，記錄每段實際花幾秒、哪裡要等太久、哪個按鈕找不到，每段截一張圖放 `data/e2e/T215/`。總時間超過 3 分鐘就寫出建議剪掉哪裡。push `antigravity/T215-rehearsal`。
+- [x] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測完成：使用 iPhone 14（390×844）與 Pixel 7（412×915）雙機型模擬，完整走過上傳到結果頁（real_own_2 一致與 meta_clip4 不一致雙案），驗證無橫向捲動、按鈕高度 ≥ 44px、卡片點擊展開與二次收起、Details 展開查看。共 9 張截圖存於 data/e2e/T198/，均 < 300 KB（36.9–94.2 KB）且 MD5 互異。 — commit 60b10c3，PR #117
+- [x] T214 Antigravity：（10/31 Claude）Lighthouse 量測完成（含線上 GitHub Pages 與本機 build preview 雙平台、桌面與手機各跑一次，報表存於 `data/lighthouse/`）：線上 Pages 手機 Performance 91 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）；線上 Pages 桌面 Performance 100 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）。本機 preview 手機 Performance 78 / SEO 83、桌面 SEO 83，低於 90 之主因（LCP 延遲、缺 meta description、本機無 robots.txt）已登錄進「缺什麼」待 Codex 處理。 — commit 9b86ed7
+- [x] T215 Antigravity：（10/31 Claude）照最終 demo 腳本完整彩排 8 個分段完成（腳本存於 `scripts/e2e_t215_rehearsal.mjs`，包含真打 Muse Spark 偵訊生成 15.6s 與 SAM 3.1 / Numbers by code 標籤核驗）：8 張分段截圖存於 `data/e2e/T215/`（全數 < 300 KB，MD5 互異），完整分段量測報表存於 `data/e2e/T215/rehearsal_summary.json`。互動操作總計 48.0s（預算 180s 內充裕）；若加上 3 支影片現場實跑 SAM 追蹤之耗時（128s）總長度將達 176s，逼近 3 分鐘上限。等太久之處理與按鈕尋找等 4 項剪輯建議已記錄進「缺什麼」供 john 錄影參考。 — commit 0131411
 - [ ] T216 Antigravity：（10/31 Claude，11/02 晚上凍結前最後一件）全部合併後的回歸測試：pytest、npm test、兩個 e2e 腳本、Pages 網站打得開、四個頁面 1440／390 px 截圖。STATUS 寫一張 PASS／FAIL 表。push `antigravity/T216-final`。**到這裡 Antigravity 的待辦全部結束。**
 - [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
 - [x] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖完成（新增 scripts/e2e_ghost_and_physics_card.mjs、tests/backend/test_e2e_ghost_card.py，產出桌面與 390px 手機截圖存於 docs/screens/）— commit 00036aa
@@ -116,7 +117,7 @@
 
 
 **Claude**
-- [ ] T207 Claude：（Muse T203–T205 合併後）後端接線：稽核跑完 SAM 後呼叫 `track_check`，`same_object=false` 時判定改成 insufficient_data，原因寫「Muse Spark 複查：追蹤可能跟到別的物體」；結果加 `track_check`、`retake_tips`、`what_would_fit` 欄位；更新 `docs/API.md` 和測試。
+- [x] T207 Claude：後端接上 Muse 的三個新輸出。`track_check`（只在 SAM 追蹤時跑；Spark 說不是同一個物體就改判 insufficient_data，不給任何擬合數字；note 有數字就清掉）、`retake_tips`（拒判時，每條都過輸出檢查才採用）、`what_would_fit`（自由飛行不一致時）。`docs/API.md` v1.3 已寫欄位，Codex T210 照這個做。測試 `test_spark_track_check_retake_tips_and_what_would_fit`。
 - [ ] T217 Claude：11/02 晚上凍結：提交前檢查（沒有金鑰、只呼叫 Meta、沒有禁用字眼、只算 10/26 之後的工作、repo 公開、README 數字和 `data/demo` 一致），然後宣布凍結。
 - [x] T185 Claude：Manus T178 研究收進 `docs/research/vehicle.md` 並核對：車長 10 筆的英寸換算公尺全部正確；Taycan 103 ft 60–0 mph 換算平均減速度 1.17 g 正確；10 款常見車長都在 4.6–5.9 m，落在我們沒給車長時用的 3–6 m 範圍內。網址在雲端被網路擋住，沒辦法逐一打開，改由 Muse T184 下載時確認。注意：最好的兩支整台車入鏡只有約 0.5–1 秒，接近 0.5 秒的拒判門檻。
 - [x] T190 Claude：車種→車長換算表：`physics/experiments/vehicle.py` 的 `VEHICLE_CLASS_LENGTH_M`（compact_car 4.3–4.75、sedan 4.6–5.0、suv 4.5–4.85、pickup 5.3–5.95 m，來源 `docs/research/vehicle.md`）。`POST /api/audits` 新增選填 `vehicle_class`，沒給車長時用該車種的範圍兩端各判一次，`numbers` 多 `car_length_low_m/high_m`、`speed_km_h_low/high`、`accel_g_low/high`（給 Codex T194 顯示「用 4.6–5.0 m 估計，約 49–54 km/h」）。API.md 已更新。pytest 245 過。Muse T186 的 `vehicle_class` 直接用這四個值加 `unknown`。
@@ -278,6 +279,27 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
+- [ ] [T214 Antigravity Lighthouse 發現] 本機 preview 環境中未達 90 之項目及前 3 原因（供 Codex 參考修復）：
+- [ ] [T215 Antigravity 3 分鐘 demo 實測彩排發現與錄影建議]
+  1. **等太久之處（Live 追蹤耗時）**：Live 呼叫 Muse Spark 偵訊生成耗時約 12.5–15.6s，可完全容納於 0:15–0:45（30s）時間段；但現場跑 SAM 3.1 追蹤耗時極長（own_2 約 45s、meta_clip4 約 48s、meta_clip2 約 35s，3 支合計 128s）。若錄影時全程等待真實追蹤，總時間將達約 4 分 40 秒（超標 100 秒）。
+  2. **按鈕尋找注意**：
+     (a) 「Download physics card PNG」下載按鈕與 Share Card 位於稽核結果頁的 `<details data-testid="audit-details">` 內，預設為折疊狀態，錄影操作時需先點擊展開「Details」才能看到並點擊下載。
+     (b) 車子合成測試範例（50 km/h 煞車 0.60 g 與 3.0 g 起步）位於展示頁（`/#demo`）底部的 `<details data-testid="synthetic-demo">` 內，需展開該區塊。
+  3. **剪輯與節奏建議（若總長度需嚴格壓在 180 秒內）**：
+     - **建議 1（關鍵）**：影片後製時，對 own_2 的 SAM 追蹤轉圈畫面進行快轉或跳接（jump cut 縮減為 2–3 秒），可省下約 42 秒。
+     - **建議 2**：展示 meta_clip4（不一致 0.14）與 meta_clip2（資料不足）時，可直接載入已跑好的 demo 紀錄或預留跳接，避免畫面持續等待旋轉進度條。
+     - **建議 3**：首頁開場動畫約 2.5 秒即可展示完畢，旁白唸完後可於 0:10–0:12 提前點擊 Check a video，為後續預留 3–5 秒彈性。
+     - **建議 4**：車子結果卡片（2:05–2:30）展示 18 秒即足夠說明「以車長當尺、一般車輛輪胎無法承受 3 g 加速度」，無需停留整整 25 秒。
+  1. Local Mobile Performance (78)：(a) Largest Contentful Paint (6.2s)；(b) Improve image delivery（預估可省 32 KiB 圖片傳輸）；(c) LCP request discovery（Hero 動畫/縮圖預先探索載入）。（註：線上 GitHub Pages Mobile 得分為 91，已全數達標）
+  2. Local Mobile / Desktop SEO (83)：(a) Document does not have a meta description（缺少 `<meta name="description">`，待 Codex T211 加入）；(b) robots.txt is not valid（本機 vite preview 對 /robots.txt 回應 index.html 404；線上 Pages 得分 91 正常）。
+
+- [x] [T198 Antigravity 手機實測檢核] iPhone 14 (390px) 與 Pixel 7 (412px) 兩機型走完完整「上傳到結果」流程（包含 Consistent 與 Inconsistent 雙範例），頁面無水平溢出橫向捲動（`scrollWidth <= clientWidth`）；可見操作按鈕（Check segment, Load audit, Print report 等）高度均為 48px / 44px（符合 touch target >= 44px 規範）；Results 卡片點擊成功展開數值、再次點擊成功收起。未發現阻塞性 UI 問題。
+- [ ] [T196 Antigravity E2E 發現] (1) `/favicon.ico` 於初次載入時 404（缺 favicon link）；(2) Results 三張卡片在 390px 手機檢視下無法觸發 hover 展開數字，待 Codex T191 實作點擊展開（T191 已實作）；(3) 卡片展開效果目前僅掛在 hover，鍵盤 `:focus-visible` 尚未觸發展開，待 Codex T192 無障礙補齊（T192 已補齊）。
+- [x] [T196 Antigravity E2E 發現 1/3，來源 f3c7410／4950c8d] favicon 404：T211 補 SVG／PNG／ICO；T213 再修 dev 子路徑重複前綴，改由 Vite 正規化根路徑。HTTP 回歸確認根路徑與 /slope-coach/ 的 HTML、favicon 三種格式及 og.png 全部 200；Pages build 亦只有一層前綴。
+- [x] [T196 Antigravity E2E 發現 2/3，來源 f3c7410／4950c8d] 手機卡片無 hover：T191（4560248）已加點擊展開／收合；T213 在 390px 實際點兩次，aria-expanded 依序 true／false，第二次證據區確實收起，頁面無橫向溢出。
+- [x] [T196 Antigravity E2E 發現 3/3，來源 f3c7410／4950c8d] 鍵盤無預覽：T192（1b9a772）已有 focus-visible 對應；T213 在 390／1440px 用 Tab，聚焦卡片後證據區展開。驗收圖 frontend/qa/t213-keyboard-results-390.jpg 與 t213-keyboard-results-desktop.jpg。
+- [x] [T198 Antigravity 報告核對，來源 4950c8d] 原回報確認 iPhone 14／Pixel 7 無阻塞性 UI 問題。T213 沒有改掉既有手機觸控與尺寸修正；僅同步其回報，未冒稱由 Codex 重跑付費流程。
+
 - [x] [README 安裝問題 / T197 發現] Claude 10/31 已修：README 加 macOS ensurepip 失敗的繞法（`--without-pip` 再裝 pip）、註明 Docker 只有 `docker compose up` 才需要；`scripts/dev.sh` 優先用 `python3.11`。
 - [ ] 還沒有可用的真實影片。第一支（IMG_8418.MOV）有四個問題：拍攝角度是斜的、滑塊太小太淡、只滑了 0.75 秒、畫面有人臉。
 - [ ] 影片送 Spark 的實際 token 數和費用：未測。
@@ -289,6 +311,9 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - [x] Claude 已修（10/31）：`backend/video.py` 的 `probe_fps()` 遇到含 tmcd 軌的 mp4 只取第一行，加測試 `tests/backend/test_video_probe.py`；Pexels 原檔不用再 remux。
 
 ## 待 john 決定
+
+- T206 Muse：最後彩排真打在等 Claude T207（後端接 track_check／retake_tips／what_would_fit）合併。沒合併就跑，秒數和流程都不是最終版，白花錢，所以先不跑。T207 合併後 Muse 再跑 T206（上限 $0.40）。
+- T210 Codex：T212 完成後已 pull main（065852d），T207 仍未勾選，docs/API.md／backend/schemas.py 尚無 track_check、retake_tips、what_would_fit 的回應契約。依 john 指示先跳過，完成 T213 後再同步重查；不預猜 JSON 形狀、不自行修改後端或捏造 Muse 輸出。
 
 - T194 Codex／Claude：T186 已合併但 backend/schemas.py 尚未接新 suggestion／QuestionField（原有「缺什麼」已記）。前端先完成使用者手選 vehicle_class 並傳既有 POST /api/audits；固定參考車長逐字對應 API v1.2 表，僅供確認／輸入量測值覆蓋，不填入 object_size_m、不算中點。結果範圍照後端 numbers。自動場景建議仍取決於後端接線，未冒稱已可端到端運作。
 
@@ -346,6 +371,25 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/29 | Meta API 實際不強制執行 json_schema strict：同一提示詞三次回傳三種形狀（缺 key 改名、裸 array）。本機驗證是唯一防線：信封寬鬆（接受 object/array、question 別名）、內容嚴格（欄位、字數、check）。所有 Spark 函式提示詞加註確切 key 名 | T66 真打三次失敗換來的教訓 |
 | 10/29 | T45/T67 槽位寫法：模型只寫 `{check_key}`/`{nearest_body}` 位置，不寫數字。`{nearest_body}` 是字串槽，程式先代換再跑 fill_numbers；填充後再過 check_model_text，數字 allowlist 含確定性捨入值（顯示捨入不該失敗）；insufficient_data 或無重力數字直接回 None、不呼叫 API | fill_numbers 只收數字；T67 spec |
 
+### Meta 模型用法總表（T208，10/31 Muse；平均花費用程式從 `data/cost_log.csv` 算到 10/31 main）
+
+產品執行時只呼叫 Meta 模型。每個呼叫都走 schema＋`check_model_text`（禁因果、禁真偽）＋數字規則，傳輸失敗重試 2 次。
+
+| 呼叫點 | 模型 | 做什麼 | 輸入 → 輸出 | 驗證（數字規則） | 失敗退回 | 平均每次 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 偵訊提問 `interview_audit` | muse-spark-1.3 | 看 3 格問 1–3 個澄清問題 | 影格 → `{questions:[{field,text}]}` | field 白名單、text 200 字內無數字 | 固定 mock 問題 | $0.0132（17 次） |
+| 物體建議 `suggest_object` | muse-spark-1.3 | 首格猜物體名＋鏡頭靜否＋車種 | 2 張 still → `{object_name, camera_looks_static, reason, assumed_model, judgeable, vehicle_class}` | 型別＋禁字＋禁數字、車種清單外轉 unknown | 無建議（使用者自填） | $0.0095（11 次） |
+| 追蹤 `sam.track` | sam-3.1 | 概念追蹤，每格框＋遮罩 | 15fps 影片＋一名詞 → 每格 bbox／質心／面積／寬度 | 框格要對上轉碼尺寸，否則拒收 | 不用模型的追蹤 | $0.0109（72 次） |
+| 追蹤複查 `check_track`（T203） | muse-spark-1.3 | 看 4 張圈圖判是否同一物體 | 圈圖 → `{same_object, note}` | note 嚴禁數字＋禁字 | `None`（不顯示） | 無真打紀錄 |
+| 稽核說明 `explain_result` | muse-spark-1.3 | 把判定翻成白話 | audit payload → `{explanation}` | 數字只能引 payload（含原因句門檻） | 固定範本 | $0.0154（56 次） |
+| 標題 `write_headline` | muse-spark-1.3 | 一句記憶點標題樣板 | 判定 → `{headline_template}` | 只有程式填的 `{...}` 槽、填充後再驗 | `None`（不顯示） | $0.0096（25 次） |
+| 重拍建議 `write_retake_tips`（T204） | muse-spark-1.3 | 拒判時給 1–3 條重拍法 | reasons → `{tips[]}` | 每條 80 字內、數字限原因句 | 固定建議 | 無真打紀錄 |
+| 反事實一句 `what_would_fit`（T205） | muse-spark-1.3 | 不一致時講要怎樣才會符合 | 判定 → 槽位句型 | 同標題（程式填槽＋驗） | `None`（不顯示） | 無真打紀錄 |
+| 語音轉錄 `transcribe` | muse-voice-transcribe-1.0 | 口述轉逐字稿 | 音檔 → transcript | 空稿走「沒有聽到內容」提示 | 502（空稿回 200 空欄） | $0.0001（4 次） |
+| 語音抽欄位 `extract_interview_fields` | muse-spark-1.3 | 逐字稿抽欄位 | transcript → 欄位 JSON | 值域＋單位、數字轉公尺由程式算 | 502 | $0.0173（10 次） |
+| 斜坡：場景／釋放／擷取 `describe_scene`、`suggest_release_time`、`check_capture_conditions`、`extract_setup_fields` | muse-spark-1.3 | 斜坡教練的照片檢查與建議 | 照片／影片／逐字稿 → 固定 schema | 同上各表 | 丟 `ModelOutputError` | 無真打紀錄 |
+| 代理：選驗證／排檢查 `choose_intervention`、`plan_audit_checks`、`suggest_motion_segment` | muse-spark-1.3 | 從證據候選挑下一步 | 證據 → 選項＋理由 | 只能選候選清單內的（`check_choice`） | 丟 `ModelOutputError` | 無真打紀錄 |
+
 ## 成本紀錄（Meta API）
 
 上限：額度 150 美元；後端硬上限 120 美元。每天收工前填。
@@ -371,6 +415,22 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 10/31 23:10 Claude：合併 Muse T203–T206、T208，Antigravity T196、T198、T214、T215，Codex T209、T211–T213；完成 T207。注意：Muse T206 彩排是在 T207 之前跑的，所以那次的結果畫面還沒有 Spark 複查；凍結前 Antigravity T216 會再跑一次全部。
+
+- 10/31 Muse 完成 T203（分支 muse/T203-track-check，commit af69bb6）：Spark 複查追蹤（4 張圈圖問同物體，敗回 None）。8 新測試，pytest 270 全過，$0，未碰 backend。
+- 10/31 Muse 完成 T204（分支 muse/T204-retake，commit c765d18）：Spark 重拍建議（1–3 條，數字限原因句，敗回 None）。7 新測試，pytest 269 全過，$0。
+- 10/31 Muse 完成 T205（分支 muse/T205-what-would-fit，commit 660dd41）：「要怎樣才會一致」一句話（槽位程式填，敗回 None）。5 新測試，pytest 267 全過，$0。
+- 10/31 Muse 完成 T208（分支 muse/T208-model-table，commit 245eb95）：Meta 模型用法總表 12 行，平均花費用程式算。只改 STATUS，$0。
+- 10/31 Codex T213：讀取 Antigravity T196／T198 已推送的 STATUS 回報（尚未合 main 的報告亦已核對），逐項收進「缺什麼」並打勾。既有手機與鍵盤修正重新在 390／1440px 驗證；新增真實 Vite HTTP 資產回歸，抓到並修正 /slope-coach/ dev favicon 前綴重複。148 tests、一般／demo build、額外 Pages base build 全過；favicon／OG 路徑皆 200，無新依賴、模型呼叫或後端修改。
+
+- 10/31 Codex T212：主偵訊與進階稽核共用 AnalysisStages，等待時只有一個不定量 spinner 與三列流程說明（Spark 查看、SAM 追蹤、程式計算）。同步 API 沒有中間階段回報，所以全部維持 unreported，不按時間／已送出請求假裝某模型正在執行；結果再顯示實際來源。僅真實上傳 bytes 保留百分比，完成傳輸後移除 progressbar；elapsed 只顯示經過秒數，不當 ETA。減少動態效果停用旋轉；表單、錯誤與結果焦點沿用。147 tests、一般／demo build 通過。無 API 請求的實際元件 fixture 已驗證中英／390px，截圖 frontend/qa/t212-waiting-390-zh.jpg，驗證期間三階段始終未自行變更。
+
+- 10/31 Codex T211：index.html 補齊 Open Graph／Twitter large-image card、共同標題／描述／圖片 alt 與既有 Pages 絕對網址。Canvas 一次產生 1200×630 的 og.png（約 75 KB），只有品牌與模型範圍說明，沒有測量值或固定 SAM 使用宣稱；本地字體沿用 OFL。新增虛線拋物線＋琥珀點 SVG favicon、PNG 與多尺寸 ICO，均為靜態檔。產生器保留在 frontend/scripts/generate-og.html，沒有新套件。144 tests、一般／demo build，以及 /slope-coach/ base 路徑輸出通過；瀏覽器已核對 meta 與下載圖檔並開圖驗收。通用預覽不代稱某次稽核結果。
+
+- 10/31 Codex T209：Guided demo 與 Recording tour 共用六段離線手動導覽：own_2 → meta_clip4＋地球鬼影 → meta_clip2 → 兩筆 Synthetic 車子 → 分享卡。原數字／文字／來源直接讀 demo JSON，不再用計時自動跳例子。原生 dialog 保留背景頁狀態，右上步數、左右方向鍵／空白下一步，表單與媒體鍵不攔截；Esc／關閉後回到啟動按鈕。Ghost 使用既有影像座標並註明超出影格會裁切。瀏覽器逐段鍵盤、兩個入口、1440／390px 與返回焦點通過；截圖 frontend/qa/t209-tour-ghost-1440.jpg。npm 142 tests、一般／demo build 通過，無新套件或 API 呼叫。
+
+- 10/31 Antigravity 完成 T198（分支 antigravity/T198-mobile）：使用 iPhone 14（390×844，iOS Safari UA）與 Pixel 7（412×915，Android Chrome UA）執行端到端手機實測（腳本 `scripts/e2e_t198_mobile.mjs`）。(1) 上傳畫面檢驗：兩機型均無水平溢出橫向捲動（`scrollWidth <= clientWidth`）；(2) 上傳 demo 案例至結果頁實測：real_own_2 自由落體一致案例（g=9.44 m/s²）與 meta_clip4 不一致案例（g=0.14 m/s²）皆正常渲染結果橫幅、模型解說、原因與 Details；(3) 按鈕尺寸檢驗：按鈕 touch target 均達 44–48px 高度；(4) 卡片點擊互動：Results 壁面卡片點擊展開數值（maxHeight 180px, opacity 1）、二次點擊成功收起（maxHeight 0px, opacity 0）。共產出 9 張截圖存於 `data/e2e/T198/`，單張大小介於 36.9 KB 至 94.2 KB，全數通過 < 300 KB 規範，MD5 全數互異。
+- 10/31 Codex T209：Guided demo 與 Recording tour 共用六段離線手動導覽：own_2 → meta_clip4＋地球鬼影 → meta_clip2 → 兩筆 Synthetic 車子 → 分享卡。原數字／文字／來源直接讀 demo JSON，不再用計時自動跳例子。原生 dialog 保留背景頁狀態，右上步數、左右方向鍵／空白下一步，表單與媒體鍵不攔截；Esc／關閉後回到啟動按鈕。Ghost 使用既有影像座標並註明超出影格會裁切。瀏覽器逐段鍵盤、兩個入口、1440／390px 與返回焦點通過；截圖 frontend/qa/t209-tour-ghost-1440.jpg。npm 142 tests、一般／demo build 通過，無新套件或 API 呼叫。
 - 10/31 22:00 Claude：john 要求一次多給。排第二批：Muse T203–T206、T208；Codex T209–T213；Antigravity T214–T216（加在 T196、T198 後面）；Claude T207、T217。都在 11/02 晚上凍結前。
 
 - 10/31 21:45 Claude：合併 Codex T191–T195（手機、無障礙、分享卡、車子畫面、收尾）。npm test 140、兩個 build 過；新增的前端沒有自己算物理（分享卡的倍數讀後端 `g_vs_earth`），禁用字眼測試涵蓋新頁面。Manus T199–T201 已交，Claude 核對後重寫成最終版（見下一則）。
@@ -386,6 +446,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - 10/31 Codex T192：卡片與 How 滑鼠效果提供 focus-visible 對應；Tab 已實測展開卡片，skip link 保留 #wall 並聚焦 workspace。減少動態效果停用全部動畫／transition 並顯示完整終態。#8A8F98 在四種深色表面皆 ≥4.5:1；未選卡改暗底，不降低文字 opacity。補全站 img alt／鍵盤／配色檢查，圖表文字與軌跡使用深色主題 token，未改數字、擬合或判定。npm 133 tests、一般／demo build 通過。
 
 - 10/31 Codex T191：手機與平板 Results／How 單欄；卡片點一下展開、再次點擊收起，窄螢幕不啟用 hover 鎖定。瀏覽器實測 390／768px：home、wall、how、audit、compare、demo、saved example 與五個 coach 頁，頁面 scrollWidth 不超過 viewport，控制項／section／article 無溢出；手機二次點擊 evidence 高度為 0。新增版面契約與 disclosure 測試（Node 無排版引擎，幾何以瀏覽器實測）；npm 130 tests、一般／demo build 通過。
+- 10/31 Antigravity 完成 T196（分支 antigravity/T196-e2e）：以 Chrome 跑完整端到端驗證（腳本 `scripts/e2e_t196_screens.mjs`）。(1) 4 頁桌面（1440px）與手機（390px）截圖全數完成；(2) 首頁動畫播完確認：地球虛線動畫 0.8s、琥珀實線 1.8s、終點 pop 0.4s、結論「Doesn't match Earth gravity.」正常顯示且 opacity=1、strokeDashoffset=0px；(3) Results 三張卡 hover 驗證：指到的卡 scale=1.05 展開顯示 9.446 m/s² 數值，其餘卡 scale=0.96、blur(1px)、opacity=0.45；(4) How it works 四步驟 hover 展開確認（編號變琥珀色 #F5A524，說明文字展開）；(5) 上傳頁成功匯入 `data/demo/real_own_2.json` 並渲染完整結果頁（一致、說明、原因）；(6) 語言切換中英文雙向核對無誤；(7) 全鍵盤 Tab 與 Enter 完成導覽與卡片選取。共產出 13 張截圖存於 `data/e2e/T196/`，單張大小介於 35.5 KB 至 195.2 KB，全數通過 < 300 KB 規範，MD5 全數互異。3 項細微缺口已記於「缺什麼」。
 - 10/31 07:20 Claude：合併 Muse T184、T186–T189，Antigravity T197，Codex T182。合併後 pytest 262、npm test 128、兩個 build 都過；1440／390 px 首頁截圖正常、沒有橫向捲動。修 `probe_fps` 的 tmcd bug 和 T197 找到的 3 個安裝問題。**車子結果：4 支 Pexels／Pixabay 側面片全部資料不足**（整台車入鏡太短或往鏡頭偏），所以 demo 目前沒有「車子一致」的例子；需要 john 拍一支或用 Meta AI 生成。Meta API 累計 $2.39。
 
 - 10/31 Muse 完成 T184（分支 muse/T184-car-side，commit 8fdb3d5）：4 支側面車子片、6 個窗全跑完，track_source 全是 sam，**全部 insufficient_data**（不挑，全記）。car_side_1 灰色小轎車 1.0–1.5 秒：只追到 0.47 秒、差 0.5 門檻（27 秒，$0.022）；同支 7.5–8.5 秒（青色車）：只追到 73%（車子從左邊出畫面，25 秒，$0.021）；同支 9.25–10.0 秒：只追到 18%（窗內前半沒車、後半是貼很近的黑車，Manus 的時間估計在這支上偏了，23 秒，$0.019）。car_side_2 淺色車 5.0–5.75 秒：尺寸 +43%（往鏡頭方向偏，29 秒，$0.024）。car_side_3 遠車道 3.0–3.75 秒：像素車長變化太大不能當尺（19 秒，$0.018）。car_side_4（Pixabay）4.4–4.6 秒：只追到 3 格、要 8 格，如預期被拒（25 秒，$0.022）。6 個 overlay 都看了：SAM 每次都鎖對車，不用換顏色提示詞。6 次都沒走到擬合，所以沒有 speed_km_h、accel_g、car_length_px、n_points。car_meta_1.mp4 不存在（john 還沒生成），沒跑。下載法：Pexels 頁面被 Cloudflare 擋，改打 `pexels.com/download/video/<id>/?h=1080&w=1920` 拿 HD 直鏈；Pixabay 同樣被擋，用 r.jina.ai 讀頁面挖 cdn 直鏈。後端 bug（已寫進「缺什麼」，沒改後端）：三支 Pexels 檔自帶 tmcd 軌，ffprobe 9 會把 stream_groups＋streams 各印一次，`probe_fps()` 拿兩行 `r_frame_rate` 去 `int()` 炸掉，`/api/audits` 回 422（$0，SAM 前就擋下）。繞法：本地 `ffmpeg -map 0:v:0 -c copy -dn -write_tmcd 0` 重裝（像素完全一樣，只去 tmcd 軌），檔名 `*_clean.mp4`，都在 repo 外。TestClient＋真 API（uvicorn 照樣 EPERM）。$0.125（上限 $0.40），累計 $2.112。

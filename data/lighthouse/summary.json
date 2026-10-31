@@ -1,0 +1,123 @@
+[
+  {
+    "id": "online_mobile",
+    "title": "Online GitHub Pages (Mobile)",
+    "url": "https://johncat88425-del.github.io/slope-coach/",
+    "preset": null,
+    "scores": {
+      "performance": 91,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 91
+    },
+    "issues": []
+  },
+  {
+    "id": "online_desktop",
+    "title": "Online GitHub Pages (Desktop)",
+    "url": "https://johncat88425-del.github.io/slope-coach/",
+    "preset": "desktop",
+    "scores": {
+      "performance": 100,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 91
+    },
+    "issues": []
+  },
+  {
+    "id": "local_preview_mobile",
+    "title": "Local Build Preview (Mobile)",
+    "url": "http://127.0.0.1:4173/",
+    "preset": null,
+    "scores": {
+      "performance": 78,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 83
+    },
+    "issues": [
+      {
+        "category": "Performance",
+        "catScore": 78,
+        "topFailingAudits": [
+          {
+            "id": "largest-contentful-paint",
+            "title": "Largest Contentful Paint",
+            "score": 11,
+            "displayValue": "6.2 s",
+            "description": "Largest Contentful Paint marks the time at which the largest text or image is painted. [Learn more about the Largest Contentful Paint metric](https://developer.chrome.com/docs/lighthouse/performance/lighthouse-largest-contentful-paint/)"
+          },
+          {
+            "id": "image-delivery-insight",
+            "title": "Improve image delivery",
+            "score": 50,
+            "displayValue": "Est savings of 32 KiB",
+            "description": "Reducing the download time of images can improve the perceived load time of the page and LCP. [Learn more about optimizing image size](https://developer.chrome.com/docs/performance/insights/image-delivery)."
+          },
+          {
+            "id": "lcp-discovery-insight",
+            "title": "LCP request discovery",
+            "score": 0,
+            "displayValue": "",
+            "description": "[Optimize LCP](https://developer.chrome.com/docs/performance/insights/lcp-discovery) by making the LCP image discoverable from the HTML immediately, and avoiding lazy-loading"
+          }
+        ]
+      },
+      {
+        "category": "SEO",
+        "catScore": 83,
+        "topFailingAudits": [
+          {
+            "id": "meta-description",
+            "title": "Document does not have a meta description",
+            "score": 0,
+            "displayValue": "",
+            "description": "Meta descriptions may be included in search results to concisely summarize page content. [Learn more about the meta description](https://developer.chrome.com/docs/lighthouse/seo/meta-description/)."
+          },
+          {
+            "id": "robots-txt",
+            "title": "robots.txt is not valid",
+            "score": 0,
+            "displayValue": "4 errors found",
+            "description": "If your robots.txt file is malformed, crawlers may not be able to understand how you want your website to be crawled or indexed. [Learn more about robots.txt](https://developer.chrome.com/docs/lighthouse/seo/invalid-robots-txt/)."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "local_preview_desktop",
+    "title": "Local Build Preview (Desktop)",
+    "url": "http://127.0.0.1:4173/",
+    "preset": "desktop",
+    "scores": {
+      "performance": 98,
+      "accessibility": 100,
+      "bestPractices": 96,
+      "seo": 83
+    },
+    "issues": [
+      {
+        "category": "SEO",
+        "catScore": 83,
+        "topFailingAudits": [
+          {
+            "id": "meta-description",
+            "title": "Document does not have a meta description",
+            "score": 0,
+            "displayValue": "",
+            "description": "Meta descriptions may be included in search results to concisely summarize page content. [Learn more about the meta description](https://developer.chrome.com/docs/lighthouse/seo/meta-description/)."
+          },
+          {
+            "id": "robots-txt",
+            "title": "robots.txt is not valid",
+            "score": 0,
+            "displayValue": "4 errors found",
+            "description": "If your robots.txt file is malformed, crawlers may not be able to understand how you want your website to be crawled or indexed. [Learn more about robots.txt](https://developer.chrome.com/docs/lighthouse/seo/invalid-robots-txt/)."
+          }
+        ]
+      }
+    ]
+  }
+]
