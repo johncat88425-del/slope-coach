@@ -1,0 +1,4 @@
+import {Localize} from './i18n.js';
+/** Current audit endpoints return a final response, without intermediate stage events. */
+export const analysisStageLabels=['Muse Spark reviews the clip','SAM 3.1 tracks the object','Code calculates the measurements'] as const;
+export function AnalysisStages(){return <Localize><div className="analysis-waiting" data-testid="analysis-waiting"><p className="analysis-waiting-label"><span className="analysis-spinner" data-testid="analysis-spinner" aria-hidden="true"/>Waiting for the server. Stage details are unavailable.</p><p>These are possible processing steps. The result will show which sources were used.</p><ol className="analysis-stages" aria-label="Possible analysis steps">{analysisStageLabels.map(label=><li key={label} data-state="unreported"><span className="analysis-stage-dot" aria-hidden="true"/>{label}</li>)}</ol></div></Localize>}
