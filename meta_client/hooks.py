@@ -51,11 +51,17 @@ def _dense_detections(
         else:
             cx, cy = det.centroid_px
             area = det.area_px
+            width = None
+            if det.box is not None:
+                width = det.box[2] - det.box[0]
+                if normalized:
+                    width = width / det.frame_size[0]
             if normalized:
                 fw, fh = det.frame_size
                 cx, cy, area = cx / fw, cy / fh, area / (fw * fh)
             detections.append(
-                DetectionIn(t_s=det.t_s, centroid_px=(cx, cy), area_px=area, source="sam")
+                DetectionIn(t_s=det.t_s, centroid_px=(cx, cy), area_px=area,
+                            width_px=width, source="sam")
             )
     return detections
 

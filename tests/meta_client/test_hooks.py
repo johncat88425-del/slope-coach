@@ -98,6 +98,16 @@ def test_track_object_passes_window_and_offsets_time(tmp_path, monkeypatch):
     assert dets[2].centroid_px is None
 
 
+def test_track_object_width_px_normalized(tmp_path, monkeypatch):
+    det = sam.FrameDetection(0, 1.0, 0, (100.0, 50.0, 484.0, 250.0),
+                             (1920, 1080), (292.0, 150.0), 76800.0)
+    result = sam.TrackResult(detections=[det], fps=15.0, n_frames=1,
+                             billed_frames=50, cost_usd=0.01)
+    monkeypatch.setattr(sam, "track", lambda path, prompt, **kw: result)
+    dets = hooks.MetaHooks().track_object(tmp_path / "c.mp4", "car", 1.0, 2.0)
+    assert dets[0].width_px == pytest.approx(0.2)
+
+
 def test_track_object_failure_becomes_501_signal(tmp_path, monkeypatch):
     def boom(path, prompt, **kwargs):
         raise MediaError("ffmpeg not found")
