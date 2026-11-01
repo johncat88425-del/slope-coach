@@ -49,6 +49,10 @@
 
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
+**Codex**（11/01 Claude 加，凍結前做完）
+- [ ] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。
+- [ ] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。
+
 **Muse**（照順序做）
 - [x] T224 Muse：commit acd7955。複查改放大裁切（160 框→2×→紅圈 r=28）＋逐張四答＋3/4 多數決，回傳形狀不變；新 `scripts/refresh_track_check.py` 只寫 `track_check`（程式自驗他欄逐字相同，source 照後端形存 `model`）。10 筆全轉 true（含原 false 的 own_3、manus，原 8 true 全留住）；反向對照（own_2 平移 120px）得 false，方法有效，照規則 commit。同一套規則、無單支調參。pytest 288 全過。$0.087（上限 $0.15），累計 $4.396。一套規則，不准為單支片調參。(1) `track_check.py` 改送**放大裁切**：每個時刻從 480 寬影格以追蹤點為中心裁 160×160（邊界用邊緣補齊），放大 2× 成 320×320 再畫紅圈（半徑跟著放大）；(2) prompt 改成**每張圖各答一次**「紅圈裡或緊貼紅圈的是不是 {name}」，schema 改 `{"answers":[bool×4], "note"}`；程式算 `same_object = true 的張數 ≥ 3`；回傳形狀不變 `{same_object, note, source}`（前端不用改），note 規則照舊；(3) 測試：邊界裁切、多數決（2/4→false、3/4→true）、mock Spark；(4) 新 `scripts/refresh_track_check.py`：讀 data/demo/*.json 存的 points，只重跑 check_track、只覆寫 `track_check` 欄位，其他欄位必須逐字不變（程式自己比對，不同就中止），總花費上限 $0.15；(5) **反向對照**：own_2 的 points 整條平移 120 px（圈到背景）必須得 false，否則這個改法無效、不要 commit 新 JSON；(6) 結果表寫進日誌：10 筆新舊 same_object 對照＋反向對照結果。目標 own_3、manus 轉 true 且原本 8 筆仍 true；做不到就照實寫，不要改門檻硬湊。
 - [x] T223 Muse：commit 9dfbcab。實驗做完：**假設不成立，不改程式**。B 片（前 5 格無球）第一個點 frame_index=5、x=110.5（就是第 5 格位置）——SAM 回的是絕對格號，沒有重編。附帶發現：全平面形追不到（A／B 零命中），加了立體明暗才 30／30。驗證稽核：manus 不一致、own_3 一致（警告制正確未翻盤），但兩筆複查仍是 false；把 own_3 的圈圖一張張看：4 張圈都在球上——是 Spark 看錯，不是追錯。詳見日誌。實驗 $0.050（上限 $0.05），驗證 $0.095。 Claude 的假設：SAM 回傳的 `frame_index` 是從「第一次找到物體的那一格」開始算 0，不是從影片第 0 格。證據：manus_clip1 窗口有 20 格，SAM 只回 19 個點（第 0 格球在畫面最上緣被切到，SAM 沒找到），而且整條軌跡剛好慢一格；其他從第 0 格就看得到球的影片（meta_clip1 35/35、clip5、clip6）都沒有偏。**實驗（上限 $0.05，不用真實影片）**：用 ffmpeg 或 numpy 產生兩支 15 fps、640×480、2 秒的白底影片，一顆直徑 40 px 的橘色圓從左往右等速移動（每格 10 px）：A 片第 0 格就有球；B 片前 5 格沒有球（第 5 格才出現）。各跑一次 `sam.track(clip, "orange ball")`，記下原始回傳的每個 `frame_index` 和中心 x。如果 B 片第一個點的 frame_index 是 0、x 卻是第 5 格的位置，假設成立。**成立的話**：看 SAM 回傳裡有沒有表示起始格的欄位（例如 prompt frame、start frame）；有就用它校正 `t_s`；沒有就在 `meta_client/sam.py` 用 `n_frames` 和第一個偵測的位置推算，並加單元測試（A、B 兩種情況）。**不成立的話**：不要改程式，把兩支的原始結果寫進 STATUS 給 Claude。做完用 manus_clip1 和 own_3 各跑一次稽核，看複查是否變成 true。push `muse/T223-sam-start-frame`。
@@ -329,7 +333,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - [ ] 還沒有可用的真實影片。第一支（IMG_8418.MOV）有四個問題：拍攝角度是斜的、滑塊太小太淡、只滑了 0.75 秒、畫面有人臉。
 - [ ] 影片送 Spark 的實際 token 數和費用：未測。
 - [ ] `tests/scripts/test_gate_prepare.py` 在乾淨 main 上也失敗（Muse 10/29 驗證過，與 Muse 改動無關）：gate_prepare 處理真片時 exit 1。請 Claude/Antigravity 修，T52 CI 會踩到。
-- [ ] T186 Muse：後端接線（Claude）：`ObjectSuggestion` 加 `assumed_model`、`judgeable`、`vehicle_class`（目前 Pydantic 靜默丟掉）；`QuestionField` 加 `vehicle_class`（沒加的話模型一問車種整組偵訊掉回 mock）。T194 等這個。
+- [x] （Claude 11/01 T225 已修：三欄位已接進 ObjectSuggestion，QuestionField 加 vehicle_class，API v1.4）T186 Muse：後端接線（Claude）：`ObjectSuggestion` 加 `assumed_model`、`judgeable`、`vehicle_class`（目前 Pydantic 靜默丟掉）；`QuestionField` 加 `vehicle_class`（沒加的話模型一問車種整組偵訊掉回 mock）。T194 等這個。
 - [ ] 用其他工具生成的影片當測試素材是否可以：請 john 在 Discord 確認。
 - [ ] T188 Muse：空追蹤的原因字樣（Claude）：T188 要求空追蹤時原因寫「追蹤缺失」，但後端現在是英文「object tracked in only 0% of frames」（後端原因全英文，突然一句中文很怪）。請 Claude 決定字樣／是否改，Muse 不碰後端。
 - [ ] 是否允許用其他 AI 寫程式：Discord 原文未取得。
@@ -439,6 +443,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/01 Claude T225：Spark 物體預檢的 `judgeable`／`assumed_model`／`vehicle_class` 以前被後端靜默丟掉，現在接進 `ObjectSuggestion`（API v1.4），加測試；開 Codex T226（上傳頁顯示）、T227（手機 LCP）。
 - 11/01 Claude 審查合併 Muse T224：data/demo 10 筆除 track_check 外逐欄相同（程式比對）；親自畫 manus 四張裁切圖：前三張紅圈貼著球、第四張圈在球前方空白處（manus 這支片 SAM 點本來就超前約一格，原因不明，不影響 g），3/4 過所以 true。結論：新複查能抓「追到別的東西／背景」（反向對照 false），但不會抓「差一格」的小偏移——這是設計上的容忍度，寫在限制裡。
 
 - 11/01 Muse 完成 T224（分支 muse/T224-track-crop，commit acd7955）：複查改放大裁切＋逐張判斷＋3/4 多數決（同一套規則）。`scripts/refresh_track_check.py` 重跑 10 筆，全轉 true；反向對照 own_2＋120px 得 false（note：red rings over empty background areas），方法有效，照規則 commit 新 JSON（diff 逐行驗過，只動 track_check 內三鍵）。新舊對照：own_1 T→T、own_2 T→T、own_3 F→T、clip1 T→T、clip2 T→T、clip3 T→T、clip4 T→T、clip5 T→T、clip6 T→T、manus F→T。pytest 288 全過。$0.087（上限 $0.15），累計 $4.396。

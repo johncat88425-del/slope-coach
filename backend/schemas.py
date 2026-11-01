@@ -207,7 +207,7 @@ class PersistenceEventOut(BaseModel):
     detail: str
 
 
-QuestionField = Literal["camera_static", "slow_motion", "object_size_m", "time_window", "assumed_model", "length_m"]
+QuestionField = Literal["camera_static", "slow_motion", "object_size_m", "time_window", "assumed_model", "length_m", "vehicle_class"]
 
 
 class AuditQuestion(BaseModel):
@@ -228,6 +228,10 @@ class ObjectSuggestion(BaseModel):
     object_name: str
     camera_looks_static: bool | None = None
     reason: str = ""
+    # T225: Spark's pre-check, passed through as a prefill only; the user still confirms the model and class.
+    assumed_model: Literal["vehicle"] | None = None
+    judgeable: bool | None = None
+    vehicle_class: Literal["compact_car", "sedan", "suv", "pickup", "unknown"] | None = None
 
 
 class AuditDraftOut(BaseModel):
