@@ -1,4 +1,5 @@
 export const newUiCopy:Record<string,string>={
+  "On the free host, a check usually takes 1–4 minutes. Please keep this page open.": "免費主機上一次檢查約需 1–4 分鐘，請不要關閉頁面。",
   "The server is starting or busy. Please wait one minute and try again.": "伺服器正在啟動或忙碌中，請等 1 分鐘再試一次。",
   "Try again": "重試",
   "Try a sample clip": "試用範例影片",
