@@ -439,6 +439,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/01 Claude 審查合併 Muse T224：data/demo 10 筆除 track_check 外逐欄相同（程式比對）；親自畫 manus 四張裁切圖：前三張紅圈貼著球、第四張圈在球前方空白處（manus 這支片 SAM 點本來就超前約一格，原因不明，不影響 g），3/4 過所以 true。結論：新複查能抓「追到別的東西／背景」（反向對照 false），但不會抓「差一格」的小偏移——這是設計上的容忍度，寫在限制裡。
 
 - 11/01 Muse 完成 T224（分支 muse/T224-track-crop，commit acd7955）：複查改放大裁切＋逐張判斷＋3/4 多數決（同一套規則）。`scripts/refresh_track_check.py` 重跑 10 筆，全轉 true；反向對照 own_2＋120px 得 false（note：red rings over empty background areas），方法有效，照規則 commit 新 JSON（diff 逐行驗過，只動 track_check 內三鍵）。新舊對照：own_1 T→T、own_2 T→T、own_3 F→T、clip1 T→T、clip2 T→T、clip3 T→T、clip4 T→T、clip5 T→T、clip6 T→T、manus F→T。pytest 288 全過。$0.087（上限 $0.15），累計 $4.396。
 - 11/01 Claude 合併 Muse T223（假設不成立，sam.py 不動）與 Antigravity T216 第二輪回歸（全 PASS）。開 T224：複查改放大裁切＋逐張判斷＋多數決，附只更新 track_check 的刷新腳本與反向對照。
