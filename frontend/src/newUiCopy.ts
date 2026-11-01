@@ -1,4 +1,5 @@
 export const newUiCopy:Record<string,string>={
+  "Muse Spark original (English)": "Muse Spark 原文（英文）",
   "Download share card PNG": "下載分享卡 PNG",
   "Cars": "車子",
   "Synthetic test clips": "程式模擬測試片",
