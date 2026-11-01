@@ -17,9 +17,9 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | 全部完成；等凍結前 T216 一起回歸 |
-| **Codex** | **T210、T218 已完成並 push**，等 Claude 審查合併；本輪沒有待辦 |
-| **Antigravity** | T196 新設計端到端 → T198 手機實測 → T214 Lighthouse → T215 照腳本彩排 → T216 凍結前回歸測試 |
+| **Muse** | T219 真打驗證 Spark 複查 → T220 用最終程式重產 demo 紀錄 |
+| **Codex** | T221 中文模式標示 Spark 英文原文 → T222 README 截圖 |
+| **Antigravity** | **T216 凍結前回歸測試（現在可以做了）**；Muse T220 合併後再跑一次 |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -50,6 +50,8 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
+- [ ] T219 Muse：（11/01 Claude）T206 修好 `track_check` 之後還沒真打驗證過。用 own_2 和 meta_clip4 各跑一次 `POST /api/audits`（SAM 追蹤），確認結果裡 `track_check` 是 `{same_object: true, note: ..., source: model}`，不是 `null`；note 沒有數字。再故意把 `object_name` 寫成畫面裡沒有的東西（例如 `red umbrella`）跑一次 own_2，記下 SAM 和 Spark 複查各回傳什麼（不准挑結果）。上限 $0.15。結果寫進 STATUS 日誌，push `muse/T219-verify-check`。
+- [ ] T220 Muse：（11/01 Claude，T219 通過後）用最終程式重新產生 `data/demo/` 裡 10 筆 SAM 紀錄（real_own_1–3、generated_meta_clip1–6、generated_manus_clip1），讓靜態網站也看得到 Spark 複查、重拍建議、「要怎樣才會一致」。用 `scripts/seed_demo.py` 或原本產生 demo 的方式，時間窗和 object_name 跟原紀錄一模一樣。**規則**：(1) 任何一筆判定和原本不同，就全部停下，不要 commit，把差異寫進 STATUS 給 Claude；(2) g 和原本相差超過 1% 也停下回報；(3) 都沒問題才 commit 新 JSON。上限 $0.60。push `muse/T220-demo-refresh`。**到這裡 Muse 的待辦全部結束。**
 - [x] T203 Muse：commit af69bb6。新 `meta_client/track_check.py`：軌跡平均挑 4 個時刻，480 寬影格追蹤處畫紅圈（numpy 畫圈＋ffmpeg 編 PNG，無 PIL），問 Spark 圈的是不是同一個物體；回 `{"same_object", "note", "source"}`，note 嚴禁數字（後端檢查放行 10 以下整數，這裡額外擋）＋禁字；重試 2 次，再敗回 `None`；花費計 tracker。hooks 加 `track_check`，無金鑰回 `None`。點格式走 AuditOut 的 480 框 `(t,x,y)`，少於 4 點回 `None`。8 個 mock 測試（任務 5 個＋點太少＋無金鑰＋缺檔），pytest 270 全過，未真打 API。後端接線等 Claude T207。新增 `meta_client/track_check.py` 的 `check_track(video_path, points, object_name)`：從追蹤點裡平均挑 4 個時間點，各截一張影格並在追蹤位置畫圓圈，送給 Spark 問「4 張圖圈起來的是不是同一個 {object_name}？」。只准回傳 JSON `{"same_object": true/false, "note": "一句話"}`；`note` 不准有數字和禁用字眼；失敗最多重試 2 次，再失敗就回 `None`（代表沒檢查）。花費計入 cost tracker。在 `meta_client/hooks.py` 加 `track_check` hook，沒有金鑰時回 `None`。單元測試至少 5 個（同物體、換物體、不是 JSON、note 有數字、逾時），不真打 API。**後端接線由 Claude T207 做，你不要改 backend/。** push `muse/T203-track-check`。
 - [x] T204 Muse：commit c765d18。新 `meta_client/retake.py`：拒判時讀 reasons 寫 1–3 條重拍建議，每條 80 字內，數字只能用 reasons 裡的（程式 parse 原因句數字當 allowlist），禁字照舊，失敗回 `None`（前端退回固定建議）。hook `retake_tips`（英文，同 explain）。7 個 mock 測試（成功＋引原因數字＋偷渡數字＋禁字兩種＋非拒判不呼叫＋超長＋壞 lang），pytest 269 全過，未真打 API，未碰 backend。判定是 insufficient_data 時，Spark 讀 `reasons` 寫 1 到 3 條具體的重拍建議（例如「球往鏡頭飛：請站到球飛行路線的正側面」）。新增 `meta_client/retake.py` 的 `write_retake_tips(audit, lang)`，輸出 `{"tips": ["..."]}`；每條 80 字內；不准出現 reasons 裡沒有的數字；禁用字眼照舊；失敗就回 `None`，前端會退回現在的固定建議。hook 名稱 `retake_tips`。測試至少 4 個。push `muse/T204-retake`。
 - [x] T205 Muse：commit 660dd41。`explain.py` 新 `what_would_fit(audit, lang)`：只接 inconsistent 自由飛行；Spark 寫句型，`{implied_time_factor}`、`{implied_object_size_m}` 由程式填（至少用一槽，缺數字回 `None`）；禁自寫數字、禁「假的」與因果字眼；重試 2 次，再敗回 `None`。hook `what_would_fit`（英文）。5 個 mock 測試（中英成功＋偷渡數字＋假的＋跳過條件），pytest 267 全過，未真打 API，未碰 backend。判定是 inconsistent 的自由飛行，`numbers` 裡有 `implied_time_factor`（如果影片其實被放慢幾倍就會符合地球）和 `implied_object_size_m`（如果物體其實多大就會符合）。寫 `meta_client/explain.py` 的新樣板 `what_would_fit`：Spark 只寫句子，數字用 `{implied_time_factor}`、`{implied_object_size_m}` 欄位由程式填，例如「如果這支影片其實放慢了 {implied_time_factor} 倍，或球其實有 {implied_object_size_m} 公尺寬，才會和地球重力一致。」不准寫「所以是假的」或任何因果字眼。中英文都要。測試至少 4 個。push `muse/T205-what-would-fit`。
@@ -74,6 +76,8 @@
 
 
 **Codex**（照順序做）
+- [ ] T221 Codex：（11/01 Claude）中文模式下，Muse Spark 的三個新輸出（`retake_tips`、`what_would_fit`、`track_check.note`）目前只有英文。不要自己翻譯（翻譯會改到模型的話），顯示原文並在旁邊加小字「Muse Spark 原文（英文）」。加測試。push `codex/T221-zh-label`。
+- [ ] T222 Codex：（11/01 Claude）README 最上面加三張截圖讓評審一眼看懂：首頁、一致的結果（own_2）、不一致的結果（meta_clip4，有地球鬼影軌跡）。1440 px 寬截圖，壓成 WebP 或 PNG，每張 < 250 KB，放 `docs/screenshots/`；README 只加圖片那三行和一行說明，不要動其他文字。push `codex/T222-readme-shots`。**到這裡 Codex 的待辦全部結束。**
 - [x] T209 Codex：（10/31 Claude）**錄影用的導覽**。把 `GuidedDemo`／`AutoTour` 改成照最終 demo 腳本的順序：自拍的球（一致 9.45）→ Meta AI 籃球（不一致 0.14，顯示地球鬼影軌跡）→ 往鏡頭飛的球（不能判斷）→ 合成車子兩張（要標「Synthetic test clip」）→ 分享卡。用新設計的樣式；左右方向鍵和空白鍵換下一步；右上角小字顯示「3 / 6」。數字全部從 `data/demo` JSON 讀。push `codex/T209-tour`。 — commit c999fc8（142 tests、兩種 build、鍵盤／手機檢查通過）
 - [x] T210 Codex：（10/31 Claude，Muse T203–T205 合併後）把三個新的 Muse 輸出放上畫面，都要標「由 Muse Spark 產生」：(1) 結果頁小標籤「Muse Spark 複查：追蹤的是同一個物體 ✓」或「⚠ 可能追錯物體」（後端欄位 `track_check`，沒有就不顯示）；(2) 不能判斷時，`RetakeGuide` 優先顯示 Spark 的 `retake_tips`，沒有就用現在的固定建議；(3) 不一致時在結果下面顯示「要怎樣才會一致」那一句。欄位名稱以 Claude T207 更新的 `docs/API.md` 為準。push `codex/T210-muse-ui`。 — commit 43b4fb2（153 tests、兩種 build、桌面／手機與原文保留通過）
 - [x] T211 Codex：（10/31 Claude）**分享連結的預覽圖**。`frontend/index.html` 加 Open Graph 和 Twitter card 標籤（標題「Does it fall like Earth?」、一句說明、1200×630 預覽圖）；預覽圖照分享卡設計用 SVG 或 canvas 產生一次，存成 `frontend/public/og.png`；加 favicon（logo 那條虛線拋物線加琥珀色點）。不加新套件。push `codex/T211-og`。 — commit 63acb1d（144 tests、兩種 build、Pages base 檢查通過）
@@ -414,6 +418,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 00:10 Claude：合併 Muse T206（含 track_check 上線 bug 修正）、Codex T210、T218。pytest 284、npm test 156、兩個 build 過。排 Muse T219–T220、Codex T221–T222；Antigravity T216 可以開始。Meta API 累計約 $2.77。
 
 - 10/31 Muse 完成 T206（分支 muse/T206-rehearsal，commit d88697a）：最終彩排 4 案（TestClient＋真 API，uvicorn 照樣 EPERM）。own_2：偵訊 15.7 秒 $0.029→稽核 34.8 秒 $0.042，一致 g=9.45，sam，說明＋標題 model。clip4：偵訊 16.5 秒 $0.023→稽核 45.8 秒 $0.045，不一致 g=0.14，what_would_fit source=model；子步驟直打：SAM 16.6 秒 $0.010（38/38 格）、說明 8.6 秒 $0.010、複查見下、擬合 0.000 秒。clip2：偵訊 13.3 秒 $0.020→稽核 25.6 秒 $0.030，拒判（尺寸 -48%），retake_tips 兩條英文。合成車（現畫 car_50kmh）：偵訊 22.8 秒 $0.025→稽核 21.5 秒 $0.031，一致但 track=frame_diff（SAM 在黑方塊上 0/17 格，直打 3.7 秒 $0.010 確認），說明＋標題 model。給 john 的節奏：每案 35–60 秒，偵訊約 15–23 秒、稽核約 22–46 秒。**bug（同分支修好）**：T203 的 `_frame_rgb` 用了 text-mode 管道，真跑第一分散就 UnicodeDecodeError，本輪四案的 audit 內 track_check 全是 `None`（後端有接住，沒炸）。修：byte-mode subprocess＋`image2pipe` muxer（這台 ffmpeg 沒有 `png` muxer），加真 ffmpeg 回歸測試（不打 API），pytest 284 全過；修完直打驗證：same_object=True、5.0 秒、$0.004。$0.288（上限 $0.40），累計 $2.767。Muse 待辦全部結束。
 - 10/31 Codex T218：結果卡下方直接提供外框分享 PNG 下載，保留單一 testid、等待／錯誤狀態及原 Details 證據。Results 增加明示「程式模擬／Synthetic test clips」的 Cars 卡，重用原始 demo JSON 與車子數值格式，保留舊 demo／錄影路由，不新增測量、不改後端。1440px hover 顯示兩案，390px 點擊展開／收起與鍵盤 Enter 連至範例，無橫向捲動；Details 收合時成功下載 1080×1920 PNG，按鈕高 48px。156 前端 tests、一般／demo build、pytest 283 全過；截圖 frontend/qa/t218-cars-1440.jpg、frontend/qa/t218-visible-download.jpg。T215 僅兩項入口問題已解，真實模型等待時間與錄影建議保留。本輪 T210／T218 全部完成；舊 T165 的 Figma 配額阻擋仍照原紀錄保留。
