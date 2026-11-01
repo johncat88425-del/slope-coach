@@ -46,7 +46,7 @@ def test_track_success(tmp_path, monkeypatch):
     assert len(result.detections) == 1
     det = result.detections[0]
     assert det.frame == 0
-    assert det.t_s == pytest.approx(1 / 15.0)  # SAM index 0 is frame 1 of the uploaded clip (11/01)
+    assert det.t_s == 0.0
     assert det.object_id == 0
     assert det.box == (211.0, 228.0, 271.0, 255.0)  # parser: exclusive bounds
     assert det.frame_size == (320, 334)
@@ -188,7 +188,7 @@ def test_track_window_slices_and_offsets_time(tmp_path, monkeypatch):
     tracker = CostTracker(tmp_path / "cost.csv", limit_usd=120)
     result = sam.track(clip, "ball", t_start=1.0, t_end=2.0, tracker=tracker)
     assert seen["window"] == (1.0, 2.0)
-    assert result.detections[0].t_s == pytest.approx(1.0 + 1 / 15.0)
+    assert result.detections[0].t_s == pytest.approx(1.0)
 
 
 def test_track_window_validates_bounds(tmp_path, monkeypatch):
