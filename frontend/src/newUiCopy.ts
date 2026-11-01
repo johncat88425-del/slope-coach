@@ -1,4 +1,7 @@
 export const newUiCopy:Record<string,string>={
+  "Muse Spark thinks this clip may not be judgeable:": "Muse Spark 認為這支片可能無法判斷：",
+  "Muse Spark thinks this clip may not be judgeable.": "Muse Spark 認為這支片可能無法判斷。",
+
   "Upload your own video": "上傳自己的影片",
   "This page only replays saved results.": "這個頁面只重播已存結果。",
   "To upload your own video, open the live app →": "要上傳自己的影片，請開線上版 →",

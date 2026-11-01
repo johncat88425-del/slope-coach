@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {createElement} from 'react';
 import {renderToStaticMarkup as render} from 'react-dom/server';
 import {createApi} from '../.test-dist/api.js';
-import {ObjectSuggestionHint,suggestedObjectName} from '../.test-dist/ObjectSuggestion.js';
+import {ObjectSuggestionHint,suggestedObjectName,suggestedVehicleFields} from '../.test-dist/ObjectSuggestion.js';
+import {LanguageProvider} from '../.test-dist/i18n.js';
 
 const suggestion={source:'muse-spark-1.3',object_name:'orange ball',camera_looks_static:true,reason:'Please check the camera in the original clip.'};
 test('suggestion prefills the name while edited names remain the submitted answer',async()=>{
@@ -30,4 +31,27 @@ test('camera suggestions are text only and absent suggestions render nothing',()
   if(fixed===true)assert.match(html,/camera looks fixed/);
   if(fixed===false)assert.match(html,/camera may be moving/);
  }
+});
+test('vehicle suggestions prefill only the model and class, preserving fields the user has edited',()=>{
+ const car={...suggestion,assumed_model:'vehicle',vehicle_class:'sedan',judgeable:false},before=JSON.stringify(car);
+ const current={model:'',vehicleClass:''},untouched={model:false,vehicleClass:false};
+ assert.deepEqual(suggestedVehicleFields(current,untouched,car),{model:'vehicle',vehicleClass:'sedan'});
+ assert.deepEqual(suggestedVehicleFields({model:'bounce',vehicleClass:''},{model:true,vehicleClass:false},car),{model:'bounce',vehicleClass:''});
+ assert.deepEqual(suggestedVehicleFields({model:'vehicle',vehicleClass:'pickup'},{model:false,vehicleClass:true},car),{model:'vehicle',vehicleClass:'pickup'});
+ assert.deepEqual(suggestedVehicleFields(current,untouched,{...car,vehicle_class:null}),{model:'vehicle',vehicleClass:''});
+ assert.deepEqual(suggestedVehicleFields(current,untouched,{...car,vehicle_class:'invalid'}),{model:'vehicle',vehicleClass:''});
+ for(const value of [undefined,null,suggestion])assert.deepEqual(suggestedVehicleFields(current,untouched,value),current);
+ assert.equal(JSON.stringify(car),before);assert.deepEqual(Object.keys(suggestedVehicleFields(current,untouched,car)).sort(),['model','vehicleClass']);
+});
+test('negative Spark prechecks show an advisory with verbatim reasons, never disabling confirmation',()=>{
+ for(const language of ['en','zh']){
+  const value={...suggestion,judgeable:false,reason:'Details'},before=JSON.stringify(value);
+  const html=render(createElement(LanguageProvider,{value:language},createElement(ObjectSuggestionHint,{suggestion:value})));
+  assert.match(html,/data-testid="spark-precheck"/);assert.match(html,/role="status"/);assert.match(html,/precheck-warning/);assert.match(html,/Details/);
+  assert.match(html,language==='zh'?/Muse Spark 認為這支片可能無法判斷：/:/Muse Spark thinks this clip may not be judgeable:/);
+  assert.doesNotMatch(html,/<input|disabled|blocked/);assert.equal(JSON.stringify(value),before);
+ }
+ for(const judgeable of [undefined,null,true])assert.doesNotMatch(render(createElement(ObjectSuggestionHint,{suggestion:{...suggestion,judgeable}})),/data-testid="spark-precheck"/);
+ const empty=render(createElement(ObjectSuggestionHint,{suggestion:{...suggestion,judgeable:false,reason:''}}));
+ assert.match(empty,/may not be judgeable\./);assert.doesNotMatch(empty,/undefined|null/);
 });

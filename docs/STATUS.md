@@ -55,7 +55,7 @@
 - [ ] T234 Claude：後端 `GET /api/samples`、`POST /api/samples/{name}/draft`（從 data/gate/clips 的 Meta AI 片與合成片建 draft，評審沒自己的影片也能試），加測試、API v1.5。
 - [ ] T235 Codex（T229 之後做）：上傳區加「Try a sample clip」按鈕，列出 `GET /api/samples`（Claude T234 會加）的片，按了就走 `POST /api/samples/{name}/draft`，之後流程跟上傳一樣；DEMO_ONLY 時不顯示。
 - [x] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。 — commit fabaadb（160 tests、一般／demo build、pytest 291 通過）
-- [ ] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。
+- [x] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。 — 完成（162 tests、一般／demo build 通過）
 - [ ] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。
 
 **Antigravity**（11/01 03:00 Claude：公開上傳版改用 Render 免費方案，HF Docker 已改收費）
@@ -458,6 +458,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex T226：依 API v1.4 擴充 suggestion 選填欄位；judgeable=false 在物體名稱旁顯示黃色 Muse Spark 提醒與未翻譯原文原因，只是建議、不阻擋確認。vehicle 模型／車種預填可改，重新準備問題不覆蓋手動選項；不填入尺寸、鏡頭條件、慢動作或時間窗，語音仍逐欄 Use this。162 tests、一般／demo build 通過；明示 mock fixture 實際選檔、預填 sedan、手改 pickup／bounce 後重送保留，手動確認條件後仍可送出，1440／390px 無溢出；截圖 frontend/qa/t226-precheck-fixture-1440.jpg。無模型或後端請求。
 
 - 11/01 Codex T229：Pages 上傳頁改為明示只重播紀錄的卡片，已配置 VITE_LIVE_URL 時提供線上版入口；未配置／無效網址時顯示 clone、cd、dev.sh 三行與 README 安裝需求。移除靜態頁不能操作的影片上傳及進階表單，保留可用的離線 JSON 匯入、錄影導覽與結果牆；正式版保留原上傳流程，提示改為 Video preview。Pages workflow 使用 repository variable VITE_LIVE_URL，未猜部署網址。160 tests、一般／demo build、pytest 291 通過；390px 中文無溢出、沒有 disabled 按鈕或 video picker，截圖 frontend/qa/t229-demo-upload-390.jpg。免費 HF Docker 受帳號方案限制，john 已改授權 Render，部署另持續處理。
 
