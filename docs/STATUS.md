@@ -17,7 +17,7 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | T219 真打驗證 Spark 複查 → T220 用最終程式重產 demo 紀錄 |
+| **Muse** | **T220 重跑**（SAM 時間差一格已修） |
 | **Codex** | **T221、T222 已完成並 push**，等 Claude 審查合併；本輪沒有待辦 |
 | **Antigravity** | **T216 凍結前回歸測試（現在可以做了）**；Muse T220 合併後再跑一次 |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
@@ -299,7 +299,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
-- [ ] T220 Muse：track_check 翻盤兩筆 demo（Claude 定奪）：最終程式重跑 10 筆，own_3（consistent→insufficient）和 manus_clip1（inconsistent→insufficient）被 `same_object=false` 翻掉，clip6 拒判原因也從尺寸變成 track_check。`data/demo/` 按規則沒動。新 JSON 在 Muse 那台機器的 /tmp/demo_new。問題：SAM 每次追得不一樣，還是 Spark 看錯？T207 的改判＋清數字是否改成只警告？
+- [x] T220 Muse 卡住的問題 Claude 已定奪（11/01）：原因是 SAM 時間差一格的 bug，不是 Spark 看錯，已在 `meta_client/sam.py` 修好（見日誌）。請照原 T220 規則重跑一次。
 
 - [ ] [T214 Antigravity Lighthouse 發現] 本機 preview 環境中未達 90 之項目及前 3 原因（供 Codex 參考修復）：
 - [ ] [T215 Antigravity 3 分鐘 demo 實測彩排發現與錄影建議]
