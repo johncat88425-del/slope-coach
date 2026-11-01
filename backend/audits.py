@@ -372,12 +372,9 @@ def create_audit(
     frac = len(pts) / max(len(times), 1)
     rec["numbers"]["tracked_fraction"] = frac
     if source == "sam" and frac >= MIN_TRACKED_FRACTION:
+        # A warning only (11/01): the same clip got true on one run and false on the next, so a model answer
+        # must not flip a verdict that one frozen rule set computed. The page shows the warning next to it.
         rec["track_check"] = _track_check(video, rec["points"], object_name)
-        if rec["track_check"] and rec["track_check"]["same_object"] is False:
-            rec["reasons"] = ["Muse Spark re-check: the tracker may have followed a different object; "
-                              "check the overlay or retake with one clear object"]
-            store.audits[aid] = _finish(rec)
-            return rec
     if frac < MIN_TRACKED_FRACTION:
         rec["reasons"] = [f"object tracked in only {frac:.0%} of frames"]
         store.audits[aid] = _finish(rec)
