@@ -52,7 +52,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完）
-- [x] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。 — 前端完成（160 tests、一般／demo build、pytest 291 通過）
+- [x] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。 — commit fabaadb（160 tests、一般／demo build、pytest 291 通過）
 - [ ] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。
 - [ ] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。
 
