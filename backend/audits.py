@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 
+import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -202,7 +203,41 @@ def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, 
 def create_draft(file: UploadFile = File(...)):
     """Step 1 of the Muse interview: store the clip and let the model ask what it needs to know."""
     did = new_id("drf")
-    video = _save_upload(file, UPLOAD_ROOT / "audits" / did)
+    return _start_draft(did, _save_upload(file, UPLOAD_ROOT / "audits" / did))
+
+
+# Clips a visitor can try without their own video (T234). Each label says what the clip is; the
+# verdict is still computed live by the same pipeline, never stored here.
+SAMPLES: dict[str, dict] = {
+    "meta_ai_ball_4": {"path": "data/gate/clips/meta_clip4.mp4", "kind": "generated",
+                       "label": "Ball clip made with the Meta AI app"},
+    "meta_ai_ball_2": {"path": "data/gate/clips/meta_clip2.mp4", "kind": "generated",
+                       "label": "Another Meta AI app ball clip (camera angle changes)"},
+    "synthetic_toss": {"path": "data/samples/synthetic_toss_earth_g.mp4", "kind": "synthetic",
+                       "label": "Synthetic test clip: a 6 cm square thrown under Earth gravity, drawn by code"},
+}
+
+
+@router.get("/api/samples")
+def list_samples():
+    return [{"name": k, "kind": v["kind"], "label": v["label"]} for k, v in SAMPLES.items() if Path(v["path"]).is_file()]
+
+
+@router.post("/api/samples/{name}/draft", response_model=S.AuditDraftOut, status_code=201)
+def create_sample_draft(name: str):
+    """Start the same interview flow from a bundled sample clip."""
+    sample = SAMPLES.get(name)
+    if sample is None or not Path(sample["path"]).is_file():
+        raise HTTPException(404, f"sample {name} not found")
+    did = new_id("drf")
+    d = UPLOAD_ROOT / "audits" / did
+    d.mkdir(parents=True, exist_ok=True)
+    video = d / "video.mp4"
+    shutil.copyfile(sample["path"], video)
+    return _start_draft(did, video)
+
+
+def _start_draft(did: str, video: Path) -> dict:
     store.audit_drafts[did] = str(video)
     try:
         iv = checked_interview(get_hooks().interview_audit(video))

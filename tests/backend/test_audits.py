@@ -445,3 +445,17 @@ def test_object_suggestion_keeps_spark_precheck_fields():
     plain = S.ObjectSuggestion(source="m", object_name="orange ball")
     assert plain.assumed_model is None and plain.judgeable is None and plain.vehicle_class is None
     assert "vehicle_class" in S.QuestionField.__args__
+
+
+def test_sample_clips_start_the_same_interview(tmp_path):
+    """T234: visitors without a clip can start from a bundled sample; unknown names are 404."""
+    from fastapi.testclient import TestClient
+    from backend.main import app
+    c = TestClient(app)
+    names = {s["name"]: s for s in c.get("/api/samples").json()}
+    assert {"meta_ai_ball_4", "synthetic_toss"} <= set(names)
+    assert names["synthetic_toss"]["kind"] == "synthetic"
+    r = c.post("/api/samples/synthetic_toss/draft")
+    assert r.status_code == 201 and r.json()["draft_id"].startswith("drf") and r.json()["interview"]["questions"]
+    assert c.post("/api/samples/../../etc/draft").status_code in (404, 405)
+    assert c.post("/api/samples/nope/draft").status_code == 404
