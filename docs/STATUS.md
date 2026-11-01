@@ -19,7 +19,7 @@
 | --- | --- |
 | **Muse** | 全部完成 |
 | **Codex** | 全部完成 |
-| **Antigravity** | **T216 凍結前回歸測試（現在可以做了）**；Muse T220 合併後再跑一次 |
+| **Antigravity** | 全部完成（T216 凍結前回歸測試含 Muse T220 合併後第二輪全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -50,7 +50,8 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Muse**（照順序做）
-- [ ] T223 Muse：（11/01 Claude，john 要求把紅圈慢一格修好）**先做實驗，確認原因再改程式。** Claude 的假設：SAM 回傳的 `frame_index` 是從「第一次找到物體的那一格」開始算 0，不是從影片第 0 格。證據：manus_clip1 窗口有 20 格，SAM 只回 19 個點（第 0 格球在畫面最上緣被切到，SAM 沒找到），而且整條軌跡剛好慢一格；其他從第 0 格就看得到球的影片（meta_clip1 35/35、clip5、clip6）都沒有偏。**實驗（上限 $0.05，不用真實影片）**：用 ffmpeg 或 numpy 產生兩支 15 fps、640×480、2 秒的白底影片，一顆直徑 40 px 的橘色圓從左往右等速移動（每格 10 px）：A 片第 0 格就有球；B 片前 5 格沒有球（第 5 格才出現）。各跑一次 `sam.track(clip, "orange ball")`，記下原始回傳的每個 `frame_index` 和中心 x。如果 B 片第一個點的 frame_index 是 0、x 卻是第 5 格的位置，假設成立。**成立的話**：看 SAM 回傳裡有沒有表示起始格的欄位（例如 prompt frame、start frame）；有就用它校正 `t_s`；沒有就在 `meta_client/sam.py` 用 `n_frames` 和第一個偵測的位置推算，並加單元測試（A、B 兩種情況）。**不成立的話**：不要改程式，把兩支的原始結果寫進 STATUS 給 Claude。做完用 manus_clip1 和 own_3 各跑一次稽核，看複查是否變成 true。push `muse/T223-sam-start-frame`。
+- [ ] T224 Muse（john 11/01 要求「把複查做好一點」）：修 Spark 複查誤報（own_3 圈在球上 Spark 仍答 false；manus 圈落後約一格）。一套規則，不准為單支片調參。(1) `track_check.py` 改送**放大裁切**：每個時刻從 480 寬影格以追蹤點為中心裁 160×160（邊界用邊緣補齊），放大 2× 成 320×320 再畫紅圈（半徑跟著放大）；(2) prompt 改成**每張圖各答一次**「紅圈裡或緊貼紅圈的是不是 {name}」，schema 改 `{"answers":[bool×4], "note"}`；程式算 `same_object = true 的張數 ≥ 3`；回傳形狀不變 `{same_object, note, source}`（前端不用改），note 規則照舊；(3) 測試：邊界裁切、多數決（2/4→false、3/4→true）、mock Spark；(4) 新 `scripts/refresh_track_check.py`：讀 data/demo/*.json 存的 points，只重跑 check_track、只覆寫 `track_check` 欄位，其他欄位必須逐字不變（程式自己比對，不同就中止），總花費上限 $0.15；(5) **反向對照**：own_2 的 points 整條平移 120 px（圈到背景）必須得 false，否則這個改法無效、不要 commit 新 JSON；(6) 結果表寫進日誌：10 筆新舊 same_object 對照＋反向對照結果。目標 own_3、manus 轉 true 且原本 8 筆仍 true；做不到就照實寫，不要改門檻硬湊。
+- [x] T223 Muse：commit 9dfbcab。實驗做完：**假設不成立，不改程式**。B 片（前 5 格無球）第一個點 frame_index=5、x=110.5（就是第 5 格位置）——SAM 回的是絕對格號，沒有重編。附帶發現：全平面形追不到（A／B 零命中），加了立體明暗才 30／30。驗證稽核：manus 不一致、own_3 一致（警告制正確未翻盤），但兩筆複查仍是 false；把 own_3 的圈圖一張張看：4 張圈都在球上——是 Spark 看錯，不是追錯。詳見日誌。實驗 $0.050（上限 $0.05），驗證 $0.095。 Claude 的假設：SAM 回傳的 `frame_index` 是從「第一次找到物體的那一格」開始算 0，不是從影片第 0 格。證據：manus_clip1 窗口有 20 格，SAM 只回 19 個點（第 0 格球在畫面最上緣被切到，SAM 沒找到），而且整條軌跡剛好慢一格；其他從第 0 格就看得到球的影片（meta_clip1 35/35、clip5、clip6）都沒有偏。**實驗（上限 $0.05，不用真實影片）**：用 ffmpeg 或 numpy 產生兩支 15 fps、640×480、2 秒的白底影片，一顆直徑 40 px 的橘色圓從左往右等速移動（每格 10 px）：A 片第 0 格就有球；B 片前 5 格沒有球（第 5 格才出現）。各跑一次 `sam.track(clip, "orange ball")`，記下原始回傳的每個 `frame_index` 和中心 x。如果 B 片第一個點的 frame_index 是 0、x 卻是第 5 格的位置，假設成立。**成立的話**：看 SAM 回傳裡有沒有表示起始格的欄位（例如 prompt frame、start frame）；有就用它校正 `t_s`；沒有就在 `meta_client/sam.py` 用 `n_frames` 和第一個偵測的位置推算，並加單元測試（A、B 兩種情況）。**不成立的話**：不要改程式，把兩支的原始結果寫進 STATUS 給 Claude。做完用 manus_clip1 和 own_3 各跑一次稽核，看複查是否變成 true。push `muse/T223-sam-start-frame`。
 - [x] T219 Muse：commit d756205。修好後真打驗證通過：own_2 一致＋clip4 不一致，兩筆 `track_check` 都是 `{same_object: true, note 無數字, source: model}`；錯名對照（own_2 配 `red umbrella`）SAM 什麼都沒追到，後端退回顏色追蹤只追到 6% 而拒判，`track_check` 為 `None`（只跑 sam 軌，正確）。$0.114（上限 $0.15）。用 own_2 和 meta_clip4 各跑一次 `POST /api/audits`（SAM 追蹤），確認結果裡 `track_check` 是 `{same_object: true, note: ..., source: model}`，不是 `null`；note 沒有數字。再故意把 `object_name` 寫成畫面裡沒有的東西（例如 `red umbrella`）跑一次 own_2，記下 SAM 和 Spark 複查各回傳什麼（不准挑結果）。上限 $0.15。結果寫進 STATUS 日誌，push `muse/T219-verify-check`。
 - [x] T220 Muse：commit 4d22250（分支 `muse/T220-demo-refresh-3`）。offset 歸零＋複查改警告後第三次重跑：10 筆判定全同、g 漂最大 0.149%，按規則 (3) commit 新 JSON。10 筆全有 `track_check`（其中 own_3、manus 為 false 警告，正確未翻盤）、3 筆 `retake_tips`、4 筆 `what_would_fit`。$0.446（上限 $0.50），累計 $4.165。 — ⛔ 第二次重跑（11/01，commit fb01b9e，分支 `muse/T220-demo-refresh-2`）：SAM_FRAME_OFFSET=1 修完重跑，更糟——4 筆翻盤（own_1／2／3 全滅＋clip5）＋clip4 g 漂 2.7%，按規則停下，`data/demo/` 未動。詳見日誌。$0.399。
 - [x] T203 Muse：commit af69bb6。新 `meta_client/track_check.py`：軌跡平均挑 4 個時刻，480 寬影格追蹤處畫紅圈（numpy 畫圈＋ffmpeg 編 PNG，無 PIL），問 Spark 圈的是不是同一個物體；回 `{"same_object", "note", "source"}`，note 嚴禁數字（後端檢查放行 10 以下整數，這裡額外擋）＋禁字；重試 2 次，再敗回 `None`；花費計 tracker。hooks 加 `track_check`，無金鑰回 `None`。點格式走 AuditOut 的 480 框 `(t,x,y)`，少於 4 點回 `None`。8 個 mock 測試（任務 5 個＋點太少＋無金鑰＋缺檔），pytest 270 全過，未真打 API。後端接線等 Claude T207。新增 `meta_client/track_check.py` 的 `check_track(video_path, points, object_name)`：從追蹤點裡平均挑 4 個時間點，各截一張影格並在追蹤位置畫圓圈，送給 Spark 問「4 張圖圈起來的是不是同一個 {object_name}？」。只准回傳 JSON `{"same_object": true/false, "note": "一句話"}`；`note` 不准有數字和禁用字眼；失敗最多重試 2 次，再失敗就回 `None`（代表沒檢查）。花費計入 cost tracker。在 `meta_client/hooks.py` 加 `track_check` hook，沒有金鑰時回 `None`。單元測試至少 5 個（同物體、換物體、不是 JSON、note 有數字、逾時），不真打 API。**後端接線由 Claude T207 做，你不要改 backend/。** push `muse/T203-track-check`。
@@ -104,22 +105,22 @@
 - [x] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測完成：使用 iPhone 14（390×844）與 Pixel 7（412×915）雙機型模擬，完整走過上傳到結果頁（real_own_2 一致與 meta_clip4 不一致雙案），驗證無橫向捲動、按鈕高度 ≥ 44px、卡片點擊展開與二次收起、Details 展開查看。共 9 張截圖存於 data/e2e/T198/，均 < 300 KB（36.9–94.2 KB）且 MD5 互異。 — commit 60b10c3，PR #117
 - [x] T214 Antigravity：（10/31 Claude）Lighthouse 量測完成（含線上 GitHub Pages 與本機 build preview 雙平台、桌面與手機各跑一次，報表存於 `data/lighthouse/`）：線上 Pages 手機 Performance 91 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）；線上 Pages 桌面 Performance 100 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）。本機 preview 手機 Performance 78 / SEO 83、桌面 SEO 83，低於 90 之主因（LCP 延遲、缺 meta description、本機無 robots.txt）已登錄進「缺什麼」待 Codex 處理。 — commit 9b86ed7
 - [x] T215 Antigravity：（10/31 Claude）照最終 demo 腳本完整彩排 8 個分段完成（腳本存於 `scripts/e2e_t215_rehearsal.mjs`，包含真打 Muse Spark 偵訊生成 15.6s 與 SAM 3.1 / Numbers by code 標籤核驗）：8 張分段截圖存於 `data/e2e/T215/`（全數 < 300 KB，MD5 互異），完整分段量測報表存於 `data/e2e/T215/rehearsal_summary.json`。互動操作總計 48.0s（預算 180s 內充裕）；若加上 3 支影片現場實跑 SAM 追蹤之耗時（128s）總長度將達 176s，逼近 3 分鐘上限。等太久之處理與按鈕尋找等 4 項剪輯建議已記錄進「缺什麼」供 john 錄影參考。 — commit 0131411
-- [x] T216 Antigravity：（10/31 Claude，11/02 晚上凍結前）全部合併後的回歸測試完成：pytest 284 pass、npm test 156 pass、一般 build 與靜態 build 均 pass、雙 e2e 腳本全 pass、Pages 網站 HTTP 200 打得開、四個頁面 1440／390 px 截圖共 8 張（存於 `data/e2e/T216/`，均 < 300 KB 且 MD5 互異）。PASS／FAIL 總表已更新於下方。Muse T220 合併後將再跑一次。 — commit c353f4a
+- [x] T216 Antigravity：（10/31 Claude，11/02 晚上凍結前）全部合併後的回歸測試完成（兩輪全過）：第一輪針對 52befc9（commit c353f4a）；第二輪針對 Muse T220 最終 demo 合併後（origin/main 86de770）：pytest 284 pass（11.32s）、npm test 158 pass（1.46s）、一般 build (93.68 KB) 與展示 build (92.57 KB) 均通過 < 250 KB 限制、雙 e2e 腳本全 pass、Pages 網站 HTTP 200 OK、4 頁 1440／390 px 共 8 張截圖（存於 `data/e2e/T216/`，37.5–187.7 KB，均 < 300 KB 且 MD5 互異）。PASS／FAIL 總表已更新於下方。 — commit bfc12c4
 
-#### T216 凍結前回歸測試 PASS／FAIL 總表（10/31 20:30 執行）
+#### T216 凍結前回歸測試 PASS／FAIL 總表（10/31 21:40 執行，Muse T220 合併後第二輪最終回歸）
 
 | 項目 | 測試內容與指令 | 結果 | 詳細數據 / 備註 |
 | :--- | :--- | :---: | :--- |
-| **後端測試** | `python -m pytest` | **PASS** | **284 passed** (11.80s), 0 fail |
-| **前端測試** | `cd frontend && npm test` | **PASS** | **156 passed** (1.52s), 0 fail |
-| **前端標準建置** | `cd frontend && npm run build` | **PASS** | Bundle 93.6 KB（限制 250 KB 內） |
-| **前端展示建置** | `VITE_DEMO_ONLY=1 npm run build` | **PASS** | Bundle 92.5 KB，純靜態離線模式正常 |
+| **後端測試** | `python -m pytest` | **PASS** | **284 passed** (11.32s), 0 fail |
+| **前端測試** | `cd frontend && npm test` | **PASS** | **158 passed** (1.46s), 0 fail (含 Codex T221 原文標籤測試) |
+| **前端標準建置** | `cd frontend && npm run build` | **PASS** | Bundle 93.68 KB（限制 250 KB 內） |
+| **前端展示建置** | `VITE_DEMO_ONLY=1 npm run build` | **PASS** | Bundle 92.57 KB，純靜態離線模式正常 |
 | **斜坡 E2E 腳本** | `python scripts/e2e_slope_demo.py` | **PASS** | PUSHED, WRONG_HEIGHT, OK, OCCLUDED 四案全過 |
 | **稽核 E2E 腳本** | `python scripts/e2e_audit.py` | **PASS** | Case A (g=9.19 地球)、Case B (g=2.32 月球) 均通過 |
 | **Pages 網站連線** | `curl -I https://johncat88425-del.github.io/slope-coach/` | **PASS** | **HTTP/2 200 OK**，靜態網站正常對外提供服務 |
-| **4 頁 1440px 截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（50.7–186.9 KB，均 < 300 KB，MD5 互異） |
-| **4 頁 390px 手機截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（37.5–94.4 KB，均 < 300 KB，MD5 互異） |
-| **T210 / T218 新功能** | Results 第四張 Cars 卡、外露分享卡按鈕、Spark 複查標籤 | **PASS** | 截圖與 DOM 檢驗均確認正確渲染且無遮擋 |
+| **4 頁 1440px 截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（50.7–187.7 KB，均 < 300 KB，MD5 互異） |
+| **4 頁 390px 手機截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（37.5–92.1 KB，均 < 300 KB，MD5 互異） |
+| **T210 / T218 / T220 / T221 功能** | Results 第四張 Cars 卡、外露分享卡按鈕、Spark 複查警告/提示、英文原文標籤 | **PASS** | 截圖與 DOM 檢驗均確認正確渲染，離線 demo 完整呈現新欄位 |
 
 - [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
 - [x] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖完成（新增 scripts/e2e_ghost_and_physics_card.mjs、tests/backend/test_e2e_ghost_card.py，產出桌面與 390px 手機截圖存於 docs/screens/）— commit 00036aa
@@ -438,6 +439,10 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/01 Claude 合併 Muse T223（假設不成立，sam.py 不動）與 Antigravity T216 第二輪回歸（全 PASS）。開 T224：複查改放大裁切＋逐張判斷＋多數決，附只更新 track_check 的刷新腳本與反向對照。
+
+- 11/01 Muse 完成 T223（分支 muse/T223-sam-start-frame，commit 9dfbcab）：SAM 起始格實驗。做了 15fps／640×480／2 秒白底橘球片（每格 10px）：A 第 0 格有球、B 前 5 格無球。結果：平面圓形完全追不到（A、B 及換 prompt `ball` 皆零命中，3×$0.01）；改畫立體明暗球後 C 片 30／30（frame 0→x=60.5，位置全對）；關鍵 D 片（明暗球、第 5 格出現）25 個點，**第一個點 frame=5、x=110.5——絕對格號，假設不成立，不改 `sam.py`**（wire 原文無起始格欄位，只有 `<Nf>` 絕對格號）。驗證稽核：manus 不一致 g=2.63、own_3 一致（$0.045＋$0.041），兩筆複查仍 false。但把 own_3 的 4 張圈圖逐張看：圈都在球上；拿同一組點直打 track_check 還是 false（$0.009）——**是 Spark 看錯（小球＋沙發背景太嚴），不是追錯**。警告制是對的；若要再修，應放寬複查提示詞或圈加大，不要動時間映射。實驗 $0.050（到頂），驗證 $0.095，累計 $4.310。
+- 10/31 21:40 Antigravity 完成 T216 第二次回歸測試（分支 antigravity/T216-final-2）：針對 Muse T220 合併後之最新 origin/main（86de770）執行全量回歸。pytest 284 全過（11.32s）；frontend npm test 158 全過（1.46s）；標準建置（93.68 KB）與 demo 展示建置（92.57 KB）均通過且遠小於 250 KB 上限；python scripts/e2e_slope_demo.py（4 案）與 scripts/e2e_audit.py（2 案）全數通過；線上 GitHub Pages 確認 HTTP/2 200 OK。重新在 preview 伺服器截取 8 張端到端截圖（Home, Results Wall, How It Works, Audit 頁面在 1440px 及 390px Viewport），存於 `data/e2e/T216/`，檔案大小介於 37.5 KB 至 187.7 KB，全數通過 < 300 KB 限制且 8 張 MD5 互異。PASS/FAIL 總表已更新於 STATUS。Antigravity 待辦全部結束。
 
 - 11/01 02:40 Claude：核對並合併 Muse T220 第三次重跑：10 筆判定全部和原本相同，g 最大差 0.15%（own_1 9.306→9.302、own_3 8.680→8.684），if_earth 數字不變；新欄位都在（8 筆複查 true、3 筆重拍建議、4 筆「要怎樣才會一致」，例如 meta_clip4「放慢 8.29 倍，或球有 16.48 公尺寬才符合地球」，我手算 √(9.81/0.143)=8.28 吻合）。own_3 和 manus_clip1 複查是 false，現在只顯示警告。**已知限制**：manus_clip1（24 fps 原片）的紅圈仍比球慢一格，自拍片（30/60 fps）不會；只影響複查紅圈，不影響擬合和判定。凍結前不再追，寫進限制。Antigravity 請再跑一次 T216。
 
@@ -505,6 +510,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 11/01 | T220：最終程式重跑 10 筆 demo（兩筆翻盤停下，未 commit） | 0.439 | 3.206（＋未合併 T219 $0.114，合起來約 $3.320） |
 | 11/01 | T220 重跑（offset 修完：4 筆翻盤＋g 超標，停下，未 commit） | 0.399 | 3.718 |
 | 11/01 | T220 三跑（offset 歸零：10 筆全同，commit 新 JSON） | 0.446 | 4.165 |
+| 11/01 | T223：SAM 起始格實驗（5 次 $0.050）＋驗證稽核 2 次＋圈圖直打（$0.095） | 0.145 | 4.310 |
 - 10/31 Muse 完成 T189（分支 muse/T189-live-check，commit dd165b7）：`scripts/demo_live_check.py` 跑完 4 案全 PASS（自拍一致 g=9.44、clip4 不一致 g=0.14、clip2 拒判、T184 最好的車 0.47 秒拒判；source 標籤全對）。$0.281，pytest 245 全過。Muse 待辦全部結束。
 - 10/31 Antigravity 完成 T197（分支 antigravity/T197-fresh-install）：在全新目錄從零 clone 依 README 步驟驗證。git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 依賴確認；npm ci 1.12s、npm test 126 pass (3.16s)；pytest 244 pass (17.44s)；scripts/e2e_slope_demo.py 與 scripts/e2e_audit.py 均通過。發現 3 項問題（python3.11 ensurepip 遇 truststore 異常、docker compose 缺前置需求、dev.sh 寫死 python3）已寫進「缺什麼」待 Claude 修改。下一項 T196 待 Codex T182 合併。
 - 10/31 Codex T191：手機與平板 Results／How 單欄；卡片點一下展開、再次點擊收起，窄螢幕不啟用 hover 鎖定。瀏覽器實測 390／768px：home、wall、how、audit、compare、demo、saved example 與五個 coach 頁，頁面 scrollWidth 不超過 viewport，控制項／section／article 無溢出；手機二次點擊 evidence 高度為 0。新增版面契約與 disclosure 測試（Node 無排版引擎，幾何以瀏覽器實測）；npm 130 tests、一般／demo build 通過。
