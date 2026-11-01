@@ -419,6 +419,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 11/01 01:30 Claude：**找到 T220 判定改變的原因：SAM 的時間差一格。** SAM 回傳的第 k 格，其實是我們上傳的 15 fps 影片的第 k+1 格（manus_clip1：用第 k 格比對，追蹤點和球差 18 px；用 k+1 格比對只差 0.7 px）。所以 Spark 複查的紅圈畫在球「下一刻」的位置，快速移動的球就被圈到空的牆或沙發上，Spark 才會說「不是同一個物體」。修正：`meta_client/sam.py` 的 `SAM_FRAME_OFFSET = 1`。整條軌跡平移固定時間，**擬合出的 g 不會變**，所以之前的判定和數字都還成立。T207「Spark 說 false 就拒判」維持不變，這次的 false 是 bug，不是規則太兇。Muse 請在這個修正合併後重跑 T220。
+
 - 11/01 00:10 Claude：合併 Muse T206（含 track_check 上線 bug 修正）、Codex T210、T218。pytest 284、npm test 156、兩個 build 過。排 Muse T219–T220、Codex T221–T222；Antigravity T216 可以開始。Meta API 累計約 $2.77。
 
 - 10/31 Muse 完成 T206（分支 muse/T206-rehearsal，commit d88697a）：最終彩排 4 案（TestClient＋真 API，uvicorn 照樣 EPERM）。own_2：偵訊 15.7 秒 $0.029→稽核 34.8 秒 $0.042，一致 g=9.45，sam，說明＋標題 model。clip4：偵訊 16.5 秒 $0.023→稽核 45.8 秒 $0.045，不一致 g=0.14，what_would_fit source=model；子步驟直打：SAM 16.6 秒 $0.010（38/38 格）、說明 8.6 秒 $0.010、複查見下、擬合 0.000 秒。clip2：偵訊 13.3 秒 $0.020→稽核 25.6 秒 $0.030，拒判（尺寸 -48%），retake_tips 兩條英文。合成車（現畫 car_50kmh）：偵訊 22.8 秒 $0.025→稽核 21.5 秒 $0.031，一致但 track=frame_diff（SAM 在黑方塊上 0/17 格，直打 3.7 秒 $0.010 確認），說明＋標題 model。給 john 的節奏：每案 35–60 秒，偵訊約 15–23 秒、稽核約 22–46 秒。**bug（同分支修好）**：T203 的 `_frame_rgb` 用了 text-mode 管道，真跑第一分散就 UnicodeDecodeError，本輪四案的 audit 內 track_check 全是 `None`（後端有接住，沒炸）。修：byte-mode subprocess＋`image2pipe` muxer（這台 ffmpeg 沒有 `png` muxer），加真 ffmpeg 回歸測試（不打 API），pytest 284 全過；修完直打驗證：same_object=True、5.0 秒、$0.004。$0.288（上限 $0.40），累計 $2.767。Muse 待辦全部結束。
