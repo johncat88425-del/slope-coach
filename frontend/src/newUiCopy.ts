@@ -1,4 +1,8 @@
 export const newUiCopy:Record<string,string>={
+"Upload a video → Prepare questions → Answer → Confirm time window → Check":"上傳影片 → 準備問題 → 回答 → 確認時間窗 → 檢查",
+"Offline demo: import saved JSON":"離線 demo：匯入已儲存的 JSON",
+"Advanced: check without the interview":"進階：略過問答直接檢查",
+"Optional voice answer":"選用語音回答",
 "Arrow keys move a handle by 0.01 seconds. Home and End select the boundaries. Press Enter in a time field to confirm a valid window.":"方向鍵每次移動 0.01 秒；Home／End 移至邊界。在時間欄位按 Enter 可確認有效時間窗。",
   "Select and confirm a time window": "選擇並確認時間窗",
   "Cannot preview this video. Choose a supported video encoding.": "無法預覽影片，請選擇支援的影片編碼。",
