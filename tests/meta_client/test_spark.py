@@ -457,6 +457,35 @@ def test_suggest_object_rejects_bad_model(tmp_path, monkeypatch):
         spark.suggest_object(clip)
 
 
+def test_suggest_object_no_mover_not_judgeable(tmp_path, monkeypatch):
+    payload = {"object_name": "green hill", "camera_looks_static": True,
+               "reason": "only landscape visible with no moving object to check",
+               "assumed_model": None, "judgeable": False,
+               "vehicle_class": "unknown"}
+    clip, _ = _object_setup(tmp_path, monkeypatch, [payload])
+    out = spark.suggest_object(clip)
+    assert out["judgeable"] is False
+
+
+def test_suggest_prompt_has_general_precheck_rule():
+    # T236: one rule for all clips — no clear lone mover means not
+    # judgeable; balls, cars, and pendulums are explicitly protected.
+    prompt = spark.OBJECT_PROMPT
+    assert "no single clear object moves on its own" in prompt
+    for kind in ("Balls", "cars", "pendulums"):
+        assert kind in prompt
+
+
+def test_suggest_object_walker_not_judgeable(tmp_path, monkeypatch):
+    payload = {"object_name": "dark figure", "camera_looks_static": True,
+               "reason": "a person walking is never the checked object",
+               "assumed_model": None, "judgeable": False,
+               "vehicle_class": "unknown"}
+    clip, _ = _object_setup(tmp_path, monkeypatch, [payload])
+    out = spark.suggest_object(clip)
+    assert out["judgeable"] is False
+
+
 def test_suggest_object_missing_file(tmp_path, monkeypatch):
     monkeypatch.setattr(spark, "get_tracker", lambda: _tracker(tmp_path))
     with pytest.raises(MediaError, match="not found"):
