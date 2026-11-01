@@ -4,10 +4,12 @@ from __future__ import annotations
 import dataclasses
 import math
 import os
+import time
+from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from physics.baseline import BaselineEstimate, estimate_baseline
@@ -57,7 +59,39 @@ async def persist_after_writes(request, call_next):
     return response
 
 
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["*"], allow_headers=["*"])
+# Extra origins (comma separated) for a hosted frontend, e.g. the GitHub Pages site (T228).
+_ORIGINS = ["http://localhost:5173"] + [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=_ORIGINS, allow_methods=["*"], allow_headers=["*"])
+
+# Public demo guard (T228). With PUBLIC_DEMO=1 each visitor IP may start a limited number of paid
+# steps (new drafts and audits) per hour, and uploads are capped smaller. The spend ceiling still applies
+# (set SPEND_LIMIT_USD on the host; the image starts with an empty cost log).
+PUBLIC_DEMO = os.environ.get("PUBLIC_DEMO") == "1"
+PUBLIC_MAX_PER_HOUR = int(os.environ.get("PUBLIC_MAX_PER_HOUR", "10"))
+PUBLIC_MAX_UPLOAD_BYTES = int(os.environ.get("PUBLIC_MAX_UPLOAD_MB", "80")) * 1024 * 1024
+_PAID_PATHS = ("/api/audit-drafts", "/api/audits")
+_hits: dict[str, list[float]] = {}
+
+
+def _client_ip(request) -> str:
+    fwd = request.headers.get("x-forwarded-for", "")
+    return fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "?")
+
+
+@app.middleware("http")
+async def public_demo_guard(request, call_next):
+    if PUBLIC_DEMO and request.method == "POST" and request.url.path in _PAID_PATHS:
+        size = request.headers.get("content-length")
+        if size and size.isdigit() and int(size) > PUBLIC_MAX_UPLOAD_BYTES:
+            return JSONResponse({"detail": f"This public demo accepts uploads up to {PUBLIC_MAX_UPLOAD_BYTES // 1048576} MB. "
+                                           "Trim the clip to the few seconds that matter."}, status_code=413)
+        now = time.time()
+        recent = [t for t in _hits.get(_client_ip(request), []) if now - t < 3600]
+        if len(recent) >= PUBLIC_MAX_PER_HOUR:
+            return JSONResponse({"detail": "This public demo allows a few checks per visitor each hour. "
+                                           "Please try again later, or run it locally (see README)."}, status_code=429)
+        _hits[_client_ip(request)] = recent + [now]
+    return await call_next(request)
 
 # Uploaded videos and photos, served as /media/<eid>/<file>. File names are generated server-side.
 UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
@@ -404,3 +438,19 @@ def spend():
 
 def _raise(code: int, msg: str):
     raise HTTPException(code, msg)
+
+
+# Serve the built frontend from the same origin when it exists (T228: one public URL, no CORS).
+# Registered last so every /api and /media route above wins.
+_DIST = Path(os.environ.get("FRONTEND_DIST", "frontend/dist"))
+if (_DIST / "index.html").is_file():
+    app.mount("/assets", StaticFiles(directory=_DIST / "assets"), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def frontend(path: str):
+        target = (_DIST / path).resolve()
+        if path and target.is_file() and _DIST.resolve() in target.parents:
+            return FileResponse(target)
+        if path.startswith(("api/", "media/")) or "." in path.rsplit("/", 1)[-1]:
+            raise HTTPException(404, "not found")  # a missing file is a 404, not the app shell
+        return FileResponse(_DIST / "index.html")

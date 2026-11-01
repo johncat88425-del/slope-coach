@@ -50,8 +50,12 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完）
+- [ ] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。
 - [ ] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。
 - [ ] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。
+
+**Antigravity**
+- [ ] T230 Antigravity：john 建好 Hugging Face Space 後（網址會寫在這行），用內建瀏覽器在**線上網址**跑完 own_2／meta_clip4／meta_clip2 三支（Meta clip 可用 data/gate 的），截圖、記每支秒數、確認一致／不一致／拒判跟 data/demo 相同；再測同一 IP 第 11 次送出得到 429 提示。結果寫日誌。
 
 **Muse**（照順序做）
 - [x] T224 Muse：commit acd7955。複查改放大裁切（160 框→2×→紅圈 r=28）＋逐張四答＋3/4 多數決，回傳形狀不變；新 `scripts/refresh_track_check.py` 只寫 `track_check`（程式自驗他欄逐字相同，source 照後端形存 `model`）。10 筆全轉 true（含原 false 的 own_3、manus，原 8 true 全留住）；反向對照（own_2 平移 120px）得 false，方法有效，照規則 commit。同一套規則、無單支調參。pytest 288 全過。$0.087（上限 $0.15），累計 $4.396。一套規則，不准為單支片調參。(1) `track_check.py` 改送**放大裁切**：每個時刻從 480 寬影格以追蹤點為中心裁 160×160（邊界用邊緣補齊），放大 2× 成 320×320 再畫紅圈（半徑跟著放大）；(2) prompt 改成**每張圖各答一次**「紅圈裡或緊貼紅圈的是不是 {name}」，schema 改 `{"answers":[bool×4], "note"}`；程式算 `same_object = true 的張數 ≥ 3`；回傳形狀不變 `{same_object, note, source}`（前端不用改），note 規則照舊；(3) 測試：邊界裁切、多數決（2/4→false、3/4→true）、mock Spark；(4) 新 `scripts/refresh_track_check.py`：讀 data/demo/*.json 存的 points，只重跑 check_track、只覆寫 `track_check` 欄位，其他欄位必須逐字不變（程式自己比對，不同就中止），總花費上限 $0.15；(5) **反向對照**：own_2 的 points 整條平移 120 px（圈到背景）必須得 false，否則這個改法無效、不要 commit 新 JSON；(6) 結果表寫進日誌：10 筆新舊 same_object 對照＋反向對照結果。目標 own_3、manus 轉 true 且原本 8 筆仍 true；做不到就照實寫，不要改門檻硬湊。
@@ -443,6 +447,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/01 Claude T228（john 要求評審能在線上自己上傳）：後端可同網址提供前端（`FRONTEND_DIST`，缺檔回 404）、`ALLOWED_ORIGINS`、公開模式 `PUBLIC_DEMO=1`（每 IP 每小時 10 次付費步驟、上傳 80 MB、主機自己的花費上限 `SPEND_LIMIT_USD=25`）；Dockerfile 補上漏掉的 `meta_client/`（之前容器只會跑 mock）；新 `deploy/huggingface/`（Space 用 Dockerfile＋README）。本機實測：同網址開頁、選影片、Prepare questions 正常。部署要 john 自己建 Space 並把金鑰設成 Space secret（金鑰不能經過任何 AI）。開 Codex T229、Antigravity T230。
 - 11/01 Claude T225：Spark 物體預檢的 `judgeable`／`assumed_model`／`vehicle_class` 以前被後端靜默丟掉，現在接進 `ObjectSuggestion`（API v1.4），加測試；開 Codex T226（上傳頁顯示）、T227（手機 LCP）。
 - 11/01 Claude 審查合併 Muse T224：data/demo 10 筆除 track_check 外逐欄相同（程式比對）；親自畫 manus 四張裁切圖：前三張紅圈貼著球、第四張圈在球前方空白處（manus 這支片 SAM 點本來就超前約一格，原因不明，不影響 g），3/4 過所以 true。結論：新複查能抓「追到別的東西／背景」（反向對照 false），但不會抓「差一格」的小偏移——這是設計上的容忍度，寫在限制裡。
 
