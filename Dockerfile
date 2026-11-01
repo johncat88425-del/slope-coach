@@ -32,6 +32,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application modules
 COPY backend/ ./backend/
 COPY physics/ ./physics/
+COPY meta_client/ ./meta_client/
 COPY data/ ./data/
 COPY scripts/ ./scripts/
 
@@ -45,4 +46,5 @@ ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
 
 # Default command starts FastAPI backend
-CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# PORT can be overridden by the host (Hugging Face Spaces, Render, ...). The key comes only from the host's secret settings.
+CMD ["sh", "-c", "python -m uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips=*"]
