@@ -161,10 +161,10 @@ def _transcode_to_15fps(
     return dst
 
 
-# SAM's frame_index k is frame k + 1 of the 15 fps clip we upload. Found 11/01 by matching SAM points against
-# the decoded transcode (manus_clip1: median 18 px off at k, 0.7 px at k + 1), which also put Spark's re-check
-# rings beside fast objects. A constant time shift leaves the fitted acceleration (g) unchanged.
-SAM_FRAME_OFFSET = 1
+# SAM's frame_index k is frame k of the 15 fps clip we upload. An offset of 1 was tried on 11/01 from one old
+# record (manus_clip1) and reverted the same day: Muse's live rerun showed the rings then lagged one frame
+# behind fast balls on the own clips, and the shifted window edge moved meta_clip4's g by 2.7%.
+SAM_FRAME_OFFSET = 0
 
 _BOX_SIZE_RE = re.compile(r"<\|box;[^|]*?w=(\d+);h=(\d+)")
 
