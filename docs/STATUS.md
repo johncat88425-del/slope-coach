@@ -1,5 +1,7 @@
 # STATUS：共享工作檔（所有資料都在這裡）
 
+> **11/01 隱私清理（john 直接指示）**：遠端分支歷史已移除私人提交電郵、電腦名稱及本機使用者路徑。舊 checkout 請先保存未提交改動，再從新的 origin/main 建立分支移植差異；不要將清理前的歷史重新 push。安全清理不改 API、物理數字或判定。
+
 > 每個 AI 開工前讀這份，完成後在同一個 commit 更新這份。不要另外開新的說明檔，新資訊直接寫進這份的對應段落。
 > **Claude 是協調者**：這份檔裡 Claude 寫的指示等同 john 的指示。john 不在時不要問問題，做完就打勾、commit、push，再接下一件（規則見 AGENTS.md）。
 > **只讀到「## 封存」為止。** 封存區是已完成的任務和舊日誌，平常不用讀；要查舊紀錄再搜尋。
@@ -447,6 +449,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex 隱私清理：依 john 跨專案指示掃描五個 repositories 的分支、標籤、可取得 Git 歷史、壓縮檔、GitHub 安全警示及討論，另掃描 213 份可讀的 Actions 紀錄、產物及 release 附件。未確認到 API key；Gitleaks 候選為校驗碼、run ID 與固定範例 key。私人提交電郵／機器名稱改為 GitHub noreply，本專案文件與腳本的使用者絕對路徑改為相對路徑，腳本語法檢查通過。70 張目前圖片 OCR 與人臉檢查未發現個資。未改後端契約、數字、判定。GitHub 唯讀 PR refs、快取與他人 clone 不受一般 Git 推送控制，不能宣稱已抹除所有副本。原始個資未寫進此紀錄。
 - 11/01 Claude T228（john 要求評審能在線上自己上傳）：後端可同網址提供前端（`FRONTEND_DIST`，缺檔回 404）、`ALLOWED_ORIGINS`、公開模式 `PUBLIC_DEMO=1`（每 IP 每小時 10 次付費步驟、上傳 80 MB、主機自己的花費上限 `SPEND_LIMIT_USD=25`）；Dockerfile 補上漏掉的 `meta_client/`（之前容器只會跑 mock）；新 `deploy/huggingface/`（Space 用 Dockerfile＋README）。本機實測：同網址開頁、選影片、Prepare questions 正常。部署要 john 自己建 Space 並把金鑰設成 Space secret（金鑰不能經過任何 AI）。開 Codex T229、Antigravity T230。
 - 11/01 Claude T225：Spark 物體預檢的 `judgeable`／`assumed_model`／`vehicle_class` 以前被後端靜默丟掉，現在接進 `ObjectSuggestion`（API v1.4），加測試；開 Codex T226（上傳頁顯示）、T227（手機 LCP）。
 - 11/01 Claude 審查合併 Muse T224：data/demo 10 筆除 track_check 外逐欄相同（程式比對）；親自畫 manus 四張裁切圖：前三張紅圈貼著球、第四張圈在球前方空白處（manus 這支片 SAM 點本來就超前約一格，原因不明，不影響 g），3/4 過所以 true。結論：新複查能抓「追到別的東西／背景」（反向對照 false），但不會抓「差一格」的小偏移——這是設計上的容忍度，寫在限制裡。
