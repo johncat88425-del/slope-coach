@@ -80,7 +80,8 @@ def _client_ip(request) -> str:
 
 @app.middleware("http")
 async def public_demo_guard(request, call_next):
-    if PUBLIC_DEMO and request.method == "POST" and request.url.path in _PAID_PATHS:
+    if PUBLIC_DEMO and request.method == "POST" and (request.url.path in _PAID_PATHS
+                                                    or request.url.path.startswith("/api/samples/")):
         size = request.headers.get("content-length")
         if size and size.isdigit() and int(size) > PUBLIC_MAX_UPLOAD_BYTES:
             return JSONResponse({"detail": f"This public demo accepts uploads up to {PUBLIC_MAX_UPLOAD_BYTES // 1048576} MB. "
