@@ -52,7 +52,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
-- [x] T239 Codex：稽核等待區上方顯示真實經過秒數與「免費主機上一次檢查約需 1–4 分鐘，請不要關閉頁面」雙語說明；沿用 Claude 的 fetch／XHR 360 秒上限，不改流程、不自動重送。 — commit 待補（178 tests、普通／demo build、pytest 295 通過）
+- [x] T239 Codex：稽核等待區上方顯示真實經過秒數與「免費主機上一次檢查約需 1–4 分鐘，請不要關閉頁面」雙語說明；沿用 Claude 的 fetch／XHR 360 秒上限，不改流程、不自動重送。 — commit 5b99500（178 tests、普通／demo build、pytest 295 通過）
 - [x] T238 Codex：HTML／502／503／504 改為雙語友善提示與手動重試，429／413 保留後端 detail；共用於範例、準備問題、確認、時間窗建議、語音與既有紀錄錯誤。已查 Render Logs／Events，該段有兩次 main 重新部署，未找到可對應 502 的應用例外或 OOM 事件，不能確證根因，詳見日誌。 — commit 8d80f60（173 tests、普通／demo build、pytest 292 通過）
 - [x] T237 Codex：Render 部署分支已改回 `main`，手動 Deploy latest commit 成功（ca9d149，Live）；`/api/samples` 200、3 支範例；首頁 Check a video → Choose video 可用並觸發選片對話框。自動部署限制見「待 john 決定」，未宣稱 main 更新會自動部署。 — commit a6665f9（npm 167、普通／demo build、pytest 292 全過）
 - [ ] T234 Claude：後端 `GET /api/samples`、`POST /api/samples/{name}/draft`（從 data/gate/clips 的 Meta AI 片與合成片建 draft，評審沒自己的影片也能試），加測試、API v1.5。
