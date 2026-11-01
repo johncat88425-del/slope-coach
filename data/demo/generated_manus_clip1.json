@@ -243,8 +243,8 @@
   "text": "Motion matches model of Mars at 0.27 times Earth's gravity."
  },
  "track_check": {
-  "same_object": false,
-  "note": "ring on empty wall beside ball",
+  "same_object": true,
+  "note": "blurry ball above red circle",
   "source": "model"
  },
  "retake_tips": null,

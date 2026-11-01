@@ -33,12 +33,14 @@ def _setup(monkeypatch, tmp_path, results):
 
 
 def test_check_track_same_object(tmp_path, monkeypatch):
-    payload = {"same_object": True, "note": "same orange ball in every still"}
+    payload = {"answers": [True, True, True, True],
+               "note": "same orange ball in every still"}
     clip, fake = _setup(monkeypatch, tmp_path,
                         [fake_response(json.dumps(payload), fake_usage())])
     tracker = _tracker(tmp_path)
     out = track_check.check_track(clip, POINTS, "orange ball", tracker=tracker)
-    assert out == {**payload, "source": "muse-spark-1.3"}
+    assert out == {"same_object": True, "note": payload["note"],
+                   "source": "muse-spark-1.3"}
     parts = fake.responses.calls[0]["input"][0]["content"]
     assert parts[0]["type"] == "input_text"
     assert "orange ball" in parts[0]["text"]
@@ -47,11 +49,41 @@ def test_check_track_same_object(tmp_path, monkeypatch):
 
 
 def test_check_track_switched_object(tmp_path, monkeypatch):
-    payload = {"same_object": False, "note": "ring jumps from ball to wall"}
+    payload = {"answers": [False, False, False, False],
+               "note": "ring jumps from ball to wall"}
     clip, _ = _setup(monkeypatch, tmp_path,
                      [fake_response(json.dumps(payload), fake_usage())])
     out = track_check.check_track(clip, POINTS, "orange ball")
     assert out["same_object"] is False
+
+
+def test_check_track_majority_three_of_four(tmp_path, monkeypatch):
+    payload = {"answers": [True, True, False, True],
+               "note": "ball in three stills"}
+    clip, _ = _setup(monkeypatch, tmp_path,
+                     [fake_response(json.dumps(payload), fake_usage())])
+    out = track_check.check_track(clip, POINTS, "orange ball")
+    assert out["same_object"] is True
+
+
+def test_check_track_majority_two_of_four(tmp_path, monkeypatch):
+    payload = {"answers": [True, False, True, False],
+               "note": "ball in two stills"}
+    clip, _ = _setup(monkeypatch, tmp_path,
+                     [fake_response(json.dumps(payload), fake_usage())])
+    out = track_check.check_track(clip, POINTS, "orange ball")
+    assert out["same_object"] is False
+
+
+def test_check_track_rejects_bad_answers(tmp_path, monkeypatch):
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+    for bad in ({"answers": [True, True, True], "note": "x"},
+                {"answers": [True, True, True, "yes"], "note": "x"},
+                {"note": "x"}):
+        clip, fake = _setup(monkeypatch, tmp_path,
+                            [fake_response(json.dumps(bad), fake_usage())])
+        assert track_check.check_track(clip, POINTS, "ball") is None
+        assert len(fake.responses.calls) == 3
 
 
 def test_check_track_non_json_returns_none(tmp_path, monkeypatch):
@@ -64,7 +96,8 @@ def test_check_track_non_json_returns_none(tmp_path, monkeypatch):
 
 def test_check_track_note_with_digit_returns_none(tmp_path, monkeypatch):
     monkeypatch.setattr(time, "sleep", lambda s: None)
-    payload = {"same_object": True, "note": "same ball in all 4 stills"}
+    payload = {"answers": [True, True, True, True],
+               "note": "same ball in all 4 stills"}
     clip, fake = _setup(monkeypatch, tmp_path,
                         [fake_response(json.dumps(payload), fake_usage())])
     assert track_check.check_track(clip, POINTS, "ball") is None
@@ -110,12 +143,33 @@ def test_check_track_real_ffmpeg_extraction(tmp_path, monkeypatch):
          "testsrc=size=640x480:rate=30:duration=1", "-pix_fmt", "yuv420p",
          str(clip)],
         check=True)
-    payload = {"same_object": True, "note": "same test pattern throughout"}
+    payload = {"answers": [True, True, True, True],
+               "note": "same test pattern throughout"}
     fake = FakeClient([fake_response(json.dumps(payload), fake_usage())])
     monkeypatch.setattr(track_check, "get_client", lambda: fake)
     monkeypatch.setattr(track_check, "get_tracker", lambda: _tracker(tmp_path))
     pts = [(i / 30, 240.0, 120.0) for i in range(30)]
     out = track_check.check_track(clip, pts, "pattern")
-    assert out == {**payload, "source": "muse-spark-1.3"}
+    assert out == {"same_object": True, "note": payload["note"],
+                   "source": "muse-spark-1.3"}
     parts = fake.responses.calls[0]["input"][0]["content"]
     assert sum(p["type"] == "input_image" for p in parts) == 4
+
+
+def test_crop_zoom_border_stays_aligned():
+    # T224: a point in the corner still lands the ring on itself after
+    # edge-padding; output is always 320x320.
+    frame = np.zeros((270, 480, 3), dtype=np.uint8)
+    for x, y in ((240.0, 135.0), (5.0, 5.0), (475.0, 265.0)):
+        out = track_check._crop_zoom(frame, x, y)
+        assert out.shape == (320, 320, 3)
+        # Ring centre maps the tracked point: recompute where it must be.
+        half = track_check.CROP_SIZE // 2
+        x0 = int(round(x)) - half
+        y0 = int(round(y)) - half
+        px0, py0 = max(0, -x0), max(0, -y0)
+        cx = int(round((x - (x0 + px0 - px0)) * track_check.CROP_ZOOM))
+        cy = int(round((y - (y0 + py0 - py0)) * track_check.CROP_ZOOM))
+        r = track_check.RING_RADIUS
+        assert (out[cy, cx - r] == (255, 0, 0)).all()
+        assert (out[0, 0] == (0, 0, 0)).all()  # padding, no ring bleed
