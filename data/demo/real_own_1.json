@@ -162,7 +162,7 @@
  },
  "track_check": {
   "same_object": true,
-  "note": "ring follows orange ball through air to floor",
+  "note": "orange ball within red ring throughout",
   "source": "model"
  },
  "retake_tips": null,
