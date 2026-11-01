@@ -1,3 +1,4 @@
+import {TrackCheck,WhatWouldFit} from './MuseAuditOutputs.js';
 import {EarthAssumption} from './EarthAssumption.js';
 import type {VehicleClass} from './vehiclePresentation.js';
 import {AuditDimensionField,VehicleMeasurements,VehicleClassField} from './VehicleModel.js';
@@ -17,7 +18,7 @@ import {GravityRuler} from './GravityRuler.js';
 import {InterviewPanel} from './InterviewPanel.js';
 import {BounceChart} from './BounceChart.js';
 import {formatNumber} from './formatNumber.js';
-import {PhysicsCard} from './PhysicsCard.js';
+import {PhysicsCard,PhysicsCardDownload} from './PhysicsCard.js';
 import {GhostReview} from './GhostReview.js';
 import {auditHash,shareAuditUrl} from './experiment.js';
 import { Localize } from './i18n.js';
@@ -40,12 +41,15 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
     const [copyStatus,setCopyStatus]=useState('');
     const result=useRef<HTMLElement>(null),verdictId=useId();
     useEffect(()=>{if(autoFocus)result.current?.focus()},[autoFocus]);
-    return <Localize><article ref={result} tabIndex={-1} data-testid="audit-result" aria-label="稽核結果" aria-labelledby={verdictId}>
+    return <Localize><div className="audit-result-group"><article ref={result} tabIndex={-1} data-testid="audit-result" aria-label="稽核結果" aria-labelledby={verdictId}>
  <div className={'verdict-banner verdict-'+audit.verdict}><h2 id={verdictId} data-testid="audit-verdict">{verdictLabel(audit.verdict,audit.assumed_model)}</h2></div>
+ <TrackCheck check={audit.track_check}/>
  <VehicleMeasurements audit={audit}/>
  <ModelHeadline headline={audit.headline}/>
  {audit.explanation&&<section data-testid="audit-explanation"><p>{audit.explanation.source==='model'?'由 Muse Spark 產生':'固定模板（未使用模型）'}</p><p><Verbatim text={audit.explanation.text}/></p></section>}
  <section data-testid="audit-reasons"><h3>原因</h3><ul>{audit.reasons.map((reason,i)=><li key={i}><Verbatim text={reason}/></li>)}</ul></section>
+ <WhatWouldFit audit={audit}/>
+ <RetakeGuide verdict={audit.verdict} reasons={audit.reasons} modelTips={audit.retake_tips}/>
  <EarthAssumption numbers={audit.numbers}/>
  <details data-testid="audit-details"><summary>Details</summary>
  {replay&&<p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">SYNTHETIC test example — program-drawn motion.</p>}
@@ -53,14 +57,14 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
  {!replay&&<p><a href={'/audit/'+encodeURIComponent(audit.audit_id)}>Open result link</a><button data-testid="copy-audit-link" onClick={async()=>{try{await navigator.clipboard.writeText(shareAuditUrl(audit.audit_id,location.origin));setCopyStatus('Link copied.')}catch{setCopyStatus('Could not copy. Use the result link.')}}}>Copy link</button><span role="status">{copyStatus}</span></p>}
  <p data-testid="audit-slow-answer">Slow motion or retimed playback (user): {audit.slow_motion===true?'Yes':audit.slow_motion===false?'No':'Not provided'}</p>
  {audit.slow_motion===true&&audit.verdict==='insufficient_data'&&<aside data-testid="audit-timing-limit"><h3>Reported limitations</h3>{audit.reasons.map((r,i)=><blockquote key={i}><Verbatim text={r}/></blockquote>)}</aside>}
- <RetakeGuide verdict={audit.verdict} reasons={audit.reasons}/><ModelUsage audit={audit} interviewSource={interviewSource}/>{audit.assumed_model!=='vehicle'&&<GravityRuler numbers={audit.numbers}/>}<h3>量測數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
+ <ModelUsage audit={audit} interviewSource={interviewSource}/>{audit.assumed_model!=='vehicle'&&<GravityRuler numbers={audit.numbers}/>}<h3>量測數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <GhostReview audit={audit} url={replay ? undefined : videoUrl??mediaUrl(audit.video_url, import.meta.env?.VITE_API_BASE_URL)}/><Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
  {audit.assumed_model==='bounce'&&<BounceChart numbers={audit.numbers}/>}
  {audit.assumed_model==='bounce' && <p>Rebound ratios compare each rebound height with the preceding height. Backend values are shown unchanged above.</p>}<EventTimeline events={audit.events}/>
  {audit.verdict==='insufficient_data' && audit.numbers.size_trend!==undefined && <aside data-testid="audit-size-trend" aria-label="Size trend limitation"><h3>Size trend limitation</h3><p>size_trend: <span title={String(audit.numbers.size_trend)}>{formatNumber(audit.numbers.size_trend)}</span></p><p>A changing apparent size can make the 2D motion check unreliable. The backend rejects changes beyond its quality threshold. Review the backend reasons above; this value alone does not establish a cause.</p></aside>}
- <PrintReport audit={audit}/><PhysicsCard audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/><button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json", "application/json;charset=utf-8")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}><Verbatim text={r}/></li>)}</ul>
- </details></article></Localize>;
+ <PrintReport audit={audit}/><PhysicsCard showDownload={false} audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)}/><button data-testid="audit-export-json" onClick={() => downloadText(JSON.stringify(audit, null, 2), audit.audit_id + ".json", "application/json;charset=utf-8")}>Save audit JSON</button><button data-testid="audit-export-markdown" onClick={() => downloadText(auditMarkdown(audit), audit.audit_id + '.md')}>匯出稽核 Markdown</button><h3>已知限制</h3><ul>{audit.limits.map((r, i) => <li key={i}><Verbatim text={r}/></li>)}</ul>
+ </details></article><div className="result-actions" data-testid="audit-result-actions"><PhysicsCardDownload audit={audit} overlay={replay?undefined:mediaUrl(audit.overlay_url,import.meta.env?.VITE_API_BASE_URL)} label="Download share card PNG"/></div></div></Localize>;
 }
 
 export function AuditPage({ api, auditId = null }: {

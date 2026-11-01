@@ -75,12 +75,20 @@ def _pick_times(points: Sequence[Sequence[float]]) -> list[tuple[float, float, f
 
 
 def _frame_rgb(video: Path, t: float) -> np.ndarray:
-    proc = _sam._run_cmd(
-        ["ffmpeg", "-y", "-v", "error", "-ss", str(t), "-i", str(video),
-         "-frames:v", "1", "-vf", f"scale={FRAME_WIDTH}:-2",
-         "-pix_fmt", "rgb24", "-f", "rawvideo", "-"],
-        _client.UPLOAD_TIMEOUT_S,
-    )
+    # Byte-mode subprocess: _sam._run_cmd decodes text and crashes on binary
+    # frame data (found live in T206; unit tests had mocked this away).
+    try:
+        proc = subprocess.run(
+            ["ffmpeg", "-y", "-v", "error", "-ss", str(t), "-i", str(video),
+             "-frames:v", "1", "-vf", f"scale={FRAME_WIDTH}:-2",
+             "-pix_fmt", "rgb24", "-f", "rawvideo", "-"],
+            capture_output=True, check=False,
+            timeout=_client.UPLOAD_TIMEOUT_S,
+        )
+    except FileNotFoundError as exc:
+        raise MediaError("ffmpeg not found; install ffmpeg to enable tracking.") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise MediaError(f"ffmpeg timed out at t={t:g}") from exc
     if proc.returncode != 0 or not proc.stdout:
         raise MediaError(f"frame extraction failed at t={t:g}")
     raw = proc.stdout
@@ -104,7 +112,8 @@ def _to_png_bytes(frame: np.ndarray) -> bytes:
     h, w = frame.shape[:2]
     proc = subprocess.run(
         ["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24",
-         "-s", f"{w}x{h}", "-i", "-", "-frames:v", "1", "-f", "png", "-"],
+         "-s", f"{w}x{h}", "-i", "-", "-frames:v", "1",
+         "-f", "image2pipe", "-vcodec", "png", "-"],
         input=frame.tobytes(), capture_output=True, check=False,
     )
     if proc.returncode != 0 or not proc.stdout:

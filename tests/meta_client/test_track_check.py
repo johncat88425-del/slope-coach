@@ -97,3 +97,25 @@ def test_check_track_missing_file(tmp_path, monkeypatch):
     monkeypatch.setattr(track_check, "get_tracker", lambda: _tracker(tmp_path))
     with pytest.raises(MediaError, match="not found"):
         track_check.check_track(tmp_path / "missing.mp4", POINTS, "ball")
+
+
+def test_check_track_real_ffmpeg_extraction(tmp_path, monkeypatch):
+    # T206 regression: _frame_rgb must survive real binary ffmpeg output
+    # (a text-mode pipe crashed live with UnicodeDecodeError). No API call.
+    import subprocess
+
+    clip = tmp_path / "src.mp4"
+    subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i",
+         "testsrc=size=640x480:rate=30:duration=1", "-pix_fmt", "yuv420p",
+         str(clip)],
+        check=True)
+    payload = {"same_object": True, "note": "same test pattern throughout"}
+    fake = FakeClient([fake_response(json.dumps(payload), fake_usage())])
+    monkeypatch.setattr(track_check, "get_client", lambda: fake)
+    monkeypatch.setattr(track_check, "get_tracker", lambda: _tracker(tmp_path))
+    pts = [(i / 30, 240.0, 120.0) for i in range(30)]
+    out = track_check.check_track(clip, pts, "pattern")
+    assert out == {**payload, "source": "muse-spark-1.3"}
+    parts = fake.responses.calls[0]["input"][0]["content"]
+    assert sum(p["type"] == "input_image" for p in parts) == 4
