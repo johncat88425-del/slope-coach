@@ -94,3 +94,9 @@
 - 前端顯示問題時要標明「由 Muse Spark 提問」（`source=model`）或「固定問題」（`source=mock`）。
 - 模型只負責提問，答案（數字、是否固定、是否慢動作）一律由使用者輸入。
 
+
+
+## v1.5（T234，11/01）範例片
+
+- `GET /api/samples` → `[{name, kind, label}]`，kind 是 `generated`（Meta AI app 做的片）或 `synthetic`（程式畫的測試片）。
+- `POST /api/samples/{name}/draft` → 跟 `POST /api/audit-drafts` 一樣的 `AuditDraftOut`，之後流程完全相同。判定照樣即時計算，不存答案。公開模式下也算進每 IP 次數。
