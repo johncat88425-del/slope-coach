@@ -5,7 +5,7 @@ import ts from 'typescript';
 import {translateText} from '../.test-dist/i18n.js';
 import {shareCardContent} from '../.test-dist/cardExport.js';
 import {vehicleClassReferences} from '../.test-dist/vehiclePresentation.js';
-const files=['Home','HomeMotion','ResultPreview','OpeningCards','ResultsWall','HowItWorks','SiteHeader','PhysicsCard','VehicleModel','InterviewPanel'];
+const files=['Home','HomeMotion','ResultPreview','CarPreview','OpeningCards','ResultsWall','HowItWorks','SiteHeader','PhysicsCard','MuseAuditOutputs','RetakeGuide','VehicleModel','InterviewPanel'];
 const units=new Set(['km/h','m/s²']);
 const prohibited=/fake[ -]+detector|detect(?:s|ing)?\s+AI|real\s+or\s+fake|\bproves\b|\bany video\b|偵測\s*AI|假影片|真假/i;
 test('every new v4 static label and accessible name has a Chinese translation',async()=>{
