@@ -53,7 +53,7 @@ function backendError(status:number,raw:string,contentType:string|null=null){
 }
 export type UploadProgress=(percent:number|null)=>void;
 export function uploadAudit(url:string,data:FormData,progress:UploadProgress,makeXhr:()=>XMLHttpRequest=()=>new XMLHttpRequest()):Promise<AuditOut>{
- return new Promise((resolve,reject)=>{const xhr=makeXhr();xhr.open('POST',url);xhr.timeout=120000;
+ return new Promise((resolve,reject)=>{const xhr=makeXhr();xhr.open('POST',url);xhr.timeout=360000;
  xhr.upload.onprogress=e=>progress(e.lengthComputable&&e.total>0?Math.min(100,Math.round(e.loaded/e.total*100)):null);
  xhr.upload.onload=()=>progress(100);
  xhr.onload=()=>{const contentType=xhr.getResponseHeader?.('Content-Type')??null;if(xhr.status<200||xhr.status>=300||isHtmlResponse(xhr.responseText,contentType)){reject(backendError(xhr.status,xhr.responseText,contentType));return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(new Error('The backend returned an unreadable result. Load the record before submitting again.'))}};
@@ -68,7 +68,7 @@ export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnl
   const root=base.replace(/\/$/,'');
   async function request<T>(path:string, init:RequestInit={}, text=false):Promise<T> {
     if(demoOnly)throw new Error(demoUploadMessage);
-    const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),120000);
+    const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),360000);
     try {
       const response=await transport(root+'/api'+path,{...init,signal:controller.signal});
       const raw=await response.text(),contentType=response.headers.get('Content-Type');

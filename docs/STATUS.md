@@ -52,6 +52,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
+- [ ] T239 Codex（T230 發現線上一支片要 90–243 秒）：稽核進行中顯示經過秒數＋一句「免費主機上一次檢查約需 1–4 分鐘，請不要關閉頁面」（中英文），超過 360 秒才算逾時（Claude 已把 api.ts 兩處 120000 改成 360000）。不改流程、不自動重送。加測試。
 - [x] T238 Codex：HTML／502／503／504 改為雙語友善提示與手動重試，429／413 保留後端 detail；共用於範例、準備問題、確認、時間窗建議、語音與既有紀錄錯誤。已查 Render Logs／Events，該段有兩次 main 重新部署，未找到可對應 502 的應用例外或 OOM 事件，不能確證根因，詳見日誌。 — commit 8d80f60（173 tests、普通／demo build、pytest 292 通過）
 - [x] T237 Codex：Render 部署分支已改回 `main`，手動 Deploy latest commit 成功（ca9d149，Live）；`/api/samples` 200、3 支範例；首頁 Check a video → Choose video 可用並觸發選片對話框。自動部署限制見「待 john 決定」，未宣稱 main 更新會自動部署。 — commit a6665f9（npm 167、普通／demo build、pytest 292 全過）
 - [ ] T234 Claude：後端 `GET /api/samples`、`POST /api/samples/{name}/draft`（從 data/gate/clips 的 Meta AI 片與合成片建 draft，評審沒自己的影片也能試），加測試、API v1.5。
@@ -469,6 +470,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/01 23:30 Claude 合併 Codex T237（Render 改部署 main）、T238（502／HTML 錯誤改友善提示）、Antigravity T230（線上三支全對：own_2 一致 9.45／89 秒、clip4 不一致 0.14／243 秒、clip2 拒判 −48%／111 秒；第 11 次 429 正確）、Muse T236（預檢規則：風景、走路、遊戲 false，球車擺照舊 true）。T230 發現前端 120 秒逾時會打斷 clip4，Claude 改成 360 秒；開 Codex T239（等待中顯示秒數與說明）。pytest 295、npm 173、兩種 build 通過。
 
 - 11/01 Codex T237：從清理後的新 checkout 同步 main（ca9d149），獨立開 codex/T237-render-main。Render Settings 的 Branch 已由 codex/T229-live-link 改成 main，保存後觸發 branch-updated 建置，再明確執行一次 Manual Deploy → Deploy latest commit；部署 dep-dbjs02m7bikc738d2nm0 顯示 Deploy succeeded／Live，來源 ca9d149。公開網址 https://video-physics-audit.onrender.com；GET /api/samples 回 200、3 支（meta_ai_ball_4／meta_ai_ball_2／synthetic_toss；generated／generated／synthetic），GET /api/spend 回 limit_usd=25。Chrome 從首頁 Check a video 進入上傳頁，file input enabled、Try a sample clip 可見、沒有 demo-only 提示，實際 click 觸發 filechooser；自動填入本機測試檔被 Chrome extension 的 file URL 權限擋住，未改瀏覽器安全權限，也未宣稱本次已上傳或付費跑完稽核。截圖 frontend/qa/t237-render-main-upload.jpg。npm test 167、普通／demo build、pytest 292 全過。僅更新 STATUS 與驗證截圖；自動部署與跨重啟花費保護的真實限制已列待決定，不冒稱已解決。
 
