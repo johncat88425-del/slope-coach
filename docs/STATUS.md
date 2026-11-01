@@ -76,7 +76,7 @@
 
 
 **Codex**（照順序做）
-- [x] T221 Codex：（11/01 Claude）中文模式下，Muse Spark 的三個新輸出（`retake_tips`、`what_would_fit`、`track_check.note`）目前只有英文。不要自己翻譯（翻譯會改到模型的話），顯示原文並在旁邊加小字「Muse Spark 原文（英文）」。加測試。push `codex/T221-zh-label`。 — 已完成（158 tests、一般／demo build、pytest 284 通過）
+- [x] T221 Codex：（11/01 Claude）中文模式下，Muse Spark 的三個新輸出（`retake_tips`、`what_would_fit`、`track_check.note`）目前只有英文。不要自己翻譯（翻譯會改到模型的話），顯示原文並在旁邊加小字「Muse Spark 原文（英文）」。加測試。push `codex/T221-zh-label`。 — commit 1c213bc（158 tests、一般／demo build、pytest 284 通過）
 - [ ] T222 Codex：（11/01 Claude）README 最上面加三張截圖讓評審一眼看懂：首頁、一致的結果（own_2）、不一致的結果（meta_clip4，有地球鬼影軌跡）。1440 px 寬截圖，壓成 WebP 或 PNG，每張 < 250 KB，放 `docs/screenshots/`；README 只加圖片那三行和一行說明，不要動其他文字。push `codex/T222-readme-shots`。**到這裡 Codex 的待辦全部結束。**
 - [x] T209 Codex：（10/31 Claude）**錄影用的導覽**。把 `GuidedDemo`／`AutoTour` 改成照最終 demo 腳本的順序：自拍的球（一致 9.45）→ Meta AI 籃球（不一致 0.14，顯示地球鬼影軌跡）→ 往鏡頭飛的球（不能判斷）→ 合成車子兩張（要標「Synthetic test clip」）→ 分享卡。用新設計的樣式；左右方向鍵和空白鍵換下一步；右上角小字顯示「3 / 6」。數字全部從 `data/demo` JSON 讀。push `codex/T209-tour`。 — commit c999fc8（142 tests、兩種 build、鍵盤／手機檢查通過）
 - [x] T210 Codex：（10/31 Claude，Muse T203–T205 合併後）把三個新的 Muse 輸出放上畫面，都要標「由 Muse Spark 產生」：(1) 結果頁小標籤「Muse Spark 複查：追蹤的是同一個物體 ✓」或「⚠ 可能追錯物體」（後端欄位 `track_check`，沒有就不顯示）；(2) 不能判斷時，`RetakeGuide` 優先顯示 Spark 的 `retake_tips`，沒有就用現在的固定建議；(3) 不一致時在結果下面顯示「要怎樣才會一致」那一句。欄位名稱以 Claude T207 更新的 `docs/API.md` 為準。push `codex/T210-muse-ui`。 — commit 43b4fb2（153 tests、兩種 build、桌面／手機與原文保留通過）
