@@ -35,3 +35,23 @@ test('new guidance is outside collapsed evidence and does not change a backend r
  const a={...base,verdict:'insufficient_data',headline:null,explanation:undefined,numbers:{},track_check:{source:'model',same_object:false,note:''},retake_tips:['Keep one clear object visible.'],what_would_fit:null},before=JSON.stringify(a),html=render(h(AuditResult,{audit:a,replay:true}));
  assert.ok(html.indexOf('data-testid="track-check"')<html.indexOf('data-testid="audit-details"'));assert.ok(html.indexOf('data-testid="retake-guide"')<html.indexOf('data-testid="audit-details"'));assert.doesNotMatch(html,/data-testid="what-would-fit"|NaN|Infinity/);assert.equal(JSON.stringify(a),before);
 });
+test('Chinese mode labels all three Spark fields while leaving their original text and numbers untouched',()=>{
+ const note='Home',tips=['Details','Keep the object visible.'],text='What would fit this model? 0.123456789';
+ const audit={...base,track_check:{source:'model',same_object:true,note},retake_tips:tips,what_would_fit:{source:'model',text}},before=JSON.stringify(audit);
+ const fields=[h(TrackCheck,{check:audit.track_check}),h(RetakeGuide,{verdict:'insufficient_data',reasons:[],modelTips:tips}),h(WhatWouldFit,{audit})];
+ for(const [index,field] of fields.entries()){
+  const zh=localized('zh',field),en=localized('en',field);
+  assert.equal((zh.match(/Muse Spark 原文（英文）/g)||[]).length,1);
+  assert.match(zh,/data-testid="spark-original-label" lang="zh-Hant"/);
+  assert.match(zh,/lang="en"/);assert.doesNotMatch(en,/spark-original-label|Muse Spark 原文/);
+  for(const original of [[note],tips,[text]][index]){assert.ok(zh.includes(original));assert.ok(en.includes(original));}
+ }
+ assert.equal(JSON.stringify(audit),before);
+ const rendered=localized('zh',h(AuditResult,{audit,replay:true}));
+ assert.equal((rendered.match(/Muse Spark 原文（英文）/g)||[]).length,2);
+ assert.match(rendered,/>Home<\/p>/);assert.match(rendered,/What would fit this model\? 0.123456789/);
+});
+test('original-English labels never appear for missing notes, fixed fallback guidance or absent model output',()=>{
+ const fields=[h(TrackCheck,{check:{source:'model',same_object:true,note:''}}),h(TrackCheck,{check:null}),h(RetakeGuide,{verdict:'insufficient_data',reasons:['camera is not static']}),h(RetakeGuide,{verdict:'consistent',reasons:[],modelTips:['Details']}),h(WhatWouldFit,{audit:{...base,what_would_fit:null}})];
+ for(const field of fields)assert.doesNotMatch(localized('zh',field),/spark-original-label|Muse Spark 原文/);
+});
