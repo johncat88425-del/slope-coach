@@ -418,10 +418,11 @@ def test_spark_track_check_retake_tips_and_what_would_fit(tmp_path):
 
         hooks.same, hooks.note, hooks.tips = False, "Frame 3 rings a different object 99 cm away.", ["Keep one object in view."]
         wrong = post(tmp_path / "real.mp4", object_name="black square").json()
-        assert wrong["verdict"] == "insufficient_data" and "Muse Spark re-check" in wrong["reasons"][0]
+        # a warning only: the program's verdict and numbers stay, the page shows the re-check next to them
+        assert wrong["verdict"] == "consistent" and wrong["track_check"]["same_object"] is False
         assert wrong["track_check"]["note"] == ""  # an invented number in the note is dropped
-        assert wrong["retake_tips"] == ["Keep one object in view."]
-        assert "g_apparent_m_s2" not in wrong["numbers"]
+        assert wrong["numbers"]["g_apparent_m_s2"] == pytest.approx(ok["numbers"]["g_apparent_m_s2"])
+        assert wrong["retake_tips"] is None  # tips only for insufficient_data
 
         hooks.same, hooks.tips = True, ["Film it 12 times slower."]  # number not in the result: rejected
         hooks.g, hooks.fit = 9.81 / 4, "This would match Earth only if the clip were slowed down."
