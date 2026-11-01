@@ -1,5 +1,13 @@
 # Slope Coach: Video Physics Audit & Inquiry Coach
 
+Home and saved results: own_2 fits the assumed model; meta_clip4 differs, with the stored Earth-model ghost trajectory shown.
+
+![Home — upload entry and example motion](docs/screenshots/readme-home.webp)
+
+![Consistent result — own_2 saved record](docs/screenshots/readme-consistent.webp)
+
+![Inconsistent result — meta_clip4 with Earth-model ghost trajectory](docs/screenshots/readme-inconsistent.webp)
+
 A neuro-symbolic physical inquiry and audit system developed for the **Meta Global AI Developer Hackathon (Indie Track)**.
 
 **Static demo:** https://johncat88425-del.github.io/slope-coach/ replays the saved results in `data/demo/` in the browser. It has no upload and makes no backend or model calls. To check your own clips, run the full app locally (see below).
