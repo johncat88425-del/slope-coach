@@ -52,7 +52,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完）
-- [ ] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。
+- [x] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。 — 前端完成（160 tests、一般／demo build、pytest 291 通過）
 - [ ] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。
 - [ ] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。
 
@@ -347,6 +347,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T229／Hugging Face：已登入帳號，但其 New Space 頁目前將 Docker／Gradio 標為 Paid、停用選取並要求 PRO，免費僅提供 Static。依 john 的免費限制，尚未建立 Space、未傳送 MODEL_API_KEY、未設定付費方案或捏造線上網址。前端先提供 VITE_LIVE_URL 入口及未設定時的 README 本機啟動備案。需可用的免費 Docker 額度或已運作網址後，再由 Claude 填 Pages 變數並接 T230。
+
 - T210 Codex：T212 完成後已 pull main（065852d），T207 仍未勾選，docs/API.md／backend/schemas.py 尚無 track_check、retake_tips、what_would_fit 的回應契約。依 john 指示先跳過，完成 T213 後再同步重查；不預猜 JSON 形狀、不自行修改後端或捏造 Muse 輸出。
 
 - T206 Muse：最後彩排真打在等 Claude T207（後端接 track_check／retake_tips／what_would_fit）合併。沒合併就跑，秒數和流程都不是最終版，白花錢，所以先不跑。T207 合併後 Muse 再跑 T206（上限 $0.40）。
@@ -449,6 +451,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex T229：Pages 上傳頁改為明示只重播紀錄的卡片，已配置 VITE_LIVE_URL 時提供線上版入口；未配置／無效網址時顯示 clone、cd、dev.sh 三行與 README 安裝需求。移除靜態頁不能操作的影片上傳及進階表單，保留可用的離線 JSON 匯入、錄影導覽與結果牆；正式版保留原上傳流程，提示改為 Video preview。Pages workflow 使用 repository variable VITE_LIVE_URL，未猜部署網址。160 tests、一般／demo build、pytest 291 通過；390px 中文無溢出、沒有 disabled 按鈕或 video picker，截圖 frontend/qa/t229-demo-upload-390.jpg。免費 HF Docker 受帳號方案限制，john 已改授權 Render，部署另持續處理。
 
 - 11/01 Codex 隱私清理：依 john 跨專案指示掃描五個 repositories 的分支、標籤、可取得 Git 歷史、壓縮檔、GitHub 安全警示及討論，另掃描 213 份可讀的 Actions 紀錄、產物及 release 附件。未確認到 API key；Gitleaks 候選為校驗碼、run ID 與固定範例 key。私人提交電郵／機器名稱改為 GitHub noreply，本專案文件與腳本的使用者絕對路徑改為相對路徑，腳本語法檢查通過。70 張目前圖片 OCR 與人臉檢查未發現個資。未改後端契約、數字、判定。GitHub 唯讀 PR refs、快取與他人 clone 不受一般 Git 推送控制，不能宣稱已抹除所有副本。原始個資未寫進此紀錄。
 - 11/01 Claude T228（john 要求評審能在線上自己上傳）：後端可同網址提供前端（`FRONTEND_DIST`，缺檔回 404）、`ALLOWED_ORIGINS`、公開模式 `PUBLIC_DEMO=1`（每 IP 每小時 10 次付費步驟、上傳 80 MB、主機自己的花費上限 `SPEND_LIMIT_USD=25`）；Dockerfile 補上漏掉的 `meta_client/`（之前容器只會跑 mock）；新 `deploy/huggingface/`（Space 用 Dockerfile＋README）。本機實測：同網址開頁、選影片、Prepare questions 正常。部署要 john 自己建 Space 並把金鑰設成 Space secret（金鑰不能經過任何 AI）。開 Codex T229、Antigravity T230。

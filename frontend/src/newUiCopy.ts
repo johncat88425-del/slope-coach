@@ -1,4 +1,12 @@
 export const newUiCopy:Record<string,string>={
+  "Upload your own video": "上傳自己的影片",
+  "This page only replays saved results.": "這個頁面只重播已存結果。",
+  "To upload your own video, open the live app →": "要上傳自己的影片，請開線上版 →",
+  "The live app link is not available yet. Run the full app locally:": "線上版網址尚未提供。請在本機啟動完整網站：",
+  "Read the setup requirements in the README": "先閱讀 README 的安裝需求與設定",
+  "Explore saved examples →": "查看已存範例 →",
+  "Video preview · user-confirmed inputs": "影片預覽・輸入須由使用者確認",
+
   "Muse Spark original (English)": "Muse Spark 原文（英文）",
   "Download share card PNG": "下載分享卡 PNG",
   "Cars": "車子",

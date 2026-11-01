@@ -45,7 +45,7 @@ export function InterviewPanel({api,onResult,disabled=false,onBusyChange,hasResu
     </label>
     {file&&<p className="selected-file"><Verbatim text={file.name}/></p>}
     <button className="primary" data-testid="interview-prepare" hidden={!file} disabled={!file||busy||disabled} onClick={()=>void prepare()}>Prepare questions</button>
-    <p className="upload-note">Local preview · user-confirmed inputs</p>
+    <p className="upload-note">Video preview · user-confirmed inputs</p>
    </div>
    {!draft&&<figure className="upload-example">
     {preview?<video aria-label="Selected video preview" controls src={preview}/>:<img src={(import.meta.env?.BASE_URL??'/')+'images/motion-study.jpg'} width="1280" height="720" alt="A frame from a Meta AI–generated test clip (meta_clip4)"/>}
