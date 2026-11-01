@@ -182,6 +182,7 @@ svg text{fill:var(--color-text)}
 
 .track-check{margin:16px 0 24px;padding:0;border-left:2px solid var(--color-earth);padding-left:16px}.track-check-uncertain{border-left-color:var(--color-action)}.track-check-label{color:var(--color-earth);font-size:14px;font-weight:600;margin:0 0 8px}.track-check-uncertain .track-check-label{color:var(--color-action)}.track-check-note{font-size:14px;margin:8px 0 0}
 .muse-guidance,.retake-guide{margin:24px 0;padding:24px 0 0!important;border-top:1px solid var(--color-border)!important}.muse-guidance h3,.retake-guide h3{font-size:20px;margin:0 0 12px}.muse-guidance>p,.retake-guide li{line-height:1.7;max-width:78ch}.retake-guide li{margin-block:8px}
+.spark-original-label{display:block;color:var(--color-muted);font-size:12px;line-height:1.5;margin-block:8px}
 
 /* Result actions stay visible after the result card, without opening evidence. */
 .audit-result-group{min-width:0;max-width:100%}.audit-flow>.audit-result-group{grid-column:1/-1}.result-actions{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-top:16px}.share-download{background:transparent;color:var(--color-text);border:1px solid var(--color-field);min-height:48px}.physics-card-action>p[role=alert]{margin-top:12px}

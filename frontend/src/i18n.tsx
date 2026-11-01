@@ -4,6 +4,7 @@ import type {ReactNode,ReactElement} from 'react';
 export type Language='en'|'zh';
 const Context=createContext<Language>('en');
 export const LanguageProvider=Context.Provider;
+export function useLanguage(){return useContext(Context)}
 const LanguageControl=createContext<{language:Language;setLanguage:(value:Language)=>void}|null>(null);
 export function LanguageSwitch(){const control=useContext(LanguageControl);return control?<label className="language-control"><span className="sr-only">Language / 語言</span><select aria-label="Language / 語言" value={control.language} onChange={e=>control.setLanguage(e.target.value as Language)}><option value="en">English</option><option value="zh">中文</option></select></label>:null}
 export const dictionary:Record<string,string>={
