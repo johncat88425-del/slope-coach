@@ -1,0 +1,35 @@
+{
+  "baseline_mb": 107.9375,
+  "overall_peak_mb": 393.546875,
+  "limit_mb": 512,
+  "alert_threshold_mb": 480,
+  "results": [
+    {
+      "case": "meta_clip4 (Basketball drop)",
+      "file": "meta_clip4.mp4",
+      "elapsed_s": 58.016711950302124,
+      "peak_mb": 393.546875,
+      "margin_to_512_mb": 118.453125,
+      "verdict": "inconsistent",
+      "status": "PASS"
+    },
+    {
+      "case": "meta_clip2 (Toward camera / Refusal)",
+      "file": "meta_clip2.mp4",
+      "elapsed_s": 39.46936798095703,
+      "peak_mb": 382.234375,
+      "margin_to_512_mb": 129.765625,
+      "verdict": "insufficient_data",
+      "status": "PASS"
+    },
+    {
+      "case": "synthetic_toss (Normal g=9.81 m/s\u00b2)",
+      "file": "clip_normal_g.mp4",
+      "elapsed_s": 25.99672818183899,
+      "peak_mb": 139.859375,
+      "margin_to_512_mb": 372.140625,
+      "verdict": "consistent",
+      "status": "PASS"
+    }
+  ]
+}

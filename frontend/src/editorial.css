@@ -196,3 +196,11 @@ svg text{fill:var(--color-text)}
 .car-preview .preview-mark{font-size:64px;padding-block:16px}
 
 .car-case{padding-block:12px}.car-case:first-child{margin-top:8px}.car-case h4{margin:0}.car-case .car-outcome{margin:0 0 8px}.car-case-link{font-size:14px;font-weight:600}
+
+.demo-upload-notice{grid-column:1/-1;padding:32px;border:1px solid var(--color-field);border-left:3px solid var(--color-action);border-radius:12px;background:var(--color-surface);min-width:0}.demo-upload-notice h2{margin-top:0;font-size:24px}.demo-upload-notice pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.7}.demo-upload-notice .next{min-height:48px}
+
+.precheck-warning{padding:16px;border-left:3px solid var(--color-action);background:var(--color-surface);color:var(--color-action)!important;line-height:1.7}
+
+.sample-picker{margin-top:16px;min-width:0}.sample-picker ul{list-style:none;margin:16px 0;padding:0;display:grid;gap:16px}.sample-picker li{display:grid;gap:8px;border-top:1px solid var(--color-border);padding-top:16px}.sample-picker li button{text-align:left;white-space:normal;overflow-wrap:anywhere;min-height:48px}.sample-picker li .source-label{justify-self:start}
+
+.sample-result-source{grid-column:1/-1;justify-self:start}

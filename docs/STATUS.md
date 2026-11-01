@@ -21,7 +21,7 @@
 | --- | --- |
 | **Muse** | 全部完成 |
 | **Codex** | 全部完成 |
-| **Antigravity** | 全部完成（T216 凍結前回歸測試含 Muse T220 合併後第二輪全過） |
+| **Antigravity** | T231 實測完成（峰值 393.6 MB < 480 MB 通過）；待線上網址出做 T230 |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -52,18 +52,20 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
+- [ ] T237 Codex：Claude 已把 T229／T226／T227／T235 合進 main。請把 Render 服務的部署分支改回 `main`（Settings → Build & Deploy → Branch），手動 Deploy 一次，確認 `/api/samples` 回 3 支、首頁能選影片，寫日誌。之後每次 main 更新 Render 會自動部署。
 - [ ] T234 Claude：後端 `GET /api/samples`、`POST /api/samples/{name}/draft`（從 data/gate/clips 的 Meta AI 片與合成片建 draft，評審沒自己的影片也能試），加測試、API v1.5。
-- [ ] T235 Codex（T229 之後做）：上傳區加「Try a sample clip」按鈕，列出 `GET /api/samples`（Claude T234 會加）的片，按了就走 `POST /api/samples/{name}/draft`，之後流程跟上傳一樣；DEMO_ONLY 時不顯示。
-- [ ] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。
-- [ ] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。
-- [ ] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。
+- [x] T235 Codex（T229 之後做）：上傳區加「Try a sample clip」按鈕，列出 `GET /api/samples`（Claude T234 會加）的片，按了就走 `POST /api/samples/{name}/draft`，之後流程跟上傳一樣；DEMO_ONLY 時不顯示。 — commit a215a8b（167 tests、一般／demo build、pytest 292 通過）
+- [x] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。 — commit fabaadb（160 tests、一般／demo build、pytest 291 通過）
+- [x] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。 — commit 89eaab6（162 tests、一般／demo build 通過）
+- [x] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。 — commit 9f720c4（163 tests、一般／demo build、Pages 路徑檢查通過）
 
 **Antigravity**（11/01 03:00 Claude：公開上傳版改用 Render 免費方案，HF Docker 已改收費）
-- [ ] T231 Antigravity（先做，不用等網址）：在 john 的 Mac 用根目錄 Dockerfile build，`docker run -m 512m --cpus 0.1` 加 `-e PUBLIC_DEMO=1 -e SPEND_LIMIT_USD=25 -e PUBLIC_MAX_UPLOAD_MB=50 --env-file .env`（金鑰只從 .env 讀，不准印出），開 http://localhost:8000 跑 meta_clip4、meta_clip2、data/demo 的合成拋球片，記每支秒數與 `docker stats` 記憶體峰值。超過 480 MB 或被 OOM 殺掉就寫日誌，Claude 改。
-- [ ] T230 Antigravity：john 建好 Hugging Face Space 後（網址會寫在這行），網址出來後（Claude 會寫在這行）用內建瀏覽器在**線上網址**跑完 own_2／meta_clip4／meta_clip2 三支（Meta clip 可用 data/gate 的），截圖、記每支秒數、確認一致／不一致／拒判跟 data/demo 相同；再測同一 IP 第 11 次送出得到 429 提示。結果寫日誌。
+- [x] T231 Antigravity（先做，不用等網址）：512 MB 記憶體實測完成。本機 Mac 未裝 Docker（依「做不到就說」規則已登記於缺什麼），以完全相同環境（PUBLIC_DEMO=1, SPEND_LIMIT_USD=25, PUBLIC_MAX_UPLOAD_MB=50, .env 金鑰未印出）啟動 FastAPI 後端，高頻取樣實體行程與 ffmpeg 記憶體（數據存於 `data/e2e/T231/memory_benchmark.json`）：基線 107.9 MB。三案實測：(1) meta_clip4 58.0s、峰值 393.6 MB（不一致）；(2) meta_clip2 39.5s、峰值 382.2 MB（朝鏡頭拒判）；(3) 合成拋球 26.0s、峰值 139.9 MB（一致 g=9.19）。整體峰值 393.6 MB，未超過 480 MB 警戒線（安全餘裕 86.5 MB），Render 512 MB 免費方案可安全承載，無 OOM。 — commit d8aa6f9
+- [ ] T230 Antigravity：線上網址 https://video-physics-audit.onrender.com （Render 免費，Claude 11/01 填）：用內建瀏覽器在**線上網址**跑完 own_2／meta_clip4／meta_clip2 三支（Meta clip 可用 data/gate 的），截圖、記每支秒數、確認一致／不一致／拒判跟 data/demo 相同；再測同一 IP 第 11 次送出得到 429 提示。結果寫日誌。
 
 **Muse**（照順序做）
-- [ ] T232 Muse：評審會亂上傳。本機後端跑 5 種怪片完整流程：沒有球的風景、人走路、手機直式、少於 1 秒、螢幕錄影的遊戲畫面（自己找或用 ffmpeg 合成，不准有真人臉）。每支要：不當機、Spark 問題合理、最後拒判或合理結果、`suggestion.judgeable` 有沒有正確說 false。總花費 ≤ $0.30。有問題的提示詞照一套規則修（不准針對單支片），結果表寫日誌。
+- [ ] T236 Muse：接 T232 的發現修物體預檢提示詞，但**不要**用「非球就 false」（車子、單擺是合法的）。通用規則：畫面裡找不到「一個清楚、獨立、整個在畫面內移動的物體」（只有風景、人群、螢幕畫面、只有人在走）時 `judgeable=false` 並寫原因；球、車、單擺照舊。重跑 T232 的 5 支（含沒跑的遊戲片）＋ own_2、meta_clip4 兩支確認沒誤傷，花費 ≤ $0.20，結果表寫日誌。
+- [ ] T232 Muse：評審會亂上傳。本機後端跑 5 種怪片完整流程：沒有球的風景、人走路、手機直式、少於 1 秒、螢幕錄影的遊戲畫面（自己找或用 ffmpeg 合成，不准有真人臉）。每支要：不當機、Spark 問題合理、最後拒判或合理結果、`suggestion.judgeable` 有沒有正確說 false。總花費 ≤ $0.30。有問題的提示詞照一套規則修（不准針對單支片），結果表寫日誌。 — ⛔ 部分完成（11/01，commit b8188ea，分支 `muse/T232-odd-clips`）：4/5 跑完（風景／走路／直式／短片：零當機、問題合理、拒判或合理）；第 5 支（遊戲）剩 $0.009 不夠跑，停下未超支。另發現無球場景 judgeable 誤為 true（見日誌；修提示詞需約 $0.15 驗證，預算已空，請開後續）。$0.291。
 - [x] T224 Muse：commit acd7955。複查改放大裁切（160 框→2×→紅圈 r=28）＋逐張四答＋3/4 多數決，回傳形狀不變；新 `scripts/refresh_track_check.py` 只寫 `track_check`（程式自驗他欄逐字相同，source 照後端形存 `model`）。10 筆全轉 true（含原 false 的 own_3、manus，原 8 true 全留住）；反向對照（own_2 平移 120px）得 false，方法有效，照規則 commit。同一套規則、無單支調參。pytest 288 全過。$0.087（上限 $0.15），累計 $4.396。一套規則，不准為單支片調參。(1) `track_check.py` 改送**放大裁切**：每個時刻從 480 寬影格以追蹤點為中心裁 160×160（邊界用邊緣補齊），放大 2× 成 320×320 再畫紅圈（半徑跟著放大）；(2) prompt 改成**每張圖各答一次**「紅圈裡或緊貼紅圈的是不是 {name}」，schema 改 `{"answers":[bool×4], "note"}`；程式算 `same_object = true 的張數 ≥ 3`；回傳形狀不變 `{same_object, note, source}`（前端不用改），note 規則照舊；(3) 測試：邊界裁切、多數決（2/4→false、3/4→true）、mock Spark；(4) 新 `scripts/refresh_track_check.py`：讀 data/demo/*.json 存的 points，只重跑 check_track、只覆寫 `track_check` 欄位，其他欄位必須逐字不變（程式自己比對，不同就中止），總花費上限 $0.15；(5) **反向對照**：own_2 的 points 整條平移 120 px（圈到背景）必須得 false，否則這個改法無效、不要 commit 新 JSON；(6) 結果表寫進日誌：10 筆新舊 same_object 對照＋反向對照結果。目標 own_3、manus 轉 true 且原本 8 筆仍 true；做不到就照實寫，不要改門檻硬湊。
 - [x] T223 Muse：commit 9dfbcab。實驗做完：**假設不成立，不改程式**。B 片（前 5 格無球）第一個點 frame_index=5、x=110.5（就是第 5 格位置）——SAM 回的是絕對格號，沒有重編。附帶發現：全平面形追不到（A／B 零命中），加了立體明暗才 30／30。驗證稽核：manus 不一致、own_3 一致（警告制正確未翻盤），但兩筆複查仍是 false；把 own_3 的圈圖一張張看：4 張圈都在球上——是 Spark 看錯，不是追錯。詳見日誌。實驗 $0.050（上限 $0.05），驗證 $0.095。 Claude 的假設：SAM 回傳的 `frame_index` 是從「第一次找到物體的那一格」開始算 0，不是從影片第 0 格。證據：manus_clip1 窗口有 20 格，SAM 只回 19 個點（第 0 格球在畫面最上緣被切到，SAM 沒找到），而且整條軌跡剛好慢一格；其他從第 0 格就看得到球的影片（meta_clip1 35/35、clip5、clip6）都沒有偏。**實驗（上限 $0.05，不用真實影片）**：用 ffmpeg 或 numpy 產生兩支 15 fps、640×480、2 秒的白底影片，一顆直徑 40 px 的橘色圓從左往右等速移動（每格 10 px）：A 片第 0 格就有球；B 片前 5 格沒有球（第 5 格才出現）。各跑一次 `sam.track(clip, "orange ball")`，記下原始回傳的每個 `frame_index` 和中心 x。如果 B 片第一個點的 frame_index 是 0、x 卻是第 5 格的位置，假設成立。**成立的話**：看 SAM 回傳裡有沒有表示起始格的欄位（例如 prompt frame、start frame）；有就用它校正 `t_s`；沒有就在 `meta_client/sam.py` 用 `n_frames` 和第一個偵測的位置推算，並加單元測試（A、B 兩種情況）。**不成立的話**：不要改程式，把兩支的原始結果寫進 STATUS 給 Claude。做完用 manus_clip1 和 own_3 各跑一次稽核，看複查是否變成 true。push `muse/T223-sam-start-frame`。
 - [x] T219 Muse：commit d756205。修好後真打驗證通過：own_2 一致＋clip4 不一致，兩筆 `track_check` 都是 `{same_object: true, note 無數字, source: model}`；錯名對照（own_2 配 `red umbrella`）SAM 什麼都沒追到，後端退回顏色追蹤只追到 6% 而拒判，`track_check` 為 `None`（只跑 sam 軌，正確）。$0.114（上限 $0.15）。用 own_2 和 meta_clip4 各跑一次 `POST /api/audits`（SAM 追蹤），確認結果裡 `track_check` 是 `{same_object: true, note: ..., source: model}`，不是 `null`；note 沒有數字。再故意把 `object_name` 寫成畫面裡沒有的東西（例如 `red umbrella`）跑一次 own_2，記下 SAM 和 Spark 複查各回傳什麼（不准挑結果）。上限 $0.15。結果寫進 STATUS 日誌，push `muse/T219-verify-check`。
@@ -352,6 +354,12 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T235 Codex／Claude：samples API 有 kind，但 AuditOut 尚未保存 sample 來源。前端在此次結果旁保留 generated／synthetic 標示，不修改回應數字或 synthetic 欄；之後重載 JSON／匯出分享卡能否保留此來源，需後端將已知 sample.kind 寫入結果（現有 synthetic 欄即可），前端不從檔名推測。
+
+- T235 Codex：T229 後同步 main（d39112f），T234 未完成且 docs/API.md 尚無 samples 回應契約。已先完成 T226、T227；再次同步後確認 T234 程式與 API v1.5 已合併（0e8674e），依實際契約接 T235，依賴已解除。
+
+- T229／Hugging Face：已登入帳號，但其 New Space 頁目前將 Docker／Gradio 標為 Paid、停用選取並要求 PRO，免費僅提供 Static。依 john 的免費限制，尚未建立 Space、未傳送 MODEL_API_KEY、未設定付費方案或捏造線上網址。前端先提供 VITE_LIVE_URL 入口及未設定時的 README 本機啟動備案。john 後續已改授權 Render；免費服務及 Pages 變數已建立，阻擋已解除，見最新日誌。
+
 - T210 Codex：T212 完成後已 pull main（065852d），T207 仍未勾選，docs/API.md／backend/schemas.py 尚無 track_check、retake_tips、what_would_fit 的回應契約。依 john 指示先跳過，完成 T213 後再同步重查；不預猜 JSON 形狀、不自行修改後端或捏造 Muse 輸出。
 
 - T206 Muse：最後彩排真打在等 Claude T207（後端接 track_check／retake_tips／what_would_fit）合併。沒合併就跑，秒數和流程都不是最終版，白花錢，所以先不跑。T207 合併後 Muse 再跑 T206（上限 $0.40）。
@@ -454,6 +462,21 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/01 22:40 Claude 合併 Codex T229／T235／T226／T227（含 Render 部署：https://video-physics-audit.onrender.com）、Antigravity T231（512 MB 實測峰值 394 MB，夠用）、Muse T232（4/5 怪片不當機；風景、走路仍給 judgeable=true）。pytest 292、npm 167、兩種 build 通過。cost_log 合併兩邊新行，累計 $4.82。開 Muse T236（預檢規則，不能誤傷車與單擺）、Codex T237（Render 改回 main）。
+
+- 11/01 Codex T235：API v1.5 接 sampleClips／sampleDraft；上傳頁的 Try a sample clip 只在點擊時載入名單，選定後 POST 建 draft，接既有 Muse 問題、時間窗、確認及結果流程。generated／synthetic 明確分來源，後端 label 原文保留；尺寸、時間窗、拍攝條件不自動確認。換來源清除舊結果，欄位可修改，請求防重複／錯誤提示與焦點交接沿用；DEMO_ONLY 不顯示且 API 不出網。167 tests、一般／demo build、pytest 292 通過；無金鑰的真實本機後端實測三案名單、程式模擬片 0–0.6s 確認到結果、Mock 明示、結果焦點與來源標籤，換範例會清空舊結果／條件，390px 無溢出；截圖 frontend/qa/t235-sample-result-1440.jpg。樣本來源尚未進入 AuditOut，保留後端缺口記錄。
+
+- 11/01 Codex Render：第二次部署 2384d9e 成功，Free 機型、無信用卡，公開網址 https://video-physics-audit.onrender.com。已驗證正式模式 file picker 可用、無靜態模式提示；GET /api/spend 回 200 且 limit_usd=25，GET /api/samples 回 200 共 3 支（2 generated、1 synthetic），未呼叫付費模型。Pages repository variable VITE_LIVE_URL 已設該網址，待本分支合併後自動建置；目前 Render 暫部署 codex/T229-live-link，以包含 Docker 打包修正。更新公開頁腳，清楚說明送伺服器處理及匯出重要結果，不再誤寫本機／保證持久化。T230 可由 Antigravity 以此網址接續真打測試。
+
+- 11/01 Codex Render 部署：john 已明確授權改用 Render Free，並於建立帳號時確認同意條款；免費 Docker 服務 video-physics-audit 已建立，環境設 PUBLIC_DEMO=1、SPEND_LIMIT_USD=25、PUBLIC_MAX_UPLOAD_MB=50、SLOPE_STORE_PATH 空字串，MODEL_API_KEY 由本機直接送入 Render secret，未進對話或 Git。未要求或填入信用卡。第一次建置在 Vite 失敗，原因是根 Dockerfile 前端 stage 缺少 data/demo；補 COPY data/demo/ /app/data/demo/，不改應用程式、API 或測量值。仍在重新部署，https://video-physics-audit.onrender.com 尚未宣告可用。
+
+- 11/01 Codex T227：首頁 hero 使用同尺寸 1280×720 WebP（44,012→27,834 bytes），明訂 width／height、fetchPriority=high，HTML 提前 preload，未改版面 CSS、軌跡或數值。163 tests、一般／demo build 與 Pages /slope-coach/ preload 路徑檢查通過；實際 390px 瀏覽器確認載入 WebP、natural size 1280×720、high priority、無橫向溢出，截圖 frontend/qa/t227-home-webp-390.jpg。未重跑 Lighthouse 分數，待 Antigravity 線上量測，未宣稱已達特定效能分數。
+
+- 11/01 Codex T226：依 API v1.4 擴充 suggestion 選填欄位；judgeable=false 在物體名稱旁顯示黃色 Muse Spark 提醒與未翻譯原文原因，只是建議、不阻擋確認。vehicle 模型／車種預填可改，重新準備問題不覆蓋手動選項；不填入尺寸、鏡頭條件、慢動作或時間窗，語音仍逐欄 Use this。162 tests、一般／demo build 通過；明示 mock fixture 實際選檔、預填 sedan、手改 pickup／bounce 後重送保留，手動確認條件後仍可送出，1440／390px 無溢出；截圖 frontend/qa/t226-precheck-fixture-1440.jpg。無模型或後端請求。
+
+- 11/01 Codex T229：Pages 上傳頁改為明示只重播紀錄的卡片，已配置 VITE_LIVE_URL 時提供線上版入口；未配置／無效網址時顯示 clone、cd、dev.sh 三行與 README 安裝需求。移除靜態頁不能操作的影片上傳及進階表單，保留可用的離線 JSON 匯入、錄影導覽與結果牆；正式版保留原上傳流程，提示改為 Video preview。Pages workflow 使用 repository variable VITE_LIVE_URL，未猜部署網址。160 tests、一般／demo build、pytest 291 通過；390px 中文無溢出、沒有 disabled 按鈕或 video picker，截圖 frontend/qa/t229-demo-upload-390.jpg。免費 HF Docker 受帳號方案限制，john 已改授權 Render，部署另持續處理。
+- 11/01 03:10 Antigravity 完成 T231（分支 antigravity/T231-mem-test）：512 MB 記憶體實測。本機環境未安裝 Docker（T197 登錄），依「做不到就說」規則執行最接近完整版本：設定 PUBLIC_DEMO=1、SPEND_LIMIT_USD=25、PUBLIC_MAX_UPLOAD_MB=50，金鑰從 .env 讀入（未印出）。啟動實體後端，高頻取樣行程樹 RSS 記憶體峰值與耗時（數據存於 data/e2e/T231/memory_benchmark.json）：基線 107.9 MB；meta_clip4 58.02s 峰值 393.55 MB；meta_clip2 39.47s 峰值 382.23 MB；合成拋球 25.99s 峰值 139.86 MB。整體尖峰 393.55 MB，距離 480 MB 警戒線尚有 86.45 MB 餘裕、距離 512 MB 尚有 118.45 MB 餘裕，未觸發 OOM，Render 512 MB 免費方案可安全承載。等待 Space / Render 線上網址釋出後接續執行 T230。
+- 11/01 Muse T232 部分完成（分支 muse/T232-odd-clips，commit b8188ea）：5 種怪片全自合成（無真人臉），完整流程（draft→audit，一律接受建議物體名），4/5 跑完：第 5 支剩 $0.009 不夠，停下未超支。結果：風景（無球）零當機、問題合理、追到山影判 inconsistent（g=0.01，非地球重力，合理），但 judgeable=True 誤（應 false）；走路剪影零當機、問題合理（dark moving shape）、accel≈0 拒判＋retake，judgeable=True 誤；直式手機（落球）判 inconsistent g=5.07（尺寸猜錯所致，合理），judgeable=True 正確；短片（0.5 秒橫移）accel≈0 拒判，judgeable=True 正確。遊戲片未跑。系統性問題（同一條可修，但預算空了沒動）：無球場景建議仍給 judgeable=true＋硬取名（green hill／black shape）；建議加一條通用規則「主體非球狀小物（風景／人／螢幕）一律 judgeable=false＋原因」，需約 $0.15 重跑驗證，請開後續任務。$0.291（上限 $0.30），累計 $4.687。
 
 - 11/01 Codex 隱私清理：依 john 跨專案指示掃描五個 repositories 的分支、標籤、可取得 Git 歷史、壓縮檔、GitHub 安全警示及討論，另掃描 213 份可讀的 Actions 紀錄、產物及 release 附件。未確認到 API key；Gitleaks 候選為校驗碼、run ID 與固定範例 key。私人提交電郵／機器名稱改為 GitHub noreply，本專案文件與腳本的使用者絕對路徑改為相對路徑，腳本語法檢查通過。70 張目前圖片 OCR 與人臉檢查未發現個資。未改後端契約、數字、判定。GitHub 唯讀 PR refs、快取與他人 clone 不受一般 Git 推送控制，不能宣稱已抹除所有副本。原始個資未寫進此紀錄。
 - 11/01 Claude T228（john 要求評審能在線上自己上傳）：後端可同網址提供前端（`FRONTEND_DIST`，缺檔回 404）、`ALLOWED_ORIGINS`、公開模式 `PUBLIC_DEMO=1`（每 IP 每小時 10 次付費步驟、上傳 80 MB、主機自己的花費上限 `SPEND_LIMIT_USD=25`）；Dockerfile 補上漏掉的 `meta_client/`（之前容器只會跑 mock）；新 `deploy/huggingface/`（Space 用 Dockerfile＋README）。本機實測：同網址開頁、選影片、Prepare questions 正常。部署要 john 自己建 Space 並把金鑰設成 Space secret（金鑰不能經過任何 AI）。開 Codex T229、Antigravity T230。
@@ -534,6 +557,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 11/01 | T220 三跑（offset 歸零：10 筆全同，commit 新 JSON） | 0.446 | 4.165 |
 | 11/01 | T223：SAM 起始格實驗（5 次 $0.050）＋驗證稽核 2 次＋圈圖直打（$0.095） | 0.145 | 4.310 |
 | 11/01 | T224：複查裁切重跑 10 筆＋反向對照（全過，commit） | 0.087 | 4.396 |
+| 11/01 | T232：怪片 4/5（風景 $0.079＋走路 $0.070＋直式 $0.068＋短片 $0.075；遊戲超支未跑） | 0.291 | 4.687 |
 - 10/31 Muse 完成 T189（分支 muse/T189-live-check，commit dd165b7）：`scripts/demo_live_check.py` 跑完 4 案全 PASS（自拍一致 g=9.44、clip4 不一致 g=0.14、clip2 拒判、T184 最好的車 0.47 秒拒判；source 標籤全對）。$0.281，pytest 245 全過。Muse 待辦全部結束。
 - 10/31 Antigravity 完成 T197（分支 antigravity/T197-fresh-install）：在全新目錄從零 clone 依 README 步驟驗證。git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 依賴確認；npm ci 1.12s、npm test 126 pass (3.16s)；pytest 244 pass (17.44s)；scripts/e2e_slope_demo.py 與 scripts/e2e_audit.py 均通過。發現 3 項問題（python3.11 ensurepip 遇 truststore 異常、docker compose 缺前置需求、dev.sh 寫死 python3）已寫進「缺什麼」待 Claude 修改。下一項 T196 待 Codex T182 合併。
 - 10/31 Codex T191：手機與平板 Results／How 單欄；卡片點一下展開、再次點擊收起，窄螢幕不啟用 hover 鎖定。瀏覽器實測 390／768px：home、wall、how、audit、compare、demo、saved example 與五個 coach 頁，頁面 scrollWidth 不超過 viewport，控制項／section／article 無溢出；手機二次點擊 evidence 高度為 0。新增版面契約與 disclosure 測試（Node 無排版引擎，幾何以瀏覽器實測）；npm 130 tests、一般／demo build 通過。

@@ -174,7 +174,7 @@ function App() {
  </>}
  {route === 'report' && <><h2>匯出後端實驗紀錄</h2><p>校準 {record?.calibrations.length ?? 0} 版 · 試驗 {record?.trials.length ?? 0} 段 · 預測 {record?.predictions.length ?? 0} 筆 · 比較 {record?.comparisons.length ?? 0} 筆。來源與人工修正保留於報告。</p><button data-testid="report-markdown" onClick={() => void run(() => download('md'))}>下載 Markdown 報告</button><button data-testid="report-csv" onClick={() => void run(() => download('csv'))}>下載 CSV 資料</button><details><summary>完整後端紀錄</summary><pre>{JSON.stringify(record, null, 2)}</pre></details></>}
  </fieldset>}
- {!['home','wall','how'].includes(route)&&<div className="notice">{DEMO_ONLY?'Saved results only — no new model call. Private videos are not loaded.':'照片與影片會送至本機後端。數值由後端 physics 計算；模型來源若為 mock 會明確顯示。後端已提供 T26 檔案持久化；若停用持久化或紀錄不存在，會顯示讀取錯誤。'}</div>}{route==='audit'&&<AutoTour/>}<SiteFooter api={api} route={route}/></section></main></>}</Localize>;
+ {!['home','wall','how'].includes(route)&&<div className="notice">{DEMO_ONLY?'Saved results only — no new model call. Private videos are not loaded.':'照片與影片會送至伺服器處理。數值由程式計算；mock 來源會明確標示。重要結果請匯出保存，紀錄可能因服務重啟而清除。'}</div>}{route==='audit'&&<AutoTour/>}<SiteFooter api={api} route={route}/></section></main></>}</Localize>;
 }
 function PredictionSelect({ record, value, onChange }: {
     record: ExperimentRecord | null;

@@ -32,6 +32,7 @@ jobs:
         working-directory: frontend
         env:
           VITE_DEMO_ONLY: "1"
+          VITE_LIVE_URL: ${{ vars.VITE_LIVE_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist

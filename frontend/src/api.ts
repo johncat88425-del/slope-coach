@@ -2,10 +2,15 @@ import {DEMO_ONLY,demoUploadMessage} from './mode.js';
 import type {VehicleClass} from './vehiclePresentation.js';
 import type {AuditModel,AuditOut} from './audit';
 export type FlightWindows={draft_id:string;source:'physics';track_source:'frame_diff'|'color';windows:{t_start:number;t_end:number}[];scanned_until_s:number};
+export type SampleClip={name:string;kind:'generated'|'synthetic';label:string};
+export function parseSampleClips(value:unknown):SampleClip[]{
+ if(!Array.isArray(value)||!value.every(row=>row&&typeof row.name==='string'&&row.name.trim()&&typeof row.label==='string'&&row.label.trim()&&['generated','synthetic'].includes(row.kind)))throw new Error('The sample list is invalid. Please try again.');
+ return value;
+}
 export type InterviewField='camera_static'|'slow_motion'|'object_size_m'|'time_window'|'assumed_model'|'length_m';
 export type VoiceField={value:boolean|number|string|number[];confirmed:false};
 export type VoiceAnswer={source:{transcript:string;fields:string};transcript:string;fields:Partial<Record<InterviewField,VoiceField>>};
-export type ObjectSuggestion={source:string;object_name:string;camera_looks_static:boolean|null;reason:string};
+export type ObjectSuggestion={source:string;object_name:string;camera_looks_static:boolean|null;reason:string;assumed_model?:'vehicle'|null;judgeable?:boolean|null;vehicle_class?:VehicleClass|null};
 export type AuditDraft={draft_id:string;video_url:string;interview:{source:'model'|'mock';note?:string|null;questions:{field:InterviewField|'vehicle_class';text:string}[]};suggestion?:ObjectSuggestion|null};
 export type InterviewAnswers={object_name?:string;t_start:number;t_end:number;camera_static:boolean;slow_motion?:boolean;assumed_model:AuditModel;object_size_m?:number;length_m?:number;vehicle_class?:VehicleClass};
 export type Pixel = [number, number];
@@ -68,6 +73,8 @@ export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnl
     audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight',onProgress?:UploadProgress,length_m?:number,object_name='ball',slow_motion?:boolean,vehicle_class?:VehicleClass)=>{if(demoOnly)return Promise.reject(new Error(demoUploadMessage));const data=new FormData();data.append('file',file);data.append('object_name',object_name.trim()||'ball');if(slow_motion!==undefined)data.append('slow_motion',String(slow_motion));data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(assumed_model==='vehicle'&&vehicle_class)data.append('vehicle_class',vehicle_class);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));if(length_m!==undefined)data.append('length_m',String(length_m));return onProgress?uploadAudit(root+'/api/audits',data,onProgress):request<AuditOut>('/audits',{method:'POST',body:data})},
     flightWindows:(id:string,object_name:string)=>{const body=new FormData();body.append('object_name',object_name.trim()||'ball');return request<FlightWindows>('/audit-drafts/'+encodeURIComponent(id)+'/windows',{method:'POST',body})},
     auditDraft:(file:File)=>{const data=new FormData();data.append('file',file);return request<AuditDraft>('/audit-drafts',{method:'POST',body:data})},
+    sampleClips:async()=>parseSampleClips(await request<unknown>('/samples')),
+    sampleDraft:(name:string)=>request<AuditDraft>('/samples/'+encodeURIComponent(name)+'/draft',{method:'POST'}),
     voiceAnswer:(id:string,audio:File)=>{const body=new FormData();body.append('audio',audio);return request<VoiceAnswer>('/audit-drafts/'+encodeURIComponent(id)+'/voice',{method:'POST',body})},
     auditFromDraft:(id:string,answers:InterviewAnswers)=>{const data=new FormData();data.append('draft_id',id);for(const [k,v] of Object.entries(answers))if(v!==undefined)data.append(k,String(v));return request<AuditOut>('/audits',{method:'POST',body:data})},
     spend:()=>request<unknown>('/spend'),
