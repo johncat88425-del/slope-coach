@@ -51,15 +51,19 @@
 
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
-**Codex**（11/01 Claude 加，凍結前做完）
+**Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
+- [ ] T234 Claude：後端 `GET /api/samples`、`POST /api/samples/{name}/draft`（從 data/gate/clips 的 Meta AI 片與合成片建 draft，評審沒自己的影片也能試），加測試、API v1.5。
+- [ ] T235 Codex（T229 之後做）：上傳區加「Try a sample clip」按鈕，列出 `GET /api/samples`（Claude T234 會加）的片，按了就走 `POST /api/samples/{name}/draft`，之後流程跟上傳一樣；DEMO_ONLY 時不顯示。
 - [x] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。 — commit fabaadb（160 tests、一般／demo build、pytest 291 通過）
 - [ ] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。
 - [ ] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。
 
-**Antigravity**
-- [ ] T230 Antigravity：john 建好 Hugging Face Space 後（網址會寫在這行），用內建瀏覽器在**線上網址**跑完 own_2／meta_clip4／meta_clip2 三支（Meta clip 可用 data/gate 的），截圖、記每支秒數、確認一致／不一致／拒判跟 data/demo 相同；再測同一 IP 第 11 次送出得到 429 提示。結果寫日誌。
+**Antigravity**（11/01 03:00 Claude：公開上傳版改用 Render 免費方案，HF Docker 已改收費）
+- [ ] T231 Antigravity（先做，不用等網址）：在 john 的 Mac 用根目錄 Dockerfile build，`docker run -m 512m --cpus 0.1` 加 `-e PUBLIC_DEMO=1 -e SPEND_LIMIT_USD=25 -e PUBLIC_MAX_UPLOAD_MB=50 --env-file .env`（金鑰只從 .env 讀，不准印出），開 http://localhost:8000 跑 meta_clip4、meta_clip2、data/demo 的合成拋球片，記每支秒數與 `docker stats` 記憶體峰值。超過 480 MB 或被 OOM 殺掉就寫日誌，Claude 改。
+- [ ] T230 Antigravity：john 建好 Hugging Face Space 後（網址會寫在這行），網址出來後（Claude 會寫在這行）用內建瀏覽器在**線上網址**跑完 own_2／meta_clip4／meta_clip2 三支（Meta clip 可用 data/gate 的），截圖、記每支秒數、確認一致／不一致／拒判跟 data/demo 相同；再測同一 IP 第 11 次送出得到 429 提示。結果寫日誌。
 
 **Muse**（照順序做）
+- [ ] T232 Muse：評審會亂上傳。本機後端跑 5 種怪片完整流程：沒有球的風景、人走路、手機直式、少於 1 秒、螢幕錄影的遊戲畫面（自己找或用 ffmpeg 合成，不准有真人臉）。每支要：不當機、Spark 問題合理、最後拒判或合理結果、`suggestion.judgeable` 有沒有正確說 false。總花費 ≤ $0.30。有問題的提示詞照一套規則修（不准針對單支片），結果表寫日誌。
 - [x] T224 Muse：commit acd7955。複查改放大裁切（160 框→2×→紅圈 r=28）＋逐張四答＋3/4 多數決，回傳形狀不變；新 `scripts/refresh_track_check.py` 只寫 `track_check`（程式自驗他欄逐字相同，source 照後端形存 `model`）。10 筆全轉 true（含原 false 的 own_3、manus，原 8 true 全留住）；反向對照（own_2 平移 120px）得 false，方法有效，照規則 commit。同一套規則、無單支調參。pytest 288 全過。$0.087（上限 $0.15），累計 $4.396。一套規則，不准為單支片調參。(1) `track_check.py` 改送**放大裁切**：每個時刻從 480 寬影格以追蹤點為中心裁 160×160（邊界用邊緣補齊），放大 2× 成 320×320 再畫紅圈（半徑跟著放大）；(2) prompt 改成**每張圖各答一次**「紅圈裡或緊貼紅圈的是不是 {name}」，schema 改 `{"answers":[bool×4], "note"}`；程式算 `same_object = true 的張數 ≥ 3`；回傳形狀不變 `{same_object, note, source}`（前端不用改），note 規則照舊；(3) 測試：邊界裁切、多數決（2/4→false、3/4→true）、mock Spark；(4) 新 `scripts/refresh_track_check.py`：讀 data/demo/*.json 存的 points，只重跑 check_track、只覆寫 `track_check` 欄位，其他欄位必須逐字不變（程式自己比對，不同就中止），總花費上限 $0.15；(5) **反向對照**：own_2 的 points 整條平移 120 px（圈到背景）必須得 false，否則這個改法無效、不要 commit 新 JSON；(6) 結果表寫進日誌：10 筆新舊 same_object 對照＋反向對照結果。目標 own_3、manus 轉 true 且原本 8 筆仍 true；做不到就照實寫，不要改門檻硬湊。
 - [x] T223 Muse：commit 9dfbcab。實驗做完：**假設不成立，不改程式**。B 片（前 5 格無球）第一個點 frame_index=5、x=110.5（就是第 5 格位置）——SAM 回的是絕對格號，沒有重編。附帶發現：全平面形追不到（A／B 零命中），加了立體明暗才 30／30。驗證稽核：manus 不一致、own_3 一致（警告制正確未翻盤），但兩筆複查仍是 false；把 own_3 的圈圖一張張看：4 張圈都在球上——是 Spark 看錯，不是追錯。詳見日誌。實驗 $0.050（上限 $0.05），驗證 $0.095。 Claude 的假設：SAM 回傳的 `frame_index` 是從「第一次找到物體的那一格」開始算 0，不是從影片第 0 格。證據：manus_clip1 窗口有 20 格，SAM 只回 19 個點（第 0 格球在畫面最上緣被切到，SAM 沒找到），而且整條軌跡剛好慢一格；其他從第 0 格就看得到球的影片（meta_clip1 35/35、clip5、clip6）都沒有偏。**實驗（上限 $0.05，不用真實影片）**：用 ffmpeg 或 numpy 產生兩支 15 fps、640×480、2 秒的白底影片，一顆直徑 40 px 的橘色圓從左往右等速移動（每格 10 px）：A 片第 0 格就有球；B 片前 5 格沒有球（第 5 格才出現）。各跑一次 `sam.track(clip, "orange ball")`，記下原始回傳的每個 `frame_index` 和中心 x。如果 B 片第一個點的 frame_index 是 0、x 卻是第 5 格的位置，假設成立。**成立的話**：看 SAM 回傳裡有沒有表示起始格的欄位（例如 prompt frame、start frame）；有就用它校正 `t_s`；沒有就在 `meta_client/sam.py` 用 `n_frames` 和第一個偵測的位置推算，並加單元測試（A、B 兩種情況）。**不成立的話**：不要改程式，把兩支的原始結果寫進 STATUS 給 Claude。做完用 manus_clip1 和 own_3 各跑一次稽核，看複查是否變成 true。push `muse/T223-sam-start-frame`。
 - [x] T219 Muse：commit d756205。修好後真打驗證通過：own_2 一致＋clip4 不一致，兩筆 `track_check` 都是 `{same_object: true, note 無數字, source: model}`；錯名對照（own_2 配 `red umbrella`）SAM 什麼都沒追到，後端退回顏色追蹤只追到 6% 而拒判，`track_check` 為 `None`（只跑 sam 軌，正確）。$0.114（上限 $0.15）。用 own_2 和 meta_clip4 各跑一次 `POST /api/audits`（SAM 追蹤），確認結果裡 `track_check` 是 `{same_object: true, note: ..., source: model}`，不是 `null`；note 沒有數字。再故意把 `object_name` 寫成畫面裡沒有的東西（例如 `red umbrella`）跑一次 own_2，記下 SAM 和 Spark 複查各回傳什麼（不准挑結果）。上限 $0.15。結果寫進 STATUS 日誌，push `muse/T219-verify-check`。
@@ -139,6 +143,7 @@
 
 
 **Manus**（不寫程式）
+- [ ] T233 Manus：寫「評審怎麼測」英文段落（≤120 字，放 README 最上面和提交文字）：線上網址（先寫 LIVE_URL 佔位）、第一次開要等約 1 分鐘（免費主機休眠）、沒有自己影片就按「Try a sample clip」、自己拍的話：固定鏡頭、正側面、球整個在畫面裡、2–5 秒、50 MB 以下；結果只會是 consistent／inconsistent／not judgeable，**不判斷真假**。另外把 /mnt/project-files/submission/2026-10-31-submission-final.md 加一行 live link 佔位。成果交給 john。
 - [x] T178 Manus：車子影片與資料研究 — 成果在 `docs/research/vehicle.md`（Claude 10/31 收進 repo 並核對，見 T185）
 - [x] T164 Manus：三分鐘 demo 的英文旁白和分鏡表（給 john 錄影用）。順序：(1) 0:00–0:20 問題：影片裡的運動符不符合物理，一般人沒辦法量；(2) 0:20–1:00 Muse 偵訊：上傳 → Muse Spark 問問題、建議物體名稱 → 使用者確認；(3) 1:00–1:40 真實影片：john 丟球，SAM 3.1 追蹤，g = 9.45 m/s²，與假設一致；(4) 1:40–2:20 生成影片：g = 0.14 m/s²（像冥王星），與真實重力的自由飛行不一致；另一支因為物體往鏡頭移動而拒判；(5) 2:20–2:50 限制與規則：數字只由程式算、模型不碰數字、不判斷影片真假；(6) 2:50–3:00 結尾。數字只用 README「Results on our test set」的 SAM 欄。每段寫：畫面上要點哪裡、旁白（英文）、秒數。不准說「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude 檢查。
 - [x] T163 Manus：用目前的數字寫提交文字初稿（英文，Cerebral Valley 用）：一段 50 字簡介、一段 200 字說明（問題、做法、Meta 模型用在哪、結果、限制）。數字只用 README 的「Results on our test set」表；SAM 版寫 [TBD]。不准出現「偵測 AI」「抓假影片」「任何影片都能檢查」。交給 john 轉給 Claude。
@@ -346,6 +351,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - [x] Claude 已修（10/31）：`backend/video.py` 的 `probe_fps()` 遇到含 tmcd 軌的 mp4 只取第一行，加測試 `tests/backend/test_video_probe.py`；Pexels 原檔不用再 remux。
 
 ## 待 john 決定
+
+- T235 Codex：T229 後同步 main（d39112f），T234 未完成且 docs/API.md 尚無 samples 回應契約。先依 john 指定順序做 T226、T227，不預猜樣本 JSON；完成後再同步重查 T234。
 
 - T229／Hugging Face：已登入帳號，但其 New Space 頁目前將 Docker／Gradio 標為 Paid、停用選取並要求 PRO，免費僅提供 Static。依 john 的免費限制，尚未建立 Space、未傳送 MODEL_API_KEY、未設定付費方案或捏造線上網址。前端先提供 VITE_LIVE_URL 入口及未設定時的 README 本機啟動備案。需可用的免費 Docker 額度或已運作網址後，再由 Claude 填 Pages 變數並接 T230。
 
