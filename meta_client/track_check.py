@@ -1,16 +1,17 @@
-"""Track re-check (T203): Spark looks at 4 circled frames and judges whether
-SAM tracked the same object throughout.
+"""Track re-check (T203, crops in T224): Spark judges 4 zoomed crops and says
+whether SAM tracked the same object throughout.
 
 `check_track(video_path, points, object_name)` picks 4 evenly spaced tracked
-times, extracts each frame scaled to the backend's 480 px-wide frame, draws a
-red ring at the tracked position, and asks Spark whether the circled thing is
-the same object in all four. Points use the AuditOut convention: (t_s, x, y)
-with x/y in the 480 px-wide frame.
+times; for each, a 160x160 crop around the tracked point is cut from the
+480 px-wide frame (edge-padded at borders), zoomed 2x, ringed, and sent to
+Spark, which answers per still. Points use the AuditOut convention: (t_s, x,
+y) with x/y in the 480 px-wide frame.
 
-Returns {"same_object", "note", "source"}, or None when there is nothing to
-check (fewer than 4 tracked points), the model output fails validation after
-retries, or the API call itself fails. None means "not checked", never a
-verdict. Numbers or authenticity language in the note fail validation.
+Returns {"same_object", "note", "source"} with same_object decided by
+majority (>= 3 of 4 stills), or None when there is nothing to check (fewer
+than 4 tracked points), the model output fails validation after retries, or
+the API call itself fails. None means "not checked", never a verdict.
+Numbers or authenticity language in the note fail validation.
 """
 from __future__ import annotations
 
@@ -34,31 +35,34 @@ from .spark import _check_priced, _text_format, _usage_to_dict
 
 N_STILLS = 4
 FRAME_WIDTH = 480
-RING_RADIUS = 14
-RING_WIDTH = 3
+CROP_SIZE = 160
+CROP_ZOOM = 2
+RING_RADIUS = 14 * CROP_ZOOM
+RING_WIDTH = 3 * CROP_ZOOM
+SAME_OBJECT_MIN_TRUES = 3
 MAX_NOTE_CHARS = 200
 
 TRACK_CHECK_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "same_object": {"type": "boolean"},
+        "answers": {"type": "array", "items": {"type": "boolean"},
+                    "minItems": N_STILLS, "maxItems": N_STILLS},
         "note": {"type": "string"},
     },
-    "required": ["same_object", "note"],
+    "required": ["answers", "note"],
     "additionalProperties": False,
 }
 
 TRACK_CHECK_PROMPT = (
-    "You see {n} stills from one video clip, in time order. In each still a "
-    "red ring marks where a tracker says the {name} is. Answer with JSON "
-    "only, matching the schema. same_object is true when the ringed thing "
-    "looks like the same {name} in every still the ring is visible, false "
-    "when the tracker clearly jumped to a different object or the background "
-    "(a ring on empty background with the object elsewhere counts as jumped). "
-    "note is one short English phrase saying what you saw. Describe only "
-    "what is visible; do not claim proof or causes (no 'proves', 'confirms', "
-    "'must be'). Do not output any numbers at all. Use exactly these JSON "
-    'keys: "same_object" and "note".'
+    "You see {n} close-up stills from one video clip, in time order. Each is "
+    "a 2x zoom centered where a tracker says the {name} is, with a red ring "
+    "at the tracked spot. For EACH still in order, decide: is the {name} "
+    "inside the red ring or touching it? Answer with JSON only, matching "
+    "the schema: answers has one true/false per still in order, note is one "
+    "short English phrase saying what you saw. Describe only what is "
+    "visible; do not claim proof or causes (no 'proves', 'confirms', 'must "
+    "be'). Do not output any numbers at all. Use exactly these JSON keys: "
+    '"answers" and "note".'
 )
 
 
@@ -99,13 +103,38 @@ def _frame_rgb(video: Path, t: float) -> np.ndarray:
     return np.frombuffer(raw, np.uint8).reshape(px, FRAME_WIDTH, 3).copy()
 
 
-def _draw_ring(frame: np.ndarray, x: float, y: float) -> np.ndarray:
+def _draw_ring(frame: np.ndarray, x: float, y: float,
+               radius: float = RING_RADIUS,
+               width: float = RING_WIDTH) -> np.ndarray:
     h, w = frame.shape[:2]
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
     dist = np.sqrt((xx - x) ** 2 + (yy - y) ** 2)
-    ring = np.abs(dist - RING_RADIUS) <= RING_WIDTH / 2
+    ring = np.abs(dist - radius) <= width / 2
     frame[ring] = (255, 0, 0)
     return frame
+
+
+def _crop_zoom(frame: np.ndarray, x: float, y: float) -> np.ndarray:
+    """160x160 crop around (x, y), edge-padded, zoomed 2x, ringed (T224)."""
+    h, w = frame.shape[:2]
+    half = CROP_SIZE // 2
+    x0 = int(round(x)) - half
+    y0 = int(round(y)) - half
+    # Pad first so alignment never shifts: crop pixel (i, j) always shows
+    # source pixel (x0 + i, y0 + j), clamped to the edge.
+    px0, py0 = max(0, -x0), max(0, -y0)
+    px1 = max(0, x0 + CROP_SIZE - w)
+    py1 = max(0, y0 + CROP_SIZE - h)
+    if px0 or py0 or px1 or py1:
+        frame = np.pad(frame, ((py0, py1), (px0, px1), (0, 0)), mode="edge")
+        x0 += px0
+        y0 += py0
+    crop = frame[y0:y0 + CROP_SIZE, x0:x0 + CROP_SIZE]
+    big = np.repeat(np.repeat(crop, CROP_ZOOM, axis=0), CROP_ZOOM, axis=1)
+    # Tracked point in crop pixels, scaled by the zoom.
+    cx = (x - (x0 - px0)) * CROP_ZOOM
+    cy = (y - (y0 - py0)) * CROP_ZOOM
+    return _draw_ring(np.ascontiguousarray(big), cx, cy)
 
 
 def _to_png_bytes(frame: np.ndarray) -> bytes:
@@ -122,10 +151,10 @@ def _to_png_bytes(frame: np.ndarray) -> bytes:
 
 
 def _circled_stills(video: Path, picks: list[tuple[float, float, float]]) -> list[str]:
-    """Extract + ring each pick; returns base64 PNG data URIs."""
+    """Extract + crop + zoom + ring each pick; returns base64 PNG data URIs."""
     uris = []
     for t, x, y in picks:
-        frame = _draw_ring(_frame_rgb(video, t), x, y)
+        frame = _crop_zoom(_frame_rgb(video, t), x, y)
         uris.append("data:image/png;base64,"
                     + base64.b64encode(_to_png_bytes(frame)).decode("ascii"))
     return uris
@@ -134,9 +163,11 @@ def _circled_stills(video: Path, picks: list[tuple[float, float, float]]) -> lis
 def _validate_track_check(data: Any) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ModelOutputError("track check must be a JSON object")
-    same = data.get("same_object")
-    if type(same) is not bool:
-        raise ModelOutputError("same_object must be boolean")
+    answers = data.get("answers")
+    if (not isinstance(answers, list) or len(answers) != N_STILLS
+            or any(type(a) is not bool for a in answers)):
+        raise ModelOutputError(f"answers must be {N_STILLS} booleans")
+    same = sum(answers) >= SAME_OBJECT_MIN_TRUES
     note = data.get("note")
     if not isinstance(note, str) or not note.strip():
         raise ModelOutputError("note must be a non-empty string")

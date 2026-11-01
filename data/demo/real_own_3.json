@@ -111,8 +111,8 @@
   "text": "Motion matches Earth-level gravity at 0.89 times Earth's pull."
  },
  "track_check": {
-  "same_object": false,
-  "note": "ring on empty couch fabric",
+  "same_object": true,
+  "note": "orange ball overlapping red ring over couch to floor",
   "source": "model"
  },
  "retake_tips": null,
