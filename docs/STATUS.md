@@ -20,7 +20,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | 全部完成 |
-| **Codex** | 全部完成 |
+| **Codex** | T229、T226、T227、T235 已完成並 push 至 codex/T229-live-link；Render Free 已上線，最後版本部署核對中 |
 | **Antigravity** | 全部完成（T216 凍結前回歸測試含 Muse T220 合併後第二輪全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
@@ -53,7 +53,7 @@
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
 - [ ] T234 Claude：後端 `GET /api/samples`、`POST /api/samples/{name}/draft`（從 data/gate/clips 的 Meta AI 片與合成片建 draft，評審沒自己的影片也能試），加測試、API v1.5。
-- [ ] T235 Codex（T229 之後做）：上傳區加「Try a sample clip」按鈕，列出 `GET /api/samples`（Claude T234 會加）的片，按了就走 `POST /api/samples/{name}/draft`，之後流程跟上傳一樣；DEMO_ONLY 時不顯示。
+- [x] T235 Codex（T229 之後做）：上傳區加「Try a sample clip」按鈕，列出 `GET /api/samples`（Claude T234 會加）的片，按了就走 `POST /api/samples/{name}/draft`，之後流程跟上傳一樣；DEMO_ONLY 時不顯示。 — 完成（167 tests、一般／demo build、pytest 292 通過）
 - [x] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。 — commit fabaadb（160 tests、一般／demo build、pytest 291 通過）
 - [x] T226 Codex：上傳頁用 `suggestion` 的新欄位（API v1.4）：(1) `judgeable === false` 時，在物體名稱預填旁顯示黃色提示「Muse Spark 認為這支片可能無法判斷：{reason}」，仍可繼續；(2) `assumed_model === "vehicle"` 時預選車子模型、`vehicle_class` 預填車種（使用者可改）；(3) 標「由 Muse Spark 建議」；(4) 測試＋ demo build 不壞。 — commit 89eaab6（162 tests、一般／demo build 通過）
 - [x] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。 — commit 9f720c4（163 tests、一般／demo build、Pages 路徑檢查通過）
@@ -352,9 +352,11 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
-- T235 Codex：T229 後同步 main（d39112f），T234 未完成且 docs/API.md 尚無 samples 回應契約。先依 john 指定順序做 T226、T227，不預猜樣本 JSON；完成後再同步重查 T234。
+- T235 Codex／Claude：samples API 有 kind，但 AuditOut 尚未保存 sample 來源。前端在此次結果旁保留 generated／synthetic 標示，不修改回應數字或 synthetic 欄；之後重載 JSON／匯出分享卡能否保留此來源，需後端將已知 sample.kind 寫入結果（現有 synthetic 欄即可），前端不從檔名推測。
 
-- T229／Hugging Face：已登入帳號，但其 New Space 頁目前將 Docker／Gradio 標為 Paid、停用選取並要求 PRO，免費僅提供 Static。依 john 的免費限制，尚未建立 Space、未傳送 MODEL_API_KEY、未設定付費方案或捏造線上網址。前端先提供 VITE_LIVE_URL 入口及未設定時的 README 本機啟動備案。需可用的免費 Docker 額度或已運作網址後，再由 Claude 填 Pages 變數並接 T230。
+- T235 Codex：T229 後同步 main（d39112f），T234 未完成且 docs/API.md 尚無 samples 回應契約。已先完成 T226、T227；再次同步後確認 T234 程式與 API v1.5 已合併（0e8674e），依實際契約接 T235，依賴已解除。
+
+- T229／Hugging Face：已登入帳號，但其 New Space 頁目前將 Docker／Gradio 標為 Paid、停用選取並要求 PRO，免費僅提供 Static。依 john 的免費限制，尚未建立 Space、未傳送 MODEL_API_KEY、未設定付費方案或捏造線上網址。前端先提供 VITE_LIVE_URL 入口及未設定時的 README 本機啟動備案。john 後續已改授權 Render；免費服務及 Pages 變數已建立，阻擋已解除，見最新日誌。
 
 - T210 Codex：T212 完成後已 pull main（065852d），T207 仍未勾選，docs/API.md／backend/schemas.py 尚無 track_check、retake_tips、what_would_fit 的回應契約。依 john 指示先跳過，完成 T213 後再同步重查；不預猜 JSON 形狀、不自行修改後端或捏造 Muse 輸出。
 
@@ -458,6 +460,10 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex T235：API v1.5 接 sampleClips／sampleDraft；上傳頁的 Try a sample clip 只在點擊時載入名單，選定後 POST 建 draft，接既有 Muse 問題、時間窗、確認及結果流程。generated／synthetic 明確分來源，後端 label 原文保留；尺寸、時間窗、拍攝條件不自動確認。換來源清除舊結果，欄位可修改，請求防重複／錯誤提示與焦點交接沿用；DEMO_ONLY 不顯示且 API 不出網。167 tests、一般／demo build、pytest 292 通過；無金鑰的真實本機後端實測三案名單、程式模擬片 0–0.6s 確認到結果、Mock 明示、結果焦點與來源標籤，換範例會清空舊結果／條件，390px 無溢出；截圖 frontend/qa/t235-sample-result-1440.jpg。樣本來源尚未進入 AuditOut，保留後端缺口記錄。
+
+- 11/01 Codex Render：第二次部署 2384d9e 成功，Free 機型、無信用卡，公開網址 https://video-physics-audit.onrender.com。已驗證正式模式 file picker 可用、無靜態模式提示；GET /api/spend 回 200 且 limit_usd=25，GET /api/samples 回 200 共 3 支（2 generated、1 synthetic），未呼叫付費模型。Pages repository variable VITE_LIVE_URL 已設該網址，待本分支合併後自動建置；目前 Render 暫部署 codex/T229-live-link，以包含 Docker 打包修正。更新公開頁腳，清楚說明送伺服器處理及匯出重要結果，不再誤寫本機／保證持久化。T230 可由 Antigravity 以此網址接續真打測試。
 
 - 11/01 Codex Render 部署：john 已明確授權改用 Render Free，並於建立帳號時確認同意條款；免費 Docker 服務 video-physics-audit 已建立，環境設 PUBLIC_DEMO=1、SPEND_LIMIT_USD=25、PUBLIC_MAX_UPLOAD_MB=50、SLOPE_STORE_PATH 空字串，MODEL_API_KEY 由本機直接送入 Render secret，未進對話或 Git。未要求或填入信用卡。第一次建置在 Vite 失敗，原因是根 Dockerfile 前端 stage 缺少 data/demo；補 COPY data/demo/ /app/data/demo/，不改應用程式、API 或測量值。仍在重新部署，https://video-physics-audit.onrender.com 尚未宣告可用。
 

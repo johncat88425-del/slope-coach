@@ -1,4 +1,11 @@
 export const newUiCopy:Record<string,string>={
+  "Try a sample clip": "試用範例影片",
+  "Sample clips": "範例影片",
+  "Loading sample clips…": "正在讀取範例影片…",
+  "Choose a clip. Confirm its conditions before checking.": "選擇影片，確認條件後再檢查。",
+  "No sample clips are available.": "目前沒有可用的範例影片。",
+  "The sample preview is unavailable. Choose another clip.": "目前無法預覽此範例，請選擇另一支影片。",
+
   "Muse Spark thinks this clip may not be judgeable:": "Muse Spark 認為這支片可能無法判斷：",
   "Muse Spark thinks this clip may not be judgeable.": "Muse Spark 認為這支片可能無法判斷。",
 
