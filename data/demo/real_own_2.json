@@ -1,11 +1,12 @@
 {
- "audit_id": "aud_e75d61247087",
- "created_at": "2026-10-29T13:17:51.622585Z",
+ "audit_id": "aud_2054f3928840",
+ "created_at": "2026-11-01T01:25:13.263442Z",
  "assumed_model": "free_flight",
  "t_start": 0.2,
  "t_end": 0.8,
  "camera_static": true,
  "object_size_m": 0.11,
+ "vehicle_class": null,
  "length_m": null,
  "slow_motion": false,
  "track_source": "sam",
@@ -13,115 +14,115 @@
  "reasons": [],
  "numbers": {
   "tracked_fraction": 1.0,
-  "size_trend": 0.10384730707534029,
-  "g_vs_earth": 0.962896527249538,
-  "g_apparent_low": 7.2661653325522835,
-  "g_apparent_high": 13.494307046168528,
+  "size_trend": 0.10551033865732484,
+  "g_vs_earth": 0.9628667055802929,
+  "g_apparent_low": 7.265940293648209,
+  "g_apparent_high": 13.493889116775248,
   "g_verdict_robust": 0.0,
-  "a_px_s2": 1952.1916338088329,
-  "tilt_deg": -0.5295691800694303,
-  "rms_over_travel": 0.0036568354448613884,
-  "g_apparent_m_s2": 9.446014932317969,
-  "implied_time_factor": 1.0190844851312857,
-  "implied_object_size_m": 0.11423865066188273,
-  "n_points": 9.0,
   "if_earth_flight_time_s": 0.5333333333333334,
-  "if_earth_vertical_extent_m": 0.670352745612337,
-  "if_earth_launch_speed_m_s": 2.5123282285806594,
-  "if_earth_launch_angle_deg": 39.71757099316301
+  "if_earth_vertical_extent_m": 0.6705539375979747,
+  "if_earth_launch_speed_m_s": 2.511368060601453,
+  "if_earth_launch_angle_deg": 39.719628440998484,
+  "a_px_s2": 1952.8392792527632,
+  "tilt_deg": -0.5492793463422626,
+  "rms_over_travel": 0.0036149912526880195,
+  "g_apparent_m_s2": 9.445722381742673,
+  "implied_time_factor": 1.0191002664252913,
+  "implied_object_size_m": 0.11424218883309095,
+  "n_points": 9.0
  },
  "points": [
   [
    0.2,
-   417.9809349074665,
-   114.77363858753456
+   417.9775,
+   114.7806914893617
   ],
   [
    0.26666666666666666,
-   392.501980287822,
-   96.36290663925504
+   392.5054833836858,
+   96.3791993957704
   ],
   [
    0.33333333333333337,
-   367.7828022926168,
-   88.31195303833354
+   367.80001540357364,
+   88.31030499075786
   ],
   [
    0.4,
-   342.3906895661157,
-   88.35795454545455
+   342.4129363648074,
+   88.34878590750998
   ],
   [
    0.4666666666666667,
-   316.58726295828063,
-   97.21027180783818
+   316.5890467171717,
+   97.21265782828283
   ],
   [
    0.5333333333333333,
-   290.45436507936506,
-   114.26065323565324
+   290.4332275390625,
+   114.2913818359375
   ],
   [
    0.6000000000000001,
-   262.36426966829174,
-   142.4977416117006
+   262.39680011411184,
+   142.49995245340435
   ],
   [
    0.6666666666666667,
-   237.33728215767636,
-   176.6723651452282
+   237.32660421157354,
+   176.67018322002986
   ],
   [
    0.7333333333333334,
-   213.63920746319752,
-   218.52212427250944
+   213.61089466499828,
+   218.57352690251395
   ]
  ],
  "ghost_points": [
   [
    0.2,
-   418.33903835979197,
-   114.1383546831309
+   418.33682545300564,
+   114.15113571235038
   ],
   [
    0.26666666666666666,
-   392.89923517421505,
-   97.10951972395377
+   392.9064910323259,
+   97.1153607392196
   ],
   [
    0.33333333333333337,
-   367.45943198863813,
-   89.09142165688723
+   367.47615661164616,
+   89.09359116815232
   ],
   [
    0.4,
-   342.0196288030612,
-   90.0840604819313
+   342.0458221909664,
+   90.08582699914851
   ],
   [
    0.4666666666666667,
-   316.57982561748435,
-   100.08743619908597
+   316.6154877702867,
+   100.09206823220823
   ],
   [
    0.5333333333333333,
-   291.1400224319074,
-   119.10154880835124
+   291.185153349607,
+   119.1123148673314
   ],
   [
    0.6000000000000001,
-   265.70021924633045,
-   147.12639830972716
+   265.7548189289272,
+   147.14656690451812
   ],
   [
    0.6666666666666667,
-   240.26041606075358,
-   184.1619847032136
+   240.32448450824748,
+   184.1948243437683
   ],
   [
    0.7333333333333334,
-   214.82061287517666,
-   230.20830798881067
+   214.89415008756774,
+   230.257087185082
   ]
  ],
  "nearest_body": "Earth",
@@ -133,12 +134,19 @@
  ],
  "explanation": {
   "source": "model",
-  "text": "The audit checked free flight motion from 0.2 to 0.8 assuming a static camera and object size of 0.11 meters. The apparent gravity was 9.45 meters per second squared, about 0.96 of Earth gravity, with an implied time factor of 1.02. The motion is consistent with the assumption."
+  "text": "Assuming free flight between 0.2 and 0.8 with a static camera, the motion is consistent with the assumption. Apparent gravity was 9.45, about 0.96 of the Earth value, within 7.27 to 13.49, with implied time factor 1.02 and implied size 0.11 for an assumed size 0.11."
  },
  "headline": {
   "source": "model",
-  "text": "This ball falls as if on Earth, at 0.96 times Earth's gravity."
+  "text": "Falling motion matches a model at 0.96 times Earth's gravity, closest to Earth."
  },
+ "track_check": {
+  "same_object": true,
+  "note": "orange ball near chair sofa and floor",
+  "source": "model"
+ },
+ "retake_tips": null,
+ "what_would_fit": null,
  "video_url": "",
  "overlay_url": null,
  "clip": "own_2_IMG_8429.mov",

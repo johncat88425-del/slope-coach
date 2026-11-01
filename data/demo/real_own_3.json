@@ -1,11 +1,12 @@
 {
- "audit_id": "aud_03277cc27209",
- "created_at": "2026-10-29T13:18:17.223108Z",
+ "audit_id": "aud_36fade4648f6",
+ "created_at": "2026-11-01T01:25:46.205515Z",
  "assumed_model": "free_flight",
  "t_start": 2.0,
  "t_end": 2.4,
  "camera_static": true,
  "object_size_m": 0.11,
+ "vehicle_class": null,
  "length_m": null,
  "slow_motion": false,
  "track_source": "sam",
@@ -13,85 +14,85 @@
  "reasons": [],
  "numbers": {
   "tracked_fraction": 1.0,
-  "size_trend": -0.00844542050812247,
-  "g_vs_earth": 0.8848055484049733,
-  "g_apparent_low": 6.676878792194453,
-  "g_apparent_high": 12.399917756932556,
+  "size_trend": -0.008202847837960991,
+  "g_vs_earth": 0.8851765761964805,
+  "g_apparent_low": 6.679678624990364,
+  "g_apparent_high": 12.405117446410678,
   "g_verdict_robust": 0.0,
-  "a_px_s2": 2115.6842346287144,
-  "tilt_deg": 3.16751136884818,
-  "rms_over_travel": 0.004200007258402625,
-  "g_apparent_m_s2": 8.679942429852789,
-  "implied_time_factor": 1.0631048056521428,
-  "implied_object_size_m": 0.12432110105807483,
-  "n_points": 6.0,
   "if_earth_flight_time_s": 0.3333333333333335,
-  "if_earth_vertical_extent_m": 0.5231104586655048,
-  "if_earth_launch_speed_m_s": 1.476500902289658,
-  "if_earth_launch_angle_deg": 2.575259740300609
+  "if_earth_vertical_extent_m": 0.5230714115616678,
+  "if_earth_launch_speed_m_s": 1.4767151175430449,
+  "if_earth_launch_angle_deg": 2.5795298406747977,
+  "a_px_s2": 2115.743168320571,
+  "tilt_deg": 3.1730973794037722,
+  "rms_over_travel": 0.0042069318058907375,
+  "g_apparent_m_s2": 8.683582212487474,
+  "implied_time_factor": 1.0628819784893724,
+  "implied_object_size_m": 0.12426899102172308,
+  "n_points": 6.0
  },
  "points": [
   [
    2.0,
-   370.95154590613225,
-   62.216491092840016
+   370.9551284796574,
+   62.215
   ],
   [
    2.066666666666667,
-   350.7564771344114,
-   65.97574334898279
+   350.7646937266162,
+   65.97858479074219
   ],
   [
    2.1333333333333333,
-   330.195952846106,
-   80.23338291448361
+   330.1942447639333,
+   80.22961040113596
   ],
   [
    2.2,
-   309.7141935483871,
-   104.63043778801843
+   309.71463482109925,
+   104.63357617115456
   ],
   [
    2.2666666666666666,
-   289.9543885191348,
-   139.14259567387688
+   289.9499355616529,
+   139.1469298245614
   ],
   [
    2.3333333333333335,
-   272.0283267751744,
-   179.27481666964763
+   272.029690574137,
+   179.27841620461456
   ]
  ],
  "ghost_points": [
   [
    2.0,
-   371.2878175223332,
-   61.66556775397874
+   371.29396158302615,
+   61.66472919900792
   ],
   [
    2.066666666666667,
-   350.0602076267542,
-   67.19861994467325
+   350.06268557325126,
+   67.19622766900719
   ],
   [
    2.1333333333333333,
-   328.8325977311753,
-   83.35891227840818
+   328.8314095634765,
+   83.35080770621046
   ],
   [
    2.2,
-   307.6049878355963,
-   110.14644475518375
+   307.6001335537016,
+   110.12846931061796
   ],
   [
    2.2666666666666666,
-   286.3773779400175,
-   147.56121737499956
+   286.3688575439268,
+   147.5292124822293
   ],
   [
    2.3333333333333335,
-   265.1497680444385,
-   195.60323013785617
+   265.1375815341519,
+   195.553037221045
   ]
  ],
  "nearest_body": "Earth",
@@ -103,12 +104,19 @@
  ],
  "explanation": {
   "source": "model",
-  "text": "Assuming free flight from 2 to 2.4 with a static camera and an assumed size of 0.11 m, the tracked fall was checked against gravity-like motion. The apparent gravity was 8.68 m per s squared, with a range of 6.68 to 12.4, about 0.88 times Earth gravity, and tilt was 3.17 degrees. This is consistent with the assumption and cannot yet distinguish a departure from free flight."
+  "text": "Assuming free flight between 2 and 2.4 with object size 0.11 m, the track was checked for gravity-like fall. The apparent gravity was 8.68 m/s\u00b2, range 6.68 to 12.41 m/s\u00b2, about 0.89 times Earth, with small tilt 3.17 deg. The motion is consistent with the assumption."
  },
  "headline": {
   "source": "model",
-  "text": "This ball falls as if on Earth, at 0.88 times Earth's gravity."
+  "text": "Motion matches Earth-level gravity at 0.89 times Earth's pull."
  },
+ "track_check": {
+  "same_object": false,
+  "note": "ring on empty couch fabric",
+  "source": "model"
+ },
+ "retake_tips": null,
+ "what_would_fit": null,
  "video_url": "",
  "overlay_url": null,
  "clip": "own_3_IMG_8434.mov",
