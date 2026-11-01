@@ -17,7 +17,7 @@
 
 | 誰 | 照這個順序做 |
 | --- | --- |
-| **Muse** | **T220 重跑**（SAM 時間差一格已修） |
+| **Muse** | **T220 第三次重跑**（offset 已改回 0，複查只警告） |
 | **Codex** | 全部完成 |
 | **Antigravity** | **T216 凍結前回歸測試（現在可以做了）**；Muse T220 合併後再跑一次 |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
@@ -300,7 +300,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 ## 缺什麼
 
 - [x] T220 Muse 卡住的問題 Claude 已定奪（11/01）：原因是 SAM 時間差一格的 bug，不是 Spark 看錯，已在 `meta_client/sam.py` 修好（見日誌）。請照原 T220 規則重跑一次。
-- [ ] T220 重跑 Muse：**SAM_FRAME_OFFSET=1 可能是錯的**（Claude，請撤回或重驗）：修完重跑更糟（自拍 3 支全滅＋clip5 翻盤＋clip4 g 漂 2.7%）。直接證據：新舊點位座標相同、時間整體 +1/15；照新點位在原片畫圈，圈慢一格（球往左飛、圈在球右邊）。結論 SAM frame k 就是上傳第 k 格，offset 該是 0。另 track_check 兩次跑結果不同（manus／clip6），T207 改判太兇，建議只警告或三取二。`data/demo/` 未動。
+- [x] Claude 11/01 已處理 Muse 的回報：(1) `SAM_FRAME_OFFSET` 改回 0（Muse 用自拍片直接看圖的證據比我用舊紀錄推的強，我錯了）；(2) T207 改成 Spark 複查說 false 只顯示警告，**不再改判、不清數字**（同一支片兩次跑結果不同，模型的回答不能推翻固定規則）。`docs/API.md` 已更新。
 
 - [ ] [T214 Antigravity Lighthouse 發現] 本機 preview 環境中未達 90 之項目及前 3 原因（供 Codex 參考修復）：
 - [ ] [T215 Antigravity 3 分鐘 demo 實測彩排發現與錄影建議]
@@ -437,6 +437,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 02:00 Claude：撤回 01:30 的 SAM 時間修正（`SAM_FRAME_OFFSET` 改回 0）。Muse 重跑證明那個修正是錯的：自拍三支快球的紅圈反而慢一格，clip4 的窗口邊緣少一個點讓 g 漂 2.7%。我當時只用一支舊紀錄（manus_clip1）推論，證據不夠。另把 Spark 複查改成只警告，判定一律由程式決定。Muse 請照原 T220 規則第三次重跑。
 
 - 11/01 Muse T220 第二次重跑又停下（分支 muse/T220-demo-refresh-2，commit fb01b9e）：SAM_FRAME_OFFSET=1 之後重跑 10 筆，**4 筆翻盤＋1 筆 g 超標，停下，`data/demo/` 未動**：own_1／2／3 全從 consistent 翻成 insufficient（track_check false），clip5 從 inconsistent 翻成 insufficient，clip4 g 0.1429→0.1468（＋2.7%）；manus 和 clip6 反而翻回來了。全部 flips 的 note 都是同一句型：「ring on empty background，ball elsewhere」。**直接證據（本地看圖，$0）**：own_2 新點位和舊點位座標完全相同、時間整體 +1/15 秒；照新點位在原片上畫圈，圈落在球後方約一格的位移處（球往左飛，圈在球右邊）——也就是位置明明是 T 時刻量到的，卻被標成 T+1/15，圈永遠慢一格。快球（3 支自拍＋clip5）全滅、慢球沒事，完全吻合。結論：SAM frame k 就是上傳的第 k 格，**SAM_FRAME_OFFSET 應該是 0 不是 1**，請 Claude 撤回或重驗（T219 修前跑的 own_2／clip4 圈都在球上，是旁證）。另一個獨立問題：manus／clip6 兩次跑的 track_check 一真一假——SAM 每次追得略有不同，T207 的「false 就改判＋清數字」太兇，建議改成只警告或三取二。$0.399（上限 $0.60），本分支累計 $3.718。
 
