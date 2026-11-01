@@ -52,7 +52,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
-- [ ] T237 Codex：Claude 已把 T229／T226／T227／T235 合進 main。請把 Render 服務的部署分支改回 `main`（Settings → Build & Deploy → Branch），手動 Deploy 一次，確認 `/api/samples` 回 3 支、首頁能選影片，寫日誌。之後每次 main 更新 Render 會自動部署。
+- [x] T237 Codex：Render 部署分支已改回 `main`，手動 Deploy latest commit 成功（ca9d149，Live）；`/api/samples` 200、3 支範例；首頁 Check a video → Choose video 可用並觸發選片對話框。自動部署限制見「待 john 決定」，未宣稱 main 更新會自動部署。 — commit 待補（npm 167、普通／demo build、pytest 292 全過）
 - [ ] T234 Claude：後端 `GET /api/samples`、`POST /api/samples/{name}/draft`（從 data/gate/clips 的 Meta AI 片與合成片建 draft，評審沒自己的影片也能試），加測試、API v1.5。
 - [x] T235 Codex（T229 之後做）：上傳區加「Try a sample clip」按鈕，列出 `GET /api/samples`（Claude T234 會加）的片，按了就走 `POST /api/samples/{name}/draft`，之後流程跟上傳一樣；DEMO_ONLY 時不顯示。 — commit a215a8b（167 tests、一般／demo build、pytest 292 通過）
 - [x] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。 — commit fabaadb（160 tests、一般／demo build、pytest 291 通過）
@@ -354,6 +354,10 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T237 Render 自動部署：Branch 已保存 main；Auto-Deploy 選單雖顯示 On Commit，但 Update Source → Git Provider 仍是 Connect Git provider，服務目前用公開 Git URL。Render 官方說此來源不支援自動部署，需手動 Deploy latest commit；要在 main 更新後自動部署，須另外連接 GitHub Git Provider 並授權 repo。未自行新增 GitHub 存取權，也未把 deploy hook 寫進檔案或對話。來源：https://render.com/docs/deploys#automatic-deploys 。
+
+- Render／Claude 花費帳本：`meta_client/cost.py` 目前將帳本記在本機 CSV；Render Free 的檔案系統會在休眠／重啟／重新部署後重置，因此 SPEND_LIMIT_USD=25 是當前帳本的停止門檻，不能保證跨部署的總支出上限。需 Claude 接持久化帳本，或 john 在供應商帳戶設定硬額度；本次沒有改後端。來源：https://render.com/docs/free#local-files-lost-on-redeploy 。
+
 - T235 Codex／Claude：samples API 有 kind，但 AuditOut 尚未保存 sample 來源。前端在此次結果旁保留 generated／synthetic 標示，不修改回應數字或 synthetic 欄；之後重載 JSON／匯出分享卡能否保留此來源，需後端將已知 sample.kind 寫入結果（現有 synthetic 欄即可），前端不從檔名推測。
 
 - T235 Codex：T229 後同步 main（d39112f），T234 未完成且 docs/API.md 尚無 samples 回應契約。已先完成 T226、T227；再次同步後確認 T234 程式與 API v1.5 已合併（0e8674e），依實際契約接 T235，依賴已解除。
@@ -462,6 +466,11 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex T237：從清理後的新 checkout 同步 main（ca9d149），獨立開 codex/T237-render-main。Render Settings 的 Branch 已由 codex/T229-live-link 改成 main，保存後觸發 branch-updated 建置，再明確執行一次 Manual Deploy → Deploy latest commit；部署 dep-dbjs02m7bikc738d2nm0 顯示 Deploy succeeded／Live，來源 ca9d149。公開網址 https://video-physics-audit.onrender.com；GET /api/samples 回 200、3 支（meta_ai_ball_4／meta_ai_ball_2／synthetic_toss；generated／generated／synthetic），GET /api/spend 回 limit_usd=25。Chrome 從首頁 Check a video 進入上傳頁，file input enabled、Try a sample clip 可見、沒有 demo-only 提示，實際 click 觸發 filechooser；自動填入本機測試檔被 Chrome extension 的 file URL 權限擋住，未改瀏覽器安全權限，也未宣稱本次已上傳或付費跑完稽核。截圖 frontend/qa/t237-render-main-upload.jpg。npm test 167、普通／demo build、pytest 292 全過。僅更新 STATUS 與驗證截圖；自動部署與跨重啟花費保護的真實限制已列待決定，不冒稱已解決。
+
+- 11/01 Codex 補記上一輪線上驗證：ece701d 已曾在 Render 顯示 Live。公開網站以 synthetic_toss 範例成功取得 Questions by Muse Spark（三題）及黑色方塊建議，影片 readyState=4、時間窗維持空白、焦點在 window-start；沒有送出稽核。這證實當時金鑰與提問接線可用，不能代替 Antigravity T230 三支線上稽核。後續 main 部署已在 T237 完成。
+
 - 11/01 22:40 Claude 合併 Codex T229／T235／T226／T227（含 Render 部署：https://video-physics-audit.onrender.com）、Antigravity T231（512 MB 實測峰值 394 MB，夠用）、Muse T232（4/5 怪片不當機；風景、走路仍給 judgeable=true）。pytest 292、npm 167、兩種 build 通過。cost_log 合併兩邊新行，累計 $4.82。開 Muse T236（預檢規則，不能誤傷車與單擺）、Codex T237（Render 改回 main）。
 
 - 11/01 Codex T235：API v1.5 接 sampleClips／sampleDraft；上傳頁的 Try a sample clip 只在點擊時載入名單，選定後 POST 建 draft，接既有 Muse 問題、時間窗、確認及結果流程。generated／synthetic 明確分來源，後端 label 原文保留；尺寸、時間窗、拍攝條件不自動確認。換來源清除舊結果，欄位可修改，請求防重複／錯誤提示與焦點交接沿用；DEMO_ONLY 不顯示且 API 不出網。167 tests、一般／demo build、pytest 292 通過；無金鑰的真實本機後端實測三案名單、程式模擬片 0–0.6s 確認到結果、Mock 明示、結果焦點與來源標籤，換範例會清空舊結果／條件，390px 無溢出；截圖 frontend/qa/t235-sample-result-1440.jpg。樣本來源尚未進入 AuditOut，保留後端缺口記錄。
