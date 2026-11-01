@@ -28,19 +28,35 @@ export type Comparison = {comparison_id:string; prediction_id:string; trial_id:s
 export type Intervention = {intervention_id:string;comparison_id:string;check_type:string;instructions:Record<string,string|string[]>;chosen_by:string;model_rationale:string|null;result_trial_id:string|null;created_at:string};
 export type ExperimentRecord = {experiment_id:string;title:string;created_at:string;scene_photos:ScenePhoto[];calibrations:Calibration[];trials:Trial[];baselines:Baseline[];predictions:Prediction[];comparisons:Comparison[];interventions:Intervention[]};
 export class ApiError extends Error {
-  constructor(public status:number, message:string) {super(message); this.name='ApiError'}
+  constructor(public status:number, message:string,public temporary=false) {super(message); this.name='ApiError'}
+}
+export const serverBusyMessage='The server is starting or busy. Please wait one minute and try again.';
+const looksLikeHtml=(text:string)=>/<(?:!doctype\b|!--|\/?[a-z][\w:-]*(?:\s|\/?>))|&lt;\/?(?:html|body|head)\b/i.test(text);
+function isHtmlResponse(raw:string,contentType:string|null){
+ if(/\b(?:text\/html|application\/xhtml\+xml)\b/i.test(contentType??''))return true;
+ try{JSON.parse(raw);return false}catch{return /^\s*(?:<|&lt;)/i.test(raw)&&looksLikeHtml(raw)}
+}
+export function isTemporaryApiError(error:unknown):boolean {
+ const message=error instanceof Error?error.message:typeof error==='string'?error:'';
+ return (error instanceof ApiError&&(error.temporary||[502,503,504].includes(error.status)))||message===serverBusyMessage||looksLikeHtml(message);
 }
 export function friendlyApiError(error:unknown):string {
+ if(isTemporaryApiError(error))return serverBusyMessage;
+ if(error instanceof ApiError&&[429,413].includes(error.status))return error.message;
  if(error instanceof ApiError){const prefix=error.status===404?'Result not found. Check the ID or load a saved JSON.':error.status===422?'Please check the submitted settings.':'The backend could not complete this request.';return prefix+' Reason: '+error.message}
  return error instanceof Error ? error.message : String(error);
 }
-function backendError(status:number,raw:string){let message=raw;try{const body=JSON.parse(raw);message=typeof body.detail==='string'?body.detail:JSON.stringify(body.detail??body)}catch{}return new ApiError(status,message||'Request failed')}
+function backendError(status:number,raw:string,contentType:string|null=null){
+ let message=raw;try{const body=JSON.parse(raw);message=typeof body.detail==='string'?body.detail:JSON.stringify(body.detail??body)}catch{}
+ const temporary=[502,503,504].includes(status)||isHtmlResponse(raw,contentType)||looksLikeHtml(message);
+ return new ApiError(status,temporary?serverBusyMessage:message||'Request failed',temporary);
+}
 export type UploadProgress=(percent:number|null)=>void;
 export function uploadAudit(url:string,data:FormData,progress:UploadProgress,makeXhr:()=>XMLHttpRequest=()=>new XMLHttpRequest()):Promise<AuditOut>{
  return new Promise((resolve,reject)=>{const xhr=makeXhr();xhr.open('POST',url);xhr.timeout=120000;
  xhr.upload.onprogress=e=>progress(e.lengthComputable&&e.total>0?Math.min(100,Math.round(e.loaded/e.total*100)):null);
  xhr.upload.onload=()=>progress(100);
- xhr.onload=()=>{if(xhr.status<200||xhr.status>=300){reject(backendError(xhr.status,xhr.responseText));return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(new Error('The backend returned an unreadable result. Load the record before submitting again.'))}};
+ xhr.onload=()=>{const contentType=xhr.getResponseHeader?.('Content-Type')??null;if(xhr.status<200||xhr.status>=300||isHtmlResponse(xhr.responseText,contentType)){reject(backendError(xhr.status,xhr.responseText,contentType));return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(new Error('The backend returned an unreadable result. Load the record before submitting again.'))}};
  xhr.onerror=()=>reject(new Error('Cannot connect to the backend. Check your connection and try loading the record before submitting again.'));
  xhr.ontimeout=()=>reject(new Error('Request timed out. Processing may have completed; load the record before submitting again.'));
  xhr.onabort=()=>reject(new Error('Upload was interrupted. No automatic retry was made.'));
@@ -55,12 +71,9 @@ export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnl
     const controller=new AbortController(); const timer=setTimeout(()=>controller.abort(),120000);
     try {
       const response=await transport(root+'/api'+path,{...init,signal:controller.signal});
-      if(!response.ok) {
-        const raw=await response.text(); let message=raw;
-        try {const body=JSON.parse(raw); message=typeof body.detail==='string'?body.detail:JSON.stringify(body.detail??body)} catch { /* retain server error text */ }
-        throw new ApiError(response.status,message||response.statusText);
-      }
-      return (text?await response.text():await response.json()) as T;
+      const raw=await response.text(),contentType=response.headers.get('Content-Type');
+      if(!response.ok||isHtmlResponse(raw,contentType))throw backendError(response.status,raw,contentType);
+      return (text?raw:JSON.parse(raw)) as T;
     } catch(error) {
       if(error instanceof ApiError) throw error;
       if(error instanceof Error && error.name==='AbortError') throw new Error('請求逾時。操作可能已在伺服器完成，請先重新讀取紀錄，不會自動重送。');

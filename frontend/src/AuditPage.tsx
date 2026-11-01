@@ -24,7 +24,8 @@ import {GhostReview} from './GhostReview.js';
 import {auditHash,shareAuditUrl} from './experiment.js';
 import { Localize } from './i18n.js';
 import { useEffect, useId, useRef, useState } from 'react';
-import {friendlyApiError} from './api.js';
+import {friendlyApiError,isTemporaryApiError} from './api.js';
+import {ApiErrorNotice} from './ApiErrorNotice.js';
 import type { createApi } from './api';
 import type { AuditModel, AuditOut } from './audit.js';
 import { parseSavedAudit, validateAuditInput, verdictText } from './audit.js';
@@ -72,7 +73,7 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
 export function AuditPage({ api, auditId = null }: {
     api: ReturnType<typeof createApi>; auditId?: string|null;
 }) {
-    const requestGate=useRef(createRequestGate());
+    const requestGate=useRef(createRequestGate()),retryRequest=useRef<(()=>void)|null>(null);
     const [requestPhase,setRequestPhase]=useState<'checking'|'loading'>('checking');
     const selectedDraft=useRef(createSelectedDraft<File>());
     const [previewAuditId,setPreviewAuditId]=useState<string|null>(null);
@@ -92,8 +93,8 @@ export function AuditPage({ api, auditId = null }: {
     const [model, setModel] = useState<AuditModel>('free_flight');
     const [vehicleClass,setVehicleClass]=useState<VehicleClass|''>('unknown');
     useEffect(()=>{
-        if(!auditId){setBusy(false);return;}let cancelled=false;setRequestPhase('loading');setBusy(true);setError('');selectedDraft.current.clear();setAudit(null);setPreview('');setReplay(DEMO_ONLY);setInterviewSource(null);setSampleKind(null);setId(auditId);
-        (DEMO_ONLY?import('./DemoCatalog.js').then(({demoRecords})=>{const found=demoRecords.find(r=>r.audit.audit_id===auditId||r.key===auditId);if(!found)throw new Error('Saved example not found in this demo.');return found.audit}):api.getAudit(auditId)).then(value=>{if(!cancelled)setAudit(value)}).catch(e=>{if(!cancelled)setError(friendlyApiError(e))}).finally(()=>{if(!cancelled)setBusy(false)});
+        retryRequest.current=null;if(!auditId){setBusy(false);return;}let cancelled=false;setRequestPhase('loading');setBusy(true);setError('');selectedDraft.current.clear();setAudit(null);setPreview('');setReplay(DEMO_ONLY);setInterviewSource(null);setSampleKind(null);setId(auditId);
+        (DEMO_ONLY?import('./DemoCatalog.js').then(({demoRecords})=>{const found=demoRecords.find(r=>r.audit.audit_id===auditId||r.key===auditId);if(!found)throw new Error('Saved example not found in this demo.');return found.audit}):api.getAudit(auditId)).then(value=>{if(!cancelled)setAudit(value)}).catch(e=>{if(!cancelled){setError(friendlyApiError(e));if(isTemporaryApiError(e)&&!DEMO_ONLY)retryRequest.current=()=>void run(()=>api.getAudit(auditId))}}).finally(()=>{if(!cancelled)setBusy(false)});
         return ()=>{cancelled=true};
     },[api,auditId]);
     const video = useRef<HTMLVideoElement>(null);
@@ -101,14 +102,14 @@ export function AuditPage({ api, auditId = null }: {
     useEffect(() => () => { if (preview)
         URL.revokeObjectURL(preview); }, [preview]);
     async function run(action: () => Promise<AuditOut>, allowLocalPreview=false) { await requestGate.current(async()=>{if (busy)
-        return;setRequestPhase(allowLocalPreview?'checking':'loading');setPreviewAuditId(null); setBusy(true); setError('');setInterviewSource(null);setSampleKind(null);setAudit(null);setUploadPercent(null); try {
+        return;retryRequest.current=null;setRequestPhase(allowLocalPreview?'checking':'loading');setPreviewAuditId(null); setBusy(true); setError('');setInterviewSource(null);setSampleKind(null);setAudit(null);setUploadPercent(null); try {
         const value = await action();
         setPreviewAuditId(allowLocalPreview?value.audit_id:null);setAudit(value);window.dispatchEvent(new Event('audit-completed'));
         setReplay(false);
         setId(value.audit_id);
     }
     catch (e) {
-        setError(friendlyApiError(e));
+        setError(friendlyApiError(e));if(isTemporaryApiError(e))retryRequest.current=()=>void run(action,allowLocalPreview);
     }
     finally {
         setBusy(false);
@@ -119,7 +120,7 @@ export function AuditPage({ api, auditId = null }: {
  <details className="audit-utility"><summary>Recording tips</summary><aside data-testid="capture-checklist"><h3>Before recording</h3><ul><li>Keep the camera fixed on a tripod.</li><li>Film from the side.</li><li>Keep one moving object in frame.</li><li>Use a clearly coloured ball, such as orange.</li><li>Use normal speed, without slow motion or retiming.</li><li>Keep motion parallel to the image plane, away from the camera direction.</li></ul><p>When capture conditions or evidence fail the quality checks, the system returns insufficient data rather than forcing an answer.</p></aside></details>
  <details className="audit-utility" data-testid="offline-import"><summary>Offline demo: import saved JSON</summary><fieldset disabled={busy||interviewBusy}><legend>Offline demo</legend><p>Load a previously saved result. No network connection or tracking is needed.</p><label>Saved audit JSON<input data-testid="audit-import-json" type="file" accept=".json,application/json" onChange={async e => { const saved = e.target.files?.[0]; if (!saved) return; setError(''); try { if(saved.size > 5 * 1024 * 1024) throw new Error('Saved JSON must be under 5 MB.'); const result = parseSavedAudit(await saved.text()); selectedDraft.current.clear();setAudit(result);setInterviewSource(null);setSampleKind(null); setReplay(true); setPreview(''); setFile(null); } catch(e) {setError(friendlyApiError(e));} }}/></label></fieldset></details>
  {!DEMO_ONLY&&<details className="audit-utility" data-testid="advanced-audit"><summary>Advanced: check without the interview</summary><fieldset disabled={busy||interviewBusy}><legend>使用者確認的設定</legend><label>Object name<input data-testid="audit-object-name" value={objectName} onChange={e=>setObjectName(e.target.value)}/></label><label>Slow motion or retimed playback<select data-testid="audit-slow-motion" value={slowMotion} onChange={e=>setSlowMotion(e.target.value)}><option value="">Not provided</option><option value="yes">Yes</option><option value="no">No</option></select></label><label>Motion model<select data-testid="audit-model" value={model} onChange={e=>setModel(e.target.value as AuditModel)}><option value="free_flight">Free flight</option><option value="bounce">Bounce</option><option value="pendulum">Pendulum</option><option value="vehicle">Car driving past side-on (fixed camera)</option></select></label><label>上傳影片<input data-testid="audit-video-input" type="file" accept="video/*" onChange={e => { const f = e.target.files?.[0]; if (f) {
-        selectedDraft.current.select(f);setFile(f);setStart('');setEnd('');setWindowConfirmed(false);
+        retryRequest.current=null;setError('');selectedDraft.current.select(f);setFile(f);setStart('');setEnd('');setWindowConfirmed(false);
         setPreview(URL.createObjectURL(f));
         setAudit(null);
         setAttempted(false);
@@ -131,6 +132,6 @@ export function AuditPage({ api, auditId = null }: {
         return; const savedDraft=selectedDraft.current.take();void run(() => savedDraft?api.auditFromDraft(savedDraft,{t_start:Number(start),t_end:Number(end),camera_static:fixed,slow_motion:slowMotion?slowMotion==='yes':undefined,assumed_model:model,vehicle_class:model==='vehicle'?(vehicleClass||'unknown'):undefined,object_name:objectName,object_size_m:size.trim()?Number(size):undefined,length_m:model==='pendulum'&&length.trim()?Number(length):undefined}):api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined,objectName,slowMotion?slowMotion==='yes':undefined,model==='vehicle'?(vehicleClass||'unknown'):undefined),true); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input data-testid="audit-id" value={id} onChange={e => setId(e.target.value)}/></label><button data-testid="audit-load" disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
- </fieldset></details>}<div aria-live="polite">{busy && <AuditProgress percent={uploadPercent} phase={requestPhase}/>}{error && <p data-testid="audit-error" role="alert">{error}</p>}</div>{audit && <AuditResult sampleKind={sampleKind} autoFocus key={audit.audit_id} audit={audit} replay={replay} videoUrl={matchingAuditPreview(audit.audit_id,previewAuditId,preview)} interviewSource={interviewSource}/>}
+ </fieldset></details>}<div aria-live="polite">{busy && <AuditProgress percent={uploadPercent} phase={requestPhase}/>}<ApiErrorNotice testId="audit-error" error={error} disabled={busy||interviewBusy} onRetry={retryRequest.current??undefined}/></div>{audit && <AuditResult sampleKind={sampleKind} autoFocus key={audit.audit_id} audit={audit} replay={replay} videoUrl={matchingAuditPreview(audit.audit_id,previewAuditId,preview)} interviewSource={interviewSource}/>}
  </section>}</Localize>;
 }
