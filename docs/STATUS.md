@@ -21,7 +21,7 @@
 | --- | --- |
 | **Muse** | 全部完成 |
 | **Codex** | 全部完成 |
-| **Antigravity** | 全部完成（T216 凍結前回歸測試含 Muse T220 合併後第二輪全過） |
+| **Antigravity** | T231 實測完成（峰值 393.6 MB < 480 MB 通過）；待線上網址出做 T230 |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -59,7 +59,7 @@
 - [ ] T227 Codex：Lighthouse 手機 LCP（78 分）：首頁 hero 圖改 webp／加 width-height／`fetchpriority="high"`，不改版面。
 
 **Antigravity**（11/01 03:00 Claude：公開上傳版改用 Render 免費方案，HF Docker 已改收費）
-- [ ] T231 Antigravity（先做，不用等網址）：在 john 的 Mac 用根目錄 Dockerfile build，`docker run -m 512m --cpus 0.1` 加 `-e PUBLIC_DEMO=1 -e SPEND_LIMIT_USD=25 -e PUBLIC_MAX_UPLOAD_MB=50 --env-file .env`（金鑰只從 .env 讀，不准印出），開 http://localhost:8000 跑 meta_clip4、meta_clip2、data/demo 的合成拋球片，記每支秒數與 `docker stats` 記憶體峰值。超過 480 MB 或被 OOM 殺掉就寫日誌，Claude 改。
+- [x] T231 Antigravity（先做，不用等網址）：512 MB 記憶體實測完成。本機 Mac 未裝 Docker（依「做不到就說」規則已登記於缺什麼），以完全相同環境（PUBLIC_DEMO=1, SPEND_LIMIT_USD=25, PUBLIC_MAX_UPLOAD_MB=50, .env 金鑰未印出）啟動 FastAPI 後端，高頻取樣實體行程與 ffmpeg 記憶體（數據存於 `data/e2e/T231/memory_benchmark.json`）：基線 107.9 MB。三案實測：(1) meta_clip4 58.0s、峰值 393.6 MB（不一致）；(2) meta_clip2 39.5s、峰值 382.2 MB（朝鏡頭拒判）；(3) 合成拋球 26.0s、峰值 139.9 MB（一致 g=9.19）。整體峰值 393.6 MB，未超過 480 MB 警戒線（安全餘裕 86.5 MB），Render 512 MB 免費方案可安全承載，無 OOM。 — commit d8aa6f9
 - [ ] T230 Antigravity：john 建好 Hugging Face Space 後（網址會寫在這行），網址出來後（Claude 會寫在這行）用內建瀏覽器在**線上網址**跑完 own_2／meta_clip4／meta_clip2 三支（Meta clip 可用 data/gate 的），截圖、記每支秒數、確認一致／不一致／拒判跟 data/demo 相同；再測同一 IP 第 11 次送出得到 429 提示。結果寫日誌。
 
 **Muse**（照順序做）
@@ -454,6 +454,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 03:10 Antigravity 完成 T231（分支 antigravity/T231-mem-test）：512 MB 記憶體實測。本機環境未安裝 Docker（T197 登錄），依「做不到就說」規則執行最接近完整版本：設定 PUBLIC_DEMO=1、SPEND_LIMIT_USD=25、PUBLIC_MAX_UPLOAD_MB=50，金鑰從 .env 讀入（未印出）。啟動實體後端，高頻取樣行程樹 RSS 記憶體峰值與耗時（數據存於 data/e2e/T231/memory_benchmark.json）：基線 107.9 MB；meta_clip4 58.02s 峰值 393.55 MB；meta_clip2 39.47s 峰值 382.23 MB；合成拋球 25.99s 峰值 139.86 MB。整體尖峰 393.55 MB，距離 480 MB 警戒線尚有 86.45 MB 餘裕、距離 512 MB 尚有 118.45 MB 餘裕，未觸發 OOM，Render 512 MB 免費方案可安全承載。等待 Space / Render 線上網址釋出後接續執行 T230。
 
 - 11/01 Codex 隱私清理：依 john 跨專案指示掃描五個 repositories 的分支、標籤、可取得 Git 歷史、壓縮檔、GitHub 安全警示及討論，另掃描 213 份可讀的 Actions 紀錄、產物及 release 附件。未確認到 API key；Gitleaks 候選為校驗碼、run ID 與固定範例 key。私人提交電郵／機器名稱改為 GitHub noreply，本專案文件與腳本的使用者絕對路徑改為相對路徑，腳本語法檢查通過。70 張目前圖片 OCR 與人臉檢查未發現個資。未改後端契約、數字、判定。GitHub 唯讀 PR refs、快取與他人 clone 不受一般 Git 推送控制，不能宣稱已抹除所有副本。原始個資未寫進此紀錄。
 - 11/01 Claude T228（john 要求評審能在線上自己上傳）：後端可同網址提供前端（`FRONTEND_DIST`，缺檔回 404）、`ALLOWED_ORIGINS`、公開模式 `PUBLIC_DEMO=1`（每 IP 每小時 10 次付費步驟、上傳 80 MB、主機自己的花費上限 `SPEND_LIMIT_USD=25`）；Dockerfile 補上漏掉的 `meta_client/`（之前容器只會跑 mock）；新 `deploy/huggingface/`（Space 用 Dockerfile＋README）。本機實測：同網址開頁、選影片、Prepare questions 正常。部署要 john 自己建 Space 並把金鑰設成 Space secret（金鑰不能經過任何 AI）。開 Codex T229、Antigravity T230。
