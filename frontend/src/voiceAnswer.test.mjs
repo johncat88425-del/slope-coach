@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createElement} from 'react';
 import {renderToStaticMarkup as render} from 'react-dom/server';
-import {createApi,ApiError} from '../.test-dist/api.js';
+import {createApi,ApiError,serverBusyMessage} from '../.test-dist/api.js';
 import {VoiceAnswers,VoiceReview} from '../.test-dist/VoiceAnswers.js';
 import {parseVoiceAnswer,voiceFieldPatch,voiceAudioFile} from '../.test-dist/voiceAnswer.js';
 import {startVoiceRecording,MAX_VOICE_BYTES} from '../.test-dist/voiceRecorder.js';
@@ -43,10 +43,10 @@ test('mock answers show no model attribution or applicable fields and keep recor
  assert.match(mock,/data-testid="voice-record" disabled/);assert.match(mock,/requires Meta API/);assert.doesNotMatch(mock,/<audio|voice-send/);
  for(const changed of [{fields:{object_size_m:{value:0.1,confirmed:true}}},{fields:{time_window:{value:[0,0],confirmed:false}}},{source:{}},{transcript:null}])assert.throws(()=>parseVoiceAnswer({...proposal,...changed}),/unreadable voice answer/);
 });
-test('voice errors preserve backend reasons and never retry; demo mode does not fetch',async()=>{
+test('voice gateway errors use a safe message and never retry; demo mode does not fetch',async()=>{
  let calls=0;const audio=new File(['audio'],'answer.webm');
  const api=createApi('',async()=>{calls++;return Response.json({detail:'voice model unavailable: example'},{status:502})});
- await assert.rejects(api.voiceAnswer('one',audio),e=>e instanceof ApiError&&e.message==='voice model unavailable: example');assert.equal(calls,1);
+ await assert.rejects(api.voiceAnswer('one',audio),e=>e instanceof ApiError&&e.status===502&&e.message===serverBusyMessage);assert.equal(calls,1);
  const demo=createApi('',async()=>{throw Error('must not fetch')},{demoOnly:true});await assert.rejects(demo.voiceAnswer('one',audio),/demo/i);
 });
 test('review labels translate while the transcript and numeric values remain verbatim',()=>{

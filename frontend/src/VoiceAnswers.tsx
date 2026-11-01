@@ -1,7 +1,7 @@
+import {ApiErrorNotice} from './ApiErrorNotice.js';
 import {useEffect,useRef,useState} from 'react';
 import type {createApi,InterviewField,VoiceAnswer,VoiceField} from './api.js';
-import {friendlyApiError} from './api.js';
-import {Localize,useTranslation} from './i18n.js';
+import {Localize} from './i18n.js';
 import {Verbatim} from './ModelHeadline.js';
 import {RequestStatus} from './RequestStatus.js';
 import {parseVoiceAnswer,voiceAudioFile,voiceFieldLabels} from './voiceAnswer.js';
@@ -24,9 +24,8 @@ export function VoiceReview({answer,onUse,disabled=false}:{answer:VoiceAnswer;on
 }
 
 export function VoiceAnswers({api,draftId,source='mock',onUse,disabled=false,onBusyChange}:{api?:ReturnType<typeof createApi>;draftId?:string;source?:'model'|'mock';onUse?:UseField;disabled?:boolean;onBusyChange?:(busy:boolean)=>void}){
- const t=useTranslation();
  const [phase,setPhase]=useState<'idle'|'starting'|'recording'|'sending'>('idle');
- const [recorded,setRecorded]=useState<Blob|null>(null),[preview,setPreview]=useState(''),[answer,setAnswer]=useState<VoiceAnswer|null>(null),[reviewVersion,setReviewVersion]=useState(0),[mock,setMock]=useState(false),[error,setError]=useState('');
+ const [recorded,setRecorded]=useState<Blob|null>(null),[preview,setPreview]=useState(''),[answer,setAnswer]=useState<VoiceAnswer|null>(null),[reviewVersion,setReviewVersion]=useState(0),[mock,setMock]=useState(false),[error,setError]=useState<unknown>(null);
  const active=useRef(true),lock=useRef(false),recording=useRef<VoiceRecording|null>(null);
  const available=source==='model'&&!mock&&Boolean(api&&draftId&&onUse),busy=phase!=='idle';
  useEffect(()=>{active.current=true;return()=>{active.current=false;recording.current?.cancel()}},[]);
@@ -49,7 +48,7 @@ export function VoiceAnswers({api,draftId,source='mock',onUse,disabled=false,onB
   if(!available||disabled||lock.current||!recorded||!api||!draftId)return;
   lock.current=true;setPhase('sending');setError('');
   try{const result=parseVoiceAnswer(await api.voiceAnswer(draftId,voiceAudioFile(recorded)));if(active.current){setAnswer(result);setReviewVersion(v=>v+1);setMock(result.source.transcript==='mock'||result.source.fields==='mock')}}
-  catch(e){if(active.current)setError(friendlyApiError(e))}
+  catch(e){if(active.current)setError(e)}
   finally{lock.current=false;if(active.current)setPhase('idle')}
  }
  return <Localize><section className="voice-answers" data-testid="voice-answers"><h3>Voice answers</h3>
@@ -60,6 +59,6 @@ export function VoiceAnswers({api,draftId,source='mock',onUse,disabled=false,onB
  {preview&&<><audio controls src={preview}/><button type="button" data-testid="voice-send" disabled={!available||busy||disabled} onClick={()=>void send()}>Send recording</button><p>The recording is sent only when you press Send recording.</p></>}
  {phase==='sending'&&<RequestStatus phase="transcribing"/>}
  {answer&&onUse&&<VoiceReview key={reviewVersion} answer={answer} onUse={onUse} disabled={busy||disabled}/>}
- {error&&<p role="alert"><Verbatim text={t(error)}/></p>}
+ <ApiErrorNotice error={error} disabled={busy||disabled} onRetry={()=>void send()}/>
  </section></Localize>;
 }

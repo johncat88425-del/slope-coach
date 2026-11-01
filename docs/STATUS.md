@@ -52,7 +52,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
-- [ ] T238 Codex（john 11/01 22:43 線上按範例片看到整頁 502 HTML 原始碼）：`friendlyApiError` 遇到回應是 HTML（或 502/503/504）時，只顯示「伺服器正在啟動或忙碌中，請等 1 分鐘再試一次」＋重試按鈕，永不把 HTML 原文印到畫面；429／413 照後端 detail 顯示。加測試。另外到 Render Logs 看 22:40–22:45 那次 502 的原因（重新部署？記憶體不足？逾時？），寫日誌。
+- [x] T238 Codex：HTML／502／503／504 改為雙語友善提示與手動重試，429／413 保留後端 detail；共用於範例、準備問題、確認、時間窗建議、語音與既有紀錄錯誤。已查 Render Logs／Events，該段有兩次 main 重新部署，未找到可對應 502 的應用例外或 OOM 事件，不能確證根因，詳見日誌。 — commit 待補（173 tests、普通／demo build、pytest 292 通過）
 - [ ] T237 Codex：Claude 已把 T229／T226／T227／T235 合進 main。請把 Render 服務的部署分支改回 `main`（Settings → Build & Deploy → Branch），手動 Deploy 一次，確認 `/api/samples` 回 3 支、首頁能選影片，寫日誌。之後每次 main 更新 Render 會自動部署。
 - [ ] T234 Claude：後端 `GET /api/samples`、`POST /api/samples/{name}/draft`（從 data/gate/clips 的 Meta AI 片與合成片建 draft，評審沒自己的影片也能試），加測試、API v1.5。
 - [x] T235 Codex（T229 之後做）：上傳區加「Try a sample clip」按鈕，列出 `GET /api/samples`（Claude T234 會加）的片，按了就走 `POST /api/samples/{name}/draft`，之後流程跟上傳一樣；DEMO_ONLY 時不顯示。 — commit a215a8b（167 tests、一般／demo build、pytest 292 通過）
@@ -355,6 +355,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T238 Render 502 調查：已核對 11/01 22:40–22:45 UTC（Render 畫面 EST 17:40–17:45）附近的 Logs／Events。確認重部署與新行程啟動，應用日誌搜尋 502／error 無對應記錄，也沒有看到 OOM 事件；缺少該次代理請求 ID，無法確定是部署中斷、平台代理逾時或其他來源，不把推測寫成定論。前端已完成復原提示；若再次發生，需取得當次時間與 Render 請求 ID／HTTP request logs 才能定位。合併 T238 後需部署最新 main，現有公開 Git URL 來源不能假定會自動部署（T237 已登記）。
+
 - T235 Codex／Claude：samples API 有 kind，但 AuditOut 尚未保存 sample 來源。前端在此次結果旁保留 generated／synthetic 標示，不修改回應數字或 synthetic 欄；之後重載 JSON／匯出分享卡能否保留此來源，需後端將已知 sample.kind 寫入結果（現有 synthetic 欄即可），前端不從檔名推測。
 
 - T235 Codex：T229 後同步 main（d39112f），T234 未完成且 docs/API.md 尚無 samples 回應契約。已先完成 T226、T227；再次同步後確認 T234 程式與 API v1.5 已合併（0e8674e），依實際契約接 T235，依賴已解除。
@@ -463,6 +465,13 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex T238：從 origin/main（19fdd3a）獨立開 codex/T238-friendly-502。根因（前端）是 request 與 XHR 原先把非 JSON 錯誤整頁保留；現在於 API 邊界攔下 HTML（含成功狀態卻傳 HTML）及 502／503／504，錯誤物件也不保留該頁原文。friendlyApiError 統一提示，429／413 照後端 detail；404／422、正常 JSON／數字與文字匯出維持原內容。共用 ApiErrorNotice 提供中英文、alert 焦點交接、只在使用者點擊時重試；範例名單、選定範例 draft、上傳準備、確認、時間窗、語音及紀錄載入沿用既有防重複請求，不自動重送、不清空確認欄位。6 個新測試涵蓋各 gateway status／HTML／429／413／JSON／XHR／雙語、沒有自動重送；原語音 502 測試同步新要求。173 tests、普通／demo build、pytest 292 全過；未改後端、API 或量測值，沒有付費模型呼叫。
+
+- 11/01 Codex T238 瀏覽器驗證：明示 Mock 的 preview-server-errors.html 讓名單與 draft 各首試回 502 HTML、手動重試才成功。實測次數依序 list=1/draft=0 → 按 Enter 重試 list=2/draft=0 → 選片 draft=1 失敗 → 按 Enter 重試 draft=2 成功；同一 synthetic 範例保留、鏡頭條件空白，錯誤後焦點在 alert、成功回物體欄，PRIVATE_UPSTREAM_DIAGNOSTIC 從未出現在頁面。390px 無橫向溢出（scrollWidth 375 ≤ 390），重試觸控高度 50px；截圖 frontend/qa/t238-friendly-error-390.jpg。這是 UI 故障注入驗證，不冒稱線上網站已套用尚未合併的分支。
+
+- 11/01 Codex T238 Render 調查：Events 顯示 ca9d149 的 branch-updated 部署於 EST 17:40 開始／17:41 Live，另一次手動部署於 17:41 開始及 Live；Application logs 查到 Started server process 17:39:58、17:41:00、17:41:44（分屬不同 instance）。該時段和 john 的 22:40–22:45 UTC 相符。搜尋 502、error 無 matching logs，Events 未見記憶體不足／OOM。推論部署切換可能中斷長請求，但現有紀錄沒有請求 ID 或邊緣代理錯誤，不能把這個相關性當成已確證原因；未因不明原因調整後端或升級付費方案，訪客 IP／完整 runtime logs 未寫入 repo。
+
 - 11/01 22:40 Claude 合併 Codex T229／T235／T226／T227（含 Render 部署：https://video-physics-audit.onrender.com）、Antigravity T231（512 MB 實測峰值 394 MB，夠用）、Muse T232（4/5 怪片不當機；風景、走路仍給 judgeable=true）。pytest 292、npm 167、兩種 build 通過。cost_log 合併兩邊新行，累計 $4.82。開 Muse T236（預檢規則，不能誤傷車與單擺）、Codex T237（Render 改回 main）。
 
 - 11/01 Codex T235：API v1.5 接 sampleClips／sampleDraft；上傳頁的 Try a sample clip 只在點擊時載入名單，選定後 POST 建 draft，接既有 Muse 問題、時間窗、確認及結果流程。generated／synthetic 明確分來源，後端 label 原文保留；尺寸、時間窗、拍攝條件不自動確認。換來源清除舊結果，欄位可修改，請求防重複／錯誤提示與焦點交接沿用；DEMO_ONLY 不顯示且 API 不出網。167 tests、一般／demo build、pytest 292 通過；無金鑰的真實本機後端實測三案名單、程式模擬片 0–0.6s 確認到結果、Mock 明示、結果焦點與來源標籤，換範例會清空舊結果／條件，390px 無溢出；截圖 frontend/qa/t235-sample-result-1440.jpg。樣本來源尚未進入 AuditOut，保留後端缺口記錄。

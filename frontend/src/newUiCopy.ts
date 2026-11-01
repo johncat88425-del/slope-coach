@@ -1,4 +1,6 @@
 export const newUiCopy:Record<string,string>={
+  "The server is starting or busy. Please wait one minute and try again.": "伺服器正在啟動或忙碌中，請等 1 分鐘再試一次。",
+  "Try again": "重試",
   "Try a sample clip": "試用範例影片",
   "Sample clips": "範例影片",
   "Loading sample clips…": "正在讀取範例影片…",
