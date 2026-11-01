@@ -10,6 +10,7 @@ COPY frontend/package*.json ./
 RUN npm ci
 
 COPY frontend/ ./
+COPY data/demo/ /app/data/demo/
 RUN npm run build
 
 # -------------------------------------------------------------

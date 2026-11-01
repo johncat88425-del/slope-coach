@@ -459,6 +459,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
+- 11/01 Codex Render 部署：john 已明確授權改用 Render Free，並於建立帳號時確認同意條款；免費 Docker 服務 video-physics-audit 已建立，環境設 PUBLIC_DEMO=1、SPEND_LIMIT_USD=25、PUBLIC_MAX_UPLOAD_MB=50、SLOPE_STORE_PATH 空字串，MODEL_API_KEY 由本機直接送入 Render secret，未進對話或 Git。未要求或填入信用卡。第一次建置在 Vite 失敗，原因是根 Dockerfile 前端 stage 缺少 data/demo；補 COPY data/demo/ /app/data/demo/，不改應用程式、API 或測量值。仍在重新部署，https://video-physics-audit.onrender.com 尚未宣告可用。
+
 - 11/01 Codex T227：首頁 hero 使用同尺寸 1280×720 WebP（44,012→27,834 bytes），明訂 width／height、fetchPriority=high，HTML 提前 preload，未改版面 CSS、軌跡或數值。163 tests、一般／demo build 與 Pages /slope-coach/ preload 路徑檢查通過；實際 390px 瀏覽器確認載入 WebP、natural size 1280×720、high priority、無橫向溢出，截圖 frontend/qa/t227-home-webp-390.jpg。未重跑 Lighthouse 分數，待 Antigravity 線上量測，未宣稱已達特定效能分數。
 
 - 11/01 Codex T226：依 API v1.4 擴充 suggestion 選填欄位；judgeable=false 在物體名稱旁顯示黃色 Muse Spark 提醒與未翻譯原文原因，只是建議、不阻擋確認。vehicle 模型／車種預填可改，重新準備問題不覆蓋手動選項；不填入尺寸、鏡頭條件、慢動作或時間窗，語音仍逐欄 Use this。162 tests、一般／demo build 通過；明示 mock fixture 實際選檔、預填 sedan、手改 pickup／bounce 後重送保留，手動確認條件後仍可送出，1440／390px 無溢出；截圖 frontend/qa/t226-precheck-fixture-1440.jpg。無模型或後端請求。
