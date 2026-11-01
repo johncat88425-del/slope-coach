@@ -19,7 +19,7 @@
 | --- | --- |
 | **Muse** | 全部完成 |
 | **Codex** | 全部完成 |
-| **Antigravity** | **T216 凍結前回歸測試（現在可以做了）**；Muse T220 合併後再跑一次 |
+| **Antigravity** | 全部完成（T216 凍結前回歸測試含 Muse T220 合併後第二輪全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -103,22 +103,22 @@
 - [x] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測完成：使用 iPhone 14（390×844）與 Pixel 7（412×915）雙機型模擬，完整走過上傳到結果頁（real_own_2 一致與 meta_clip4 不一致雙案），驗證無橫向捲動、按鈕高度 ≥ 44px、卡片點擊展開與二次收起、Details 展開查看。共 9 張截圖存於 data/e2e/T198/，均 < 300 KB（36.9–94.2 KB）且 MD5 互異。 — commit 60b10c3，PR #117
 - [x] T214 Antigravity：（10/31 Claude）Lighthouse 量測完成（含線上 GitHub Pages 與本機 build preview 雙平台、桌面與手機各跑一次，報表存於 `data/lighthouse/`）：線上 Pages 手機 Performance 91 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）；線上 Pages 桌面 Performance 100 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）。本機 preview 手機 Performance 78 / SEO 83、桌面 SEO 83，低於 90 之主因（LCP 延遲、缺 meta description、本機無 robots.txt）已登錄進「缺什麼」待 Codex 處理。 — commit 9b86ed7
 - [x] T215 Antigravity：（10/31 Claude）照最終 demo 腳本完整彩排 8 個分段完成（腳本存於 `scripts/e2e_t215_rehearsal.mjs`，包含真打 Muse Spark 偵訊生成 15.6s 與 SAM 3.1 / Numbers by code 標籤核驗）：8 張分段截圖存於 `data/e2e/T215/`（全數 < 300 KB，MD5 互異），完整分段量測報表存於 `data/e2e/T215/rehearsal_summary.json`。互動操作總計 48.0s（預算 180s 內充裕）；若加上 3 支影片現場實跑 SAM 追蹤之耗時（128s）總長度將達 176s，逼近 3 分鐘上限。等太久之處理與按鈕尋找等 4 項剪輯建議已記錄進「缺什麼」供 john 錄影參考。 — commit 0131411
-- [x] T216 Antigravity：（10/31 Claude，11/02 晚上凍結前）全部合併後的回歸測試完成：pytest 284 pass、npm test 156 pass、一般 build 與靜態 build 均 pass、雙 e2e 腳本全 pass、Pages 網站 HTTP 200 打得開、四個頁面 1440／390 px 截圖共 8 張（存於 `data/e2e/T216/`，均 < 300 KB 且 MD5 互異）。PASS／FAIL 總表已更新於下方。Muse T220 合併後將再跑一次。 — commit c353f4a
+- [x] T216 Antigravity：（10/31 Claude，11/02 晚上凍結前）全部合併後的回歸測試完成（兩輪全過）：第一輪針對 52befc9（commit c353f4a）；第二輪針對 Muse T220 最終 demo 合併後（origin/main 86de770）：pytest 284 pass（11.32s）、npm test 158 pass（1.46s）、一般 build (93.68 KB) 與展示 build (92.57 KB) 均通過 < 250 KB 限制、雙 e2e 腳本全 pass、Pages 網站 HTTP 200 OK、4 頁 1440／390 px 共 8 張截圖（存於 `data/e2e/T216/`，37.5–187.7 KB，均 < 300 KB 且 MD5 互異）。PASS／FAIL 總表已更新於下方。 — commit bfc12c4
 
-#### T216 凍結前回歸測試 PASS／FAIL 總表（10/31 20:30 執行）
+#### T216 凍結前回歸測試 PASS／FAIL 總表（10/31 21:40 執行，Muse T220 合併後第二輪最終回歸）
 
 | 項目 | 測試內容與指令 | 結果 | 詳細數據 / 備註 |
 | :--- | :--- | :---: | :--- |
-| **後端測試** | `python -m pytest` | **PASS** | **284 passed** (11.80s), 0 fail |
-| **前端測試** | `cd frontend && npm test` | **PASS** | **156 passed** (1.52s), 0 fail |
-| **前端標準建置** | `cd frontend && npm run build` | **PASS** | Bundle 93.6 KB（限制 250 KB 內） |
-| **前端展示建置** | `VITE_DEMO_ONLY=1 npm run build` | **PASS** | Bundle 92.5 KB，純靜態離線模式正常 |
+| **後端測試** | `python -m pytest` | **PASS** | **284 passed** (11.32s), 0 fail |
+| **前端測試** | `cd frontend && npm test` | **PASS** | **158 passed** (1.46s), 0 fail (含 Codex T221 原文標籤測試) |
+| **前端標準建置** | `cd frontend && npm run build` | **PASS** | Bundle 93.68 KB（限制 250 KB 內） |
+| **前端展示建置** | `VITE_DEMO_ONLY=1 npm run build` | **PASS** | Bundle 92.57 KB，純靜態離線模式正常 |
 | **斜坡 E2E 腳本** | `python scripts/e2e_slope_demo.py` | **PASS** | PUSHED, WRONG_HEIGHT, OK, OCCLUDED 四案全過 |
 | **稽核 E2E 腳本** | `python scripts/e2e_audit.py` | **PASS** | Case A (g=9.19 地球)、Case B (g=2.32 月球) 均通過 |
 | **Pages 網站連線** | `curl -I https://johncat88425-del.github.io/slope-coach/` | **PASS** | **HTTP/2 200 OK**，靜態網站正常對外提供服務 |
-| **4 頁 1440px 截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（50.7–186.9 KB，均 < 300 KB，MD5 互異） |
-| **4 頁 390px 手機截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（37.5–94.4 KB，均 < 300 KB，MD5 互異） |
-| **T210 / T218 新功能** | Results 第四張 Cars 卡、外露分享卡按鈕、Spark 複查標籤 | **PASS** | 截圖與 DOM 檢驗均確認正確渲染且無遮擋 |
+| **4 頁 1440px 截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（50.7–187.7 KB，均 < 300 KB，MD5 互異） |
+| **4 頁 390px 手機截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（37.5–92.1 KB，均 < 300 KB，MD5 互異） |
+| **T210 / T218 / T220 / T221 功能** | Results 第四張 Cars 卡、外露分享卡按鈕、Spark 複查警告/提示、英文原文標籤 | **PASS** | 截圖與 DOM 檢驗均確認正確渲染，離線 demo 完整呈現新欄位 |
 
 - [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
 - [x] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖完成（新增 scripts/e2e_ghost_and_physics_card.mjs、tests/backend/test_e2e_ghost_card.py，產出桌面與 390px 手機截圖存於 docs/screens/）— commit 00036aa
@@ -437,6 +437,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 10/31 21:40 Antigravity 完成 T216 第二次回歸測試（分支 antigravity/T216-final-2）：針對 Muse T220 合併後之最新 origin/main（86de770）執行全量回歸。pytest 284 全過（11.32s）；frontend npm test 158 全過（1.46s）；標準建置（93.68 KB）與 demo 展示建置（92.57 KB）均通過且遠小於 250 KB 上限；python scripts/e2e_slope_demo.py（4 案）與 scripts/e2e_audit.py（2 案）全數通過；線上 GitHub Pages 確認 HTTP/2 200 OK。重新在 preview 伺服器截取 8 張端到端截圖（Home, Results Wall, How It Works, Audit 頁面在 1440px 及 390px Viewport），存於 `data/e2e/T216/`，檔案大小介於 37.5 KB 至 187.7 KB，全數通過 < 300 KB 限制且 8 張 MD5 互異。PASS/FAIL 總表已更新於 STATUS。Antigravity 待辦全部結束。
 
 - 11/01 02:40 Claude：核對並合併 Muse T220 第三次重跑：10 筆判定全部和原本相同，g 最大差 0.15%（own_1 9.306→9.302、own_3 8.680→8.684），if_earth 數字不變；新欄位都在（8 筆複查 true、3 筆重拍建議、4 筆「要怎樣才會一致」，例如 meta_clip4「放慢 8.29 倍，或球有 16.48 公尺寬才符合地球」，我手算 √(9.81/0.143)=8.28 吻合）。own_3 和 manus_clip1 複查是 false，現在只顯示警告。**已知限制**：manus_clip1（24 fps 原片）的紅圈仍比球慢一格，自拍片（30/60 fps）不會；只影響複查紅圈，不影響擬合和判定。凍結前不再追，寫進限制。Antigravity 請再跑一次 T216。
 
