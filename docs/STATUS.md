@@ -21,7 +21,7 @@
 | --- | --- |
 | **Muse** | 全部完成 |
 | **Codex** | 全部完成 |
-| **Antigravity** | T231 實測完成（峰值 393.6 MB < 480 MB 通過）；待線上網址出做 T230 |
+| **Antigravity** | 全部完成（T231 記憶體實測通過、T230 線上實測三支片＋429 速率限制全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -61,7 +61,7 @@
 
 **Antigravity**（11/01 03:00 Claude：公開上傳版改用 Render 免費方案，HF Docker 已改收費）
 - [x] T231 Antigravity（先做，不用等網址）：512 MB 記憶體實測完成。本機 Mac 未裝 Docker（依「做不到就說」規則已登記於缺什麼），以完全相同環境（PUBLIC_DEMO=1, SPEND_LIMIT_USD=25, PUBLIC_MAX_UPLOAD_MB=50, .env 金鑰未印出）啟動 FastAPI 後端，高頻取樣實體行程與 ffmpeg 記憶體（數據存於 `data/e2e/T231/memory_benchmark.json`）：基線 107.9 MB。三案實測：(1) meta_clip4 58.0s、峰值 393.6 MB（不一致）；(2) meta_clip2 39.5s、峰值 382.2 MB（朝鏡頭拒判）；(3) 合成拋球 26.0s、峰值 139.9 MB（一致 g=9.19）。整體峰值 393.6 MB，未超過 480 MB 警戒線（安全餘裕 86.5 MB），Render 512 MB 免費方案可安全承載，無 OOM。 — commit d8aa6f9
-- [ ] T230 Antigravity：線上網址 https://video-physics-audit.onrender.com （Render 免費，Claude 11/01 填）：用內建瀏覽器在**線上網址**跑完 own_2／meta_clip4／meta_clip2 三支（Meta clip 可用 data/gate 的），截圖、記每支秒數、確認一致／不一致／拒判跟 data/demo 相同；再測同一 IP 第 11 次送出得到 429 提示。結果寫日誌。
+- [x] T230 Antigravity：線上網址 https://video-physics-audit.onrender.com 實測完成（腳本存於 scripts/e2e_t230_live.mjs，數據存於 data/e2e/T230/live_test_summary.json，4 張截圖均 < 300 KB 且 MD5 互異）：(1) own_2 一致（g=9.45 m/s²，89.73s，95.3 KB）；(2) meta_clip4 不一致（g=0.14 m/s²，243.27s，100.5 KB，aud_f9a34138d09d）；(3) meta_clip2 拒判（尺寸 trend -48%，110.98s，96.9 KB，aud_52dc90819e48）。三案判定與理由逐一吻合 data/demo 紀錄。第 11 次送出觸發 429 速率限制（0.64s，64.4 KB，提示「This public demo allows a few checks per visitor each hour. Please try again later, or run it locally (see README).」）。Render 累計花費 $0.1508（未超支）。發現前端 uploadAudit 寫死 xhr.timeout=120000 導致長片（243s）直接上傳時前端提早逾時，已登錄缺什麼。 — commit 3f7461a
 
 **Muse**（照順序做）
 - [ ] T236 Muse：接 T232 的發現修物體預檢提示詞，但**不要**用「非球就 false」（車子、單擺是合法的）。通用規則：畫面裡找不到「一個清楚、獨立、整個在畫面內移動的物體」（只有風景、人群、螢幕畫面、只有人在走）時 `judgeable=false` 並寫原因；球、車、單擺照舊。重跑 T232 的 5 支（含沒跑的遊戲片）＋ own_2、meta_clip4 兩支確認沒誤傷，花費 ≤ $0.20，結果表寫日誌。
@@ -318,6 +318,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
+- [ ] [T230 Antigravity 線上 Render 實測發現] 前端 `uploadAudit`（`frontend/src/api.ts:40`）寫死 `xhr.timeout = 120000;`（120 秒）。在 Render 免費方案主機（共用/節流 CPU）上，若影片窗口較長（例如 `meta_clip4` 2.5 秒，SAM 追蹤 38 格＋5 個模型 API 循序呼叫），後端計算耗時約 243 秒。前端在 120 秒即拋出「Request timed out」錯誤而中斷等待，需改由輸入既有稽核 ID 載入。建議 Codex 將前端 `xhr.timeout` 提升至 300000（5 分鐘）或改為環境變數配置，避免使用者在線上免費主機遇到假性逾時。
 - [x] T220 Muse 卡住的問題 Claude 已定奪（11/01）：原因是 SAM 時間差一格的 bug，不是 Spark 看錯，已在 `meta_client/sam.py` 修好（見日誌）。請照原 T220 規則重跑一次。
 - [x] Claude 11/01 已處理 Muse 的回報：(1) `SAM_FRAME_OFFSET` 改回 0（Muse 用自拍片直接看圖的證據比我用舊紀錄推的強，我錯了）；(2) T207 改成 Spark 複查說 false 只顯示警告，**不再改判、不清數字**（同一支片兩次跑結果不同，模型的回答不能推翻固定規則）。`docs/API.md` 已更新。
 
@@ -462,6 +463,13 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/01 04:30 Antigravity 完成 T230（分支 antigravity/T230-live-e2e）：線上網址 https://video-physics-audit.onrender.com 實測三支影片＋第 11 次 429 速率限制（測試腳本 `scripts/e2e_t230_live.mjs`，測試摘要 `data/e2e/T230/live_test_summary.json`，4 張截圖均 < 300 KB 且 MD5 互異）：
+  1. `own_2_IMG_8429.mov`（0.2–0.8s，0.11m）：一致（Consistent with free flight on Earth，apparent g = 9.45 m/s²），89.73s，截圖 `data/e2e/T230/live_case1_own2_consistent.png`（95.3 KB，MD5 8e2a5f9ec9ee7f64b47ef4068727b575）。
+  2. `meta_clip4.mp4`（0.0–2.5s，0.24m）：不一致（Inconsistent with free flight on Earth，apparent g = 0.14 m/s²，原因「apparent g 0.14 m/s^2 is outside 8.34-11.28」），243.27s，aid `aud_f9a34138d09d`，截圖 `data/e2e/T230/live_case2_clip4_inconsistent.png`（100.5 KB，MD5 ab3c3b5a0bb5d188c1b7ed3c035b476f）。
+  3. `meta_clip2.mp4`（0.5–3.0s，0.24m）：拒判（Cannot judge this clip，尺寸變化 -48%，原因「object size changes -48% along the track; it moves towards or away from the camera, which this 2D check cannot judge」），110.98s，aid `aud_52dc90819e48`，截圖 `data/e2e/T230/live_case3_clip2_refusal.png`（96.9 KB，MD5 e60b84d6408194d55d0789302f392c63）。
+  4. 第 11 次送出 429 提示：依 IP 配額限制，連續發送觸發後，瀏覽器送出第 11 次於 0.64s 收到 HTTP 429，UI 正確渲染警示「The backend could not complete this request. Reason: This public demo allows a few checks per visitor each hour. Please try again later, or run it locally (see README).」，截圖 `data/e2e/T230/live_case4_rate_limit_429.png`（64.4 KB，MD5 1874803a24302d9e5da55e09d7285c69）。
+  5. 發現問題已記錄至缺什麼：Render 免費方案處理 2.5 秒 38 格時長片需約 243 秒，前端 `uploadAudit` 寫死 `xhr.timeout = 120000`（120 秒）會提早逾時，建議提升至 300 秒。Render 服務目前累計花費 $0.1508 / $25.0。
+
 - 11/01 22:40 Claude 合併 Codex T229／T235／T226／T227（含 Render 部署：https://video-physics-audit.onrender.com）、Antigravity T231（512 MB 實測峰值 394 MB，夠用）、Muse T232（4/5 怪片不當機；風景、走路仍給 judgeable=true）。pytest 292、npm 167、兩種 build 通過。cost_log 合併兩邊新行，累計 $4.82。開 Muse T236（預檢規則，不能誤傷車與單擺）、Codex T237（Render 改回 main）。
 
 - 11/01 Codex T235：API v1.5 接 sampleClips／sampleDraft；上傳頁的 Try a sample clip 只在點擊時載入名單，選定後 POST 建 draft，接既有 Muse 問題、時間窗、確認及結果流程。generated／synthetic 明確分來源，後端 label 原文保留；尺寸、時間窗、拍攝條件不自動確認。換來源清除舊結果，欄位可修改，請求防重複／錯誤提示與焦點交接沿用；DEMO_ONLY 不顯示且 API 不出網。167 tests、一般／demo build、pytest 292 通過；無金鑰的真實本機後端實測三案名單、程式模擬片 0–0.6s 確認到結果、Mock 明示、結果焦點與來源標籤，換範例會清空舊結果／條件，390px 無溢出；截圖 frontend/qa/t235-sample-result-1440.jpg。樣本來源尚未進入 AuditOut，保留後端缺口記錄。
