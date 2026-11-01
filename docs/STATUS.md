@@ -103,7 +103,23 @@
 - [x] T198 Antigravity：（10/31 Claude，T191 合併後）手機實測完成：使用 iPhone 14（390×844）與 Pixel 7（412×915）雙機型模擬，完整走過上傳到結果頁（real_own_2 一致與 meta_clip4 不一致雙案），驗證無橫向捲動、按鈕高度 ≥ 44px、卡片點擊展開與二次收起、Details 展開查看。共 9 張截圖存於 data/e2e/T198/，均 < 300 KB（36.9–94.2 KB）且 MD5 互異。 — commit 60b10c3，PR #117
 - [x] T214 Antigravity：（10/31 Claude）Lighthouse 量測完成（含線上 GitHub Pages 與本機 build preview 雙平台、桌面與手機各跑一次，報表存於 `data/lighthouse/`）：線上 Pages 手機 Performance 91 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）；線上 Pages 桌面 Performance 100 / Accessibility 100 / Best Practices 96 / SEO 91（四項皆 ≥ 90）。本機 preview 手機 Performance 78 / SEO 83、桌面 SEO 83，低於 90 之主因（LCP 延遲、缺 meta description、本機無 robots.txt）已登錄進「缺什麼」待 Codex 處理。 — commit 9b86ed7
 - [x] T215 Antigravity：（10/31 Claude）照最終 demo 腳本完整彩排 8 個分段完成（腳本存於 `scripts/e2e_t215_rehearsal.mjs`，包含真打 Muse Spark 偵訊生成 15.6s 與 SAM 3.1 / Numbers by code 標籤核驗）：8 張分段截圖存於 `data/e2e/T215/`（全數 < 300 KB，MD5 互異），完整分段量測報表存於 `data/e2e/T215/rehearsal_summary.json`。互動操作總計 48.0s（預算 180s 內充裕）；若加上 3 支影片現場實跑 SAM 追蹤之耗時（128s）總長度將達 176s，逼近 3 分鐘上限。等太久之處理與按鈕尋找等 4 項剪輯建議已記錄進「缺什麼」供 john 錄影參考。 — commit 0131411
-- [ ] T216 Antigravity：（10/31 Claude，11/02 晚上凍結前最後一件）全部合併後的回歸測試：pytest、npm test、兩個 e2e 腳本、Pages 網站打得開、四個頁面 1440／390 px 截圖。STATUS 寫一張 PASS／FAIL 表。push `antigravity/T216-final`。**到這裡 Antigravity 的待辦全部結束。**
+- [x] T216 Antigravity：（10/31 Claude，11/02 晚上凍結前）全部合併後的回歸測試完成：pytest 284 pass、npm test 156 pass、一般 build 與靜態 build 均 pass、雙 e2e 腳本全 pass、Pages 網站 HTTP 200 打得開、四個頁面 1440／390 px 截圖共 8 張（存於 `data/e2e/T216/`，均 < 300 KB 且 MD5 互異）。PASS／FAIL 總表已更新於下方。Muse T220 合併後將再跑一次。 — commit c353f4a
+
+#### T216 凍結前回歸測試 PASS／FAIL 總表（10/31 20:30 執行）
+
+| 項目 | 測試內容與指令 | 結果 | 詳細數據 / 備註 |
+| :--- | :--- | :---: | :--- |
+| **後端測試** | `python -m pytest` | **PASS** | **284 passed** (11.80s), 0 fail |
+| **前端測試** | `cd frontend && npm test` | **PASS** | **156 passed** (1.52s), 0 fail |
+| **前端標準建置** | `cd frontend && npm run build` | **PASS** | Bundle 93.6 KB（限制 250 KB 內） |
+| **前端展示建置** | `VITE_DEMO_ONLY=1 npm run build` | **PASS** | Bundle 92.5 KB，純靜態離線模式正常 |
+| **斜坡 E2E 腳本** | `python scripts/e2e_slope_demo.py` | **PASS** | PUSHED, WRONG_HEIGHT, OK, OCCLUDED 四案全過 |
+| **稽核 E2E 腳本** | `python scripts/e2e_audit.py` | **PASS** | Case A (g=9.19 地球)、Case B (g=2.32 月球) 均通過 |
+| **Pages 網站連線** | `curl -I https://johncat88425-del.github.io/slope-coach/` | **PASS** | **HTTP/2 200 OK**，靜態網站正常對外提供服務 |
+| **4 頁 1440px 截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（50.7–186.9 KB，均 < 300 KB，MD5 互異） |
+| **4 頁 390px 手機截圖** | Home, Results, How, Audit (`data/e2e/T216/`) | **PASS** | 4 張截圖（37.5–94.4 KB，均 < 300 KB，MD5 互異） |
+| **T210 / T218 新功能** | Results 第四張 Cars 卡、外露分享卡按鈕、Spark 複查標籤 | **PASS** | 截圖與 DOM 檢驗均確認正確渲染且無遮擋 |
+
 - [x] T53 Antigravity：效能測試：30 秒 1080p iPhone HEVC 影片 `/api/audits` 耗時：顏色追蹤 1.61s、frame differencing 0.38s（目標 < 20s，通過；註：只量 0–5 秒的時間窗）— commit 38c3570
 - [x] T68 Antigravity：鬼影對照和物理名片的端到端測試與截圖完成（新增 scripts/e2e_ghost_and_physics_card.mjs、tests/backend/test_e2e_ghost_card.py，產出桌面與 390px 手機截圖存於 docs/screens/）— commit 00036aa
 - [x] T121 Antigravity：效能量測：10 秒 1080p 影片 `/api/audits` 跑完耗時：顏色追蹤 1.13s、frame differencing 0.36s（目標 < 20s，通過；Claude 在雲端重跑 6.65s／1.53s，也通過。註：腳本只量 0–5 秒的時間窗）— commit b83b4d1
