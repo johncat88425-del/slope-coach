@@ -61,7 +61,7 @@
 - `events[]`：物體持續性事件（消失、大小跳動、位置跳動），附發生時間。
 - `POST /api/audit-drafts/{draft_id}/windows`（v0.8，表單 `object_name`）：程式（不是模型）掃影片前 15 秒，回傳候選飛行時間窗 `windows: [{t_start, t_end}]`，依時間排序，`source: "physics"`。只是建議，使用者要自己選一個並確認，稽核只用使用者確認的時間窗。
 - `AuditOut.headline`（v0.9，T143）：`{source: "model", text}` 或 `null`。這是 Muse Spark 寫的一句標題，數字由程式填入，並通過後端檢查。沒接上模型、模型失敗或沒通過檢查時是 `null`。`explanation.source` 有 Muse 接上時會是 `model`，同樣要先通過後端檢查，否則是 `template`。判定和數字都不經過模型。
-- `AuditDraftOut.suggestion`（v1.0，T147）：`{source, object_name, camera_looks_static, reason}` 或 `null`。這是 Muse Spark 看前幾格畫面猜的物體名稱，**只能拿來預填，使用者要確認或修改**。名稱裡有數字、或沒通過禁用字檢查時是 `null`。
+- `AuditDraftOut.suggestion`（v1.0，T147）：`{source, object_name, camera_looks_static, reason}` 或 `null`。v1.4（T225）多三個可為 null 的欄位：`assumed_model`（只會是 `"vehicle"` 或 null）、`judgeable`（Spark 認為這支片能不能判，false 時 `reason` 說原因）、`vehicle_class`（compact_car／sedan／suv／pickup／unknown）。全部只是預填，判定仍由程式算。這是 Muse Spark 看前幾格畫面猜的物體名稱，**只能拿來預填，使用者要確認或修改**。名稱裡有數字、或沒通過禁用字檢查時是 `null`。
 - `POST /api/audit-drafts/{draft_id}/voice`（v1.0，T147，multipart：`audio`，10 MB 以內）→ `{source: {transcript, fields}, transcript, fields}`。`fields` 只會有 `camera_static`、`slow_motion`（布林）、`object_size_m`、`length_m`（公尺，0 到 100）、`assumed_model`、`time_window`（`[開始, 結束]`），每一欄都是 `{value, confirmed: false}`。後端不會套用任何欄位，畫面要讓使用者逐欄確認後，再當成一般答案送 `POST /api/audits`。沒接上模型時回 `source: mock`、`fields: {}`；模型失敗回 502。
 - `explanation`（v0.7）：`{source, text}`，用一般人看得懂的話說明結果。`source` 是 `template`（固定模板，未使用模型）或 `model`（Muse Spark 寫的，T45）。不論哪一種，文字裡的數字都由程式用 `fill_numbers` 填入，也通過禁用語檢查。畫面要標明來源。
 - `track_source`：`sam`（畫面要標明「由 SAM 3.1 追蹤」）、`color`（v0.6：沒接 SAM、而且 `object_name` 含顏色時，例如 `orange ball`，用顏色＋移動追蹤，未使用模型）、`frame_diff`（其他情況）、`manual`。

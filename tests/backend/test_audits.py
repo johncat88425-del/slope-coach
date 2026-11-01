@@ -433,3 +433,15 @@ def test_spark_track_check_retake_tips_and_what_would_fit(tmp_path):
         assert post(tmp_path / "slow.mp4", object_name="black square").json()["what_would_fit"] is None
     finally:
         set_hooks(old)
+
+
+def test_object_suggestion_keeps_spark_precheck_fields():
+    """T225: Spark's judgeable / assumed_model / vehicle_class used to be dropped silently."""
+    from backend import schemas as S
+    sug = S.ObjectSuggestion(source="muse-spark-1.3", object_name="silver sedan", camera_looks_static=True,
+                             reason="car drives past side on", assumed_model="vehicle", judgeable=True,
+                             vehicle_class="sedan")
+    assert sug.model_dump()["vehicle_class"] == "sedan" and sug.judgeable is True
+    plain = S.ObjectSuggestion(source="m", object_name="orange ball")
+    assert plain.assumed_model is None and plain.judgeable is None and plain.vehicle_class is None
+    assert "vehicle_class" in S.QuestionField.__args__
