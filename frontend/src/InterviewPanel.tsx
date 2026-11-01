@@ -11,7 +11,8 @@ import {WindowSelector} from './WindowSelector.js';
 import {VoiceAnswers} from './VoiceAnswers.js';
 import {useEffect,useRef,useState} from 'react';
 import type {createApi,AuditDraft,InterviewAnswers,SampleClip} from './api.js';
-import {ApiError,friendlyApiError} from './api.js';
+import {ApiError,isTemporaryApiError} from './api.js';
+import {ApiErrorNotice} from './ApiErrorNotice.js';
 import type {AuditOut,AuditModel} from './audit.js';
 import {validateAuditInput} from './audit.js';
 import {Localize} from './i18n.js';
@@ -21,26 +22,26 @@ export function InterviewQuestions({draft}:{draft:AuditDraft}){return <Localize>
 export function InterviewPanel({api,onResult,disabled=false,onBusyChange,hasResult=false,onStepChange,onNewSource}:{api:ReturnType<typeof createApi>;onResult:(audit:AuditOut,source?:'model'|'mock',sampleKind?:SampleClip['kind'])=>void;disabled?:boolean;onBusyChange?:(busy:boolean)=>void;hasResult?:boolean;onStepChange?:(step:AuditStep)=>void;onNewSource?:()=>void}){
  const requestGate=useRef(createRequestGate());
  const modelEdited=useRef(false),vehicleClassEdited=useRef(false);
- const objectNameEdited=useRef(false),focusAnswers=useRef(false),objectInput=useRef<HTMLInputElement>(null),reviewGrid=useRef<HTMLDivElement>(null),errorBox=useRef<HTMLParagraphElement>(null);
+ const objectNameEdited=useRef(false),focusAnswers=useRef(false),objectInput=useRef<HTMLInputElement>(null),reviewGrid=useRef<HTMLDivElement>(null);
+ const [retry,setRetry]=useState<'prepare'|'submit'|null>(null);
  const [phase,setPhase]=useState<'preparing'|'checking'>('preparing'),[draftUsable,setDraftUsable]=useState(false);
  const [voiceBusy,setVoiceBusy]=useState(false),[sampleBusy,setSampleBusy]=useState(false),[sample,setSample]=useState<SampleClip|null>(null);
  const [preview,setPreview]=useState(''),[windowConfirmed,setWindowConfirmed]=useState(false);
- const [file,setFile]=useState<File|null>(null),[draft,setDraft]=useState<AuditDraft|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [file,setFile]=useState<File|null>(null),[draft,setDraft]=useState<AuditDraft|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState<unknown>(null);
  const [vehicleClass,setVehicleClass]=useState<VehicleClass|''>('');
  const [objectName,setObjectName]=useState('ball');
  const [camera,setCamera]=useState(''),[slow,setSlow]=useState(''),[model,setModel]=useState(''),[start,setStart]=useState(''),[end,setEnd]=useState(''),[size,setSize]=useState(''),[length,setLength]=useState('');
  useEffect(()=>{if(!file){setPreview('');return}const url=URL.createObjectURL(file);setPreview(url);return()=>URL.revokeObjectURL(url)},[file]);
  useEffect(()=>{onBusyChange?.(busy||voiceBusy||sampleBusy)},[busy,voiceBusy,sampleBusy,onBusyChange]);
  useEffect(()=>{if(focusAnswers.current&&draft&&!busy&&!sampleBusy&&!voiceBusy&&!disabled){focusAnswers.current=false;(reviewGrid.current?.querySelector<HTMLInputElement>('[data-testid="window-start"]')??objectInput.current)?.focus()}},[draft,busy,sampleBusy,voiceBusy,disabled]);
- useEffect(()=>{if(error)errorBox.current?.focus()},[error]);
  const clipPreview=sample?mediaUrl(draft?.video_url,import.meta.env?.VITE_API_BASE_URL)??'':preview;
  const step:AuditStep=busy?(phase==='checking'?2:0):draft?1:hasResult?3:0;
  useEffect(()=>{onStepChange?.(step)},[step,onStepChange]);
- async function prepare(){if(!file||busy||voiceBusy||sampleBusy||disabled)return;await requestGate.current(async()=>{setBusy(true);setPhase('preparing');setError('');try{const next=await api.auditDraft(file);focusAnswers.current=true;setDraft(next);setObjectName(current=>suggestedObjectName(current,objectNameEdited.current,next.suggestion));const fields=suggestedVehicleFields({model,vehicleClass},{model:modelEdited.current,vehicleClass:vehicleClassEdited.current},next.suggestion);setModel(fields.model);setVehicleClass(fields.vehicleClass);setDraftUsable(true)}catch(e){setError(friendlyApiError(e))}finally{setBusy(false)}})}
- async function submit(){if(!draft||busy||voiceBusy||sampleBusy||disabled)return;if(!draftUsable){setError('Prepare questions again before retrying. Your answers are kept.');return}const errors=validateAuditInput(start,end,size);if(!windowConfirmed)errors.push('Confirm the time window first.');if(!camera||!slow||!model)errors.push('Confirm camera, playback speed and motion model.');if(model==='vehicle'&&!vehicleClass)errors.push('Confirm the vehicle class, or choose Unknown.');if(model==='pendulum'&&length.trim()&&(!Number.isFinite(Number(length))||Number(length)<=0))errors.push('Pendulum length must be positive and finite; leave blank if unknown.');if(errors.length){setError(errors.join(' '));return}await requestGate.current(async()=>{setBusy(true);setPhase('checking');setError('');try{const answers:InterviewAnswers={object_name:objectName.trim()||'ball',t_start:Number(start),t_end:Number(end),camera_static:camera==='yes',slow_motion:slow==='yes',assumed_model:model as AuditModel};if(model==='vehicle'&&vehicleClass)answers.vehicle_class=vehicleClass;if(size.trim())answers.object_size_m=Number(size);if(model==='pendulum'&&length.trim())answers.length_m=Number(length);const result=await api.auditFromDraft(draft.draft_id,answers);setDraft(null);setDraftUsable(false);onResult(result,draft.interview.source,sample?.kind)}catch(e){setError(friendlyApiError(e));if(!(e instanceof ApiError)||e.status===404)setDraftUsable(false)}finally{setBusy(false)}})}
+ async function prepare(){if(!file||busy||voiceBusy||sampleBusy||disabled)return;await requestGate.current(async()=>{setBusy(true);setPhase('preparing');setError(null);setRetry(null);try{const next=await api.auditDraft(file);focusAnswers.current=true;setDraft(next);setObjectName(current=>suggestedObjectName(current,objectNameEdited.current,next.suggestion));const fields=suggestedVehicleFields({model,vehicleClass},{model:modelEdited.current,vehicleClass:vehicleClassEdited.current},next.suggestion);setModel(fields.model);setVehicleClass(fields.vehicleClass);setDraftUsable(true)}catch(e){setError(e);if(isTemporaryApiError(e))setRetry('prepare')}finally{setBusy(false)}})}
+ async function submit(){if(!draft||busy||voiceBusy||sampleBusy||disabled)return;if(!draftUsable){setError('Prepare questions again before retrying. Your answers are kept.');return}const errors=validateAuditInput(start,end,size);if(!windowConfirmed)errors.push('Confirm the time window first.');if(!camera||!slow||!model)errors.push('Confirm camera, playback speed and motion model.');if(model==='vehicle'&&!vehicleClass)errors.push('Confirm the vehicle class, or choose Unknown.');if(model==='pendulum'&&length.trim()&&(!Number.isFinite(Number(length))||Number(length)<=0))errors.push('Pendulum length must be positive and finite; leave blank if unknown.');if(errors.length){setError(errors.join(' '));return}await requestGate.current(async()=>{setBusy(true);setPhase('checking');setError(null);setRetry(null);try{const answers:InterviewAnswers={object_name:objectName.trim()||'ball',t_start:Number(start),t_end:Number(end),camera_static:camera==='yes',slow_motion:slow==='yes',assumed_model:model as AuditModel};if(model==='vehicle'&&vehicleClass)answers.vehicle_class=vehicleClass;if(size.trim())answers.object_size_m=Number(size);if(model==='pendulum'&&length.trim())answers.length_m=Number(length);const result=await api.auditFromDraft(draft.draft_id,answers);setDraft(null);setDraftUsable(false);onResult(result,draft.interview.source,sample?.kind)}catch(e){setError(e);if(isTemporaryApiError(e))setRetry('submit');if(!(e instanceof ApiError)||e.status===404)setDraftUsable(false)}finally{setBusy(false)}})}
  function acceptSample(next:AuditDraft,clip:SampleClip){
   objectNameEdited.current=false;modelEdited.current=false;vehicleClassEdited.current=false;focusAnswers.current=true;
-  setFile(null);setSample(clip);setDraft(next);setDraftUsable(true);setCamera('');setSlow('');setStart('');setEnd('');setWindowConfirmed(false);setSize('');setLength('');setError('');
+  setFile(null);setSample(clip);setDraft(next);setDraftUsable(true);setCamera('');setSlow('');setStart('');setEnd('');setWindowConfirmed(false);setSize('');setLength('');setError(null);setRetry(null);
   setObjectName(suggestedObjectName('ball',false,next.suggestion));
   const fields=suggestedVehicleFields({model:'',vehicleClass:''},{model:false,vehicleClass:false},next.suggestion);setModel(fields.model);setVehicleClass(fields.vehicleClass);
  }
@@ -90,6 +91,6 @@ export function InterviewPanel({api,onResult,disabled=false,onBusyChange,hasResu
    if(patch.length!==undefined)setLength(patch.length);
    if(patch.start!==undefined&&patch.end!==undefined){setStart(patch.start);setEnd(patch.end);setWindowConfirmed(false)}
   }}/></details>}
-  {busy&&<RequestStatus phase={phase}/>}{error&&<p ref={errorBox} tabIndex={-1} role="alert">{error}</p>}
+  {busy&&<RequestStatus phase={phase}/>}<ApiErrorNotice error={error} disabled={busy||voiceBusy||sampleBusy||disabled} onRetry={retry?()=>void(retry==='prepare'?prepare():submit()):undefined}/>
  </details></Localize>
 }

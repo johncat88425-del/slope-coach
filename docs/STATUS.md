@@ -21,7 +21,7 @@
 | --- | --- |
 | **Muse** | 全部完成 |
 | **Codex** | 全部完成 |
-| **Antigravity** | T231 實測完成（峰值 393.6 MB < 480 MB 通過）；待線上網址出做 T230 |
+| **Antigravity** | 全部完成（T231 記憶體實測通過、T230 線上實測三支片＋429 速率限制全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -52,8 +52,9 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
-- [ ] T238 Codex（john 11/01 22:43 線上按範例片看到整頁 502 HTML 原始碼）：`friendlyApiError` 遇到回應是 HTML（或 502/503/504）時，只顯示「伺服器正在啟動或忙碌中，請等 1 分鐘再試一次」＋重試按鈕，永不把 HTML 原文印到畫面；429／413 照後端 detail 顯示。加測試。另外到 Render Logs 看 22:40–22:45 那次 502 的原因（重新部署？記憶體不足？逾時？），寫日誌。
-- [ ] T237 Codex：Claude 已把 T229／T226／T227／T235 合進 main。請把 Render 服務的部署分支改回 `main`（Settings → Build & Deploy → Branch），手動 Deploy 一次，確認 `/api/samples` 回 3 支、首頁能選影片，寫日誌。之後每次 main 更新 Render 會自動部署。
+- [ ] T239 Codex（T230 發現線上一支片要 90–243 秒）：稽核進行中顯示經過秒數＋一句「免費主機上一次檢查約需 1–4 分鐘，請不要關閉頁面」（中英文），超過 360 秒才算逾時（Claude 已把 api.ts 兩處 120000 改成 360000）。不改流程、不自動重送。加測試。
+- [x] T238 Codex：HTML／502／503／504 改為雙語友善提示與手動重試，429／413 保留後端 detail；共用於範例、準備問題、確認、時間窗建議、語音與既有紀錄錯誤。已查 Render Logs／Events，該段有兩次 main 重新部署，未找到可對應 502 的應用例外或 OOM 事件，不能確證根因，詳見日誌。 — commit 8d80f60（173 tests、普通／demo build、pytest 292 通過）
+- [x] T237 Codex：Render 部署分支已改回 `main`，手動 Deploy latest commit 成功（ca9d149，Live）；`/api/samples` 200、3 支範例；首頁 Check a video → Choose video 可用並觸發選片對話框。自動部署限制見「待 john 決定」，未宣稱 main 更新會自動部署。 — commit a6665f9（npm 167、普通／demo build、pytest 292 全過）
 - [ ] T234 Claude：後端 `GET /api/samples`、`POST /api/samples/{name}/draft`（從 data/gate/clips 的 Meta AI 片與合成片建 draft，評審沒自己的影片也能試），加測試、API v1.5。
 - [x] T235 Codex（T229 之後做）：上傳區加「Try a sample clip」按鈕，列出 `GET /api/samples`（Claude T234 會加）的片，按了就走 `POST /api/samples/{name}/draft`，之後流程跟上傳一樣；DEMO_ONLY 時不顯示。 — commit a215a8b（167 tests、一般／demo build、pytest 292 通過）
 - [x] T229 Codex（john 11/01：線上版 Choose video 按了沒反應，**最優先**）：原因是 Pages 版 `DEMO_ONLY` 把上傳區 `disabled`，畫面卻沒說。(1) DEMO_ONLY 時上傳區改成明顯的卡片：「這個頁面只重播已存結果。要上傳自己的影片，請開線上版 →」連到 `import.meta.env.VITE_LIVE_URL`（沒設就顯示 README 本機三行指令），不准再出現按了沒反應的按鈕；(2) 非 DEMO_ONLY 的 `upload-note`「Local preview」改成不寫死 local；(3) Pages workflow 加 `VITE_LIVE_URL` 變數（值等 john 建好 Space 後由 Claude 填）；(4) 測試＋兩種 build 不壞。 — commit fabaadb（160 tests、一般／demo build、pytest 291 通過）
@@ -62,10 +63,10 @@
 
 **Antigravity**（11/01 03:00 Claude：公開上傳版改用 Render 免費方案，HF Docker 已改收費）
 - [x] T231 Antigravity（先做，不用等網址）：512 MB 記憶體實測完成。本機 Mac 未裝 Docker（依「做不到就說」規則已登記於缺什麼），以完全相同環境（PUBLIC_DEMO=1, SPEND_LIMIT_USD=25, PUBLIC_MAX_UPLOAD_MB=50, .env 金鑰未印出）啟動 FastAPI 後端，高頻取樣實體行程與 ffmpeg 記憶體（數據存於 `data/e2e/T231/memory_benchmark.json`）：基線 107.9 MB。三案實測：(1) meta_clip4 58.0s、峰值 393.6 MB（不一致）；(2) meta_clip2 39.5s、峰值 382.2 MB（朝鏡頭拒判）；(3) 合成拋球 26.0s、峰值 139.9 MB（一致 g=9.19）。整體峰值 393.6 MB，未超過 480 MB 警戒線（安全餘裕 86.5 MB），Render 512 MB 免費方案可安全承載，無 OOM。 — commit d8aa6f9
-- [ ] T230 Antigravity：線上網址 https://video-physics-audit.onrender.com （Render 免費，Claude 11/01 填）：用內建瀏覽器在**線上網址**跑完 own_2／meta_clip4／meta_clip2 三支（Meta clip 可用 data/gate 的），截圖、記每支秒數、確認一致／不一致／拒判跟 data/demo 相同；再測同一 IP 第 11 次送出得到 429 提示。結果寫日誌。
+- [x] T230 Antigravity：線上網址 https://video-physics-audit.onrender.com 實測完成（腳本存於 scripts/e2e_t230_live.mjs，數據存於 data/e2e/T230/live_test_summary.json，4 張截圖均 < 300 KB 且 MD5 互異）：(1) own_2 一致（g=9.45 m/s²，89.73s，95.3 KB）；(2) meta_clip4 不一致（g=0.14 m/s²，243.27s，100.5 KB，aud_f9a34138d09d）；(3) meta_clip2 拒判（尺寸 trend -48%，110.98s，96.9 KB，aud_52dc90819e48）。三案判定與理由逐一吻合 data/demo 紀錄。第 11 次送出觸發 429 速率限制（0.64s，64.4 KB，提示「This public demo allows a few checks per visitor each hour. Please try again later, or run it locally (see README).」）。Render 累計花費 $0.1508（未超支）。發現前端 uploadAudit 寫死 xhr.timeout=120000 導致長片（243s）直接上傳時前端提早逾時，已登錄缺什麼。 — commit 3f7461a
 
 **Muse**（照順序做）
-- [ ] T236 Muse：接 T232 的發現修物體預檢提示詞，但**不要**用「非球就 false」（車子、單擺是合法的）。通用規則：畫面裡找不到「一個清楚、獨立、整個在畫面內移動的物體」（只有風景、人群、螢幕畫面、只有人在走）時 `judgeable=false` 並寫原因；球、車、單擺照舊。重跑 T232 的 5 支（含沒跑的遊戲片）＋ own_2、meta_clip4 兩支確認沒誤傷，花費 ≤ $0.20，結果表寫日誌。
+- [x] T236 Muse：commit cc1df4e。預檢通用規則上線（無清楚獨立移動物→false，人形永不判真，球車擺保留；同一條，無單支調參）。驗證：5 怪（風景／走路／遊戲 F，直式／短片 T）＋own_2／clip4 T＋真車／合成車 T＋vehicle＋自合成單擺 T＋風景 draft 走通；走路初版誤 T，加人形排除後轉 F，回歸全過。pytest 295。$0.174（上限 $0.20）。
 - [ ] T232 Muse：評審會亂上傳。本機後端跑 5 種怪片完整流程：沒有球的風景、人走路、手機直式、少於 1 秒、螢幕錄影的遊戲畫面（自己找或用 ffmpeg 合成，不准有真人臉）。每支要：不當機、Spark 問題合理、最後拒判或合理結果、`suggestion.judgeable` 有沒有正確說 false。總花費 ≤ $0.30。有問題的提示詞照一套規則修（不准針對單支片），結果表寫日誌。 — ⛔ 部分完成（11/01，commit b8188ea，分支 `muse/T232-odd-clips`）：4/5 跑完（風景／走路／直式／短片：零當機、問題合理、拒判或合理）；第 5 支（遊戲）剩 $0.009 不夠跑，停下未超支。另發現無球場景 judgeable 誤為 true（見日誌；修提示詞需約 $0.15 驗證，預算已空，請開後續）。$0.291。
 - [x] T224 Muse：commit acd7955。複查改放大裁切（160 框→2×→紅圈 r=28）＋逐張四答＋3/4 多數決，回傳形狀不變；新 `scripts/refresh_track_check.py` 只寫 `track_check`（程式自驗他欄逐字相同，source 照後端形存 `model`）。10 筆全轉 true（含原 false 的 own_3、manus，原 8 true 全留住）；反向對照（own_2 平移 120px）得 false，方法有效，照規則 commit。同一套規則、無單支調參。pytest 288 全過。$0.087（上限 $0.15），累計 $4.396。一套規則，不准為單支片調參。(1) `track_check.py` 改送**放大裁切**：每個時刻從 480 寬影格以追蹤點為中心裁 160×160（邊界用邊緣補齊），放大 2× 成 320×320 再畫紅圈（半徑跟著放大）；(2) prompt 改成**每張圖各答一次**「紅圈裡或緊貼紅圈的是不是 {name}」，schema 改 `{"answers":[bool×4], "note"}`；程式算 `same_object = true 的張數 ≥ 3`；回傳形狀不變 `{same_object, note, source}`（前端不用改），note 規則照舊；(3) 測試：邊界裁切、多數決（2/4→false、3/4→true）、mock Spark；(4) 新 `scripts/refresh_track_check.py`：讀 data/demo/*.json 存的 points，只重跑 check_track、只覆寫 `track_check` 欄位，其他欄位必須逐字不變（程式自己比對，不同就中止），總花費上限 $0.15；(5) **反向對照**：own_2 的 points 整條平移 120 px（圈到背景）必須得 false，否則這個改法無效、不要 commit 新 JSON；(6) 結果表寫進日誌：10 筆新舊 same_object 對照＋反向對照結果。目標 own_3、manus 轉 true 且原本 8 筆仍 true；做不到就照實寫，不要改門檻硬湊。
 - [x] T223 Muse：commit 9dfbcab。實驗做完：**假設不成立，不改程式**。B 片（前 5 格無球）第一個點 frame_index=5、x=110.5（就是第 5 格位置）——SAM 回的是絕對格號，沒有重編。附帶發現：全平面形追不到（A／B 零命中），加了立體明暗才 30／30。驗證稽核：manus 不一致、own_3 一致（警告制正確未翻盤），但兩筆複查仍是 false；把 own_3 的圈圖一張張看：4 張圈都在球上——是 Spark 看錯，不是追錯。詳見日誌。實驗 $0.050（上限 $0.05），驗證 $0.095。 Claude 的假設：SAM 回傳的 `frame_index` 是從「第一次找到物體的那一格」開始算 0，不是從影片第 0 格。證據：manus_clip1 窗口有 20 格，SAM 只回 19 個點（第 0 格球在畫面最上緣被切到，SAM 沒找到），而且整條軌跡剛好慢一格；其他從第 0 格就看得到球的影片（meta_clip1 35/35、clip5、clip6）都沒有偏。**實驗（上限 $0.05，不用真實影片）**：用 ffmpeg 或 numpy 產生兩支 15 fps、640×480、2 秒的白底影片，一顆直徑 40 px 的橘色圓從左往右等速移動（每格 10 px）：A 片第 0 格就有球；B 片前 5 格沒有球（第 5 格才出現）。各跑一次 `sam.track(clip, "orange ball")`，記下原始回傳的每個 `frame_index` 和中心 x。如果 B 片第一個點的 frame_index 是 0、x 卻是第 5 格的位置，假設成立。**成立的話**：看 SAM 回傳裡有沒有表示起始格的欄位（例如 prompt frame、start frame）；有就用它校正 `t_s`；沒有就在 `meta_client/sam.py` 用 `n_frames` 和第一個偵測的位置推算，並加單元測試（A、B 兩種情況）。**不成立的話**：不要改程式，把兩支的原始結果寫進 STATUS 給 Claude。做完用 manus_clip1 和 own_3 各跑一次稽核，看複查是否變成 true。push `muse/T223-sam-start-frame`。
@@ -319,6 +320,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
+- [ ] [T230 Antigravity 線上 Render 實測發現] 前端 `uploadAudit`（`frontend/src/api.ts:40`）寫死 `xhr.timeout = 120000;`（120 秒）。在 Render 免費方案主機（共用/節流 CPU）上，若影片窗口較長（例如 `meta_clip4` 2.5 秒，SAM 追蹤 38 格＋5 個模型 API 循序呼叫），後端計算耗時約 243 秒。前端在 120 秒即拋出「Request timed out」錯誤而中斷等待，需改由輸入既有稽核 ID 載入。建議 Codex 將前端 `xhr.timeout` 提升至 300000（5 分鐘）或改為環境變數配置，避免使用者在線上免費主機遇到假性逾時。
 - [x] T220 Muse 卡住的問題 Claude 已定奪（11/01）：原因是 SAM 時間差一格的 bug，不是 Spark 看錯，已在 `meta_client/sam.py` 修好（見日誌）。請照原 T220 規則重跑一次。
 - [x] Claude 11/01 已處理 Muse 的回報：(1) `SAM_FRAME_OFFSET` 改回 0（Muse 用自拍片直接看圖的證據比我用舊紀錄推的強，我錯了）；(2) T207 改成 Spark 複查說 false 只顯示警告，**不再改判、不清數字**（同一支片兩次跑結果不同，模型的回答不能推翻固定規則）。`docs/API.md` 已更新。
 
@@ -354,6 +356,11 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 - [x] Claude 已修（10/31）：`backend/video.py` 的 `probe_fps()` 遇到含 tmcd 軌的 mp4 只取第一行，加測試 `tests/backend/test_video_probe.py`；Pexels 原檔不用再 remux。
 
 ## 待 john 決定
+
+- T237 Render 自動部署：Branch 已保存 main；Auto-Deploy 選單雖顯示 On Commit，但 Update Source → Git Provider 仍是 Connect Git provider，服務目前用公開 Git URL。Render 官方說此來源不支援自動部署，需手動 Deploy latest commit；要在 main 更新後自動部署，須另外連接 GitHub Git Provider 並授權 repo。未自行新增 GitHub 存取權，也未把 deploy hook 寫進檔案或對話。來源：https://render.com/docs/deploys#automatic-deploys 。
+
+- Render／Claude 花費帳本：`meta_client/cost.py` 目前將帳本記在本機 CSV；Render Free 的檔案系統會在休眠／重啟／重新部署後重置，因此 SPEND_LIMIT_USD=25 是當前帳本的停止門檻，不能保證跨部署的總支出上限。需 Claude 接持久化帳本，或 john 在供應商帳戶設定硬額度；本次沒有改後端。來源：https://render.com/docs/free#local-files-lost-on-redeploy 。
+- T238 Render 502 調查：已核對 11/01 22:40–22:45 UTC（Render 畫面 EST 17:40–17:45）附近的 Logs／Events。確認重部署與新行程啟動，應用日誌搜尋 502／error 無對應記錄，也沒有看到 OOM 事件；缺少該次代理請求 ID，無法確定是部署中斷、平台代理逾時或其他來源，不把推測寫成定論。前端已完成復原提示；若再次發生，需取得當次時間與 Render 請求 ID／HTTP request logs 才能定位。合併 T238 後需部署最新 main，現有公開 Git URL 來源不能假定會自動部署（T237 已登記）。
 
 - T235 Codex／Claude：samples API 有 kind，但 AuditOut 尚未保存 sample 來源。前端在此次結果旁保留 generated／synthetic 標示，不修改回應數字或 synthetic 欄；之後重載 JSON／匯出分享卡能否保留此來源，需後端將已知 sample.kind 寫入結果（現有 synthetic 欄即可），前端不從檔名推測。
 
@@ -463,6 +470,22 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/01 23:30 Claude 合併 Codex T237（Render 改部署 main）、T238（502／HTML 錯誤改友善提示）、Antigravity T230（線上三支全對：own_2 一致 9.45／89 秒、clip4 不一致 0.14／243 秒、clip2 拒判 −48%／111 秒；第 11 次 429 正確）、Muse T236（預檢規則：風景、走路、遊戲 false，球車擺照舊 true）。T230 發現前端 120 秒逾時會打斷 clip4，Claude 改成 360 秒；開 Codex T239（等待中顯示秒數與說明）。pytest 295、npm 173、兩種 build 通過。
+
+- 11/01 Codex T237：從清理後的新 checkout 同步 main（ca9d149），獨立開 codex/T237-render-main。Render Settings 的 Branch 已由 codex/T229-live-link 改成 main，保存後觸發 branch-updated 建置，再明確執行一次 Manual Deploy → Deploy latest commit；部署 dep-dbjs02m7bikc738d2nm0 顯示 Deploy succeeded／Live，來源 ca9d149。公開網址 https://video-physics-audit.onrender.com；GET /api/samples 回 200、3 支（meta_ai_ball_4／meta_ai_ball_2／synthetic_toss；generated／generated／synthetic），GET /api/spend 回 limit_usd=25。Chrome 從首頁 Check a video 進入上傳頁，file input enabled、Try a sample clip 可見、沒有 demo-only 提示，實際 click 觸發 filechooser；自動填入本機測試檔被 Chrome extension 的 file URL 權限擋住，未改瀏覽器安全權限，也未宣稱本次已上傳或付費跑完稽核。截圖 frontend/qa/t237-render-main-upload.jpg。npm test 167、普通／demo build、pytest 292 全過。僅更新 STATUS 與驗證截圖；自動部署與跨重啟花費保護的真實限制已列待決定，不冒稱已解決。
+
+- 11/01 Codex 補記上一輪線上驗證：ece701d 已曾在 Render 顯示 Live。公開網站以 synthetic_toss 範例成功取得 Questions by Muse Spark（三題）及黑色方塊建議，影片 readyState=4、時間窗維持空白、焦點在 window-start；沒有送出稽核。這證實當時金鑰與提問接線可用，不能代替 Antigravity T230 三支線上稽核。後續 main 部署已在 T237 完成。
+- 11/01 Codex T238：從 origin/main（19fdd3a）獨立開 codex/T238-friendly-502。根因（前端）是 request 與 XHR 原先把非 JSON 錯誤整頁保留；現在於 API 邊界攔下 HTML（含成功狀態卻傳 HTML）及 502／503／504，錯誤物件也不保留該頁原文。friendlyApiError 統一提示，429／413 照後端 detail；404／422、正常 JSON／數字與文字匯出維持原內容。共用 ApiErrorNotice 提供中英文、alert 焦點交接、只在使用者點擊時重試；範例名單、選定範例 draft、上傳準備、確認、時間窗、語音及紀錄載入沿用既有防重複請求，不自動重送、不清空確認欄位。6 個新測試涵蓋各 gateway status／HTML／429／413／JSON／XHR／雙語、沒有自動重送；原語音 502 測試同步新要求。173 tests、普通／demo build、pytest 292 全過；未改後端、API 或量測值，沒有付費模型呼叫。
+- 11/01 Codex T238 瀏覽器驗證：明示 Mock 的 preview-server-errors.html 讓名單與 draft 各首試回 502 HTML、手動重試才成功。實測次數依序 list=1/draft=0 → 按 Enter 重試 list=2/draft=0 → 選片 draft=1 失敗 → 按 Enter 重試 draft=2 成功；同一 synthetic 範例保留、鏡頭條件空白，錯誤後焦點在 alert、成功回物體欄，PRIVATE_UPSTREAM_DIAGNOSTIC 從未出現在頁面。390px 無橫向溢出（scrollWidth 375 ≤ 390），重試觸控高度 50px；截圖 frontend/qa/t238-friendly-error-390.jpg。這是 UI 故障注入驗證，不冒稱線上網站已套用尚未合併的分支。
+- 11/01 Codex T238 Render 調查：Events 顯示 ca9d149 的 branch-updated 部署於 EST 17:40 開始／17:41 Live，另一次手動部署於 17:41 開始及 Live；Application logs 查到 Started server process 17:39:58、17:41:00、17:41:44（分屬不同 instance）。該時段和 john 的 22:40–22:45 UTC 相符。搜尋 502、error 無 matching logs，Events 未見記憶體不足／OOM。推論部署切換可能中斷長請求，但現有紀錄沒有請求 ID 或邊緣代理錯誤，不能把這個相關性當成已確證原因；未因不明原因調整後端或升級付費方案，訪客 IP／完整 runtime logs 未寫入 repo。
+- 11/01 04:30 Antigravity 完成 T230（分支 antigravity/T230-live-e2e）：線上網址 https://video-physics-audit.onrender.com 實測三支影片＋第 11 次 429 速率限制（測試腳本 `scripts/e2e_t230_live.mjs`，測試摘要 `data/e2e/T230/live_test_summary.json`，4 張截圖均 < 300 KB 且 MD5 互異）：
+  1. `own_2_IMG_8429.mov`（0.2–0.8s，0.11m）：一致（Consistent with free flight on Earth，apparent g = 9.45 m/s²），89.73s，截圖 `data/e2e/T230/live_case1_own2_consistent.png`（95.3 KB，MD5 8e2a5f9ec9ee7f64b47ef4068727b575）。
+  2. `meta_clip4.mp4`（0.0–2.5s，0.24m）：不一致（Inconsistent with free flight on Earth，apparent g = 0.14 m/s²，原因「apparent g 0.14 m/s^2 is outside 8.34-11.28」），243.27s，aid `aud_f9a34138d09d`，截圖 `data/e2e/T230/live_case2_clip4_inconsistent.png`（100.5 KB，MD5 ab3c3b5a0bb5d188c1b7ed3c035b476f）。
+  3. `meta_clip2.mp4`（0.5–3.0s，0.24m）：拒判（Cannot judge this clip，尺寸變化 -48%，原因「object size changes -48% along the track; it moves towards or away from the camera, which this 2D check cannot judge」），110.98s，aid `aud_52dc90819e48`，截圖 `data/e2e/T230/live_case3_clip2_refusal.png`（96.9 KB，MD5 e60b84d6408194d55d0789302f392c63）。
+  4. 第 11 次送出 429 提示：依 IP 配額限制，連續發送觸發後，瀏覽器送出第 11 次於 0.64s 收到 HTTP 429，UI 正確渲染警示「The backend could not complete this request. Reason: This public demo allows a few checks per visitor each hour. Please try again later, or run it locally (see README).」，截圖 `data/e2e/T230/live_case4_rate_limit_429.png`（64.4 KB，MD5 1874803a24302d9e5da55e09d7285c69）。
+  5. 發現問題已記錄至缺什麼：Render 免費方案處理 2.5 秒 38 格時長片需約 243 秒，前端 `uploadAudit` 寫死 `xhr.timeout = 120000`（120 秒）會提早逾時，建議提升至 300 秒。Render 服務目前累計花費 $0.1508 / $25.0。
+
+- 11/01 Muse 完成 T236（分支 muse/T236-precheck-rule，commit cc1df4e）：物體預檢通用規則——無清楚獨立移動物（風景／人群／走路的人／螢幕）判 false，球車擺明確保留。只改提示詞一句＋加強人形排除（同一條，無單支調參）。驗證用直打 suggest（便宜，審計鏈未動故不重跑）：風景 F、走路 F（初版誤 T，加人形排除後轉 F）、遊戲 F、直式 T、短片 T、own_2 T、clip4 T、真車 T＋vehicle、合成車 T＋vehicle、單擺（自合成）T，外加風景完整 draft（judgeable=false 走通）。pytest 295 全過。$0.174（上限 $0.20），累計 $4.994。
 - 11/01 22:40 Claude 合併 Codex T229／T235／T226／T227（含 Render 部署：https://video-physics-audit.onrender.com）、Antigravity T231（512 MB 實測峰值 394 MB，夠用）、Muse T232（4/5 怪片不當機；風景、走路仍給 judgeable=true）。pytest 292、npm 167、兩種 build 通過。cost_log 合併兩邊新行，累計 $4.82。開 Muse T236（預檢規則，不能誤傷車與單擺）、Codex T237（Render 改回 main）。
 
 - 11/01 Codex T235：API v1.5 接 sampleClips／sampleDraft；上傳頁的 Try a sample clip 只在點擊時載入名單，選定後 POST 建 draft，接既有 Muse 問題、時間窗、確認及結果流程。generated／synthetic 明確分來源，後端 label 原文保留；尺寸、時間窗、拍攝條件不自動確認。換來源清除舊結果，欄位可修改，請求防重複／錯誤提示與焦點交接沿用；DEMO_ONLY 不顯示且 API 不出網。167 tests、一般／demo build、pytest 292 通過；無金鑰的真實本機後端實測三案名單、程式模擬片 0–0.6s 確認到結果、Mock 明示、結果焦點與來源標籤，換範例會清空舊結果／條件，390px 無溢出；截圖 frontend/qa/t235-sample-result-1440.jpg。樣本來源尚未進入 AuditOut，保留後端缺口記錄。
@@ -559,6 +582,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 11/01 | T223：SAM 起始格實驗（5 次 $0.050）＋驗證稽核 2 次＋圈圖直打（$0.095） | 0.145 | 4.310 |
 | 11/01 | T224：複查裁切重跑 10 筆＋反向對照（全過，commit） | 0.087 | 4.396 |
 | 11/01 | T232：怪片 4/5（風景 $0.079＋走路 $0.070＋直式 $0.068＋短片 $0.075；遊戲超支未跑） | 0.291 | 4.687 |
+| 11/01 | T236：預檢規則＋直打 14 次＋draft 1 次（5 怪＋雙球＋雙車＋單擺） | 0.174 | 4.994 |
 - 10/31 Muse 完成 T189（分支 muse/T189-live-check，commit dd165b7）：`scripts/demo_live_check.py` 跑完 4 案全 PASS（自拍一致 g=9.44、clip4 不一致 g=0.14、clip2 拒判、T184 最好的車 0.47 秒拒判；source 標籤全對）。$0.281，pytest 245 全過。Muse 待辦全部結束。
 - 10/31 Antigravity 完成 T197（分支 antigravity/T197-fresh-install）：在全新目錄從零 clone 依 README 步驟驗證。git clone 2.54s 通過；ffmpeg/python3.11/node24/npm 依賴確認；npm ci 1.12s、npm test 126 pass (3.16s)；pytest 244 pass (17.44s)；scripts/e2e_slope_demo.py 與 scripts/e2e_audit.py 均通過。發現 3 項問題（python3.11 ensurepip 遇 truststore 異常、docker compose 缺前置需求、dev.sh 寫死 python3）已寫進「缺什麼」待 Claude 修改。下一項 T196 待 Codex T182 合併。
 - 10/31 Codex T191：手機與平板 Results／How 單欄；卡片點一下展開、再次點擊收起，窄螢幕不啟用 hover 鎖定。瀏覽器實測 390／768px：home、wall、how、audit、compare、demo、saved example 與五個 coach 頁，頁面 scrollWidth 不超過 viewport，控制項／section／article 無溢出；手機二次點擊 evidence 高度為 0。新增版面契約與 disclosure 測試（Node 無排版引擎，幾何以瀏覽器實測）；npm 130 tests、一般／demo build 通過。
