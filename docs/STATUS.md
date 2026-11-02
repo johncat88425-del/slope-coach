@@ -179,7 +179,8 @@
 
 **Claude**
 - [x] T207 Claude：後端接上 Muse 的三個新輸出。`track_check`（只在 SAM 追蹤時跑；Spark 說不是同一個物體就改判 insufficient_data，不給任何擬合數字；note 有數字就清掉）、`retake_tips`（拒判時，每條都過輸出檢查才採用）、`what_would_fit`（自由飛行不一致時）。`docs/API.md` v1.3 已寫欄位，Codex T210 照這個做。測試 `test_spark_track_check_retake_tips_and_what_would_fit`。
-- [ ] T217 Claude：11/02 晚上凍結：提交前檢查（沒有金鑰、只呼叫 Meta、沒有禁用字眼、只算 10/26 之後的工作、repo 公開、README 數字和 `data/demo` 一致），然後宣布凍結。
+- [x] T217 Claude：11/02 晚上凍結：提交前檢查（沒有金鑰、只呼叫 Meta、沒有禁用字眼、只算 10/26 之後的工作、repo 公開、README 數字和 `data/demo` 一致），然後宣布凍結。
+  - 11/02 檢查結果：沒有金鑰（目前檔案和全部歷史）；產品只透過 meta_client 呼叫 Meta（base_url 預設 api.meta.ai）；禁用字眼只出現在檢查清單和測試裡；第一個 commit 是 10/27；repo 公開；pytest 320、前端 199 全過，兩種 build 都成功。修了 README：自拍 g 改成和 demo 紀錄一致的 9.30（原寫 9.31）；註明 Meta AI 3 支拒判片在深度修正後會判不一致（0.50／0.22／0.11），demo 保留舊紀錄；「2D only: no depth」和深度修正矛盾，改寫。提交文字同步改 9.30。**功能凍結：之後只修 bug，不加新檢查。**
 - [x] T185 Claude：Manus T178 研究收進 `docs/research/vehicle.md` 並核對：車長 10 筆的英寸換算公尺全部正確；Taycan 103 ft 60–0 mph 換算平均減速度 1.17 g 正確；10 款常見車長都在 4.6–5.9 m，落在我們沒給車長時用的 3–6 m 範圍內。網址在雲端被網路擋住，沒辦法逐一打開，改由 Muse T184 下載時確認。注意：最好的兩支整台車入鏡只有約 0.5–1 秒，接近 0.5 秒的拒判門檻。
 - [x] T190 Claude：車種→車長換算表：`physics/experiments/vehicle.py` 的 `VEHICLE_CLASS_LENGTH_M`（compact_car 4.3–4.75、sedan 4.6–5.0、suv 4.5–4.85、pickup 5.3–5.95 m，來源 `docs/research/vehicle.md`）。`POST /api/audits` 新增選填 `vehicle_class`，沒給車長時用該車種的範圍兩端各判一次，`numbers` 多 `car_length_low_m/high_m`、`speed_km_h_low/high`、`accel_g_low/high`（給 Codex T194 顯示「用 4.6–5.0 m 估計，約 49–54 km/h」）。API.md 已更新。pytest 245 過。Muse T186 的 `vehicle_class` 直接用這四個值加 `unknown`。
 - [ ] T202 Claude：每次合併後用瀏覽器從上傳跑到結果；T189 後用最終版本重跑 demo 紀錄；寫英文 README 的限制段；11/02 晚上凍結前做提交前檢查（沒有金鑰、只呼叫 Meta、沒有禁用字眼、repo 公開）。

@@ -35,9 +35,11 @@ Main results use SAM 3.1 tracking (`data/gate/product_results_sam_v4.md`); colou
 
 | Clips | SAM 3.1 tracking | Colour tracking (comparison) |
 | --- | --- | --- |
-| 3 own clips of a thrown ball (phone, fixed camera) | 3 consistent (g = 9.31, 9.45, 8.68 m/s²) | 2 consistent (9.62, 9.81), 1 inconsistent (8.15) |
-| 6 clips made with the Meta AI app | 3 inconsistent (g = 0.25, 0.14, 1.80 m/s²), 3 insufficient data (object size changes 34–48%) | 2 inconsistent, 4 insufficient data |
+| 3 own clips of a thrown ball (phone, fixed camera) | 3 consistent (g = 9.30, 9.45, 8.68 m/s²) | 2 consistent (9.62, 9.81), 1 inconsistent (8.15) |
+| 6 clips made with the Meta AI app | 3 inconsistent (g = 0.25, 0.14, 1.80 m/s²), 3 insufficient data (object size changes 34–48%)¹ | 2 inconsistent, 4 insufficient data |
 | 1 clip made with Manus | 1 inconsistent (g = 2.63 m/s²) | 1 insufficient data (tracked in 55% of frames) |
+
+¹ Saved records from the first version. Since the depth correction (T251, 11/02) these three come out inconsistent as well (g = 0.50, 0.22, 0.11 m/s²); the demo keeps the saved records.
 
 The two trackers do not always agree on which clips can be judged; both are reported. SAM is not fully deterministic: re-running it moved each g by less than 0.2% (first run 9.30, 9.46, 8.68) and changed no verdict. The table and the demo show the re-run, so they match the saved records in `data/demo/`. This is a small feasibility set, not a reliability benchmark. The own clips are not committed (privacy); the generated clips are in `data/gate/clips/`.
 
@@ -191,7 +193,7 @@ python scripts/e2e_audit.py
 ## Limitations
 
 - One clearly visible moving object. Camera shake, pan, small roll (≤ 8°) and zoom (≤ 15%) are measured from the background and corrected (T244, T256); motion toward the camera is corrected from the object's own apparent size (T251). Larger or uneven camera motion, a size that jumps around, slow motion, and gaps in tracking are refused rather than guessed.
-- 2D only: no depth, no live streaming.
+- One camera: depth is only inferred from the object's apparent size (above); no full 3D reconstruction, no live streaming.
 - Cars: the 1.2 g limit is a screening threshold for ordinary road cars, not a universal limit; perspective, yaw and a wrong car length all bias the estimate.
 - The metre scale comes from a user-entered object size; a wrong size scales g by the same factor.
 - Generated clips were made with consumer apps at one point in time; results say nothing about other generators or later versions.
