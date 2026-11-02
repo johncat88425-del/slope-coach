@@ -20,7 +20,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | 全部完成 |
-| **Codex** | T242 第 2–8 點已完成；第 1 點已部署並核對最新 main，Auto-Deploy 待 GitHub 授權且瀏覽器操作被中止。main 新排 T246 待接續；分支 codex/T242-live-fixes |
+| **Codex** | T242 授權已同意，GitHub 安裝停在 Confirm access 待驗證；最新 main 重新部署中。獨立接 T246，分支 codex/T246-background-share。 |
 | **Antigravity** | 全部完成（T231 記憶體實測通過、T230 線上實測三支片＋429 速率限制全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
@@ -55,10 +55,10 @@
 - [ ] T246 Codex（11/02 Claude 加，接在 T242 後，凍結前做完）：(1) **送出檢查改用背景工作**：`POST /api/audit-jobs`（欄位跟 `/api/audits` 完全一樣，回 202 `{job_id}`），每 3 秒 `GET /api/audit-jobs/{id}` 直到 `status` 是 `done`（`audit` 欄位就是原本的結果）或 `failed`（顯示 `error`）；輪詢時網路斷一次不算失敗，連續 5 次才報錯；404 時說「免費伺服器重新啟動了，請再送一次」。拿掉 360 秒上限的整段等待，等待區照舊顯示經過秒數。(2) **永久結果連結**：Copy link 改成把結果 JSON（不含影片、points 只留畫圖需要的）用瀏覽器內建 `CompressionStream("gzip")`＋base64url 放進網址 `#r=`，打開時直接畫結果、不呼叫後端；超過約 30 KB 才退回舊的 `/api/audits/{id}` 連結並註明會失效。這樣伺服器重啟後分享出去的連結還能看。取代 T242 第 (8) 點。不加新套件，加測試，兩種 build 不壞。
 - [x] T245 Claude（john：限制寫進去就廢了）：新增背景檢查 `POST /api/audit-jobs`／`GET /api/audit-jobs/{id}`，長的檢查不再因瀏覽器逾時把算好（也付過錢）的結果丟掉；判定與數字跟 `/api/audits` 完全相同（有測試比對）；公開模式算進同一個每 IP 與全站「檢查」額度。API v1.6。
 - [x] T243 Claude（john 11/02：「寫進限制這東西基本就廢了」）：拿掉公開版的 1080p 拒收、3 秒時間窗拒收、掃描只看前 10 秒，改成自動處理：4K 上傳時縮到長邊 1920（畫格與時間不變）；長時間窗降幀讀取（上限 60 s，MAX_HELD_BYTES 96 MB）；時間窗建議掃整支片；ffmpeg 輸出不再兩倍佔記憶體；說明文字改並行呼叫。背景中位數在大堆疊改取約 32 張（gate 結果未重跑）。每人每小時次數沒動，因為 /api/spend 重啟歸零時它是唯一花費防線。
-- [ ] T242 Codex（部分完成：第 2–8 點完成；第 1 點版本已核對，Auto-Deploy 仍待授權。前端 commit 96b65c1；11/02 john Mac 真瀏覽器實測的前端問題，凍結前做完，照順序）：(1) **先確認 Render 線上是最新 commit**：開 `/api/version` 對 main 的 commit；Render 的 Auto-Deploy 要開（實測時線上頁面還是 120 秒逾時，代表舊版）；(2) 502 錯誤訊息「Reason:」後面是空的 → 補成友善句；(3) 逾時訊息不要叫人「重新讀取紀錄」（沒有地方讀），改成「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」；(4) 英文介面裡的中文（逾時訊息、Details 的「假設／時間窗」、疊圖 alt）全部依語言切換；(5) 選好影片後標題不要還寫「Choose a video to begin」；(6) 數字措辭：g_vs_earth < 0.01 時寫「less than 1/100 of Earth」不要寫「0.00 times」，`if_earth_*`（例如 vertical extent 67.5 m）一律標成「If this were Earth gravity: …」，不像量測值；(7) 分享卡在 Inconsistent／Cannot judge 時印第一條原因；(8) Copy link 旁註明「免費伺服器重啟後連結會失效，請存 JSON」。加測試，兩種 build 不壞。
+- [ ] T242 Codex（部分完成：第 2–8 點完成；第 1 點版本已核對，Auto-Deploy 授權已同意，GitHub 尚待帳戶驗證。前端 commit 96b65c1；11/02 john Mac 真瀏覽器實測的前端問題，凍結前做完，照順序）：(1) **先確認 Render 線上是最新 commit**：開 `/api/version` 對 main 的 commit；Render 的 Auto-Deploy 要開（實測時線上頁面還是 120 秒逾時，代表舊版）；(2) 502 錯誤訊息「Reason:」後面是空的 → 補成友善句；(3) 逾時訊息不要叫人「重新讀取紀錄」（沒有地方讀），改成「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」；(4) 英文介面裡的中文（逾時訊息、Details 的「假設／時間窗」、疊圖 alt）全部依語言切換；(5) 選好影片後標題不要還寫「Choose a video to begin」；(6) 數字措辭：g_vs_earth < 0.01 時寫「less than 1/100 of Earth」不要寫「0.00 times」，`if_earth_*`（例如 vertical extent 67.5 m）一律標成「If this were Earth gravity: …」，不像量測值；(7) 分享卡在 Inconsistent／Cannot judge 時印第一條原因；(8) Copy link 旁註明「免費伺服器重啟後連結會失效，請存 JSON」。加測試，兩種 build 不壞。
 **T242 驗收進度（Codex；前端 commit 96b65c1）**
 
-1. [ ] 最新 main／Auto-Deploy：已將線上 ca9d149 更新到 58e0168；`GET /api/version` 回 200、commit=58e01686dec7，與當時 origin/main 相符；之後 main 已更新到 e33671e，因電腦操作已中止，尚未再次部署。GitHub Install Render 已只選 slope-coach，但安裝會新增程式庫權限，待 john 明確確認；尚未按 Install。之後電腦操作因目前瀏覽器網址不允許自動操作而被中止，未繞過或改用其他方式操作該網址。
+1. [ ] 最新 main／Auto-Deploy：已將線上 ca9d149 更新到 58e0168；`GET /api/version` 回 200、commit=58e01686dec7，與當時 origin/main 相符；之後 main 已更新到 e33671e，因電腦操作已中止，尚未再次部署。john 已明確同意只限 slope-coach 的 Render App 授權；已按 Install，GitHub 接著要求 Confirm access 信箱驗證。Gmail 自動化連續逾時，已請 john 直接在 GitHub 完成 Verify，不需傳驗證碼。之後電腦操作因目前瀏覽器網址不允許自動操作而被中止，未繞過或改用其他方式操作該網址。
 2. [x] 空白 502／其他空白錯誤不再出現空的 Reason；保留 HTML 攔截及手動重試。
 3. [x] fetch／XHR 逾時同用「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」雙語說明，不再叫使用者重新讀取紀錄，保留 360 秒及不自動重送。
 4. [x] Details 的 Audit／Model／Window、逾時提示及疊圖 alt／軌跡可讀標籤依語言切換；後端原因與模型原文保留。
@@ -491,6 +491,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex 續 T242：john 已明確同意只授權 slope-coach。再次核對 Only select repositories 僅有 slope-coach，按 Install 後 GitHub 進入 Confirm access，已寄信要求帳戶驗證。兩個已登入 Gmail 分頁均在 CDP focus 操作逾時，未讀取或輸出驗證碼、未改用其他方式取得信箱資料；已請 john 在原 GitHub 頁直接 Verify。Render 已先再觸發最新 main 的手動部署，完成後另核對 /api/version。T242 安裝／Auto-Deploy 未完成，先獨立接續 T246，不重問既有的 App 授權。
 
 - 11/01 Codex T242 同步：保留新 main e33671e 的 T243／T244／T245 程式、API v1.6 及 T246 任務，同步後 pytest 307 全過。這些是協調者的新修改，不是本分支改後端；T246 會取代 T242 (8) 的舊式分享連結說明。本次電腦操作已被中止，線上最後核對為 58e0168，不宣稱已部署後續 e33671e 或啟用 Auto-Deploy。
 
