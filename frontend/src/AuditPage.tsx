@@ -1,5 +1,6 @@
 import {TrackCheck,WhatWouldFit} from './MuseAuditOutputs.js';
 import {EarthAssumption} from './EarthAssumption.js';
+import {earthConditionPrefix} from './earthRuler.js';
 import type {VehicleClass} from './vehiclePresentation.js';
 import {AuditDimensionField,VehicleMeasurements,VehicleClassField} from './VehicleModel.js';
 import {AuditSteps,type AuditStep} from './AuditSteps.js';
@@ -56,11 +57,11 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
  <EarthAssumption numbers={audit.numbers}/>
  <details data-testid="audit-details"><summary>Details</summary>
  {replay&&<p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">SYNTHETIC test example — program-drawn motion.</p>}
- <p>稽核 {audit.audit_id} · 假設：{motionLabel(audit.assumed_model)} · 時間窗 {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
- {!replay&&<p><a href={'/audit/'+encodeURIComponent(audit.audit_id)}>Open result link</a><button data-testid="copy-audit-link" onClick={async()=>{try{await navigator.clipboard.writeText(shareAuditUrl(audit.audit_id,location.origin));setCopyStatus('Link copied.')}catch{setCopyStatus('Could not copy. Use the result link.')}}}>Copy link</button><span role="status">{copyStatus}</span></p>}
+ <p data-testid="audit-metadata"><span>Audit</span> {audit.audit_id} · <span>Model:</span> {motionLabel(audit.assumed_model)} · <span>Window:</span> {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
+ {!replay&&<p><a href={'/audit/'+encodeURIComponent(audit.audit_id)}>Open result link</a><button data-testid="copy-audit-link" onClick={async()=>{try{await navigator.clipboard.writeText(shareAuditUrl(audit.audit_id,location.origin));setCopyStatus('Link copied.')}catch{setCopyStatus('Could not copy. Use the result link.')}}}>Copy link</button><span role="status">{copyStatus}</span><small className="share-link-note" data-testid="share-link-note">Links on the free server stop working after a restart. Save the JSON.</small></p>}
  <p data-testid="audit-slow-answer">Slow motion or retimed playback (user): {audit.slow_motion===true?'Yes':audit.slow_motion===false?'No':'Not provided'}</p>
  {audit.slow_motion===true&&audit.verdict==='insufficient_data'&&<aside data-testid="audit-timing-limit"><h3>Reported limitations</h3>{audit.reasons.map((r,i)=><blockquote key={i}><Verbatim text={r}/></blockquote>)}</aside>}
- <ModelUsage audit={audit} interviewSource={interviewSource}/>{audit.assumed_model!=='vehicle'&&<GravityRuler numbers={audit.numbers}/>}<h3>量測數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
+ <ModelUsage audit={audit} interviewSource={interviewSource}/>{audit.assumed_model!=='vehicle'&&<GravityRuler numbers={audit.numbers}/>}<h3>量測數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key.startsWith('if_earth_')&&<><span>{earthConditionPrefix}</span> </>}{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}
  {!replay && <TrajectoryOverlay url={mediaUrl(audit.overlay_url, import.meta.env?.VITE_API_BASE_URL)}/>}
  <GhostReview audit={audit} url={replay ? undefined : videoUrl??mediaUrl(audit.video_url, import.meta.env?.VITE_API_BASE_URL)}/><Trajectory2D points={audit.points.map(([t, x, y]) => ({ t, x, y }))}/>
  {audit.assumed_model==='bounce'&&<BounceChart numbers={audit.numbers}/>}

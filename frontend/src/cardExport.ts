@@ -1,5 +1,5 @@
 import {vehicleMetrics} from './vehiclePresentation.js';
-import {earthRulerLines} from './earthRuler.js';
+import {earthRulerLines,earthConditionPrefix} from './earthRuler.js';
 import {motionLabel} from './verdictLabel.js';
 import {formatNumber} from './formatNumber.js';
 import {verdictEnglish} from './audit.js';
@@ -30,11 +30,11 @@ export function shareCardContent(a:AuditOut){
    if(vehicle.speed&&vehicle.acceleration)secondary={value:vehicle.acceleration,unit:'g',label:vehicle.accelerationLabel};
    if(!vehicle.knownLength)reference=vehicle.lengthRange;
   }
-  else if(a.assumed_model==='free_flight'&&finite('g_vs_earth')&&n.g_vs_earth>=0){value=n.g_vs_earth===0?'0×':n.g_vs_earth.toPrecision(3)+'×';caption="of Earth's gravity."}
+  else if(a.assumed_model==='free_flight'&&finite('g_vs_earth')&&n.g_vs_earth>=0){value=n.g_vs_earth<.01?'less than 1/100':n.g_vs_earth.toPrecision(3)+'×';caption="of Earth's gravity."}
   else if(a.assumed_model==='free_flight'&&finite('g_apparent_m_s2')){value=formatNumber(n.g_apparent_m_s2);unit='m/s²';caption='Apparent gravity under your assumptions.'}
   else if(a.assumed_model==='pendulum'&&finite('period_s')){value=formatNumber(n.period_s);unit='s';caption='Observed period.'}
  }
- return {value,unit,caption,secondary,reference,limit:a.assumed_model==='vehicle'?'Grip limit: 1.2 g':null,verdict:verdictEnglish(a),background:{consistent:'#5ab0f0',inconsistent:'#f5a524',insufficient_data:'#b7bcc5'}[a.verdict],ink:'#0e0f12',tracking:{sam:'Tracked by SAM 3.1',manual:'Manual observations — no model used',color:'Colour-based tracking (no model)',frame_diff:'Motion-based tracking (no model)'}[a.track_source]??'Tracking not recorded',numbers:'Numbers by code',provenance:a.synthetic?'Program simulation — program-drawn moving squares.':a.real_clip?'Recorded by john':a.generated_clip?'Generated test clip':null,footer:shareCardFooter};
+ return {value,unit,caption,secondary,reference,reason:a.verdict==='inconsistent'||a.verdict==='insufficient_data'?a.reasons?.[0]??null:null,limit:a.assumed_model==='vehicle'?'Grip limit: 1.2 g':null,verdict:verdictEnglish(a),background:{consistent:'#5ab0f0',inconsistent:'#f5a524',insufficient_data:'#b7bcc5'}[a.verdict],ink:'#0e0f12',tracking:{sam:'Tracked by SAM 3.1',manual:'Manual observations — no model used',color:'Colour-based tracking (no model)',frame_diff:'Motion-based tracking (no model)'}[a.track_source]??'Tracking not recorded',numbers:'Numbers by code',provenance:a.synthetic?'Program simulation — program-drawn moving squares.':a.real_clip?'Recorded by john':a.generated_clip?'Generated test clip':null,footer:shareCardFooter};
 }
 /** Fixed-size summary. Complete original evidence remains in the report and card details. */
 export async function downloadPhysicsCard(a:AuditOut,_overlay?:string,translate:(value:string)=>string=value=>value){
@@ -43,9 +43,9 @@ export async function downloadPhysicsCard(a:AuditOut,_overlay?:string,translate:
  canvas.width=shareCardSize.width;canvas.height=shareCardSize.height;
  const card=shareCardContent(a),pad=84,width=canvas.width-pad*2;
  ctx.fillStyle=card.background;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle=card.ink;
- function paragraph(text:string,y:number,size:number,lineHeight:number){
+ function paragraph(text:string,y:number,size:number,lineHeight:number,paint=true){
   ctx!.font=`500 ${size}px Inter, "Noto Sans TC", sans-serif`;let line='';
-  const draw=()=>{ctx!.fillText(line.trimEnd(),pad,y);y+=lineHeight;line=''};
+  const draw=()=>{if(paint)ctx!.fillText(line.trimEnd(),pad,y);y+=lineHeight;line=''};
   for(const token of text.match(/\S+\s*|\s+/g)??[]){
    if(line&&ctx!.measureText(line+token).width>width)draw();
    for(const character of token){if(line&&ctx!.measureText(line+character).width>width)draw();line+=character}
@@ -64,15 +64,22 @@ export async function downloadPhysicsCard(a:AuditOut,_overlay?:string,translate:
  if(card.limit&&!card.secondary)paragraph(translate(card.limit),1060,28,40);
  let badgeY=1180;
  for(const badge of [card.tracking,card.numbers]){const text=translate(badge);ctx.font='500 28px Inter, "Noto Sans TC", sans-serif';ctx.fillStyle=card.ink;ctx.fillRect(pad,badgeY-38,width,64);ctx.fillStyle=card.background;ctx.fillText(text,pad+20,badgeY+4);ctx.fillStyle=card.ink;badgeY+=88}
- if(card.reference)paragraph(translate('Estimated car length range (m):')+' '+card.reference,1420,28,42);
- paragraph(translate('Full evidence in the audit report.'),1510,28,42);
+ let reasonY=1370;
+ if(card.reference)reasonY=paragraph(translate('Estimated car length range (m):')+' '+card.reference,reasonY,26,36)+12;
+ if(card.reason){
+  paragraph(translate('Reason:'),reasonY,24,34);
+  let size=28;while(size>12&&paragraph(card.reason,reasonY+38,size,size*1.35,false)>1605)size--;
+  paragraph(card.reason,reasonY+38,size,size*1.35);
+ }
+ paragraph(translate('Full evidence in the audit report.'),1640,22,30);
  ctx.fillRect(pad,1660,width,2);paragraph(translate(card.footer),1735,30,46);
  ctx.font='400 20px "JetBrains Mono", monospace';let idSize=20;while(ctx.measureText(a.audit_id).width>width&&idSize>8){idSize--;ctx.font=`400 ${idSize}px "JetBrains Mono", monospace`}ctx.fillText(a.audit_id,pad,1850);
  const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG export failed.')),'image/png'));
  const href=URL.createObjectURL(blob),link=document.createElement('a');link.href=href;link.download=a.audit_id+'-physics.png';link.click();setTimeout(()=>URL.revokeObjectURL(href),1000);
 }
 
-export function cardDisplayLine(a:AuditOut,line:string,translate:(value:string)=>string){
+export function cardDisplayLine(a:AuditOut,line:string,translate:(value:string)=>string):string{
  const originals=[a.headline?.text,a.explanation?.text,...a.reasons,...a.limits];if(originals.includes(line))return line;
+ if(line.startsWith(earthConditionPrefix+' '))return translate(earthConditionPrefix)+' '+cardDisplayLine(a,line.slice(earthConditionPrefix.length+1),translate);
  const whole=translate(line);if(whole!==line)return whole;const split=line.indexOf(': ');return split<0?line:translate(line.slice(0,split+1))+' '+translate(line.slice(split+2));
 }

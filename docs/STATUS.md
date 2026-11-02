@@ -20,7 +20,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | 全部完成 |
-| **Codex** | T239 已完成：等待秒數、雙語提示與 360 秒逾時回歸驗證；推送 codex/T239-wait-hint |
+| **Codex** | T242 第 2–8 點已完成；第 1 點已部署並核對最新 main，Auto-Deploy 待 GitHub 授權且瀏覽器操作被中止。分支 codex/T242-live-fixes |
 | **Antigravity** | 全部完成（T231 記憶體實測通過、T230 線上實測三支片＋429 速率限制全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
@@ -52,7 +52,18 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
-- [ ] T242 Codex（11/02 john Mac 真瀏覽器實測的前端問題，凍結前做完，照順序）：(1) **先確認 Render 線上是最新 commit**：開 `/api/version` 對 main 的 commit；Render 的 Auto-Deploy 要開（實測時線上頁面還是 120 秒逾時，代表舊版）；(2) 502 錯誤訊息「Reason:」後面是空的 → 補成友善句；(3) 逾時訊息不要叫人「重新讀取紀錄」（沒有地方讀），改成「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」；(4) 英文介面裡的中文（逾時訊息、Details 的「假設／時間窗」、疊圖 alt）全部依語言切換；(5) 選好影片後標題不要還寫「Choose a video to begin」；(6) 數字措辭：g_vs_earth < 0.01 時寫「less than 1/100 of Earth」不要寫「0.00 times」，`if_earth_*`（例如 vertical extent 67.5 m）一律標成「If this were Earth gravity: …」，不像量測值；(7) 分享卡在 Inconsistent／Cannot judge 時印第一條原因；(8) Copy link 旁註明「免費伺服器重啟後連結會失效，請存 JSON」。加測試，兩種 build 不壞。
+- [ ] T242 Codex（部分完成：第 2–8 點完成；第 1 點版本已核對，Auto-Deploy 仍待授權。前端 commit 待補；11/02 john Mac 真瀏覽器實測的前端問題，凍結前做完，照順序）：(1) **先確認 Render 線上是最新 commit**：開 `/api/version` 對 main 的 commit；Render 的 Auto-Deploy 要開（實測時線上頁面還是 120 秒逾時，代表舊版）；(2) 502 錯誤訊息「Reason:」後面是空的 → 補成友善句；(3) 逾時訊息不要叫人「重新讀取紀錄」（沒有地方讀），改成「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」；(4) 英文介面裡的中文（逾時訊息、Details 的「假設／時間窗」、疊圖 alt）全部依語言切換；(5) 選好影片後標題不要還寫「Choose a video to begin」；(6) 數字措辭：g_vs_earth < 0.01 時寫「less than 1/100 of Earth」不要寫「0.00 times」，`if_earth_*`（例如 vertical extent 67.5 m）一律標成「If this were Earth gravity: …」，不像量測值；(7) 分享卡在 Inconsistent／Cannot judge 時印第一條原因；(8) Copy link 旁註明「免費伺服器重啟後連結會失效，請存 JSON」。加測試，兩種 build 不壞。
+**T242 驗收進度（Codex；前端 commit 待補）**
+
+1. [ ] 最新 main／Auto-Deploy：已將線上 ca9d149 更新到 58e0168；`GET /api/version` 回 200、commit=58e01686dec7，與當時 origin/main 相符。GitHub Install Render 已只選 slope-coach，但安裝會新增程式庫權限，待 john 明確確認；尚未按 Install。之後電腦操作因目前瀏覽器網址不允許自動操作而被中止，未繞過或改用其他方式操作該網址。
+2. [x] 空白 502／其他空白錯誤不再出現空的 Reason；保留 HTML 攔截及手動重試。
+3. [x] fetch／XHR 逾時同用「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」雙語說明，不再叫使用者重新讀取紀錄，保留 360 秒及不自動重送。
+4. [x] Details 的 Audit／Model／Window、逾時提示及疊圖 alt／軌跡可讀標籤依語言切換；後端原因與模型原文保留。
+5. [x] 選定影片或範例後改顯示 Review your selected clip／核對已選擇的影片。
+6. [x] 非負 g_vs_earth < 0.01 顯示 less than 1/100 of Earth；分享卡顯示 less than 1/100 ＋ of Earth's gravity。if_earth_* 在畫面、列印、名片及 Markdown 都明示 If this were Earth gravity；數字與 JSON 不變。
+7. [x] Inconsistent／Cannot judge 分享卡印第一條後端原因，保留原文；預覽及 PNG 共用來源，缺原因不補造。
+8. [x] Copy link 旁明示免費伺服器重啟連結會失效、請存 JSON，兩語可見。
+
 - [x] T239 Codex：稽核等待區上方顯示真實經過秒數與「免費主機上一次檢查約需 1–4 分鐘，請不要關閉頁面」雙語說明；沿用 Claude 的 fetch／XHR 360 秒上限，不改流程、不自動重送。 — commit 5b99500（178 tests、普通／demo build、pytest 295 通過）
 - [x] T238 Codex：HTML／502／503／504 改為雙語友善提示與手動重試，429／413 保留後端 detail；共用於範例、準備問題、確認、時間窗建議、語音與既有紀錄錯誤。已查 Render Logs／Events，該段有兩次 main 重新部署，未找到可對應 502 的應用例外或 OOM 事件，不能確證根因，詳見日誌。 — commit 8d80f60（173 tests、普通／demo build、pytest 292 通過）
 - [x] T237 Codex：Render 部署分支已改回 `main`，手動 Deploy latest commit 成功（ca9d149，Live）；`/api/samples` 200、3 支範例；首頁 Check a video → Choose video 可用並觸發選片對話框。自動部署限制見「待 john 決定」，未宣稱 main 更新會自動部署。 — commit a6665f9（npm 167、普通／demo build、pytest 292 全過）
@@ -360,6 +371,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T242 第 1 點尚未完成：Render 已手動部署 origin/main 58e0168，/api/version 已核對 58e01686dec7。要讓 On Commit 真正生效，GitHub 要求 Install Render App；已把範圍改成 Only select repositories → slope-coach。該 App 要求讀取 code／metadata／Dependabot alerts，及讀寫 actions／workflows／checks／statuses／deployments／environments／issues／PR／hooks（另可要求讀 email）。這是新增安全敏感存取權，依瀏覽器操作規則需在 Install 前明確確認，已提出一次確認，沒有收到同意前不安裝。後續電腦操作因目前瀏覽器網址不允許自動操作而被系統中止，未重試、改道或更動安全設定。未宣稱 Auto-Deploy 已啟用；T242 父項保留未勾。
+
 - T237 Render 自動部署：Branch 已保存 main；Auto-Deploy 選單雖顯示 On Commit，但 Update Source → Git Provider 仍是 Connect Git provider，服務目前用公開 Git URL。Render 官方說此來源不支援自動部署，需手動 Deploy latest commit；要在 main 更新後自動部署，須另外連接 GitHub Git Provider 並授權 repo。未自行新增 GitHub 存取權，也未把 deploy hook 寫進檔案或對話。來源：https://render.com/docs/deploys#automatic-deploys 。
 
 - Render／Claude 花費帳本：`meta_client/cost.py` 目前將帳本記在本機 CSV；Render Free 的檔案系統會在休眠／重啟／重新部署後重置，因此 SPEND_LIMIT_USD=25 是當前帳本的停止門檻，不能保證跨部署的總支出上限。需 Claude 接持久化帳本，或 john 在供應商帳戶設定硬額度；本次沒有改後端。來源：https://render.com/docs/free#local-files-lost-on-redeploy 。
@@ -475,6 +488,12 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex T242：從 origin/main 58e0168 獨立開 codex/T242-live-fixes，先核對線上：舊版 ca9d149、/api/version 404；手動 Deploy latest commit 後 /api/version 200 回 58e01686dec7，與 main 相符。Auto-Deploy 不能只信 On Commit 標籤：Source 的 Git Provider 尚未連接，已準備單一 slope-coach 的 GitHub Render App 安裝頁，因新增存取權提出明確確認而未按 Install。後續電腦操作被目前網址的操作限制中止；第 1 點保留待完成，沒有用其他介面繞過。
+
+- 11/01 Codex T242 第 2–8 點：補空白 API 錯誤的句子，fetch／XHR 共用短時間窗逾時提示；Details metadata、疊圖 alt／軌跡 aria-label 與選片標題支援雙語；小 Earth 比例使用 less than 1/100，所有 if_earth_* 顯示就近加條件前綴（含列印與 Markdown），保留原始數字、title 和 JSON。分享卡預覽及 PNG 在不一致／資料不足時使用第一條後端原因，原文不翻譯，無原因不補；Copy link 旁補重啟及 JSON 保存說明。未改 backend、API、資料檔、模型輸出或計算；沒有付費模型呼叫。
+
+- 11/01 Codex T242 驗證：186 tests、一般／demo build、pytest 298 通過；嚴格 build 發現遞迴 cardDisplayLine 缺回傳型別，已補 string 並重驗兩種 build。瀏覽器使用明示 Mock 的 preview-live-fixes.html，驗證選範例前後標題、中英逾時／空白 gateway、Details／疊圖 alt／連結說明及小比例／第一原因。Chrome 匯出測試 PNG 後工具的 download event 等待逾時，但檔案實際已產生；從已知測試輸出檔複製並以本機影像檢視確認 1080×1920 的文字、倍率與原因均可見，存 frontend/qa/t242-share-reason-inconsistent.png（160253 bytes）。PNG 是固定格式測試值，並非新稽核結果。Cannot judge 的 PNG 原因由 canvas 繪製測試覆蓋，未冒稱本次瀏覽器另下載第二張。未完成新的 390px 瀏覽器回歸：電腦操作已被中止，僅保留已實測項目，限制不隱藏。
 - 11/02 01:30 Claude T241（實測後續）：標題不再跟判定矛盾（判定不是 consistent 且 g 像地球時不產生標題；拒判不產生標題）；公開限次改成「準備影片」和「送出檢查」各自每小時 10 次（實測約 5 輪就被擋）；新增 `GET /api/version` 看線上是哪個 commit。實測結論照實記：真片（Pexels，相機微動）答鏡頭固定時 g=10.37 但軌跡散佈 0.08 判 inconsistent；Runway AI 片 cannot judge（加速度方向朝上、尺寸未填）。工具只能說「符不符合假設的運動」，不能分真假，這點提交文字本來就這樣寫。開 Codex T242。
 - 11/02 00:40 Claude T240 續（john Mac 上真瀏覽器實測發現）：(1)「Suggest time windows」每次讓線上伺服器當掉——原因是掃描前 15 秒影格存成 float32 彩色，本機量 meta_clip4 峰值 819 MB（主機只有 512 MB）。改成 uint8、最多 30 fps、只掃前 10 秒、ffmpeg 限 2 執行緒：同片峰值 346 MB，建議的時間窗結果不變。(2) 4K 上傳讓伺服器當掉：公開模式長邊超過 1920 px 直接回 413 請改 1080p。(3) 當掉重啟會把主機上的花費計數歸零（Render 免費版檔案不保留），所以真正的保護是不要當掉；記在缺什麼。pytest 297。
 - 11/02 00:25 Claude T240：john 線上選 0–5.36 秒整支片，6 分鐘逾時。公開模式（`PUBLIC_DEMO=1`）時間窗上限 3 秒（`PUBLIC_MAX_WINDOW_S`），超過在任何付費呼叫前回 422 並說明「只選物體在空中的 0.5–2 秒」。本機用 mock 量過：非模型部分 CPU 只 2–3 秒，所以線上慢主要在模型呼叫等待與免費主機。另開 john Mac 上的 Claude 遠端工作階段做真瀏覽器實測（網路找真片＋標示 AI 生成片上傳）。

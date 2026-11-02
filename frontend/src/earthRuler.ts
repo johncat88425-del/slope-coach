@@ -1,6 +1,7 @@
 import {formatNumber} from './formatNumber.js';
 
-export const earthRulerTitle='If this is Earth gravity at normal speed';
+export const earthRulerTitle='If this were Earth gravity at normal speed';
+export const earthConditionPrefix='If this were Earth gravity:';
 export const earthRulerNote='This is a reading under assumptions, not a verdict; slow motion makes the height appear larger.';
 const fields=[
  ['if_earth_flight_time_s','Flight time (s)'],
@@ -14,5 +15,5 @@ export function earthRulerReadings(numbers:Record<string,number>){
 }
 export function earthRulerLines(numbers:Record<string,number>){
  const rows=earthRulerReadings(numbers);
- return rows.length?[earthRulerTitle,earthRulerNote,...rows.map(r=>`${r.label}: ${r.text}`)]:[];
+ return rows.length?[earthRulerTitle,earthRulerNote,...rows.map(r=>`${earthConditionPrefix} ${r.label}: ${r.text}`)]:[];
 }
