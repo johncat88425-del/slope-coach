@@ -52,6 +52,7 @@
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
+- [ ] T242 Codex（11/02 john Mac 真瀏覽器實測的前端問題，凍結前做完，照順序）：(1) **先確認 Render 線上是最新 commit**：開 `/api/version` 對 main 的 commit；Render 的 Auto-Deploy 要開（實測時線上頁面還是 120 秒逾時，代表舊版）；(2) 502 錯誤訊息「Reason:」後面是空的 → 補成友善句；(3) 逾時訊息不要叫人「重新讀取紀錄」（沒有地方讀），改成「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」；(4) 英文介面裡的中文（逾時訊息、Details 的「假設／時間窗」、疊圖 alt）全部依語言切換；(5) 選好影片後標題不要還寫「Choose a video to begin」；(6) 數字措辭：g_vs_earth < 0.01 時寫「less than 1/100 of Earth」不要寫「0.00 times」，`if_earth_*`（例如 vertical extent 67.5 m）一律標成「If this were Earth gravity: …」，不像量測值；(7) 分享卡在 Inconsistent／Cannot judge 時印第一條原因；(8) Copy link 旁註明「免費伺服器重啟後連結會失效，請存 JSON」。加測試，兩種 build 不壞。
 - [x] T239 Codex：稽核等待區上方顯示真實經過秒數與「免費主機上一次檢查約需 1–4 分鐘，請不要關閉頁面」雙語說明；沿用 Claude 的 fetch／XHR 360 秒上限，不改流程、不自動重送。 — commit 5b99500（178 tests、普通／demo build、pytest 295 通過）
 - [x] T238 Codex：HTML／502／503／504 改為雙語友善提示與手動重試，429／413 保留後端 detail；共用於範例、準備問題、確認、時間窗建議、語音與既有紀錄錯誤。已查 Render Logs／Events，該段有兩次 main 重新部署，未找到可對應 502 的應用例外或 OOM 事件，不能確證根因，詳見日誌。 — commit 8d80f60（173 tests、普通／demo build、pytest 292 通過）
 - [x] T237 Codex：Render 部署分支已改回 `main`，手動 Deploy latest commit 成功（ca9d149，Live）；`/api/samples` 200、3 支範例；首頁 Check a video → Choose video 可用並觸發選片對話框。自動部署限制見「待 john 決定」，未宣稱 main 更新會自動部署。 — commit a6665f9（npm 167、普通／demo build、pytest 292 全過）
@@ -474,6 +475,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/02 01:30 Claude T241（實測後續）：標題不再跟判定矛盾（判定不是 consistent 且 g 像地球時不產生標題；拒判不產生標題）；公開限次改成「準備影片」和「送出檢查」各自每小時 10 次（實測約 5 輪就被擋）；新增 `GET /api/version` 看線上是哪個 commit。實測結論照實記：真片（Pexels，相機微動）答鏡頭固定時 g=10.37 但軌跡散佈 0.08 判 inconsistent；Runway AI 片 cannot judge（加速度方向朝上、尺寸未填）。工具只能說「符不符合假設的運動」，不能分真假，這點提交文字本來就這樣寫。開 Codex T242。
 - 11/02 00:40 Claude T240 續（john Mac 上真瀏覽器實測發現）：(1)「Suggest time windows」每次讓線上伺服器當掉——原因是掃描前 15 秒影格存成 float32 彩色，本機量 meta_clip4 峰值 819 MB（主機只有 512 MB）。改成 uint8、最多 30 fps、只掃前 10 秒、ffmpeg 限 2 執行緒：同片峰值 346 MB，建議的時間窗結果不變。(2) 4K 上傳讓伺服器當掉：公開模式長邊超過 1920 px 直接回 413 請改 1080p。(3) 當掉重啟會把主機上的花費計數歸零（Render 免費版檔案不保留），所以真正的保護是不要當掉；記在缺什麼。pytest 297。
 - 11/02 00:25 Claude T240：john 線上選 0–5.36 秒整支片，6 分鐘逾時。公開模式（`PUBLIC_DEMO=1`）時間窗上限 3 秒（`PUBLIC_MAX_WINDOW_S`），超過在任何付費呼叫前回 422 並說明「只選物體在空中的 0.5–2 秒」。本機用 mock 量過：非模型部分 CPU 只 2–3 秒，所以線上慢主要在模型呼叫等待與免費主機。另開 john Mac 上的 Claude 遠端工作階段做真瀏覽器實測（網路找真片＋標示 AI 生成片上傳）。
 
