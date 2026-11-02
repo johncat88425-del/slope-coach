@@ -51,6 +51,9 @@
 
 格式：`- [x] 編號 負責 內容 — commit abc1234`。只改你自己那一行，不要刪別人的行。
 
+- [x] T249 Claude（Antigravity T248 線上實測發現）：選 5 秒時間窗時線上伺服器重啟、結果遺失（T248 Case 5，報告寫「迅速復原」其實是當掉）。原因是 T244 晃動量測把每一格轉成 float 疊成一大塊，45 格 1080p 就要 493 MB。改成一次只縮一格，峰值 3.5 MB，量到的位移逐格完全相同。加記憶體測試。第二個原因（john Mac 上量到）：`meta_client/sam.py` 轉 15 fps 給 SAM 時 x264 預設會先暫存約 40 格，5 秒 1080p 峰值約 500 MB；改 `-preset ultrafast -crf 18 -threads 1`（本機峰值降到 92 MB，畫格與時間不變）。
+- **john 11/02：以後不再派工作給 Antigravity。** 部署確認與線上實測改由 Claude（透過 john Mac 上的 Remote Control）做。
+
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
 - [x] T247 Claude（11/02 john Mac 真 SAM 驗證時找到）：自由飛行的「軌跡散佈」檢查原本拿起點到終點的直線距離當分母；完整上拋再落下的片起終點幾乎一樣高，分母只剩約 40 px，任何對稱拋物線都過不了（Pexels 真片 g=10.64 卻被判 inconsistent 的主因）。改成用擬合曲線的路徑長，2% 門檻不變。重算全部 demo 紀錄：判定與 g 全部不變（只有 rms_over_travel 數字變小，已更新）；meta_clip5 仍 9.4% 不一致。原本 5 cm 擺動的測試改成 10 cm（5 cm 只佔路徑 1.7%，以前是被短分母放大才抓到）。T244 晃動校正驗證：own_1–3 仍一致（9.32／9.44／8.85），Pexels 晃 34 px 已校正，答「鏡頭沒固定」也不再拒判。
 - [x] T246 Codex（永久結果連結完成；commit 9eec8f0；codex/T246-background-share；PR #149 已合併，背景工作沿用 main；11/02，接在 T242 / PR #149 後；john 說 Codex token 快用完，只做這一小件，做不完就留給 Antigravity）：第 (1) 點背景工作 **Claude 已做完**（`api.ts` 的 audit／auditFromDraft 改送 `/api/audit-jobs` 再輪詢）。只剩 (2) **永久結果連結**：Copy link 改成把結果 JSON（不含影片；points 只留畫圖需要的）用瀏覽器內建 `CompressionStream("gzip")`＋base64url 放進網址 `#r=`，打開時直接畫結果、不呼叫後端；超過約 30 KB 才退回 `/api/audits/{id}` 並註明會失效。取代 T242 第 (8) 點。不加新套件，加測試，兩種 build 不壞。
@@ -481,6 +484,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/02 05:10 Claude：AG T248（PR #153 不合併：報告把第 5 支的「伺服器重啟、結果遺失」寫成「迅速復原」，版本比對也沒做）。可信的部分：線上 4/5 正確：meta_ai_ball_4 g=0.143 不一致、synthetic_toss 9.81 一致、Pexels 真片鏡頭沒固定 g=10.62 一致（校正 34 px）、4K 車片 cannot judge 443 秒沒當掉）；第 5 支 5 秒時間窗讓伺服器重啟 → T249 修好。john：不再派工作給 Antigravity。
 
 - 11/01 Codex 本輪 T242／T246 完成：PR #149 合併 main（8734f4b）；永久連結實作 9eec8f0，完成表已打勾並推送 codex/T246-background-share，目標 main。197 前端測試、兩種 build、308 pytest 全過。Codex 沒有本輪待辦；T248 部署／Auto-Deploy 未由本分支冒稱完成。
 
