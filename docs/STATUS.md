@@ -492,7 +492,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 工作日誌（最新在上）
 
-- 11/01 Codex T242 同步：保留新 main e33671e 的 T243／T244／T245 程式、API v1.6 及 T246 任務。這些是協調者的新修改，不是本分支改後端；T246 會取代 T242 (8) 的舊式分享連結說明。本次電腦操作已被中止，線上最後核對為 58e0168，不宣稱已部署後續 e33671e 或啟用 Auto-Deploy。
+- 11/01 Codex T242 同步：保留新 main e33671e 的 T243／T244／T245 程式、API v1.6 及 T246 任務，同步後 pytest 307 全過。這些是協調者的新修改，不是本分支改後端；T246 會取代 T242 (8) 的舊式分享連結說明。本次電腦操作已被中止，線上最後核對為 58e0168，不宣稱已部署後續 e33671e 或啟用 Auto-Deploy。
 
 - 11/01 Codex T242：從 origin/main 58e0168 獨立開 codex/T242-live-fixes，先核對線上：舊版 ca9d149、/api/version 404；手動 Deploy latest commit 後 /api/version 200 回 58e01686dec7，與 main 相符。Auto-Deploy 不能只信 On Commit 標籤：Source 的 Git Provider 尚未連接，已準備單一 slope-coach 的 GitHub Render App 安裝頁，因新增存取權提出明確確認而未按 Install。後續電腦操作被目前網址的操作限制中止；第 1 點保留待完成，沒有用其他介面繞過。
 
