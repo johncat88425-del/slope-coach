@@ -27,6 +27,12 @@ class CameraMotion:
     translational: bool  # halves agree: a 2D shift explains the background motion
     max_shift_px: float
     max_half_disagree_px: float
+    # T256: (tx, ty, a, b) per frame: content at offset c from the image centre moved by t + a*c + b*J*c
+    # (a = zoom - 1, b = roll in radians, J*c = (-cy, cx)). similar: that model explains all four halves.
+    similarity: tuple[tuple[float, float, float, float], ...] = ()
+    similar: bool = False
+    max_zoom: float = 0.0  # largest |a|
+    max_roll_deg: float = 0.0
 
 
 def _hann(h: int, w: int) -> np.ndarray:
@@ -94,12 +100,16 @@ def measure_camera_motion(frames: np.ndarray, idx: list[int], obj_xy: list[tuple
     if frames.shape[2] > 260:  # work at half size (4x fewer pixels, ~5x faster on the 0.1-CPU host); shifts x2
         half = measure_camera_motion(_HalfSize(frames), idx, [(x / 2, y / 2) for x, y in obj_xy], mask_radius_px / 2)
         return CameraMotion(tuple((2 * dx, 2 * dy) for dx, dy in half.shifts), half.reliable, half.translational,
-                            2 * half.max_shift_px, 2 * half.max_half_disagree_px)
+                            2 * half.max_shift_px, 2 * half.max_half_disagree_px,
+                            tuple((2 * tx, 2 * ty, a, b) for tx, ty, a, b in half.similarity), half.similar,
+                            half.max_zoom, half.max_roll_deg)
     h, w = frames.shape[1], frames.shape[2]
     ref_i, ref_xy = idx[0], obj_xy[0]
     halves = [(slice(0, h), slice(0, w // 2)), (slice(0, h), slice(w // 2, w)),
               (slice(0, h // 2), slice(0, w)), (slice(h // 2, h), slice(0, w))]
-    shifts, reliable, worst_dis = [], True, 0.0
+    centres = [(-w / 4, 0.0), (w / 4, 0.0), (0.0, -h / 4), (0.0, h / 4)]
+    A = np.array([row for cx, cy in centres for row in ((1, 0, cx, -cy), (0, 1, cy, cx))], dtype=float)
+    shifts, sims, reliable, worst_dis, worst_sim = [], [], True, 0.0, 0.0
     for i, xy in zip(idx, obj_xy):
         ref = _masked(frames[ref_i], [ref_xy, xy], mask_radius_px)
         cur = _masked(frames[i], [ref_xy, xy], mask_radius_px)
@@ -110,10 +120,31 @@ def measure_camera_motion(frames: np.ndarray, idx: list[int], obj_xy: list[tuple
         dis = max(float(np.hypot(px - dx, py - dy)) for px, py in parts)
         worst_dis = max(worst_dis, dis)
         shifts.append((dx, dy))
+        d = np.array([v for part in parts for v in part], dtype=float)
+        sim, *_ = np.linalg.lstsq(A, d, rcond=None)
+        resid = (A @ sim - d).reshape(-1, 2)
+        worst_sim = max(worst_sim, float(np.hypot(resid[:, 0], resid[:, 1]).max()))
+        sims.append(tuple(float(v) for v in sim))
     max_shift = max(float(np.hypot(dx, dy)) for dx, dy in shifts)
-    return CameraMotion(tuple(shifts), reliable, worst_dis <= MAX_HALF_DISAGREE_PX, max_shift, worst_dis)
+    return CameraMotion(tuple(shifts), reliable, worst_dis <= MAX_HALF_DISAGREE_PX, max_shift, worst_dis,
+                        tuple(sims), worst_sim <= MAX_HALF_DISAGREE_PX,
+                        max(abs(a) for _, _, a, _ in sims), float(np.degrees(max(abs(b) for *_, b in sims))))
 
 
 def compensate(points: list[tuple[float, float, float]], motion: CameraMotion) -> list[tuple[float, float, float]]:
     """Subtract the background shift from each tracked (t, x, y)."""
     return [(t, x - dx, y - dy) for (t, x, y), (dx, dy) in zip(points, motion.shifts)]
+
+
+def compensate_similarity(points: list[tuple[float, float, float]], sizes: list[float], motion: CameraMotion,
+                          frame_w: int, frame_h: int) -> tuple[list[tuple[float, float, float]], list[float]]:
+    """Undo a camera roll / zoom / shift (T256): map each tracked point back to where it would sit in the first
+    frame, and divide its apparent size by the zoom. Small-angle model, matching how it was measured."""
+    cx0, cy0 = frame_w / 2.0, frame_h / 2.0
+    out_p, out_s = [], []
+    for (t, x, y), size, (tx, ty, a, b) in zip(points, sizes, motion.similarity):
+        m = np.array([[1 + a, -b], [b, 1 + a]])  # p_now - centre = m @ (p_ref - centre) + t
+        rx, ry = np.linalg.solve(m, np.array([x - cx0 - tx, y - cy0 - ty]))
+        out_p.append((t, float(rx + cx0), float(ry + cy0)))
+        out_s.append(size / float(np.hypot(1 + a, b)))
+    return out_p, out_s

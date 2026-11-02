@@ -82,3 +82,32 @@ def test_long_1080p_window_uses_little_memory():
     peak = tracemalloc.get_traced_memory()[1]
     tracemalloc.stop()
     assert m.reliable and peak < 40e6
+
+
+def test_roll_and_zoom_are_measured_and_undone():
+    """T256: the camera zooms ~11% and rolls ~5 deg while a ball flies; the track is mapped back to frame one."""
+    import numpy as np
+    from scipy.ndimage import affine_transform, gaussian_filter
+    from physics.camera_motion import compensate_similarity, measure_camera_motion
+    rng = np.random.default_rng(1)
+    H, W, n = 240, 320, 20
+    tex = gaussian_filter(rng.random((H * 2, W * 2)), 2) * 255
+    frames, truth, seen = [], [], []
+    c = np.array([W / 2, H / 2])
+    for i in range(n):
+        a, b = 0.006 * i, np.radians(0.25 * i)
+        m, t = np.array([[1 + a, -b], [b, 1 + a]]), np.array([0.5 * i, -0.3 * i])
+        minv = np.linalg.inv(m)
+        M = np.array([[minv[1, 1], minv[1, 0]], [minv[0, 1], minv[0, 0]]])
+        rc, tt = np.array([H / 2, W / 2]), np.array([t[1], t[0]])
+        f = affine_transform(tex, M, offset=rc + np.array([H / 2, W / 2]) - M @ (rc + tt), output_shape=(H, W), order=1)
+        ref = np.array([60 + 8 * i, 50 + 0.9 * i * i])
+        now = m @ (ref - c) + t + c
+        yy, xx = np.mgrid[0:H, 0:W]
+        f[(xx - now[0]) ** 2 + (yy - now[1]) ** 2 < 36] = 0
+        frames.append(f), truth.append(ref), seen.append((i / 30, now[0], now[1]))
+    mo = measure_camera_motion(np.array(frames, dtype=np.float32), list(range(n)), [(x, y) for _, x, y in seen], 10)
+    assert mo.reliable and mo.similar and not mo.translational and 0.09 < mo.max_zoom < 0.14
+    pts, sizes = compensate_similarity(seen, [12.0] * n, mo, W, H)
+    assert max(np.hypot(p[1] - q[0], p[2] - q[1]) for p, q in zip(pts, truth)) < 4  # was 28 px uncorrected
+    assert sizes[-1] < sizes[0]  # the zoom's growth in apparent size is taken out

@@ -29,7 +29,7 @@ from .explain import explain_audit
 from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
 from .output_check import check_model_text, extract_numbers
 from .store import UPLOAD_ROOT, UploadTooLarge, copy_limited, new_id, now, store
-from physics.camera_motion import compensate, measure_camera_motion
+from physics.camera_motion import compensate, compensate_similarity, measure_camera_motion
 from physics.depth import rescale_for_depth
 
 from .video import (LONG_SIDE_PX, clip_duration, color_for, held_fps, probe_fps, read_frames, read_frames_rgb,
@@ -40,6 +40,8 @@ router = APIRouter()
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
 EARTH_HEADLINE_BAND = (0.85, 1.15)  # g_vs_earth inside this reads as "Earth-like" in a headline
 MAX_CAMERA_SHIFT = 0.15  # a moving camera is corrected only up to 15% of the frame width
+MAX_CAMERA_ZOOM = 0.15  # T256: correct at most 15% zoom and 8 deg roll over the window
+MAX_CAMERA_ROLL_DEG = 8.0
 MIN_CAMERA_SHIFT_PX = 1.0  # below this the camera counts as still: no correction, results unchanged
 MAX_WINDOW_S = 60.0  # SAM's own per-request limit; long windows are read at a lower frame rate (T243)
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
@@ -462,11 +464,17 @@ def create_audit(
         idx = [min(len(frames) - 1, max(0, round((t - t_start) * fps))) for t, _, _ in pts]
         motion = measure_camera_motion(frames, idx, [(x, y) for _, x, y in pts], rad)
         rec["numbers"]["camera_shift_max_px"] = motion.max_shift_px
-        movable = motion.reliable and motion.translational and motion.max_shift_px <= MAX_CAMERA_SHIFT * frames.shape[2]
-        if not camera_static and not movable:
+        shift_ok = motion.max_shift_px <= MAX_CAMERA_SHIFT * frames.shape[2]
+        movable = motion.reliable and motion.translational and shift_ok
+        # T256: a camera that also rolled or zoomed a little, when one roll+zoom+shift explains all four halves
+        # Only when the user says the camera moved: on a 'fixed' answer, halves can disagree because of things
+        # moving in the background, and a roll/zoom fit to that must not bend the track.
+        warpable = (not camera_static and not movable and motion.reliable and motion.similar and shift_ok
+                    and motion.max_zoom <= MAX_CAMERA_ZOOM and motion.max_roll_deg <= MAX_CAMERA_ROLL_DEG)
+        if not camera_static and not movable and not warpable:
             why = ("the background is too plain to measure how the camera moved" if not motion.reliable else
-                   "the camera rotated or zoomed, which a 2D correction cannot undo" if not motion.translational
-                   else "the camera moved too far")
+                   "the camera moved in a way a flat roll / zoom / shift correction cannot undo" if not motion.similar
+                   else "the camera moved, rolled or zoomed too far")
             rec["reasons"] = [f"camera is not static and {why}; this check needs a fixed or only slightly moving camera"]
             store.audits[aid] = _finish(rec)
             return rec
@@ -476,6 +484,14 @@ def create_audit(
             rec["numbers"]["camera_corrected"] = 1.0
             rec["limits"] = [*rec["limits"], f"The camera moved up to {motion.max_shift_px:.1f} px during the window; "
                              "the track was corrected for that shift (side-to-side / up-down only)."]
+        elif warpable:
+            pts, sizes = compensate_similarity(pts, sizes, motion, frames.shape[2], frames.shape[1])
+            rec["points"] = [[t, x, y] for t, x, y in pts]
+            rec["numbers"] |= {"camera_corrected": 1.0, "camera_zoom_max": motion.max_zoom,
+                               "camera_roll_max_deg": motion.max_roll_deg}
+            rec["limits"] = [*rec["limits"], f"The camera moved, rolled up to {motion.max_roll_deg:.1f} deg and zoomed up "
+                             f"to {motion.max_zoom:.0%} during the window; the track and the object's size were "
+                             "corrected for that, measured from the background."]
 
     depth_corrected = False
     trend = size_trend([p[0] for p in pts], sizes)
