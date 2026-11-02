@@ -304,3 +304,27 @@ def track_jump_ratio(points: list[tuple[float, float, float]]) -> float:
     if median_speed <= 0:
         return 0.0
     return max(math.hypot(q[0] - p[0], q[1] - p[1]) for p, q in zip(v, v[1:])) / median_speed
+
+
+MIN_POINTS_PER_HALF = 6
+DRIFT_SIGMA = 3.0  # halves must differ by more than this many combined standard errors
+DRIFT_MIN_RATIO = 0.25  # ...and by more than 25%, so tracking noise on a good clip never trips it
+
+
+def acceleration_drift(points: list[tuple[float, float, float]]) -> tuple[float, float] | None:
+    """T259: one flight has one gravity. Fit the first and second half of the track separately and return
+    (ratio of the smaller to the larger acceleration, difference in combined standard errors). Needs no
+    object size and survives slow motion (both halves scale alike). A clip stitched from separately
+    generated pieces, or one whose fall speeds up or slows down, gives two different values.
+    None when either half has too few points."""
+    pts = sorted(points)
+    mid = len(pts) // 2
+    halves = (pts[:mid + 1], pts[mid:])
+    if min(len(h) for h in halves) < MIN_POINTS_PER_HALF:
+        return None
+    fits = [fit_flight(h) for h in halves]
+    a0, a1 = (f.a_px_s2 for f in fits)
+    if max(a0, a1) <= 0:
+        return None
+    sigma = math.hypot(fits[0].a_stderr_px_s2, fits[1].a_stderr_px_s2)
+    return min(a0, a1) / max(a0, a1), abs(a0 - a1) / sigma if sigma > 0 else math.inf
