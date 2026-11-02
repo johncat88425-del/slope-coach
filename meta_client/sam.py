@@ -48,7 +48,7 @@ class FrameDetection:
     frame_size: tuple[int, int]  # (w, h) of the source frame
     centroid_px: tuple[float, float] | None  # None when the mask is empty
     area_px: float
-    mask: bytes = b""  # row-major 0/1 raster, mask_size (w*h) entries
+    mask: bytes = b""  # not kept (T258): full-frame rasters for every frame and object filled the 512 MB host
     mask_size: tuple[int, int] = (0, 0)
 
 
@@ -255,6 +255,7 @@ def _detections_from_records(
             raise TrackingError(f"mask decode failed on frame {frame_index}: {exc}") from exc
         mw, mh = int(mask_record.width), int(mask_record.height)
         cx, cy, count = _raster_stats(bytes(raster), mw, mh)
+        del raster  # only centroid and area are used downstream
         if count == 0:
             centroid = None
             area = 0.0
@@ -277,7 +278,6 @@ def _detections_from_records(
                 frame_size=(fw, fh),
                 centroid_px=centroid,
                 area_px=area,
-                mask=bytes(raster),
                 mask_size=(mw, mh),
             )
         )

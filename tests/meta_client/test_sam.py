@@ -51,7 +51,7 @@ def test_track_success(tmp_path, monkeypatch):
     assert det.box == (211.0, 228.0, 271.0, 255.0)  # parser: exclusive bounds
     assert det.frame_size == (320, 334)
     assert det.mask_size == (60, 27)
-    assert len(det.mask) == 60 * 27
+    assert det.mask == b""  # T258: rasters are not kept in memory
     # centroid inside the box, scaled to source pixels
     assert 211.0 <= det.centroid_px[0] <= 271.0
     assert 228.0 <= det.centroid_px[1] <= 255.0
