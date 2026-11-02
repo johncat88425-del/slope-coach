@@ -151,7 +151,10 @@ def _transcode_to_15fps(
     cmd += [
         # fps filter, not -r: after -ss, -r dropped frames unevenly at the window start, so frame N was
         # not at t_start + N/15 and every real throw came out tilted about 24 degrees (found 10/29, T114).
-        "-vf", "fps=15", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        # ultrafast + 1 thread (T249): x264's default look-ahead buffered ~40 frames and peaked ~500 MB on a
+        # 5 s 1080p window, which restarted the 512 MB host. Frames and timing are unchanged; crf 18 keeps detail.
+        "-vf", "fps=15", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "18", "-threads", "1",
+        "-pix_fmt", "yuv420p",
         "-movflags", "+faststart", str(dst),
     ]
     proc = _run_cmd(cmd, _FFMPEG_TIMEOUT_S)
