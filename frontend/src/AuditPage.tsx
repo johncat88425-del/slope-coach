@@ -51,7 +51,7 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
  <VehicleMeasurements audit={audit}/>
  <ModelHeadline headline={audit.headline}/>
  {audit.explanation&&<section data-testid="audit-explanation"><p>{audit.explanation.source==='model'?'由 Muse Spark 產生':'固定模板（未使用模型）'}</p><p><Verbatim text={audit.explanation.text}/></p></section>}
- <section data-testid="audit-reasons"><h3>原因</h3><ul>{audit.reasons.map((reason,i)=><li key={i}><Verbatim text={reason}/></li>)}</ul></section>
+ {audit.reasons.length>0&&<section data-testid="audit-reasons"><h3>原因</h3><ul>{audit.reasons.map((reason,i)=><li key={i}><Verbatim text={reason}/></li>)}</ul></section>}
  <WhatWouldFit audit={audit}/>
  <RetakeGuide verdict={audit.verdict} reasons={audit.reasons} modelTips={audit.retake_tips}/>
  <EarthAssumption numbers={audit.numbers}/>

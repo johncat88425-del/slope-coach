@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';import {rea
 import {AuditProgress} from '../.test-dist/AuditProgress.js';import {RequestStatus} from '../.test-dist/RequestStatus.js';import {analysisStageLabels} from '../.test-dist/AnalysisStages.js';import {LanguageProvider,translateText} from '../.test-dist/i18n.js';
 test('both analysis paths show one indeterminate spinner and three unconfirmed workflow descriptions',()=>{
  for(const node of [h(AuditProgress,{percent:100}),h(AuditProgress,{percent:null}),h(RequestStatus,{phase:'checking'})]){
-  const html=render(node);assert.equal((html.match(/data-testid="analysis-spinner"/g)||[]).length,1);assert.equal((html.match(/data-state="unreported"/g)||[]).length,3);for(const label of analysisStageLabels)assert.ok(html.includes(label));assert.match(html,/Stage details are unavailable/);assert.doesNotMatch(html,/aria-current|aria-valuenow|<progress|\d+%/);
+  const html=render(node);assert.equal((html.match(/data-testid="analysis-spinner"/g)||[]).length,1);assert.equal((html.match(/data-state="unreported"/g)||[]).length,3);for(const label of analysisStageLabels)assert.ok(html.includes(label));assert.match(html,/does not report which step/);assert.doesNotMatch(html,/aria-current|aria-valuenow|<progress|\d+%/);
  }
  for(const phase of ['preparing','scanning','loading','transcribing'])assert.doesNotMatch(render(h(RequestStatus,{phase})),/data-testid="analysis-waiting"/);
 });
@@ -14,5 +14,5 @@ test('only valid measured upload percentages are displayed; no stage follows a t
 });
 test('workflow and unknown-state text translate without asserting the models were used',()=>{
  for(const label of analysisStageLabels)assert.notEqual(translateText(label,'zh'),label);
- const html=render(h(LanguageProvider,{value:'zh'},h(AuditProgress,{percent:null})));assert.match(html,/目前沒有各階段狀態/);assert.match(html,/可能的處理流程/);assert.match(html,/程式計算量測數字/);
+ const html=render(h(LanguageProvider,{value:'zh'},h(AuditProgress,{percent:null})));assert.match(html,/不會回報目前做到哪一步/);assert.match(html,/可能的處理流程/);assert.match(html,/程式計算量測數字/);
 });

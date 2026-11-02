@@ -61,7 +61,7 @@ export const newUiCopy:Record<string,string>={
   "Muse Spark reviews the clip": "Muse Spark 查看影片",
   "SAM 3.1 tracks the object": "SAM 3.1 追蹤物體",
   "Code calculates the measurements": "程式計算量測數字",
-  "Waiting for the server. Stage details are unavailable.": "正在等待處理結果，目前沒有各階段狀態。",
+  "Still working on the server. The free host does not report which step it is on.": "伺服器仍在處理。免費主機不會回報目前做到哪一步。",
   "These are possible processing steps. The result will show which sources were used.": "以下是可能的處理流程；結果會標示實際使用的來源。",
   "Possible analysis steps": "可能的分析流程",
 
