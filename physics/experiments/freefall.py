@@ -30,7 +30,7 @@ class FlightFit:
     vy_px_s: float
     a_stderr_px_s2: float  # stderr of the acceleration magnitude
     rms_residual_px: float
-    travel_px: float
+    travel_px: float  # path length of the fitted curve over the tracked span
     n: int
     t_span_s: float
     t0_s: float = 0.0  # time of the first tracked point; positions below are at t0_s
@@ -67,7 +67,12 @@ def fit_flight(points: list[tuple[float, float, float]]) -> FlightFit:
     dof = max(2 * len(t) - 6, 1)
     sigma2 = float(r @ r) / dof
     a_se = math.sqrt(sigma2 * XtX_inv[2, 2])
-    travel = float(np.hypot(arr[-1, 1] - arr[0, 1], arr[-1, 2] - arr[0, 2]))
+    # Distance travelled along the fitted (noise-free) path, not start-to-end: a full toss up and back down
+    # ends near where it started, and a straight-line travel then made the scatter check fail any real
+    # symmetric throw however clean its track (T247, found on a real Pexels clip).
+    ts = np.linspace(0.0, span, 200)
+    path = np.column_stack([np.polyval([0.5 * c[2], c[1], c[0]], ts) for c in coefs])
+    travel = float(np.sum(np.hypot(*np.diff(path, axis=0).T)))
     return FlightFit(
         ax_px_s2=float(coefs[0][2]), ay_px_s2=float(coefs[1][2]),
         vx_px_s=float(coefs[0][1]), vy_px_s=float(coefs[1][1]),

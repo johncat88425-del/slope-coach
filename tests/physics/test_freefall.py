@@ -45,7 +45,9 @@ def test_without_scale_gives_implied_size_only():
 
 def test_sideways_gravity_and_wobbly_path_are_flagged():
     assert "image-down" in check_flight(fit_flight(throw(tilt_deg=40))).reasons[0]
-    wobbly = check_flight(fit_flight(throw(wobble=0.05)))
+    # 10 cm wobble (rms ~3% of the path). T247 measures scatter against the path length; 5 cm (1.7%) was only
+    # flagged before because start-to-end distance understated how far the ball moved.
+    wobbly = check_flight(fit_flight(throw(wobble=0.1)))
     assert any("constant-acceleration" in r for r in wobbly.reasons)
 
 
@@ -113,3 +115,19 @@ def test_gravity_ruler_drop_from_rest_and_slow_motion_inflates_heights():
     # A 2x slow-motion clip of the same drop reads a 4x too large height: the assumption matters.
     slow = gravity_ruler(fit_flight([(2 * t, x, y) for t, x, y in throw(vx=0.0, vy=0.0)]))
     assert slow.vertical_extent_m == pytest.approx(4 * r.vertical_extent_m, rel=1e-6)
+
+
+
+def test_scatter_is_judged_against_the_path_not_start_to_end():
+    """T247: a full up-and-down toss ends near its start; a clean track of it must not fail the scatter check.
+    Shaped like the real Pexels clip: ~130 px up and back down in 0.64 s, 3.6 px tracking noise."""
+    import numpy as np
+    rng = np.random.default_rng(0)
+    a = 2 * 130 / 0.32 ** 2  # px/s^2: rises 130 px in 0.32 s, back down by 0.64 s
+    v = -(2 * a * 130) ** 0.5
+    pts = [(t, 300 + 60 * t + rng.normal(0, 3.6 / 2 ** 0.5), 400 + v * t + 0.5 * a * t * t + rng.normal(0, 3.6 / 2 ** 0.5))
+           for t in np.arange(0, 0.645, 1 / 30)]
+    fit = fit_flight(pts)
+    chord = float(np.hypot(pts[-1][1] - pts[0][1], pts[-1][2] - pts[0][2]))
+    assert fit.travel_px > 3 * chord
+    assert check_flight(fit).verdict == "consistent"
