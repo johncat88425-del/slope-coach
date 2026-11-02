@@ -367,7 +367,7 @@ def test_audit_refuses_long_windows_and_oversized_uploads(tmp_path, monkeypatch)
     import io
     from backend import store as store_mod
     write_clip(tmp_path / "real.mp4", 9.81)
-    assert post(tmp_path / "real.mp4", t_end="45").status_code == 422
+    assert post(tmp_path / "real.mp4", t_end="90").status_code == 422
     monkeypatch.setattr(store_mod, "MAX_UPLOAD_BYTES", 1000)
     monkeypatch.setattr(store_mod.copy_limited, "__defaults__", (1000,))
     r = client.post("/api/audits", data={"t_start": "0", "t_end": "0.6", "camera_static": "true"},
