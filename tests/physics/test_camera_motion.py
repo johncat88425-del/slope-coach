@@ -68,3 +68,17 @@ def test_zoom_is_not_called_a_shift():
     frames, pts = _clip(np.zeros((24, 2)), zoom=True)
     m = measure_camera_motion(frames, list(range(24)), [(x, y) for _, x, y in pts], 14)
     assert not m.translational
+
+
+def test_long_1080p_window_uses_little_memory():
+    """T249: a 5 s window restarted the 512 MB host; frames are now halved one at a time, not stacked as floats."""
+    import tracemalloc
+    import numpy as np
+    from physics.camera_motion import measure_camera_motion
+    base = (np.random.default_rng(0).random((1090, 1930)) * 255).astype(np.uint8)
+    frames = np.stack([base[i % 8: i % 8 + 1080, :1920] for i in range(30)])
+    tracemalloc.start()
+    m = measure_camera_motion(frames, list(range(30)), [(500 + 5 * i, 400) for i in range(30)], 30)
+    peak = tracemalloc.get_traced_memory()[1]
+    tracemalloc.stop()
+    assert m.reliable and peak < 40e6

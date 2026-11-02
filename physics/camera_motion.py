@@ -70,6 +70,20 @@ def _masked(frame: np.ndarray, centres: list[tuple[float, float]], radius: float
     return out
 
 
+class _HalfSize:
+    """Half-resolution view made one frame at a time (T249). Building a float stack of every frame up to the
+    last tracked one took ~600 MB for a 5 s window at 1080p and restarted the 512 MB host."""
+
+    def __init__(self, frames: np.ndarray):
+        self.frames = frames
+        self.shape = (frames.shape[0], frames.shape[1] // 2, frames.shape[2] // 2)
+
+    def __getitem__(self, i: int) -> np.ndarray:
+        h, w = self.shape[1], self.shape[2]
+        f = self.frames[i]  # the source may itself be a half-size view (wide clips are halved more than once)
+        return f[: 2 * h, : 2 * w].reshape(h, 2, w, 2).mean(axis=(1, 3), dtype=np.float32)
+
+
 def measure_camera_motion(frames: np.ndarray, idx: list[int], obj_xy: list[tuple[float, float]],
                           mask_radius_px: float) -> CameraMotion:
     """frames: (n, h, w) grey; idx: frame index of each tracked point; obj_xy: the tracked object position in
@@ -78,13 +92,7 @@ def measure_camera_motion(frames: np.ndarray, idx: list[int], obj_xy: list[tuple
     if not idx:
         return CameraMotion((), False, False, 0.0, 0.0)
     if frames.shape[2] > 260:  # work at half size (4x fewer pixels, ~5x faster on the 0.1-CPU host); shifts x2
-        used = sorted(set(idx))
-        small = {i: frames[i, : frames.shape[1] // 2 * 2, : frames.shape[2] // 2 * 2].reshape(
-            frames.shape[1] // 2, 2, frames.shape[2] // 2, 2).mean(axis=(1, 3)) for i in used}
-        stack = np.zeros((max(used) + 1, *next(iter(small.values())).shape))
-        for i, f in small.items():
-            stack[i] = f
-        half = measure_camera_motion(stack, idx, [(x / 2, y / 2) for x, y in obj_xy], mask_radius_px / 2)
+        half = measure_camera_motion(_HalfSize(frames), idx, [(x / 2, y / 2) for x, y in obj_xy], mask_radius_px / 2)
         return CameraMotion(tuple((2 * dx, 2 * dy) for dx, dy in half.shifts), half.reliable, half.translational,
                             2 * half.max_shift_px, 2 * half.max_half_disagree_px)
     h, w = frames.shape[1], frames.shape[2]
