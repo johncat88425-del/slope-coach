@@ -124,6 +124,14 @@ def check_flight(
         if not lo <= g_app <= hi:
             reasons.append(f"apparent g {g_app:.2f} m/s^2 is outside {lo:.2f}-{hi:.2f}")
 
+    messy = fit.rms_residual_px > max_rms_fraction * fit.travel_px
+    if messy and abs(fit.tilt_deg) <= 90:
+        # T260: a track that does not follow one parabola, with a pull that still points roughly down, is as
+        # likely a poor track or a light object slowed by air (a paper ball) as a broken law: refuse, do not
+        # accuse. A pull pointing upwards stays inconsistent whatever the scatter.
+        return FlightCheck("insufficient_data", ("track does not follow one clean parabola (poor tracking, or a "
+                                                 "light object slowed by air), so free flight cannot be judged",),
+                           g_app, implied, size, factor)
     return FlightCheck("inconsistent" if reasons else "consistent", tuple(reasons), g_app, implied, size, factor)
 
 

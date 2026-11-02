@@ -47,8 +47,15 @@ def test_sideways_gravity_and_wobbly_path_are_flagged():
     assert "image-down" in check_flight(fit_flight(throw(tilt_deg=40))).reasons[0]
     # 10 cm wobble (rms ~3% of the path). T247 measures scatter against the path length; 5 cm (1.7%) was only
     # flagged before because start-to-end distance understated how far the ball moved.
+    # T260: a messy track with a downward pull is refused (poor tracking or air drag), not called inconsistent.
     wobbly = check_flight(fit_flight(throw(wobble=0.1)))
-    assert any("constant-acceleration" in r for r in wobbly.reasons)
+    assert wobbly.verdict == "insufficient_data"
+    assert any("parabola" in r for r in wobbly.reasons)
+
+
+def test_messy_track_pulled_upward_stays_inconsistent():
+    messy_up = check_flight(fit_flight(throw(tilt_deg=171, wobble=0.1)))
+    assert messy_up.verdict == "inconsistent"
 
 
 def test_refuses_without_enough_data():
