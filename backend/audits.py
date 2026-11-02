@@ -548,6 +548,8 @@ def create_audit(
         b = check_bounces(pts)
         rec["verdict"], rec["reasons"] = b.verdict, list(b.reasons)
         rec["numbers"] |= {f"rebound_ratio_{i + 1}": e * e for i, e in enumerate(b.restitution)}
+        if len(b.arc_g_px_s2) >= 2:  # T253: one gravity for every hop, no size needed
+            rec["numbers"]["bounce_arc_gravity_ratio"] = min(b.arc_g_px_s2) / max(b.arc_g_px_s2)
         rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v == v and abs(v) != float("inf")}
         store.audits[aid] = _finish(rec)
         return rec

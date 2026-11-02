@@ -166,6 +166,7 @@ class BounceCheck:
     reasons: tuple[str, ...]
     heights_px: tuple[float, ...]  # peak height above the lowest tracked point, per flight segment
     restitution: tuple[float, ...]  # sqrt(h[k+1] / h[k]); must be <= 1 for a passive ball
+    arc_g_px_s2: tuple[float, ...] = ()  # 8 h / T^2 per complete arc (impact to impact); one gravity for all
 
 
 def check_bounces(points: list[tuple[float, float, float]], *, tolerance: float = 0.05,
@@ -198,11 +199,26 @@ def check_bounces(points: list[tuple[float, float, float]], *, tolerance: float 
     if len(heights) < 2:
         return BounceCheck("insufficient_data", ("fewer than two flight segments",), tuple(heights), ())
     e = tuple(math.sqrt(h1 / h0) if h0 > 0 else math.inf for h0, h1 in zip(heights, heights[1:]))
-    reasons = tuple(
+    reasons = [
         f"rebound {k + 1} peaks {h1 / h0:.2f}x the previous height"
         for k, (h0, h1) in enumerate(zip(heights, heights[1:])) if h1 > h0 * (1 + tolerance)
-    )
-    return BounceCheck("inconsistent" if reasons else "consistent", reasons, tuple(heights), e)
+    ]
+    # T253: every complete arc (impact to impact) rises h and lasts T with h = g T^2 / 8 for one g. The ratio
+    # needs no object size and survives slow motion (all times stretch alike), so a clip whose arcs imply
+    # different gravities fails even without a ruler. A one-frame timing error is allowed on each arc.
+    ts = [p[0] for p in pts]
+    dt = min((b - a for a, b in zip(ts, ts[1:]) if b > a), default=0.0)
+    arcs = []
+    for a, b in zip(merged, merged[1:]):
+        T, h = ts[b] - ts[a], floor - min(ys[a:b + 1])
+        if b - a + 1 >= min_points_per_segment and T > 2 * dt and h > 0:
+            arcs.append((8 * h / T ** 2, 8 * h / (T + dt) ** 2, 8 * h / (T - dt) ** 2))
+    if len(arcs) >= 2 and max(lo for _, lo, _ in arcs) > min(hi for _, _, hi in arcs):
+        g_vals = [g for g, _, _ in arcs]
+        reasons.append(f"bounce arcs imply different gravities ({min(g_vals) / max(g_vals):.2f}x apart): "
+                       "the height of each hop does not match how long it lasts")
+    return BounceCheck("inconsistent" if reasons else "consistent", tuple(reasons), tuple(heights), e,
+                       tuple(g for g, _, _ in arcs))
 
 
 # Surface gravity in m/s^2, used only to put an apparent g into words a viewer can picture.
