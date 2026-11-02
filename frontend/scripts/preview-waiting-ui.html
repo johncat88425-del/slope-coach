@@ -1,0 +1,5 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Audit wait UI fixture</title></head><body><main class="audit-layout"><section><h1>Audit wait UI fixture</h1><p>Mock UI only — the timer uses real elapsed time. No backend or model request is made.</p><div id="fixture"></div></section></main><script type="module">
+import '../src/style.css';import '../src/editorial.css';import {createElement as h,useState} from 'react';import {createRoot} from 'react-dom/client';import {RequestStatus} from '../src/RequestStatus.tsx';import {LanguageRoot,LanguageSwitch} from '../src/i18n.tsx';
+function Fixture(){const [waiting,setWaiting]=useState(false);return h(LanguageRoot,null,h(LanguageSwitch),h('button',{'data-testid':'toggle-wait',onClick:()=>setWaiting(v=>!v)},waiting?'Finish mock wait':'Start mock wait'),waiting?h(RequestStatus,{phase:'checking'}):h('p',{'data-testid':'wait-idle'},'No request is running.'));}
+createRoot(document.querySelector('#fixture')).render(h(Fixture));
+</script></body></html>
