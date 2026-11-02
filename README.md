@@ -190,7 +190,7 @@ python scripts/e2e_audit.py
 
 ## Limitations
 
-- One object, fixed camera, roughly side-on view. Handheld footage, objects moving toward the camera (size change over 30%), slow motion, and gaps in tracking are refused rather than guessed.
+- One clearly visible moving object. Camera shake, pan, small roll (≤ 8°) and zoom (≤ 15%) are measured from the background and corrected (T244, T256); motion toward the camera is corrected from the object's own apparent size (T251). Larger or uneven camera motion, a size that jumps around, slow motion, and gaps in tracking are refused rather than guessed.
 - 2D only: no depth, no live streaming.
 - Cars: the 1.2 g limit is a screening threshold for ordinary road cars, not a universal limit; perspective, yaw and a wrong car length all bias the estimate.
 - The metre scale comes from a user-entered object size; a wrong size scales g by the same factor.
