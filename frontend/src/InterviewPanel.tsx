@@ -76,7 +76,7 @@ export function InterviewPanel({api,onResult,disabled=false,onBusyChange,hasResu
      <label>Slow motion or retimed playback<select data-testid="interview-slow" value={slow} onChange={e=>setSlow(e.target.value)}><option value="">Choose…</option><option value="yes">Yes</option><option value="no">No</option></select></label>
      <label>Motion model<select data-testid="interview-model" value={model} onChange={e=>{modelEdited.current=true;setModel(e.target.value)}}><option value="">Choose…</option><option value="free_flight">Free flight</option><option value="bounce">Bounce</option><option value="pendulum">Pendulum</option><option value="vehicle">Car driving past side-on (fixed camera)</option></select></label>
      {model==='vehicle'&&<VehicleClassField value={vehicleClass} onChange={value=>{vehicleClassEdited.current=true;setVehicleClass(value)}}/>}
-     <AuditDimensionField model={model} value={size} onChange={setSize}/>
+     <AuditDimensionField model={model} value={size} onChange={setSize} objectName={objectName}/>
      {model==='pendulum'&&<label>Pendulum length (metres, optional)<input type="number" step="any" min="0" value={length} onChange={e=>setLength(e.target.value)}/></label>}
      <button className="primary" data-testid="interview-submit" disabled={!windowConfirmed||!draftUsable||busy||disabled} onClick={()=>void submit()}>Confirm and check</button>
     </div>
