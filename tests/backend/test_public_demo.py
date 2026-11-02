@@ -46,3 +46,17 @@ def test_public_demo_refuses_long_windows_before_any_model_call(monkeypatch, tmp
                                         "slow_motion": "false", "assumed_model": "free_flight"},
                    files={"file": ("v.mp4", f, "video/mp4")})
     assert r.status_code == 422 and "at most 3 s" in r.json()["detail"]
+
+
+def test_public_demo_refuses_4k_uploads(monkeypatch, tmp_path):
+    import subprocess
+    clip = tmp_path / "big.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=3840x2160:d=0.2",
+                    "-pix_fmt", "yuv420p", str(clip)], check=True)
+    m = _app(monkeypatch, tmp_path, PUBLIC_DEMO="1")
+    c = TestClient(m.app)
+    with clip.open("rb") as f:
+        r = c.post("/api/audit-drafts", files={"file": ("big.mp4", f, "video/mp4")})
+    assert r.status_code == 413 and "1080p" in r.json()["detail"]
+    with open("data/samples/synthetic_toss_earth_g.mp4", "rb") as f:
+        assert c.post("/api/audit-drafts", files={"file": ("ok.mp4", f, "video/mp4")}).status_code == 201

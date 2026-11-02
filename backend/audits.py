@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 
 import shutil
+import subprocess
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -31,6 +32,7 @@ from .video import color_for, probe_fps, read_frames, read_frames_rgb, save_over
 router = APIRouter()
 
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
+PUBLIC_MAX_SIDE_PX = 1920
 PUBLIC_MAX_WINDOW_S = float(os.environ.get("PUBLIC_MAX_WINDOW_S", "3"))
 MAX_WINDOW_S = 30.0  # every frame of the window is held in memory; real motions here last a few seconds
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
@@ -137,7 +139,21 @@ def _save_upload(file: UploadFile, d: Path) -> Path:
         copy_limited(file.file, video)
     except UploadTooLarge as e:
         raise HTTPException(413, str(e))
+    if os.environ.get("PUBLIC_DEMO") == "1" and max(_frame_size(video)) > PUBLIC_MAX_SIDE_PX:
+        video.unlink(missing_ok=True)  # a 4K clip crashed the 512 MB public host (T240)
+        raise HTTPException(413, "On this public demo videos can be at most 1080p (1920 px on the long side). "
+                                 "Export or record the clip at 1080p and try again.")
     return video
+
+
+def _frame_size(video: Path) -> tuple[int, int]:
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
+                          "-of", "csv=p=0", str(video)], capture_output=True, text=True).stdout.strip().splitlines()
+    try:
+        w, h = (int(v) for v in out[0].split(",")[:2])
+    except (IndexError, ValueError):
+        raise HTTPException(422, "could not read the video size; is this a video file?")
+    return w, h
 
 
 def checked_interview(iv: S.AuditInterview) -> S.AuditInterview:
@@ -314,7 +330,8 @@ def voice_answer(did: str, audio: UploadFile = File(...)):
             "transcript": str(raw.get("transcript", ""))[:2000], "fields": checked_voice_fields(raw.get("fields"))}
 
 
-SCAN_LIMIT_S = 15.0  # window suggestions look at the first 15 s only
+SCAN_LIMIT_S = 10.0  # window suggestions look at the first 10 s only
+SCAN_MAX_FPS = 30.0  # and at most 30 frames a second, so a 60/240 fps phone clip fits in 512 MB (T240)
 
 
 @router.post("/api/audit-drafts/{did}/windows", response_model=S.FlightWindowsOut)
@@ -326,8 +343,9 @@ def suggest_windows(did: str, object_name: str = Form("ball", max_length=60)):
     video = store.audit_drafts[did]
     color = color_for(object_name)
     try:
-        frames, fps = ((read_frames_rgb(str(video), 0.0, SCAN_LIMIT_S), probe_fps(str(video))) if color
-                       else read_frames(video, 0.0, SCAN_LIMIT_S))
+        frames, fps = ((read_frames_rgb(str(video), 0.0, SCAN_LIMIT_S, SCAN_MAX_FPS),
+                        min(probe_fps(str(video)), SCAN_MAX_FPS)) if color
+                       else read_frames(video, 0.0, SCAN_LIMIT_S, SCAN_MAX_FPS))
     except Exception:
         raise HTTPException(422, "could not read video frames")
     pts, _ = track_color(frames, fps, 0.0, color) if color else track_with_sizes(frames, fps, 0.0)
