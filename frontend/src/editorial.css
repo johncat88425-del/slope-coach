@@ -206,3 +206,4 @@ svg text{fill:var(--color-text)}
 .sample-result-source{grid-column:1/-1;justify-self:start}
 
 .share-link-note{display:block;margin-top:8px;max-width:60ch}.share-reason{overflow-wrap:anywhere}
+.audit-share-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-block:16px}.audit-share-link small{flex-basis:100%;margin-top:0}

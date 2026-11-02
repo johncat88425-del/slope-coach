@@ -1,4 +1,13 @@
 export const newUiCopy:Record<string,string>={
+  "Preparing share link…": "正在準備分享連結…",
+  "This link contains the saved result and works after a server restart. Video is not included.": "此連結內含已儲存的結果，伺服器重啟後仍可讀取；不含影片。",
+  "This result is too large or compressed links are unavailable. This server link expires after a restart; save the JSON.": "結果過大或瀏覽器不支援壓縮連結。此伺服器連結會在重啟後失效，請存 JSON。",
+  "Shared result": "分享結果",
+  "Shared saved result": "已儲存的分享結果",
+  "The drawing path was simplified for sharing. The original JSON contains the full record.": "分享用的繪圖軌跡已精簡；原始 JSON 保留完整紀錄。",
+  "Opening the saved result…": "正在開啟已儲存的結果…",
+  "This shared result is invalid or too large. Ask for the saved JSON.": "此分享結果無效或過大，請向分享者索取已儲存的 JSON。",
+  "Compressed result links are not supported in this browser.": "此瀏覽器不支援壓縮結果連結，請換用支援的瀏覽器或載入已儲存的 JSON。",
   "Reason:": "原因：",
   "Links on the free server stop working after a restart. Save the JSON.": "免費伺服器重啟後連結會失效，請存 JSON。",
   "This check took too long. Select a shorter time window (0.5–2 seconds) and try again.": "這次檢查太久，請選更短的時間窗（0.5–2 秒）再試。",

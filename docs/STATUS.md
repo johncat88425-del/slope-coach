@@ -20,7 +20,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | 全部完成 |
-| **Codex** | T242 前端修正完成（PR #149）；部署驗證已移交 T248。接 T246：只做永久結果連結，沿用 Claude 已合併的背景工作。 |
+| **Codex** | 本輪完成：T242 PR #149 已合併；T246 永久結果連結 commit 9eec8f0，推送 codex/T246-background-share。部署與線上驗證由 T248 接手。 |
 | **Antigravity** | 全部完成（T231 記憶體實測通過、T230 線上實測三支片＋429 速率限制全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
@@ -53,7 +53,7 @@
 
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
 - [x] T247 Claude（11/02 john Mac 真 SAM 驗證時找到）：自由飛行的「軌跡散佈」檢查原本拿起點到終點的直線距離當分母；完整上拋再落下的片起終點幾乎一樣高，分母只剩約 40 px，任何對稱拋物線都過不了（Pexels 真片 g=10.64 卻被判 inconsistent 的主因）。改成用擬合曲線的路徑長，2% 門檻不變。重算全部 demo 紀錄：判定與 g 全部不變（只有 rms_over_travel 數字變小，已更新）；meta_clip5 仍 9.4% 不一致。原本 5 cm 擺動的測試改成 10 cm（5 cm 只佔路徑 1.7%，以前是被短分母放大才抓到）。T244 晃動校正驗證：own_1–3 仍一致（9.32／9.44／8.85），Pexels 晃 34 px 已校正，答「鏡頭沒固定」也不再拒判。
-- [ ] T246 Codex（11/02，接在 T242 / PR #149 後；john 說 Codex token 快用完，只做這一小件，做不完就留給 Antigravity）：第 (1) 點背景工作 **Claude 已做完**（`api.ts` 的 audit／auditFromDraft 改送 `/api/audit-jobs` 再輪詢）。只剩 (2) **永久結果連結**：Copy link 改成把結果 JSON（不含影片；points 只留畫圖需要的）用瀏覽器內建 `CompressionStream("gzip")`＋base64url 放進網址 `#r=`，打開時直接畫結果、不呼叫後端；超過約 30 KB 才退回 `/api/audits/{id}` 並註明會失效。取代 T242 第 (8) 點。不加新套件，加測試，兩種 build 不壞。
+- [x] T246 Codex（永久結果連結完成；commit 9eec8f0；codex/T246-background-share；PR #149 已合併，背景工作沿用 main；11/02，接在 T242 / PR #149 後；john 說 Codex token 快用完，只做這一小件，做不完就留給 Antigravity）：第 (1) 點背景工作 **Claude 已做完**（`api.ts` 的 audit／auditFromDraft 改送 `/api/audit-jobs` 再輪詢）。只剩 (2) **永久結果連結**：Copy link 改成把結果 JSON（不含影片；points 只留畫圖需要的）用瀏覽器內建 `CompressionStream("gzip")`＋base64url 放進網址 `#r=`，打開時直接畫結果、不呼叫後端；超過約 30 KB 才退回 `/api/audits/{id}` 並註明會失效。取代 T242 第 (8) 點。不加新套件，加測試，兩種 build 不壞。
 - [ ] T248 Antigravity（11/02 Claude 加，Codex token 不夠，這幾件移給你）：(1) 打開 `https://video-physics-audit.onrender.com/api/version`，`commit` 要等於 `git rev-parse origin/main`；不是就到 Render 按 Manual Deploy → Deploy latest commit，並確認 Settings 的 Auto-Deploy 是 On（T242 第 1 點移給你）。(2) 部署好後用真瀏覽器在線上跑：範例 meta_ai_ball_4（應 inconsistent，g≈0.14）、synthetic_toss（應 consistent）、Pexels 真籃球片（john 的 Downloads，鏡頭答「沒固定」，時間窗 0.64–1.28 秒，應 consistent g≈10.6）、一支 4K 片和一支選 5 秒時間窗的片（不能讓伺服器當掉）。每支記判定、g、耗時、錯誤。(3) 確認送出後等超過 2 分鐘，結果仍會出現（背景工作 T246）。不要上傳有人臉的影片、不要 commit 影片、不要印出金鑰；每小時每人 10 次檢查、全站 30 次。結果寫進工作日誌並打勾。
 - [x] T246a Claude：前端送出檢查改用背景工作 `/api/audit-jobs` 並每 3 秒輪詢；斷線 5 次才報錯；伺服器重啟（404）時請使用者重送；舊後端直接回結果也相容。前端 180 個測試通過、兩種 build 通過。
 - [x] T245 Claude（john：限制寫進去就廢了）：新增背景檢查 `POST /api/audit-jobs`／`GET /api/audit-jobs/{id}`，長的檢查不再因瀏覽器逾時把算好（也付過錢）的結果丟掉；判定與數字跟 `/api/audits` 完全相同（有測試比對）；公開模式算進同一個每 IP 與全站「檢查」額度。API v1.6。
@@ -481,6 +481,12 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex 本輪 T242／T246 完成：PR #149 合併 main（8734f4b）；永久連結實作 9eec8f0，完成表已打勾並推送 codex/T246-background-share，目標 main。197 前端測試、兩種 build、308 pytest 全過。Codex 沒有本輪待辦；T248 部署／Auto-Deploy 未由本分支冒稱完成。
+
+- 11/01 Codex T246 永久結果連結：PR #149 已依 john 指示合併 main（merge 8734f4b，STATUS 以 main 為準保留 T246a／T247／T248）。本分支只接剩餘分享功能，保留 Claude 的背景工作實作，不改 api.ts、後端或 demo JSON。Copy link 使用原生 gzip＋base64url 將 v1 儲存結果放入 #r=；不包含影片／疊圖 URL，只保留已知結果欄位。軌跡最多各 600 個原始點（保留首尾、不插值），數字、判定、原因和模型原文不改；精簡時在分享頁明示。超過約 30 KiB URL、壓縮不支援或失敗才退回原 ID 連結，僅 fallback 顯示重啟失效及存 JSON 提醒。無新套件。
+- 11/01 Codex T246 讀取保護：分享頁在本機解壓與驗證，包含空白／無效 #r= 都不掛載上傳、遠端影片、導覽或花費查詢；解壓上限 1 MiB，拒絕格式錯誤／不支援版本，且解碼後再次去除媒體欄位。保留來源與程式模擬標示。依既有後端 schema 補正前端 nullable explanation 與 vehicle_class，避免有效回應無法分享，未變更 API 契約。
+- 11/01 Codex T246 驗證：npm 197 tests、普通／demo build、pytest 308 全過；測試涵蓋三種判定與 Unicode 原文、原始數字不變、車種／Muse 欄位、原始點取樣、子路徑、過大 fallback、原生 API 缺失、無效資料與解壓大小限制。瀏覽器從 preview-shared-links.html（明示既有程式模擬紀錄，沒有新分析）開啟實際 App 的 2533 字元連結、重新載入、中文、無效及空白連結均正常；暫存測試 middleware 阻擋並記錄 API／media，紀錄為 0 次。390px scrollWidth=390，沒有遠端媒體元素，結果焦點正常，截圖 frontend/qa/t246-shared-result-390.jpg。Copy link 顯示成功；工具使用虛擬剪貼簿而無法回讀瀏覽器原生 Clipboard 的內容，未冒稱已驗證貼上，Open result link 已實際驗證。Render 版本／Auto-Deploy 依最新分工由 T248 接手，沒有宣稱本分支已在線上部署。
 
 - 11/01 Codex T242 整合：依 john 指示處理 PR #149，STATUS 以 main 為準，保留 T246a／T247／T248 與所有既有紀錄，再加入本分支完成狀態。前端第 2–8 點 commit 96b65c1；部署第 1 點由 T248 接手。保留 Claude 的背景工作 api.ts 實作，只整合本分支錯誤提示。接下來 T246 只做永久結果連結，不改背景工作或後端。同步後驗證 npm 188 tests、普通／demo build、pytest 308 全過。
 

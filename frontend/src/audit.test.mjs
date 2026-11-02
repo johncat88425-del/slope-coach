@@ -49,7 +49,7 @@ test('audit links round-trip encoded IDs, resolve audit route and use read-only 
  for(const id of ['audit-123','id with space','id/slash']){assert.equal(auditIdFromHash(auditHash(id)),id);assert.equal(resolveRoute(auditHash(id)),'audit')}
  for(const hash of ['#/audits/','#/audits/%ZZ','#setup'])assert.equal(auditIdFromHash(hash),null);
  let path,init;await createApi('',async(p,i)=>{path=p;init=i;return Response.json(fixture('consistent'))}).getAudit('id/slash');assert.equal(path,'/api/audits/id%2Fslash');assert.equal(init.method,undefined);
- const html=rawRender(createElement(AuditResult,{audit:fixture('consistent')}));assert.match(html,/href="\/audit\/ui-fixture"/);
+ const html=rawRender(createElement(AuditResult,{audit:fixture('consistent')}));assert.match(html,/data-testid="copy-audit-link" disabled=""/);
  assert.doesNotMatch(rawRender(createElement(AuditResult,{audit:fixture('consistent'),replay:true})),/Open result link/);
 });
 
