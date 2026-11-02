@@ -27,6 +27,8 @@ from .explain import explain_audit
 from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
 from .output_check import check_model_text, extract_numbers
 from .store import UPLOAD_ROOT, UploadTooLarge, copy_limited, new_id, now, store
+from physics.camera_motion import compensate, measure_camera_motion
+
 from .video import color_for, probe_fps, read_frames, read_frames_rgb, save_overlay, track_color, track_with_sizes
 
 router = APIRouter()
@@ -35,6 +37,8 @@ MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
 PUBLIC_MAX_SIDE_PX = 1920
 PUBLIC_MAX_WINDOW_S = float(os.environ.get("PUBLIC_MAX_WINDOW_S", "3"))
 EARTH_HEADLINE_BAND = (0.85, 1.15)  # g_vs_earth inside this reads as "Earth-like" in a headline
+MAX_CAMERA_SHIFT = 0.15  # a moving camera is corrected only up to 15% of the frame width
+MIN_CAMERA_SHIFT_PX = 1.0  # below this the camera counts as still: no correction, results unchanged
 MAX_WINDOW_S = 30.0  # every frame of the window is held in memory; real motions here last a few seconds
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
 SIZE_ERROR = 0.3  # assumed worst-case error of the object's pixel size, same as gate question 2
@@ -414,8 +418,9 @@ def create_audit(
         "track_source": "frame_diff", "verdict": "insufficient_data", "reasons": [], "numbers": {},
         "points": [], "ghost_points": [], "nearest_body": None, "events": [], "limits": LIMITS,
     }
-    if not camera_static:
-        rec["reasons"] = ["camera is not static; this check needs a fixed camera"]
+    if not camera_static and assumed_model == "vehicle":
+        # A camera following a car pans by design; car length as the ruler needs a fixed view.
+        rec["reasons"] = ["camera is not static; the vehicle check needs a fixed camera"]
         store.audits[aid] = _finish(rec)
         return rec
 
@@ -443,6 +448,28 @@ def create_audit(
         rec["reasons"] = [f"object tracked in only {frac:.0%} of frames"]
         store.audits[aid] = _finish(rec)
         return rec
+
+    # Camera shake / small pan (T244): measure the background's shift and, when it is a reliable pure
+    # translation, remove it from the track. A moving camera is judged only after that correction.
+    if assumed_model != "vehicle" and pts:
+        rad = 1.5 * size_px + 6 if size_px else 20.0
+        idx = [min(len(frames) - 1, max(0, round((t - t_start) * fps))) for t, _, _ in pts]
+        motion = measure_camera_motion(frames, idx, [(x, y) for _, x, y in pts], rad)
+        rec["numbers"]["camera_shift_max_px"] = motion.max_shift_px
+        movable = motion.reliable and motion.translational and motion.max_shift_px <= MAX_CAMERA_SHIFT * frames.shape[2]
+        if not camera_static and not movable:
+            why = ("the background is too plain to measure how the camera moved" if not motion.reliable else
+                   "the camera rotated or zoomed, which a 2D correction cannot undo" if not motion.translational
+                   else "the camera moved too far")
+            rec["reasons"] = [f"camera is not static and {why}; this check needs a fixed or only slightly moving camera"]
+            store.audits[aid] = _finish(rec)
+            return rec
+        if movable and motion.max_shift_px > MIN_CAMERA_SHIFT_PX:
+            pts = compensate(pts, motion)
+            rec["points"] = [[t, x, y] for t, x, y in pts]
+            rec["numbers"]["camera_corrected"] = 1.0
+            rec["limits"] = [*rec["limits"], f"The camera moved up to {motion.max_shift_px:.1f} px during the window; "
+                             "the track was corrected for that shift (side-to-side / up-down only)."]
 
     trend = size_trend([p[0] for p in pts], sizes)
     if trend is not None:

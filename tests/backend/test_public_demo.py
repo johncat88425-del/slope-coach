@@ -1,7 +1,18 @@
 """T228: public deployment helpers (same-origin frontend, per-IP guard)."""
 import importlib
 
+import pytest
 from fastapi.testclient import TestClient
+
+
+@pytest.fixture(autouse=True)
+def _reset_main_after(monkeypatch):
+    """Reloading backend.main rewrites its globals in place; put them back so later tests see a normal app."""
+    yield
+    monkeypatch.undo()
+    import backend.main as m
+    importlib.reload(m)
+    m._hits.clear()
 
 
 def _app(monkeypatch, tmp_path, **env):
@@ -60,3 +71,10 @@ def test_public_demo_refuses_4k_uploads(monkeypatch, tmp_path):
     assert r.status_code == 413 and "1080p" in r.json()["detail"]
     with open("data/samples/synthetic_toss_earth_g.mp4", "rb") as f:
         assert c.post("/api/audit-drafts", files={"file": ("ok.mp4", f, "video/mp4")}).status_code == 201
+
+
+def test_public_guard_has_a_site_wide_hourly_ceiling(monkeypatch, tmp_path):
+    m = _app(monkeypatch, tmp_path, PUBLIC_DEMO="1", PUBLIC_MAX_PER_HOUR="5", PUBLIC_MAX_GLOBAL_PER_HOUR="3")
+    c = TestClient(m.app)
+    codes = [c.post("/api/audits", headers={"x-forwarded-for": f"1.1.1.{i}"}).status_code for i in range(4)]
+    assert 429 not in codes[:3] and codes[3] == 429
