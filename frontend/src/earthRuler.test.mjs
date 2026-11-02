@@ -6,7 +6,7 @@ import {renderToStaticMarkup as render} from 'react-dom/server';
 import {EarthAssumption} from '../.test-dist/EarthAssumption.js';
 import {AuditResult} from '../.test-dist/AuditPage.js';
 import {physicsCardLines,cardDisplayLine} from '../.test-dist/cardExport.js';
-import {earthRulerReadings,earthRulerTitle,earthRulerNote} from '../.test-dist/earthRuler.js';
+import {earthRulerReadings,earthRulerTitle,earthRulerNote,earthConditionPrefix} from '../.test-dist/earthRuler.js';
 import {LanguageProvider,translateText} from '../.test-dist/i18n.js';
 
 const read=async name=>JSON.parse(await readFile(new URL('../../data/demo/'+name+'.json',import.meta.url),'utf8'));
@@ -30,7 +30,7 @@ test('saved results and evidence cards retain assumption context without changin
  assert.ok(html.includes(earthRulerTitle));assert.ok(html.includes(earthRulerNote));
  assert.ok(html.indexOf('data-testid="earth-assumption"')<html.indexOf('data-testid="audit-details"'));
  assert.ok(lines.includes(earthRulerTitle));assert.ok(lines.includes(earthRulerNote));
- for(const r of earthRulerReadings(a.numbers))assert.ok(lines.includes(`${r.label}: ${r.text}`));
+ for(const r of earthRulerReadings(a.numbers))assert.ok(lines.includes(`${earthConditionPrefix} ${r.label}: ${r.text}`));
  assert.equal(a.verdict,'inconsistent');assert.equal(JSON.stringify(a),before);
  assert.equal(cardDisplayLine(a,earthRulerTitle,s=>translateText(s,'zh')),'如果這是地球重力、正常速度');
  assert.match(cardDisplayLine(a,'Vertical extent (m): 28.712',s=>translateText(s,'zh')),/垂直距離（m）： 28.712/);

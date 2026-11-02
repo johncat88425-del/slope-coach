@@ -6,7 +6,7 @@ import {RequestStatus} from '../.test-dist/RequestStatus.js';
 import {AuditProgress} from '../.test-dist/AuditProgress.js';
 import {LanguageProvider} from '../.test-dist/i18n.js';
 import {elapsedSeconds} from '../.test-dist/requestFeedback.js';
-import {createApi,uploadAudit} from '../.test-dist/api.js';
+import {createApi,uploadAudit,requestTimeoutMessage} from '../.test-dist/api.js';
 
 test('both audit paths show bilingual elapsed seconds and the free-host wait hint before stage descriptions',()=>{
  for(const language of ['en','zh'])for(const node of [h(RequestStatus,{phase:'checking'}),h(AuditProgress,{percent:null}),h(AuditProgress,{percent:100})]){
@@ -31,7 +31,7 @@ test('fetch waits 360 seconds before aborting once, without an automatic resend'
  let signal,calls=0;
  const api=createApi('',async(_url,init)=>{calls++;signal=init.signal;return new Promise((_resolve,reject)=>signal.addEventListener('abort',()=>reject(Object.assign(new Error('aborted'),{name:'AbortError'})),{once:true}))});
  const request=api.auditFromDraft('fixture',{t_start:0,t_end:1,camera_static:true,assumed_model:'free_flight'});
- const expired=assert.rejects(request,/請求逾時/);
+ const expired=assert.rejects(request,e=>e.message===requestTimeoutMessage);
  t.mock.timers.tick(120000);assert.equal(signal.aborted,false);
  t.mock.timers.tick(239999);assert.equal(signal.aborted,false);
  t.mock.timers.tick(1);assert.equal(signal.aborted,true);

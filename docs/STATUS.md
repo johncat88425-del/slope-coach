@@ -20,7 +20,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | 全部完成 |
-| **Codex** | T239 已完成：等待秒數、雙語提示與 360 秒逾時回歸驗證；推送 codex/T239-wait-hint |
+| **Codex** | T242 前端修正完成（PR #149）；部署驗證已移交 T248。接 T246：只做永久結果連結，沿用 Claude 已合併的背景工作。 |
 | **Antigravity** | 全部完成（T231 記憶體實測通過、T230 線上實測三支片＋429 速率限制全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
@@ -58,7 +58,7 @@
 - [x] T246a Claude：前端送出檢查改用背景工作 `/api/audit-jobs` 並每 3 秒輪詢；斷線 5 次才報錯；伺服器重啟（404）時請使用者重送；舊後端直接回結果也相容。前端 180 個測試通過、兩種 build 通過。
 - [x] T245 Claude（john：限制寫進去就廢了）：新增背景檢查 `POST /api/audit-jobs`／`GET /api/audit-jobs/{id}`，長的檢查不再因瀏覽器逾時把算好（也付過錢）的結果丟掉；判定與數字跟 `/api/audits` 完全相同（有測試比對）；公開模式算進同一個每 IP 與全站「檢查」額度。API v1.6。
 - [x] T243 Claude（john 11/02：「寫進限制這東西基本就廢了」）：拿掉公開版的 1080p 拒收、3 秒時間窗拒收、掃描只看前 10 秒，改成自動處理：4K 上傳時縮到長邊 1920（畫格與時間不變）；長時間窗降幀讀取（上限 60 s，MAX_HELD_BYTES 96 MB）；時間窗建議掃整支片；ffmpeg 輸出不再兩倍佔記憶體；說明文字改並行呼叫。背景中位數在大堆疊改取約 32 張（gate 結果未重跑）。每人每小時次數沒動，因為 /api/spend 重啟歸零時它是唯一花費防線。
-- [ ] T242 Codex（11/02 john Mac 真瀏覽器實測的前端問題，凍結前做完，照順序）：(1) **先確認 Render 線上是最新 commit**：開 `/api/version` 對 main 的 commit；Render 的 Auto-Deploy 要開（實測時線上頁面還是 120 秒逾時，代表舊版）；(2) 502 錯誤訊息「Reason:」後面是空的 → 補成友善句；(3) 逾時訊息不要叫人「重新讀取紀錄」（沒有地方讀），改成「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」；(4) 英文介面裡的中文（逾時訊息、Details 的「假設／時間窗」、疊圖 alt）全部依語言切換；(5) 選好影片後標題不要還寫「Choose a video to begin」；(6) 數字措辭：g_vs_earth < 0.01 時寫「less than 1/100 of Earth」不要寫「0.00 times」，`if_earth_*`（例如 vertical extent 67.5 m）一律標成「If this were Earth gravity: …」，不像量測值；(7) 分享卡在 Inconsistent／Cannot judge 時印第一條原因；(8) Copy link 旁註明「免費伺服器重啟後連結會失效，請存 JSON」。加測試，兩種 build 不壞。
+- [x] T242 Codex（前端第 2–8 點完成；第 1 點已由 Claude 移交 Antigravity T248，未宣稱 Auto-Deploy 已啟用；commit 96b65c1；11/02 john Mac 真瀏覽器實測的前端問題，凍結前做完，照順序）：(1) **先確認 Render 線上是最新 commit**：開 `/api/version` 對 main 的 commit；Render 的 Auto-Deploy 要開（實測時線上頁面還是 120 秒逾時，代表舊版）；(2) 502 錯誤訊息「Reason:」後面是空的 → 補成友善句；(3) 逾時訊息不要叫人「重新讀取紀錄」（沒有地方讀），改成「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」；(4) 英文介面裡的中文（逾時訊息、Details 的「假設／時間窗」、疊圖 alt）全部依語言切換；(5) 選好影片後標題不要還寫「Choose a video to begin」；(6) 數字措辭：g_vs_earth < 0.01 時寫「less than 1/100 of Earth」不要寫「0.00 times」，`if_earth_*`（例如 vertical extent 67.5 m）一律標成「If this were Earth gravity: …」，不像量測值；(7) 分享卡在 Inconsistent／Cannot judge 時印第一條原因；(8) Copy link 旁註明「免費伺服器重啟後連結會失效，請存 JSON」。加測試，兩種 build 不壞。
 - [x] T239 Codex：稽核等待區上方顯示真實經過秒數與「免費主機上一次檢查約需 1–4 分鐘，請不要關閉頁面」雙語說明；沿用 Claude 的 fetch／XHR 360 秒上限，不改流程、不自動重送。 — commit 5b99500（178 tests、普通／demo build、pytest 295 通過）
 - [x] T238 Codex：HTML／502／503／504 改為雙語友善提示與手動重試，429／413 保留後端 detail；共用於範例、準備問題、確認、時間窗建議、語音與既有紀錄錯誤。已查 Render Logs／Events，該段有兩次 main 重新部署，未找到可對應 502 的應用例外或 OOM 事件，不能確證根因，詳見日誌。 — commit 8d80f60（173 tests、普通／demo build、pytest 292 通過）
 - [x] T237 Codex：Render 部署分支已改回 `main`，手動 Deploy latest commit 成功（ca9d149，Live）；`/api/samples` 200、3 支範例；首頁 Check a video → Choose video 可用並觸發選片對話框。自動部署限制見「待 john 決定」，未宣稱 main 更新會自動部署。 — commit a6665f9（npm 167、普通／demo build、pytest 292 全過）
@@ -481,6 +481,19 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/01 Codex T242 整合：依 john 指示處理 PR #149，STATUS 以 main 為準，保留 T246a／T247／T248 與所有既有紀錄，再加入本分支完成狀態。前端第 2–8 點 commit 96b65c1；部署第 1 點由 T248 接手。保留 Claude 的背景工作 api.ts 實作，只整合本分支錯誤提示。接下來 T246 只做永久結果連結，不改背景工作或後端。同步後驗證 npm 188 tests、普通／demo build、pytest 308 全過。
+
+- 11/01 Codex 續 T242：john 已明確同意只授權 slope-coach。再次核對 Only select repositories 僅有 slope-coach，按 Install 後 GitHub 進入 Confirm access，已寄信要求帳戶驗證。兩個已登入 Gmail 分頁均在 CDP focus 操作逾時，未讀取或輸出驗證碼、未改用其他方式取得信箱資料；已請 john 在原 GitHub 頁直接 Verify。Render 已先再觸發最新 main 的手動部署，完成後另核對 /api/version。T242 安裝／Auto-Deploy 未完成，先獨立接續 T246，不重問既有的 App 授權。
+
+- 11/01 Codex T242 同步：保留新 main e33671e 的 T243／T244／T245 程式、API v1.6 及 T246 任務，同步後 pytest 307 全過。這些是協調者的新修改，不是本分支改後端；T246 會取代 T242 (8) 的舊式分享連結說明。本次電腦操作已被中止，線上最後核對為 58e0168，不宣稱已部署後續 e33671e 或啟用 Auto-Deploy。
+
+- 11/01 Codex T242：從 origin/main 58e0168 獨立開 codex/T242-live-fixes，先核對線上：舊版 ca9d149、/api/version 404；手動 Deploy latest commit 後 /api/version 200 回 58e01686dec7，與 main 相符。Auto-Deploy 不能只信 On Commit 標籤：Source 的 Git Provider 尚未連接，已準備單一 slope-coach 的 GitHub Render App 安裝頁，因新增存取權提出明確確認而未按 Install。後續電腦操作被目前網址的操作限制中止；第 1 點保留待完成，沒有用其他介面繞過。
+
+- 11/01 Codex T242 第 2–8 點：補空白 API 錯誤的句子，fetch／XHR 共用短時間窗逾時提示；Details metadata、疊圖 alt／軌跡 aria-label 與選片標題支援雙語；小 Earth 比例使用 less than 1/100，所有 if_earth_* 顯示就近加條件前綴（含列印與 Markdown），保留原始數字、title 和 JSON。分享卡預覽及 PNG 在不一致／資料不足時使用第一條後端原因，原文不翻譯，無原因不補；Copy link 旁補重啟及 JSON 保存說明。未改 backend、API、資料檔、模型輸出或計算；沒有付費模型呼叫。
+
+- 11/01 Codex T242 驗證：186 tests、一般／demo build、pytest 298 通過；嚴格 build 發現遞迴 cardDisplayLine 缺回傳型別，已補 string 並重驗兩種 build。瀏覽器使用明示 Mock 的 preview-live-fixes.html，驗證選範例前後標題、中英逾時／空白 gateway、Details／疊圖 alt／連結說明及小比例／第一原因。Chrome 匯出測試 PNG 後工具的 download event 等待逾時，但檔案實際已產生；從已知測試輸出檔複製並以本機影像檢視確認 1080×1920 的文字、倍率與原因均可見，存 frontend/qa/t242-share-reason-inconsistent.png（160253 bytes）。PNG 是固定格式測試值，並非新稽核結果。Cannot judge 的 PNG 原因由 canvas 繪製測試覆蓋，未冒稱本次瀏覽器另下載第二張。未完成新的 390px 瀏覽器回歸：電腦操作已被中止，僅保留已實測項目，限制不隱藏。
+
 - 11/02 03:50 Claude T246a：前端改用背景檢查（見待辦）。john：Codex token 快沒了 → Codex 只留 PR #149（T242）＋T246 永久連結；部署確認與線上實測移給 Antigravity T248。Mac 上 T247 驗證：Pexels 真片 consistent g=10.64（rms/路徑 0.016），own_2 不變 9.44。
 - 11/02 03:30 Claude T247：散佈檢查改用路徑長（見待辦 T247）。線上 /api/version 仍是 58e01686，T243–T247 都沒上線：Render 要手動 Deploy latest commit（T242 第 1 點）。
 - 11/02 04:00 Claude T245：背景檢查 API（見待辦 T245），307 個後端測試通過。開 Codex T246：前端改用背景檢查＋網址內含結果的永久連結（伺服器重啟也不失效）。

@@ -50,7 +50,7 @@ export function InterviewPanel({api,onResult,disabled=false,onBusyChange,hasResu
   <fieldset className="upload-area" disabled={busy||voiceBusy||sampleBusy||disabled}>
    <legend className="sr-only">Interview video</legend>
    <div className="upload-actions">
-    <p className="eyebrow">YOUR CLIP</p><h2>Choose a video to begin</h2>
+    <p className="eyebrow">YOUR CLIP</p><h2 data-testid="interview-upload-title">{file||sample?'Review your selected clip':'Choose a video to begin'}</h2>
     <label className={'video-picker'+(file||sample?' is-selected':'')}><span>{file||sample?'Choose another video':'Choose video'}</span>
      <input data-testid="interview-video" aria-label="Interview video" type="file" accept="video/*" onChange={e=>{onNewSource?.();setSample(null);objectNameEdited.current=false;modelEdited.current=false;vehicleClassEdited.current=false;setObjectName('ball');setFile(e.target.files?.[0]??null);setDraft(null);setDraftUsable(false);setCamera('');setSlow('');setModel('');setVehicleClass('');setStart('');setEnd('');setWindowConfirmed(false);setSize('');setLength('');setError('')}}/>
     </label>

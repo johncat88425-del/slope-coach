@@ -31,6 +31,7 @@ export class ApiError extends Error {
   constructor(public status:number, message:string,public temporary=false) {super(message); this.name='ApiError'}
 }
 export const serverBusyMessage='The server is starting or busy. Please wait one minute and try again.';
+export const requestTimeoutMessage='This check took too long. Select a shorter time window (0.5–2 seconds) and try again.';
 const looksLikeHtml=(text:string)=>/<(?:!doctype\b|!--|\/?[a-z][\w:-]*(?:\s|\/?>))|&lt;\/?(?:html|body|head)\b/i.test(text);
 function isHtmlResponse(raw:string,contentType:string|null){
  if(/\b(?:text\/html|application\/xhtml\+xml)\b/i.test(contentType??''))return true;
@@ -42,8 +43,8 @@ export function isTemporaryApiError(error:unknown):boolean {
 }
 export function friendlyApiError(error:unknown):string {
  if(isTemporaryApiError(error))return serverBusyMessage;
- if(error instanceof ApiError&&[429,413].includes(error.status))return error.message;
- if(error instanceof ApiError){const prefix=error.status===404?'Result not found. Check the ID or load a saved JSON.':error.status===422?'Please check the submitted settings.':'The backend could not complete this request.';return prefix+' Reason: '+error.message}
+ if(error instanceof ApiError&&[429,413].includes(error.status)&&error.message.trim())return error.message;
+ if(error instanceof ApiError){const prefix=error.status===404?'Result not found. Check the ID or load a saved JSON.':error.status===422?'Please check the submitted settings.':'The backend could not complete this request.';return error.message.trim()?prefix+' Reason: '+error.message:prefix}
  return error instanceof Error ? error.message : String(error);
 }
 function backendError(status:number,raw:string,contentType:string|null=null){
@@ -56,9 +57,9 @@ export function uploadAudit(url:string,data:FormData,progress:UploadProgress,mak
  return new Promise((resolve,reject)=>{const xhr=makeXhr();xhr.open('POST',url);xhr.timeout=360000;
  xhr.upload.onprogress=e=>progress(e.lengthComputable&&e.total>0?Math.min(100,Math.round(e.loaded/e.total*100)):null);
  xhr.upload.onload=()=>progress(100);
- xhr.onload=()=>{const contentType=xhr.getResponseHeader?.('Content-Type')??null;if(xhr.status<200||xhr.status>=300||isHtmlResponse(xhr.responseText,contentType)){reject(backendError(xhr.status,xhr.responseText,contentType));return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(new Error('The backend returned an unreadable result. Load the record before submitting again.'))}};
- xhr.onerror=()=>reject(new Error('Cannot connect to the backend. Check your connection and try loading the record before submitting again.'));
- xhr.ontimeout=()=>reject(new Error('Request timed out. Processing may have completed; load the record before submitting again.'));
+ xhr.onload=()=>{const contentType=xhr.getResponseHeader?.('Content-Type')??null;if(xhr.status<200||xhr.status>=300||isHtmlResponse(xhr.responseText,contentType)){reject(backendError(xhr.status,xhr.responseText,contentType));return}try{resolve(JSON.parse(xhr.responseText))}catch{reject(new Error('The server returned an unreadable result. Please try again.'))}};
+ xhr.onerror=()=>reject(new Error('Cannot connect to the server. Check your connection and try again.'));
+ xhr.ontimeout=()=>reject(new Error(requestTimeoutMessage));
  xhr.onabort=()=>reject(new Error('Upload was interrupted. No automatic retry was made.'));
  progress(0);xhr.send(data);
  });
@@ -78,8 +79,8 @@ export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnl
       return (text?raw:JSON.parse(raw)) as T;
     } catch(error) {
       if(error instanceof ApiError) throw error;
-      if(error instanceof Error && error.name==='AbortError') throw new Error('請求逾時。操作可能已在伺服器完成，請先重新讀取紀錄，不會自動重送。');
-      throw new Error('Cannot connect to the backend. Check your connection and try loading the record before submitting again.');
+      if(error instanceof Error && error.name==='AbortError') throw new Error(requestTimeoutMessage);
+      throw new Error('Cannot connect to the server. Check your connection and try again.');
     } finally {clearTimeout(timer)}
   }
   function json<T>(method:string,path:string,body:unknown) {return request<T>(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
