@@ -68,6 +68,7 @@ app.add_middleware(CORSMiddleware, allow_origins=_ORIGINS, allow_methods=["*"], 
 # (set SPEND_LIMIT_USD on the host; the image starts with an empty cost log).
 PUBLIC_DEMO = os.environ.get("PUBLIC_DEMO") == "1"
 PUBLIC_MAX_PER_HOUR = int(os.environ.get("PUBLIC_MAX_PER_HOUR", "10"))
+PUBLIC_MAX_GLOBAL_PER_HOUR = int(os.environ.get("PUBLIC_MAX_GLOBAL_PER_HOUR", "30"))  # ~$1.70/h worst case
 PUBLIC_MAX_UPLOAD_BYTES = int(os.environ.get("PUBLIC_MAX_UPLOAD_MB", "80")) * 1024 * 1024
 _PAID_PATHS = ("/api/audit-drafts", "/api/audits")
 _hits: dict[tuple[str, str], list[float]] = {}
@@ -96,6 +97,13 @@ async def public_demo_guard(request, call_next):
             return JSONResponse({"detail": f"This public demo allows {PUBLIC_MAX_PER_HOUR} checks per visitor each hour. "
                                            f"Please try again in about {wait_min} minutes, or run it locally (see README)."},
                                 status_code=429)
+        if key[1] == "audit":
+            # Site-wide ceiling (T244): the host's spend log restarts empty after a sleep or crash, so the
+            # money a stranger can burn is bounded by rate instead: at most this many checks per hour in total.
+            everyone = [t for (ip, kind), ts in _hits.items() if kind == "audit" for t in ts if now - t < 3600]
+            if len(everyone) >= PUBLIC_MAX_GLOBAL_PER_HOUR:
+                return JSONResponse({"detail": "This public demo is busy: the hourly limit for all visitors is reached. "
+                                               "Please try again later, or run it locally (see README)."}, status_code=429)
         _hits[key] = recent + [now]
     return await call_next(request)
 
