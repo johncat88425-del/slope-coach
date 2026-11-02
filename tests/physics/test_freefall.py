@@ -141,3 +141,18 @@ def test_track_jump_flags_a_switch_to_another_object_not_a_real_throw():
     hopped = [(t, x + (150 if 15 <= i < 18 else 0), y) for i, (t, x, y) in enumerate(pts)]
     assert track_jump_ratio(hopped) > MAX_TRACK_JUMP
     assert track_jump_ratio(pts[:3]) == 0.0
+
+
+def test_one_flight_has_one_gravity():
+    """T259: halves of a real throw agree; a fall whose pull doubles halfway (a stitched clip) does not."""
+    from physics.experiments.freefall import DRIFT_MIN_RATIO, DRIFT_SIGMA, acceleration_drift
+    ratio, sig = acceleration_drift(throw())
+    assert ratio > 0.99
+    pts = []
+    for i in range(40):
+        t = i / 60
+        y = 100 + 300 * t * t if t < 1 / 3 else 100 + 300 / 9 + 200 * (t - 1 / 3) + 600 * (t - 1 / 3) ** 2
+        pts.append((t, 100 + 200 * t, y))
+    ratio, sig = acceleration_drift(pts)
+    assert ratio < 1 - DRIFT_MIN_RATIO and sig > DRIFT_SIGMA
+    assert acceleration_drift(throw(n=9)) is None

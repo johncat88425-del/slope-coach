@@ -19,7 +19,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from physics.errors import PhysicsInputError
 from physics.experiments.pendulum import check_pendulum
 from physics.experiments.vehicle import VEHICLE_CLASS_LENGTH_M, check_drive, fit_drive
-from physics.experiments.freefall import (MAX_TRACK_JUMP, check_bounces, check_flight, fit_flight, ghost_track, gravity_ruler, track_jump_ratio,
+from physics.experiments.freefall import (DRIFT_MIN_RATIO, DRIFT_SIGMA, MAX_TRACK_JUMP, acceleration_drift, check_bounces, check_flight, fit_flight, ghost_track, gravity_ruler, track_jump_ratio,
                                          nearest_body, suggest_flight_windows)
 from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
@@ -586,6 +586,14 @@ def create_audit(
         return rec
     rec["verdict"] = chk.verdict
     rec["reasons"] = list(chk.reasons)
+    drift = acceleration_drift(pts) if chk.verdict != "insufficient_data" else None
+    if drift is not None:
+        ratio, sigmas = drift
+        rec["numbers"] |= {"accel_halves_ratio": ratio, "accel_halves_sigma": sigmas}
+        if ratio < 1 - DRIFT_MIN_RATIO and sigmas > DRIFT_SIGMA:  # T259: one flight, one gravity
+            rec["verdict"] = "inconsistent"
+            rec["reasons"].append(f"the first and second half of the flight fall with different accelerations "
+                                  f"({ratio:.2f}x apart), so the pull is not constant")
     if m_per_px and chk.g_apparent_m_s2:
         if not depth_corrected:  # rescaled points no longer sit on the video, so no ghost path over it
             rec["ghost_points"] = [list(p) for p in ghost_track(fit, [p[0] for p in pts], m_per_px)]
