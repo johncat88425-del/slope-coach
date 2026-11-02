@@ -131,3 +131,13 @@ def test_scatter_is_judged_against_the_path_not_start_to_end():
     chord = float(np.hypot(pts[-1][1] - pts[0][1], pts[-1][2] - pts[0][2]))
     assert fit.travel_px > 3 * chord
     assert check_flight(fit).verdict == "consistent"
+
+
+def test_track_jump_flags_a_switch_to_another_object_not_a_real_throw():
+    """T250: a smooth throw stays well under MAX_TRACK_JUMP; a track that hops to a second ball goes over it."""
+    from physics.experiments.freefall import MAX_TRACK_JUMP, track_jump_ratio
+    pts = throw()
+    assert track_jump_ratio(pts) < 0.5 * MAX_TRACK_JUMP
+    hopped = [(t, x + (150 if 15 <= i < 18 else 0), y) for i, (t, x, y) in enumerate(pts)]
+    assert track_jump_ratio(hopped) > MAX_TRACK_JUMP
+    assert track_jump_ratio(pts[:3]) == 0.0
