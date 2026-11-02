@@ -22,7 +22,8 @@ import {BounceChart} from './BounceChart.js';
 import {formatNumber} from './formatNumber.js';
 import {PhysicsCard,PhysicsCardDownload} from './PhysicsCard.js';
 import {GhostReview} from './GhostReview.js';
-import {auditHash,shareAuditUrl} from './experiment.js';
+import {auditHash} from './experiment.js';
+import {ShareAuditLink} from './ShareAuditLink.js';
 import { Localize } from './i18n.js';
 import { useEffect, useId, useRef, useState } from 'react';
 import {friendlyApiError,isTemporaryApiError} from './api.js';
@@ -41,7 +42,6 @@ export function EventTimeline({events}:{events:AuditOut['events']}) {
 export function AuditResult({ audit, replay = false, videoUrl, interviewSource, autoFocus=false, sampleKind=null }: {
     audit: AuditOut; replay?: boolean; videoUrl?:string;interviewSource?:'model'|'mock'|null;autoFocus?:boolean;sampleKind?:'generated'|'synthetic'|null;
 }) {
-    const [copyStatus,setCopyStatus]=useState('');
     const result=useRef<HTMLElement>(null),verdictId=useId();
     useEffect(()=>{if(autoFocus)result.current?.focus()},[autoFocus]);
     return <Localize><div className="audit-result-group"><article ref={result} tabIndex={-1} data-testid="audit-result" aria-label="稽核結果" aria-labelledby={verdictId}>
@@ -58,7 +58,7 @@ export function AuditResult({ audit, replay = false, videoUrl, interviewSource, 
  <details data-testid="audit-details"><summary>Details</summary>
  {replay&&<p role="status">Saved result replay — no new analysis or model call.</p>}{audit.synthetic&&<p role="status">SYNTHETIC test example — program-drawn motion.</p>}
  <p data-testid="audit-metadata"><span>Audit</span> {audit.audit_id} · <span>Model:</span> {motionLabel(audit.assumed_model)} · <span>Window:</span> {audit.t_start}–{audit.t_end} s</p><ModelSource source={audit.track_source} kind="tracking"/>
- {!replay&&<p><a href={'/audit/'+encodeURIComponent(audit.audit_id)}>Open result link</a><button data-testid="copy-audit-link" onClick={async()=>{try{await navigator.clipboard.writeText(shareAuditUrl(audit.audit_id,location.origin));setCopyStatus('Link copied.')}catch{setCopyStatus('Could not copy. Use the result link.')}}}>Copy link</button><span role="status">{copyStatus}</span><small className="share-link-note" data-testid="share-link-note">Links on the free server stop working after a restart. Save the JSON.</small></p>}
+ {!replay&&<ShareAuditLink audit={audit}/>}
  <p data-testid="audit-slow-answer">Slow motion or retimed playback (user): {audit.slow_motion===true?'Yes':audit.slow_motion===false?'No':'Not provided'}</p>
  {audit.slow_motion===true&&audit.verdict==='insufficient_data'&&<aside data-testid="audit-timing-limit"><h3>Reported limitations</h3>{audit.reasons.map((r,i)=><blockquote key={i}><Verbatim text={r}/></blockquote>)}</aside>}
  <ModelUsage audit={audit} interviewSource={interviewSource}/>{audit.assumed_model!=='vehicle'&&<GravityRuler numbers={audit.numbers}/>}<h3>量測數字</h3>{Object.keys(audit.numbers).length ? <dl>{Object.entries(audit.numbers).map(([key, value]) => <div key={key}><dt>{key.startsWith('if_earth_')&&<><span>{earthConditionPrefix}</span> </>}{key}</dt><dd title={String(value)}>{formatNumber(value,key)}</dd></div>)}</dl> : <p>尚無可提供的數值。</p>}

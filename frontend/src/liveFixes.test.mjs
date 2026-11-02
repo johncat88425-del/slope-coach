@@ -106,11 +106,12 @@ test('the PNG actually draws the first reason above the footer, retaining its nu
  }finally{globalThis.document=previous;URL.createObjectURL=create;URL.revokeObjectURL=revoke}
 });
 
-test('the copy-link action includes the restart warning and a JSON save alternative in both languages',()=>{
+test('copy-link waits for a prepared URL and retains the JSON save alternative in both languages',()=>{
  for(const language of ['en','zh']){
   const html=localized(language,h(AuditResult,{audit,replay:false}));
-  assert.ok(html.indexOf('share-link-note')>html.indexOf('copy-audit-link'));
-  assert.match(html,language==='en'?/Links on the free server stop working after a restart\. Save the JSON\./:/免費伺服器重啟後連結會失效，請存 JSON。/);
+  assert.match(html,/data-testid="copy-audit-link" disabled=""/);
+  assert.match(html,language==='en'?/Preparing share link…/:/正在準備分享連結…/);
+  assert.doesNotMatch(html,/href="\/audit\//);
   assert.match(html,/data-testid="audit-export-json"/);
  }
 });

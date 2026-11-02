@@ -3,7 +3,7 @@ export type AuditModel='free_flight'|'bounce'|'pendulum'|'vehicle';
 export type AuditVerdict='consistent'|'inconsistent'|'insufficient_data';
 export type AuditTrackCheck={same_object:boolean;note:string;source:'model'};
 export type AuditModelText={source:'model';text:string};
-export type AuditOut={audit_id:string;created_at:string;track_check?:AuditTrackCheck|null;retake_tips?:string[]|null;what_would_fit?:AuditModelText|null;headline?:{source:'model';text:string}|null;explanation?:{source:'template'|'model';text:string};object_name?:string;slow_motion?:boolean|null;assumed_model:AuditModel;t_start:number;t_end:number;camera_static:boolean;object_size_m:number|null;generated_clip?:boolean;source?:string;real_clip?:boolean;labels_by?:string;synthetic?:boolean;ghost_points?:[number,number,number][];nearest_body?:string|null;length_m?:number|null;video_url:string;overlay_url:string|null;track_source:'frame_diff'|'color'|'sam'|'manual';verdict:AuditVerdict;reasons:string[];numbers:Record<string,number>;points:[number,number,number][];events:{kind:string;t_s:number;detail:string}[];limits:string[]};
+export type AuditOut={audit_id:string;created_at:string;track_check?:AuditTrackCheck|null;retake_tips?:string[]|null;what_would_fit?:AuditModelText|null;headline?:{source:'model';text:string}|null;explanation?:{source:'template'|'model';text:string}|null;object_name?:string;vehicle_class?:string|null;slow_motion?:boolean|null;assumed_model:AuditModel;t_start:number;t_end:number;camera_static:boolean;object_size_m:number|null;generated_clip?:boolean;source?:string;real_clip?:boolean;labels_by?:string;synthetic?:boolean;ghost_points?:[number,number,number][];nearest_body?:string|null;length_m?:number|null;video_url:string;overlay_url:string|null;track_source:'frame_diff'|'color'|'sam'|'manual';verdict:AuditVerdict;reasons:string[];numbers:Record<string,number>;points:[number,number,number][];events:{kind:string;t_s:number;detail:string}[];limits:string[]};
 export function verdictText(verdict:AuditVerdict,model:AuditModel='free_flight') {const name=model==='bounce'?'彈跳':model==='pendulum'?'單擺':model==='vehicle'?'車子行駛':'自由落體';return {consistent:`與${name}模型一致`,inconsistent:`與${name}模型不一致`,insufficient_data:`與${name}模型無法判斷`}[verdict]}
 export function validateAuditInput(start:string,end:string,size:string){const errors:string[]=[];
  if(!start.trim()||!end.trim()||!Number.isFinite(Number(start))||!Number.isFinite(Number(end))||Number(start)<0||Number(end)<=Number(start))errors.push('時間窗必須為有限秒數，且 0 ≤ 開始 < 結束。');
@@ -20,8 +20,9 @@ export function parseSavedAudit(text:string):AuditOut {
  || (a.retake_tips!==undefined&&a.retake_tips!==null&&(!strings(a.retake_tips)||a.retake_tips.length<1||a.retake_tips.length>3||a.retake_tips.some((tip:string)=>!tip.trim())))
  || (a.what_would_fit!==undefined&&a.what_would_fit!==null&&(!a.what_would_fit||a.what_would_fit.source!=='model'||typeof a.what_would_fit.text!=='string'||!a.what_would_fit.text.trim()))
  || (a.headline!==undefined && a.headline!==null && (a.headline.source!=='model'||typeof a.headline.text!=='string'))
- || (a.explanation!==undefined && (!a.explanation||!['template','model'].includes(a.explanation.source)||typeof a.explanation.text!=='string'))
+ || (a.explanation!==undefined && a.explanation!==null && (!a.explanation||!['template','model'].includes(a.explanation.source)||typeof a.explanation.text!=='string'))
  || (a.slow_motion!==undefined && a.slow_motion!==null && typeof a.slow_motion!=='boolean')
+ || (a.vehicle_class!==undefined && a.vehicle_class!==null && typeof a.vehicle_class!=='string')
  || (a.object_name!==undefined && typeof a.object_name!=='string')
  || (a.generated_clip!==undefined && typeof a.generated_clip!=='boolean')
  || (a.source!==undefined && typeof a.source!=='string')

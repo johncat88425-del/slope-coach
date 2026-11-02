@@ -8,6 +8,7 @@ import { auditIdFromPath, exampleKeyFromHash, auditIdFromHash, createExperiment,
 import type { Draft, Point } from './experiment';
 import { createApi, friendlyApiError } from './api';
 import type { ExperimentRecord, TrialKind, ScenePhoto } from './api';
+import {sharedPayloadFromHash} from './sharedAudit';
 import { mediaUrl } from './media';
 import { ModelSource } from './ModelSource';
 import './style.css';
@@ -15,6 +16,7 @@ import './editorial.css';
 const HowItWorks=lazy(()=>import('./HowItWorks').then(m=>({default:m.HowItWorks})));
 const TrialEditor=lazy(()=>import('./TrialEditor').then(m=>({default:m.TrialEditor})));
 const CurveChart=lazy(()=>import('./CurveChart').then(m=>({default:m.CurveChart})));
+const SharedAuditPage=lazy(()=>import('./SharedAuditPage').then(m=>({default:m.SharedAuditPage})));
 const AuditPage=lazy(()=>import('./AuditPage').then(m=>({default:m.AuditPage})));
 const SavedExample=lazy(()=>import('./OpeningCards').then(m=>({default:m.SavedExample})));
 const AutoTour=lazy(()=>import('./AutoTour').then(m=>({default:m.AutoTour})));
@@ -32,6 +34,7 @@ catch {
     return '';
 } }
 function App() {
+    const [sharedPayload,setSharedPayload]=useState(()=>sharedPayloadFromHash(location.hash));
     const [exampleKey,setExampleKey]=useState(()=>exampleKeyFromHash(location.hash));
     const [auditRouteId, setAuditRouteId] = useState(()=>(auditIdFromHash(location.hash)??(!location.hash?auditIdFromPath(location.pathname):null)));
     const [route, setRoute] = useState(() => (location.hash?resolveRoute(location.hash):auditIdFromPath(location.pathname)?'audit':resolveRoute('')));
@@ -83,9 +86,9 @@ function App() {
         const c = value.calibrations.at(-1);
         setLocal(current => ({ ...current, draft: { ...current.draft, photo: { name: photo!.photo_id, url: photoUrl }, size: { width: 0, height: 0 }, points: c ? [...c.ruler_px, c.path_start_px, c.path_end_px].map(([x, y]) => ({ x, y })) : [], length: c ? String(c.slope_length_m) : '', height: c ? String(c.slope_height_m) : '', rulerLength: c ? String(c.ruler_length_m) : '', captureConfirmed: false } }));
     } adopt(value); setScene(value.scene_photos.at(-1) ?? null); setCalVersion(value.calibrations.at(-1)?.version ?? 0); setBaseVersion(value.baselines.at(-1)?.version ?? 0); setPredictionId(value.predictions.at(-1)?.prediction_id ?? ''); setTrialId(value.trials.at(-1)?.trial_id ?? ''); setComparisonId(value.comparisons.at(-1)?.comparison_id ?? ''); setInterventionId(value.interventions.at(-1)?.intervention_id ?? ''); setBaselineIds([]); }
-    useEffect(() => { const update = () => {setRoute((location.hash?resolveRoute(location.hash):auditIdFromPath(location.pathname)?'audit':resolveRoute('')));setAuditRouteId((auditIdFromHash(location.hash)??(!location.hash?auditIdFromPath(location.pathname):null)));setExampleKey(exampleKeyFromHash(location.hash));}; window.addEventListener('hashchange', update);window.addEventListener('popstate',update);return ()=>{window.removeEventListener('hashchange',update);window.removeEventListener('popstate',update)}; }, []);
+    useEffect(() => { const update = () => {setSharedPayload(sharedPayloadFromHash(location.hash));setRoute((location.hash?resolveRoute(location.hash):auditIdFromPath(location.pathname)?'audit':resolveRoute('')));setAuditRouteId((auditIdFromHash(location.hash)??(!location.hash?auditIdFromPath(location.pathname):null)));setExampleKey(exampleKeyFromHash(location.hash));}; window.addEventListener('hashchange', update);window.addEventListener('popstate',update);return ()=>{window.removeEventListener('hashchange',update);window.removeEventListener('popstate',update)}; }, []);
     useEffect(() => { document.title = active.title + ' · Motion Audit'; }, [active.title]);
-    useEffect(()=>{const frame=requestAnimationFrame(()=>{window.scrollTo({top:0,left:0,behavior:'auto'})});return()=>cancelAnimationFrame(frame)},[route,auditRouteId,exampleKey]);
+    useEffect(()=>{const frame=requestAnimationFrame(()=>{window.scrollTo({top:0,left:0,behavior:'auto'})});return()=>cancelAnimationFrame(frame)},[route,auditRouteId,exampleKey,sharedPayload]);
     useEffect(() => { setRestConfirmed(false); setTrialFile(null); setTrialPreview(''); }, [predictionId, calVersion]);
     useEffect(() => () => allocatedUrls.current.forEach(value => URL.revokeObjectURL(value)), []);
     // Read-only resume: never auto-create or repeat a mutation after refresh.
@@ -122,7 +125,7 @@ function App() {
         }
         catch { /* optional storage */ } }}>開始另一個實驗（保留舊紀錄）</button><button onClick={() => void run(refresh)}>重新讀取後端</button><label>校準版本<select value={calVersion} onChange={e => { setCalVersion(Number(e.target.value)); setBaselineIds([]); }}><option value="0">尚未選取／草稿未保存</option>{record.calibrations.map(c => <option value={c.version} key={c.version}>v{c.version} · L {c.slope_length_m} m / h {c.slope_height_m} m（使用者）</option>)}</select></label></>}
  </fieldset>}
- {DEMO_ONLY&&isCoach ? <p role="status">{demoUploadMessage}</p> : route === 'how' ? <HowItWorks/> : route === 'examples' ? <SavedExample name={exampleKey}/> : route === 'compare' ? <PairComparison/> : route === 'wall' ? <ResultsWall/> : route === 'demo' ? <DemoPage/> : route === 'home' ? <Home/> : route === 'audit' ? <AuditPage api={api} auditId={auditRouteId}/> : <fieldset disabled={busy || !record || DEMO_ONLY}><legend>{active.title}</legend>
+ {DEMO_ONLY&&isCoach ? <p role="status">{demoUploadMessage}</p> : route === 'how' ? <HowItWorks/> : route === 'examples' ? <SavedExample name={exampleKey}/> : route === 'compare' ? <PairComparison/> : route === 'wall' ? <ResultsWall/> : route === 'demo' ? <DemoPage/> : route === 'home' ? <Home/> : route === 'audit' ? sharedPayload!==null ? <SharedAuditPage key={sharedPayload} payload={sharedPayload}/> : <AuditPage api={api} auditId={auditRouteId}/> : <fieldset disabled={busy || !record || DEMO_ONLY}><legend>{active.title}</legend>
  {route === 'setup' && <><h2>確認實拍照片與尺寸</h2><p>尺的兩端、滑塊（作為路徑起點）與坡底終點須由你確認；共四個標記。</p>
  <label className="upload">上傳實驗照片<input type="file" accept="image/*" onChange={event => { const file = event.target.files?.[0]; if (!file)
                 return; setCalVersion(0); setScene(null); setPhotoFile(file); setLocal(current => replacePhoto(current, { name: file.name, url: url(file) })); if (record)
@@ -174,7 +177,7 @@ function App() {
  </>}
  {route === 'report' && <><h2>匯出後端實驗紀錄</h2><p>校準 {record?.calibrations.length ?? 0} 版 · 試驗 {record?.trials.length ?? 0} 段 · 預測 {record?.predictions.length ?? 0} 筆 · 比較 {record?.comparisons.length ?? 0} 筆。來源與人工修正保留於報告。</p><button data-testid="report-markdown" onClick={() => void run(() => download('md'))}>下載 Markdown 報告</button><button data-testid="report-csv" onClick={() => void run(() => download('csv'))}>下載 CSV 資料</button><details><summary>完整後端紀錄</summary><pre>{JSON.stringify(record, null, 2)}</pre></details></>}
  </fieldset>}
- {!['home','wall','how'].includes(route)&&<div className="notice">{DEMO_ONLY?'Saved results only — no new model call. Private videos are not loaded.':'照片與影片會送至伺服器處理。數值由程式計算；mock 來源會明確標示。重要結果請匯出保存，紀錄可能因服務重啟而清除。'}</div>}{route==='audit'&&<AutoTour/>}<SiteFooter api={api} route={route}/></section></main></>}</Localize>;
+ {sharedPayload===null&&!['home','wall','how'].includes(route)&&<div className="notice">{DEMO_ONLY?'Saved results only — no new model call. Private videos are not loaded.':'照片與影片會送至伺服器處理。數值由程式計算；mock 來源會明確標示。重要結果請匯出保存，紀錄可能因服務重啟而清除。'}</div>}{route==='audit'&&sharedPayload===null&&<AutoTour/>}<SiteFooter api={api} route={route} offline={sharedPayload!==null}/></section></main></>}</Localize>;
 }
 function PredictionSelect({ record, value, onChange }: {
     record: ExperimentRecord | null;
