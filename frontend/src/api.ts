@@ -63,8 +63,10 @@ export function uploadAudit(url:string,data:FormData,progress:UploadProgress,mak
  progress(0);xhr.send(data);
  });
 }
-export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnly?:boolean}={}) {
+export const jobLostMessage='The free server restarted while checking this clip, so the result was lost. Please submit it again.';
+export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnly?:boolean,pollMs?:number}={}) {
   const demoOnly=options.demoOnly??DEMO_ONLY;
+  const pollMs=options.pollMs??3000;
   const root=base.replace(/\/$/,'');
   async function request<T>(path:string, init:RequestInit={}, text=false):Promise<T> {
     if(demoOnly)throw new Error(demoUploadMessage);
@@ -81,15 +83,33 @@ export function createApi(base='', transport:typeof fetch=fetch,options:{demoOnl
     } finally {clearTimeout(timer)}
   }
   function json<T>(method:string,path:string,body:unknown) {return request<T>(path,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})}
+  // T246: a check runs as a background job on the server; poll it so a slow check never loses its result.
+  async function waitForJob(started:unknown):Promise<AuditOut>{
+    const job=started as {job_id?:string};
+    if(!job||typeof job.job_id!=='string')return started as AuditOut; // older backend answered with the result itself
+    let misses=0;
+    for(;;){
+      await new Promise(r=>setTimeout(r,pollMs));
+      let state:{status:string,audit?:AuditOut,error?:string,status_code?:number};
+      try{state=await request('/audit-jobs/'+encodeURIComponent(job.job_id));misses=0}
+      catch(error){
+        if(error instanceof ApiError&&error.status===404)throw new ApiError(404,jobLostMessage);
+        if(error instanceof ApiError&&!error.temporary)throw error;
+        if(++misses>=5)throw error;continue;
+      }
+      if(state.status==='done'&&state.audit)return state.audit;
+      if(state.status==='failed')throw new ApiError(state.status_code??500,state.error||'The check failed.');
+    }
+  }
   const e=(id:string)=>'/experiments/'+encodeURIComponent(id), t=(id:string)=>'/trials/'+encodeURIComponent(id);
   return {
-    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight',onProgress?:UploadProgress,length_m?:number,object_name='ball',slow_motion?:boolean,vehicle_class?:VehicleClass)=>{if(demoOnly)return Promise.reject(new Error(demoUploadMessage));const data=new FormData();data.append('file',file);data.append('object_name',object_name.trim()||'ball');if(slow_motion!==undefined)data.append('slow_motion',String(slow_motion));data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(assumed_model==='vehicle'&&vehicle_class)data.append('vehicle_class',vehicle_class);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));if(length_m!==undefined)data.append('length_m',String(length_m));return onProgress?uploadAudit(root+'/api/audits',data,onProgress):request<AuditOut>('/audits',{method:'POST',body:data})},
+    audit:(file:File,t_start:number,t_end:number,camera_static:boolean,object_size_m?:number,assumed_model:AuditModel='free_flight',onProgress?:UploadProgress,length_m?:number,object_name='ball',slow_motion?:boolean,vehicle_class?:VehicleClass)=>{if(demoOnly)return Promise.reject(new Error(demoUploadMessage));const data=new FormData();data.append('file',file);data.append('object_name',object_name.trim()||'ball');if(slow_motion!==undefined)data.append('slow_motion',String(slow_motion));data.append('t_start',String(t_start));data.append('t_end',String(t_end));data.append('camera_static',String(camera_static));data.append('assumed_model',assumed_model);if(assumed_model==='vehicle'&&vehicle_class)data.append('vehicle_class',vehicle_class);if(object_size_m!==undefined)data.append('object_size_m',String(object_size_m));if(length_m!==undefined)data.append('length_m',String(length_m));return (onProgress?uploadAudit(root+'/api/audit-jobs',data,onProgress):request<unknown>('/audit-jobs',{method:'POST',body:data})).then(waitForJob)},
     flightWindows:(id:string,object_name:string)=>{const body=new FormData();body.append('object_name',object_name.trim()||'ball');return request<FlightWindows>('/audit-drafts/'+encodeURIComponent(id)+'/windows',{method:'POST',body})},
     auditDraft:(file:File)=>{const data=new FormData();data.append('file',file);return request<AuditDraft>('/audit-drafts',{method:'POST',body:data})},
     sampleClips:async()=>parseSampleClips(await request<unknown>('/samples')),
     sampleDraft:(name:string)=>request<AuditDraft>('/samples/'+encodeURIComponent(name)+'/draft',{method:'POST'}),
     voiceAnswer:(id:string,audio:File)=>{const body=new FormData();body.append('audio',audio);return request<VoiceAnswer>('/audit-drafts/'+encodeURIComponent(id)+'/voice',{method:'POST',body})},
-    auditFromDraft:(id:string,answers:InterviewAnswers)=>{const data=new FormData();data.append('draft_id',id);for(const [k,v] of Object.entries(answers))if(v!==undefined)data.append(k,String(v));return request<AuditOut>('/audits',{method:'POST',body:data})},
+    auditFromDraft:(id:string,answers:InterviewAnswers)=>{const data=new FormData();data.append('draft_id',id);for(const [k,v] of Object.entries(answers))if(v!==undefined)data.append(k,String(v));return request<unknown>('/audit-jobs',{method:'POST',body:data}).then(waitForJob)},
     spend:()=>request<unknown>('/spend'),
     getAudit:(id:string)=>request<AuditOut>('/audits/'+encodeURIComponent(id)),
     create:(title:string)=>json<ExperimentRecord>('POST','/experiments',{title}),
