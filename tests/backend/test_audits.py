@@ -59,12 +59,26 @@ def write_frames(path, positions, sizes, fps=60, w=640, h=480):
                    input=b"".join(f.tobytes() for f in frames), check=True)
 
 
-def test_audit_refuses_object_moving_towards_camera(tmp_path):
+def test_audit_corrects_motion_towards_camera(tmp_path):
+    """T251: a throw towards the camera is rescaled by the ball's own size instead of refused; a clip whose
+    size grows without the matching perspective is not passed as consistent."""
+    f_px, d_m, fps, w, h = 500.0, 0.1, 60, 640, 480
+    pos, sz = [], []
+    for i in range(36):
+        t = i / fps
+        X, Y, Z = -0.3 + 0.6 * t, -0.6 - 1.0 * t + 0.5 * 9.81 * t * t, 3.0 - 2.0 * t
+        b = f_px * d_m / Z
+        pos.append((w / 2 + f_px * X / Z - b / 2, h / 2 + f_px * Y / Z - b / 2))
+        sz.append(int(round(b)))
+    write_frames(tmp_path / "toward.mp4", pos, sz)
+    r = post(tmp_path / "toward.mp4", object_size_m="0.1").json()
+    assert sz[-1] / sz[0] > 1.5 and r["numbers"].get("depth_corrected") == 1.0, r
+    assert r["verdict"] == "consistent" and r["numbers"]["g_apparent_m_s2"] == pytest.approx(9.81, rel=0.15), r
+    assert any("towards or away" in line for line in r["limits"]) and not r["ghost_points"]
     n = 36
-    write_frames(tmp_path / "toward.mp4", [(100 + 5 * i, 100 + 0.2 * i * i) for i in range(n)],
+    write_frames(tmp_path / "fake.mp4", [(100 + 5 * i, 100 + 0.2 * i * i) for i in range(n)],
                  [int(16 + 0.8 * i) for i in range(n)])
-    r = post(tmp_path / "toward.mp4").json()
-    assert r["verdict"] == "insufficient_data" and "towards or away" in r["reasons"][0]
+    assert post(tmp_path / "fake.mp4").json()["verdict"] != "consistent"
 
 
 def test_audit_bounce_mode(tmp_path):
