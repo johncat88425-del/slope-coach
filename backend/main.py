@@ -70,7 +70,7 @@ PUBLIC_DEMO = os.environ.get("PUBLIC_DEMO") == "1"
 PUBLIC_MAX_PER_HOUR = int(os.environ.get("PUBLIC_MAX_PER_HOUR", "10"))
 PUBLIC_MAX_UPLOAD_BYTES = int(os.environ.get("PUBLIC_MAX_UPLOAD_MB", "80")) * 1024 * 1024
 _PAID_PATHS = ("/api/audit-drafts", "/api/audits")
-_hits: dict[str, list[float]] = {}
+_hits: dict[tuple[str, str], list[float]] = {}
 
 
 def _client_ip(request) -> str:
@@ -87,11 +87,16 @@ async def public_demo_guard(request, call_next):
             return JSONResponse({"detail": f"This public demo accepts uploads up to {PUBLIC_MAX_UPLOAD_BYTES // 1048576} MB. "
                                            "Trim the clip to the few seconds that matter."}, status_code=413)
         now = time.time()
-        recent = [t for t in _hits.get(_client_ip(request), []) if now - t < 3600]
+        # Separate buckets (T241): preparing a clip and running the check each get PUBLIC_MAX_PER_HOUR, so a
+        # visitor can finish that many full checks an hour instead of being stopped after about five.
+        key = (_client_ip(request), "audit" if request.url.path == "/api/audits" else "draft")
+        recent = [t for t in _hits.get(key, []) if now - t < 3600]
         if len(recent) >= PUBLIC_MAX_PER_HOUR:
-            return JSONResponse({"detail": "This public demo allows a few checks per visitor each hour. "
-                                           "Please try again later, or run it locally (see README)."}, status_code=429)
-        _hits[_client_ip(request)] = recent + [now]
+            wait_min = max(1, int((3600 - (now - min(recent))) // 60) + 1)
+            return JSONResponse({"detail": f"This public demo allows {PUBLIC_MAX_PER_HOUR} checks per visitor each hour. "
+                                           f"Please try again in about {wait_min} minutes, or run it locally (see README)."},
+                                status_code=429)
+        _hits[key] = recent + [now]
     return await call_next(request)
 
 # Uploaded videos and photos, served as /media/<eid>/<file>. File names are generated server-side.
@@ -414,6 +419,12 @@ def report_md(eid: str):
 @app.get("/api/experiments/{eid}/report.csv", response_class=PlainTextResponse)
 def report_csv(eid: str):
     return PlainTextResponse(report.to_csv(_exp(eid)), media_type="text/csv")
+
+
+@app.get("/api/version")
+def version():
+    """Which commit is live (T241): Render sets RENDER_GIT_COMMIT; elsewhere it is "local"."""
+    return {"commit": os.environ.get("RENDER_GIT_COMMIT", "local")[:12], "public_demo": PUBLIC_DEMO}
 
 
 @app.get("/api/spend")

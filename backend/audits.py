@@ -34,6 +34,7 @@ router = APIRouter()
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
 PUBLIC_MAX_SIDE_PX = 1920
 PUBLIC_MAX_WINDOW_S = float(os.environ.get("PUBLIC_MAX_WINDOW_S", "3"))
+EARTH_HEADLINE_BAND = (0.85, 1.15)  # g_vs_earth inside this reads as "Earth-like" in a headline
 MAX_WINDOW_S = 30.0  # every frame of the window is held in memory; real motions here last a few seconds
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
 SIZE_ERROR = 0.3  # assumed worst-case error of the object's pixel size, same as gate question 2
@@ -126,7 +127,12 @@ def _finish(rec: dict) -> dict:
     text = _model_text("explain_audit", view)
     if text:
         rec["explanation"] = {"source": "model", "text": text}
-    headline = _model_text("headline_audit", view)
+    # A one-line "how Earth-like is g" headline only when it cannot contradict the verdict (T241): live testing
+    # showed "looks like Earth, 1.06x" above an Inconsistent verdict caused by a scattered track.
+    g_ratio = (rec.get("numbers") or {}).get("g_vs_earth")
+    earth_like = g_ratio is not None and EARTH_HEADLINE_BAND[0] <= g_ratio <= EARTH_HEADLINE_BAND[1]
+    show = rec["verdict"] == "consistent" or (rec["verdict"] == "inconsistent" and not earth_like)
+    headline = _model_text("headline_audit", view) if show else None
     rec["headline"] = {"source": "model", "text": headline} if headline else None
     return rec
 

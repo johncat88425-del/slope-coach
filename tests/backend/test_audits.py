@@ -459,3 +459,25 @@ def test_sample_clips_start_the_same_interview(tmp_path):
     assert r.status_code == 201 and r.json()["draft_id"].startswith("drf") and r.json()["interview"]["questions"]
     assert c.post("/api/samples/../../etc/draft").status_code in (404, 405)
     assert c.post("/api/samples/nope/draft").status_code == 404
+
+
+def test_headline_never_contradicts_the_verdict(monkeypatch):
+    """T241: an Earth-like g headline is dropped when the verdict is not consistent for another reason."""
+    from backend import audits
+    calls = []
+
+    class Hooks:
+        def headline_audit(self, view):
+            calls.append(view["verdict"])
+            return "Looks like Earth."
+    monkeypatch.setattr(audits, "get_hooks", lambda: Hooks())
+    monkeypatch.setattr(audits, "explain_audit", lambda rec: None)
+    base = {"assumed_model": "free_flight", "reasons": [], "limits": [], "points": [], "track_check": None}
+    ok = audits._finish(base | {"verdict": "consistent", "numbers": {"g_vs_earth": 1.06}})
+    assert ok["headline"]["text"] == "Looks like Earth."
+    bad = audits._finish(base | {"verdict": "inconsistent", "numbers": {"g_vs_earth": 1.06}})
+    assert bad["headline"] is None
+    far = audits._finish(base | {"verdict": "inconsistent", "numbers": {"g_vs_earth": 0.014}})
+    assert far["headline"]["text"] == "Looks like Earth."
+    none = audits._finish(base | {"verdict": "insufficient_data", "numbers": {"g_vs_earth": 1.0}})
+    assert none["headline"] is None
