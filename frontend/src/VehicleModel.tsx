@@ -1,3 +1,4 @@
+import {knownSize} from './knownSizes.js';
 import {vehicleClassReferences,vehicleMetrics} from './vehiclePresentation.js';
 import type {VehicleClass} from './vehiclePresentation.js';
 import {useId} from 'react';
@@ -5,13 +6,14 @@ import type {AuditOut} from './audit.js';
 import {formatNumber} from './formatNumber.js';
 import {Localize} from './i18n.js';
 
-export function AuditDimensionField({model,value,onChange}:{model:string;value:string;onChange:(value:string)=>void}){
- const hintId=useId(),vehicle=model==='vehicle';
+export function AuditDimensionField({model,value,onChange,objectName=''}:{model:string;value:string;onChange:(value:string)=>void;objectName?:string}){
+ const hintId=useId(),vehicle=model==='vehicle',standard=vehicle?null:knownSize(objectName);
  return <Localize>
   <label>{vehicle?'Car body length (metres)':'Measured object size (metres, optional)'}
    <input type="number" min="0" step="any" value={value} aria-describedby={hintId} onChange={e=>onChange(e.target.value)}/>
   </label>
   <p id={hintId}>{vehicle?'A typical sedan is about 4.5 m long, an SUV about 4.8 m, and a small car about 3.5 m; check the manufacturer’s specification if you know the model. You can leave this blank: the backend checks both 3 m and 6 m and gives a verdict only when they agree.':'Enter a user-confirmed measurement. Leave unknown dimensions blank; do not infer them from the object name.'}</p>
+  {standard&&!value.trim()&&<button type="button" data-testid="use-standard-size" onClick={()=>onChange(String(standard.metres))}>{`Use ${standard.metres} m, the size of ${standard.label}`}</button>}
   {vehicle&&<p data-testid="vehicle-window-hint">Select the seconds when the whole car is visible and drives from left to right.</p>}
  </Localize>;
 }
