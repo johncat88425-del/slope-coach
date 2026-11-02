@@ -8,6 +8,11 @@ import numpy as np
 from scipy import ndimage
 
 WIDTH = 480
+# Frames are held in memory for a whole window; this keeps them from filling the 512 MB host (T243). A longer or
+# faster window is read at a lower frame rate instead of being refused.
+MAX_HELD_BYTES = 96 * 1024 * 1024
+LONG_SIDE_PX = 1920
+BACKGROUND_FULL_BYTES = 32 * 1024 * 1024
 
 
 def probe_fps(path: str) -> float:
@@ -27,30 +32,68 @@ def _fps_filter(path: str, max_fps: float | None) -> tuple[float, str]:
     return fps, ""
 
 
+def _raw_stdout(cmd: list[str]) -> bytearray:
+    """ffmpeg's output grown in place; capture_output holds it twice at the join, which alone topped 250 MB (T243)."""
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    raw = bytearray()
+    while chunk := proc.stdout.read(1 << 20):
+        raw += chunk
+    if proc.wait():
+        raise subprocess.CalledProcessError(proc.returncode, cmd)
+    return raw
+
+
+def _background(frames: np.ndarray) -> np.ndarray:
+    """Median frame. A large stack uses about 32 evenly spread frames: the median needs a sorted copy of its input."""
+    return np.median(frames[::len(frames) // 32] if frames.nbytes > BACKGROUND_FULL_BYTES else frames, axis=0)
+
+
+def clip_duration(path: str) -> float:
+    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path],
+                         capture_output=True, text=True, check=True).stdout.strip()
+    return float(out.splitlines()[0])
+
+
+def held_fps(path: str, seconds: float, channels: int = 3) -> float:
+    """Frame rate that keeps `seconds` of video at WIDTH px under MAX_HELD_BYTES (the source rate if it fits).
+    Grey callers that must stay in step with a colour read pass the default 3 channels."""
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
+                          "-of", "csv=p=0", path], capture_output=True, text=True, check=True).stdout
+    w, h = (int(v) for v in out.splitlines()[0].split(",")[:2])
+    frames = MAX_HELD_BYTES / (WIDTH * WIDTH * max(w, h) / min(w, h) * channels)  # tall side either way: rotation tags
+    return min(probe_fps(path), frames / max(seconds, 1e-3))
+
+
+def shrink_video(src: str, dst: str, timeout: float = 300.0) -> None:
+    """A copy with the long side at LONG_SIDE_PX and the same frames and timing. Measurements use 480 px frames,
+    so 4K adds nothing but memory. One thread: 4K peaks near 190 MB this way (T243)."""
+    side = f"min({LONG_SIDE_PX},max(iw,ih))"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-threads", "1", "-i", src,
+                    "-vf", f"scale=w='if(gt(iw,ih),{side},-2)':h='if(gt(iw,ih),-2,{side})',format=yuv420p",
+                    "-filter_threads", "1", "-an", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "23",
+                    "-threads", "1", "-movflags", "+faststart", dst],
+                   capture_output=True, check=True, timeout=timeout)
+
+
 def read_frames(path: str, start: float, end: float, max_fps: float | None = None) -> tuple[np.ndarray, float]:
     fps, pre = _fps_filter(path, max_fps)
     # ffmpeg applies the rotation tag, so frames come out the way the clip plays
-    raw = subprocess.run(
-        ["ffmpeg", "-v", "error", "-threads", "2", "-ss", str(start), "-to", str(end), "-i", path,
-         "-vf", f"{pre}scale={WIDTH}:-2,format=gray", "-f", "rawvideo", "-"],
-        capture_output=True, check=True).stdout
+    raw = _raw_stdout(["ffmpeg", "-v", "error", "-threads", "2", "-ss", str(start), "-to", str(end), "-i", path,
+                       "-vf", f"{pre}scale={WIDTH}:-2,format=gray", "-f", "rawvideo", "-"])
     probe_h = subprocess.run(
         ["ffmpeg", "-v", "error", "-ss", str(start), "-i", path, "-frames:v", "1",
          "-vf", f"scale={WIDTH}:-2", "-f", "image2pipe", "-vcodec", "ppm", "-"],
         capture_output=True, check=True).stdout
     h = int(probe_h.split(b"\n")[1].split()[1])
-    frames = np.frombuffer(raw, np.uint8).reshape(-1, h, WIDTH).astype(np.float32)
-    return frames, fps
+    return np.frombuffer(raw, np.uint8).reshape(-1, h, WIDTH), fps
 
 
 def read_frames_rgb(path: str, start: float, end: float, max_fps: float | None = None) -> np.ndarray:
     """Same frames as read_frames() but in colour, shape (n, h, WIDTH, 3), values 0..255 as uint8.
     uint8, not float32 (T240): a few seconds of 60 fps colour frames as float32 filled the 512 MB host."""
     pre = _fps_filter(path, max_fps)[1]
-    raw = subprocess.run(
-        ["ffmpeg", "-v", "error", "-threads", "2", "-ss", str(start), "-to", str(end), "-i", path,
-         "-vf", f"{pre}scale={WIDTH}:-2", "-pix_fmt", "rgb24", "-f", "rawvideo", "-"],
-        capture_output=True, check=True).stdout
+    raw = _raw_stdout(["ffmpeg", "-v", "error", "-threads", "2", "-ss", str(start), "-to", str(end), "-i", path,
+                       "-vf", f"{pre}scale={WIDTH}:-2", "-pix_fmt", "rgb24", "-f", "rawvideo", "-"])
     probe_h = subprocess.run(
         ["ffmpeg", "-v", "error", "-ss", str(start), "-i", path, "-frames:v", "1",
          "-vf", f"scale={WIDTH}:-2", "-f", "image2pipe", "-vcodec", "ppm", "-"],
@@ -100,7 +143,7 @@ def track_color(rgb_frames: np.ndarray, fps: float, start: float, color: str, th
     they do not move; a moving arm drops out because it is not that colour. Returns points and per-frame
     diameters (px). With widths, also appends each tracked blob's box width (px), for the vehicle check."""
     lo, hi = COLOR_HUES[color]
-    bg = np.median(rgb_frames, axis=0)
+    bg = _background(rgb_frames)
     pts, sizes = [], []
     for i, f in enumerate(rgb_frames):
         f = f.astype(np.float32)  # frames may arrive as uint8; colour maths must not wrap
@@ -132,10 +175,10 @@ def track_with_sizes(frames: np.ndarray, fps: float, start: float, thresh: float
                      widths: list | None = None):
     """Same tracker as track(), also returning the per-frame object size (sqrt of mask area, px). With widths,
     also appends each frame's moving-pixel box width (px), for the vehicle check."""
-    bg = np.median(frames, axis=0)
+    bg = _background(frames).astype(np.float32)  # frames may arrive as uint8; the difference must not wrap
     pts, sizes = [], []
     for i, f in enumerate(frames):
-        mask = np.abs(f - bg) > thresh
+        mask = np.abs(f.astype(np.float32) - bg) > thresh
         if mask.sum() < min_px:
             continue  # gap, never interpolated
         ys, xs = np.nonzero(mask)

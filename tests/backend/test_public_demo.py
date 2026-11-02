@@ -49,28 +49,46 @@ def test_public_guard_limits_paid_posts_per_ip(monkeypatch, tmp_path):
     assert c.post("/api/audits", headers={"x-forwarded-for": "8.8.8.8"}).status_code != 429
 
 
-def test_public_demo_refuses_long_windows_before_any_model_call(monkeypatch, tmp_path):
-    m = _app(monkeypatch, tmp_path, PUBLIC_DEMO="1")
+def test_public_demo_accepts_long_windows(monkeypatch, tmp_path):
+    """T243: a long window is read at a lower frame rate, not refused."""
+    m = _app(monkeypatch, tmp_path, PUBLIC_DEMO="1", SLOPE_MODEL_TEXT="0")
     c = TestClient(m.app)
     with open("data/samples/synthetic_toss_earth_g.mp4", "rb") as f:
         r = c.post("/api/audits", data={"t_start": "0", "t_end": "5.36", "camera_static": "true",
                                         "slow_motion": "false", "assumed_model": "free_flight"},
                    files={"file": ("v.mp4", f, "video/mp4")})
-    assert r.status_code == 422 and "at most 3 s" in r.json()["detail"]
+    assert r.status_code == 201
 
 
-def test_public_demo_refuses_4k_uploads(monkeypatch, tmp_path):
+def test_public_demo_shrinks_4k_uploads(monkeypatch, tmp_path):
+    """T243: 4K is shrunk on arrival with the frames and timing kept, not refused."""
     import subprocess
     clip = tmp_path / "big.mp4"
-    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=3840x2160:d=0.2",
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=2160x3840:d=0.2:r=30",
                     "-pix_fmt", "yuv420p", str(clip)], check=True)
     m = _app(monkeypatch, tmp_path, PUBLIC_DEMO="1")
     c = TestClient(m.app)
     with clip.open("rb") as f:
         r = c.post("/api/audit-drafts", files={"file": ("big.mp4", f, "video/mp4")})
-    assert r.status_code == 413 and "1080p" in r.json()["detail"]
-    with open("data/samples/synthetic_toss_earth_g.mp4", "rb") as f:
-        assert c.post("/api/audit-drafts", files={"file": ("ok.mp4", f, "video/mp4")}).status_code == 201
+    assert r.status_code == 201
+    from backend.store import store
+    from backend.video import probe_fps
+    small = store.audit_drafts[r.json()["draft_id"]]
+    w, h = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height",
+                           "-of", "csv=p=0", str(small)], capture_output=True, text=True).stdout.strip().split(",")
+    assert int(h) == 1920 and int(w) < 1920
+    assert probe_fps(str(small)) == 30
+
+
+def test_held_fps_keeps_frames_under_budget(tmp_path):
+    import subprocess
+    from backend.video import MAX_HELD_BYTES, WIDTH, held_fps
+    clip = tmp_path / "tall.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=1080x1920:d=0.2:r=60",
+                    "-pix_fmt", "yuv420p", str(clip)], check=True)
+    assert held_fps(str(clip), 0.5) == 60  # a short window keeps every frame
+    fps = held_fps(str(clip), 30.0)
+    assert fps * 30 * WIDTH * (WIDTH * 1920 / 1080) * 3 <= MAX_HELD_BYTES * 1.001
 
 
 def test_public_guard_has_a_site_wide_hourly_ceiling(monkeypatch, tmp_path):

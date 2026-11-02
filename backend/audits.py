@@ -10,6 +10,7 @@ import os
 
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -29,17 +30,16 @@ from .output_check import check_model_text, extract_numbers
 from .store import UPLOAD_ROOT, UploadTooLarge, copy_limited, new_id, now, store
 from physics.camera_motion import compensate, measure_camera_motion
 
-from .video import color_for, probe_fps, read_frames, read_frames_rgb, save_overlay, track_color, track_with_sizes
+from .video import (LONG_SIDE_PX, clip_duration, color_for, held_fps, probe_fps, read_frames, read_frames_rgb,
+                    save_overlay, shrink_video, track_color, track_with_sizes)
 
 router = APIRouter()
 
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
-PUBLIC_MAX_SIDE_PX = 1920
-PUBLIC_MAX_WINDOW_S = float(os.environ.get("PUBLIC_MAX_WINDOW_S", "3"))
 EARTH_HEADLINE_BAND = (0.85, 1.15)  # g_vs_earth inside this reads as "Earth-like" in a headline
 MAX_CAMERA_SHIFT = 0.15  # a moving camera is corrected only up to 15% of the frame width
 MIN_CAMERA_SHIFT_PX = 1.0  # below this the camera counts as still: no correction, results unchanged
-MAX_WINDOW_S = 30.0  # every frame of the window is held in memory; real motions here last a few seconds
+MAX_WINDOW_S = 60.0  # SAM's own per-request limit; long windows are read at a lower frame rate (T243)
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
 SIZE_ERROR = 0.3  # assumed worst-case error of the object's pixel size, same as gate question 2
 MODELS = ("free_flight", "bounce", "pendulum", "vehicle")
@@ -122,22 +122,26 @@ def _finish(rec: dict) -> dict:
     rec["explanation"] = explain_audit(rec)
     rec.setdefault("track_check", None)
     view = _model_view(rec)
-    rec["retake_tips"] = _model_list("retake_tips", view) if rec["verdict"] == "insufficient_data" else None
-    fit = None
-    if rec["verdict"] == "inconsistent" and rec["assumed_model"] == "free_flight":
-        text = _model_text("what_would_fit", view)
-        fit = {"source": "model", "text": text} if text else None
-    rec["what_would_fit"] = fit
-    text = _model_text("explain_audit", view)
-    if text:
-        rec["explanation"] = {"source": "model", "text": text}
     # A one-line "how Earth-like is g" headline only when it cannot contradict the verdict (T241): live testing
     # showed "looks like Earth, 1.06x" above an Inconsistent verdict caused by a scattered track.
     g_ratio = (rec.get("numbers") or {}).get("g_vs_earth")
     earth_like = g_ratio is not None and EARTH_HEADLINE_BAND[0] <= g_ratio <= EARTH_HEADLINE_BAND[1]
     show = rec["verdict"] == "consistent" or (rec["verdict"] == "inconsistent" and not earth_like)
-    headline = _model_text("headline_audit", view) if show else None
-    rec["headline"] = {"source": "model", "text": headline} if headline else None
+    wants_tips = rec["verdict"] == "insufficient_data"
+    wants_fit = rec["verdict"] == "inconsistent" and rec["assumed_model"] == "free_flight"
+    # Each text is its own model call; one after another they took most of a check's wait (T243).
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        tips = pool.submit(_model_list, "retake_tips", view) if wants_tips else None
+        fit = pool.submit(_model_text, "what_would_fit", view) if wants_fit else None
+        text = pool.submit(_model_text, "explain_audit", view)
+        headline = pool.submit(_model_text, "headline_audit", view) if show else None
+    rec["retake_tips"] = tips.result() if tips else None
+    fit_text = fit.result() if fit else None
+    rec["what_would_fit"] = {"source": "model", "text": fit_text} if fit_text else None
+    if text.result():
+        rec["explanation"] = {"source": "model", "text": text.result()}
+    headline_text = headline.result() if headline else None
+    rec["headline"] = {"source": "model", "text": headline_text} if headline_text else None
     return rec
 
 
@@ -149,10 +153,14 @@ def _save_upload(file: UploadFile, d: Path) -> Path:
         copy_limited(file.file, video)
     except UploadTooLarge as e:
         raise HTTPException(413, str(e))
-    if os.environ.get("PUBLIC_DEMO") == "1" and max(_frame_size(video)) > PUBLIC_MAX_SIDE_PX:
-        video.unlink(missing_ok=True)  # a 4K clip crashed the 512 MB public host (T240)
-        raise HTTPException(413, "On this public demo videos can be at most 1080p (1920 px on the long side). "
-                                 "Export or record the clip at 1080p and try again.")
+    if os.environ.get("PUBLIC_DEMO") == "1" and max(_frame_size(video)) > LONG_SIDE_PX:
+        small = d / "video_small.mp4"
+        try:
+            shrink_video(str(video), str(small))  # a 4K clip crashed the 512 MB public host (T240, T243)
+        except (subprocess.SubprocessError, OSError):
+            raise HTTPException(422, "could not read this video; is it a complete video file?")
+        video.unlink(missing_ok=True)
+        return small
     return video
 
 
@@ -220,7 +228,7 @@ def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, 
     times = [t_start + i / fps for i in range(len(frames))]
     color = color_for(object_name)
     if color:
-        pts, sizes = track_color(read_frames_rgb(str(video), t_start, t_end), fps, t_start, color, widths=widths)
+        pts, sizes = track_color(read_frames_rgb(str(video), t_start, t_end, fps), fps, t_start, color, widths=widths)
         return pts, sizes, "color", times
     pts, sizes = track_with_sizes(frames, fps, t_start, widths=widths)
     return pts, sizes, "frame_diff", times
@@ -340,8 +348,7 @@ def voice_answer(did: str, audio: UploadFile = File(...)):
             "transcript": str(raw.get("transcript", ""))[:2000], "fields": checked_voice_fields(raw.get("fields"))}
 
 
-SCAN_LIMIT_S = 10.0  # window suggestions look at the first 10 s only
-SCAN_MAX_FPS = 30.0  # and at most 30 frames a second, so a 60/240 fps phone clip fits in 512 MB (T240)
+SCAN_MAX_FPS = 30.0  # window suggestions look at the whole clip, at most 30 frames a second (T240, T243)
 
 
 @router.post("/api/audit-drafts/{did}/windows", response_model=S.FlightWindowsOut)
@@ -353,16 +360,17 @@ def suggest_windows(did: str, object_name: str = Form("ball", max_length=60)):
     video = store.audit_drafts[did]
     color = color_for(object_name)
     try:
-        frames, fps = ((read_frames_rgb(str(video), 0.0, SCAN_LIMIT_S, SCAN_MAX_FPS),
-                        min(probe_fps(str(video)), SCAN_MAX_FPS)) if color
-                       else read_frames(video, 0.0, SCAN_LIMIT_S, SCAN_MAX_FPS))
+        seconds = clip_duration(str(video))
+        fps = min(SCAN_MAX_FPS, held_fps(str(video), seconds, 3 if color else 1))
+        frames, fps = ((read_frames_rgb(str(video), 0.0, seconds, fps), fps) if color
+                       else read_frames(video, 0.0, seconds, fps))
     except Exception:
         raise HTTPException(422, "could not read video frames")
     pts, _ = track_color(frames, fps, 0.0, color) if color else track_with_sizes(frames, fps, 0.0)
     wins = suggest_flight_windows(pts)
     return {"draft_id": did, "track_source": "color" if color else "frame_diff",
             "windows": [{"t_start": a, "t_end": b} for a, b in wins],
-            "scanned_until_s": min(SCAN_LIMIT_S, len(frames) / fps)}
+            "scanned_until_s": len(frames) / fps}
 
 
 @router.post("/api/audits", response_model=S.AuditOut, status_code=201)
@@ -385,10 +393,6 @@ def create_audit(
         raise HTTPException(422, "need 0 <= t_start < t_end")
     if t_end - t_start > MAX_WINDOW_S:
         raise HTTPException(422, f"time window is longer than {MAX_WINDOW_S:.0f} s; pick the seconds where the motion happens")
-    if os.environ.get("PUBLIC_DEMO") == "1" and t_end - t_start > PUBLIC_MAX_WINDOW_S:
-        # The free public host needs minutes per second of video; refuse before any paid call (T240).
-        raise HTTPException(422, f"On this public demo the time window can be at most {PUBLIC_MAX_WINDOW_S:.0f} s. "
-                                 "Pick only the part where the object is in flight (usually 0.5-2 s).")
     if object_size_m is not None and object_size_m <= 0:
         raise HTTPException(422, "object_size_m must be positive")
     if length_m is not None and length_m <= 0:
@@ -425,7 +429,7 @@ def create_audit(
         return rec
 
     try:
-        frames, fps = read_frames(str(video), t_start, t_end)
+        frames, fps = read_frames(str(video), t_start, t_end, held_fps(str(video), t_end - t_start))
     except Exception:
         raise HTTPException(422, "could not read video frames in that window")
     widths: list[float] = []
