@@ -12,9 +12,12 @@ from __future__ import annotations
 import base64
 import json
 import re
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
+
+import numpy as np
 
 from backend.output_check import check_model_text
 
@@ -606,6 +609,9 @@ OBJECT_PROMPT = (
     "People and human figures are never the checked object, even silhouettes "
     "with no visible face: a person walking always means judgeable false. "
     "Balls, cars, and pendulums that are clearly visible stay judgeable. "
+    "object_name is the thing that moves, never a fixed thing it moves past "
+    "such as a bin, hoop, table, or wall; the last frame shows when the most "
+    "is moving. "
     "Describe only what is visible; "
     "do not claim proof or causes (no 'proves', 'confirms', 'must be'). Do "
     "not output any numbers at all: no times, no frame numbers, no "
@@ -616,14 +622,36 @@ OBJECT_PROMPT = (
 )
 
 MAX_OBJECT_REASON_CHARS = 200
+MOTION_SCAN_FPS = 4
+MOTION_SCAN_SIZE = 64
+
+
+def _busiest_stamp(video: Path, duration_s: float) -> float | None:
+    """When the most changes from one moment to the next; None if that cannot be read. A ball that enters after
+    the first second was never shown to the model, so it named the bin or hoop instead (T250)."""
+    proc = subprocess.run(
+        ["ffmpeg", "-v", "error", "-threads", "1", "-i", str(video), "-t", str(min(duration_s, 60.0)),
+         "-vf", f"fps={MOTION_SCAN_FPS},scale={MOTION_SCAN_SIZE}:{MOTION_SCAN_SIZE},format=gray",
+         "-f", "rawvideo", "-"], capture_output=True, timeout=_client.UPLOAD_TIMEOUT_S)
+    frames = np.frombuffer(proc.stdout, np.uint8)
+    frames = frames[:frames.size // MOTION_SCAN_SIZE ** 2 * MOTION_SCAN_SIZE ** 2]
+    if proc.returncode != 0 or frames.size < 3 * MOTION_SCAN_SIZE ** 2:
+        return None
+    frames = frames.reshape(-1, MOTION_SCAN_SIZE, MOTION_SCAN_SIZE).astype(np.float32)
+    change = np.abs(np.diff(frames, axis=0)).sum(axis=(1, 2))
+    return float(np.argmax(change) + 1) / MOTION_SCAN_FPS
 
 
 def _start_stills(video: Path, duration_s: float) -> list[Path]:
-    """First frame plus one ~1s later; camera motion needs two views."""
+    """First frame plus one ~1s later (camera motion needs two views) and the frame with the most movement."""
     tmpdir = Path(tempfile.mkdtemp(prefix="object_stills_"))
     second = 1.0 if duration_s > 1.5 else duration_s / 2
+    stamps = [0.0, second]
+    busiest = _busiest_stamp(video, duration_s)
+    if busiest is not None:
+        stamps.append(busiest)
     paths = []
-    for i, stamp in enumerate((0.0, second)):
+    for i, stamp in enumerate(stamps):
         dst = tmpdir / f"still{i}.jpg"
         proc = _sam._run_cmd(
             ["ffmpeg", "-y", "-v", "error", "-ss", str(stamp),

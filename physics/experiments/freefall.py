@@ -272,3 +272,19 @@ def suggest_flight_windows(points: list[tuple[float, float, float]], *, min_poin
         if best:
             out.append((float(t[best[0]]), float(t[best[1] - 1])))
     return out
+
+
+MAX_TRACK_JUMP = 2.5  # known throws stay at or below 1.3; a track that switched between two balls reached 2.9
+
+
+def track_jump_ratio(points: list[tuple[float, float, float]]) -> float:
+    """Largest change of velocity between neighbouring steps, as a multiple of the track's median speed. A flight
+    changes velocity smoothly, so a large value means the tracker moved to something else (T250)."""
+    v = [((b[1] - a[1]) / (b[0] - a[0]), (b[2] - a[2]) / (b[0] - a[0]))
+         for a, b in zip(points, points[1:]) if b[0] > a[0]]
+    if len(v) < 3:
+        return 0.0
+    median_speed = float(np.median([math.hypot(*s) for s in v]))
+    if median_speed <= 0:
+        return 0.0
+    return max(math.hypot(q[0] - p[0], q[1] - p[1]) for p, q in zip(v, v[1:])) / median_speed

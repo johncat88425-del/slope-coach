@@ -106,3 +106,23 @@ def test_public_guard_counts_audit_jobs_as_checks(monkeypatch, tmp_path):
     codes = [c.post("/api/audits", headers=h).status_code, c.post("/api/audit-jobs", headers=h).status_code,
              c.post("/api/audit-jobs", headers=h).status_code]
     assert 429 not in codes[:2] and codes[2] == 429
+
+
+def test_track_jump_ratio_separates_a_flight_from_a_switched_track():
+    from physics.experiments.freefall import MAX_TRACK_JUMP, track_jump_ratio
+    flight = [(i / 15, 100 + 5 * i, 20 + 9.8 * 150 * (i / 15) ** 2) for i in range(12)]
+    assert track_jump_ratio(flight) < 1
+    hopped = [(t, x + (600 if i >= 6 else 0), y) for i, (t, x, y) in enumerate(flight)]
+    assert track_jump_ratio(hopped) > MAX_TRACK_JUMP
+    assert track_jump_ratio(flight[:3]) == 0.0
+
+
+def test_busiest_stamp_finds_when_something_enters(tmp_path):
+    import subprocess
+    from pathlib import Path
+    from meta_client.spark import _busiest_stamp
+    clip = tmp_path / "enter.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x240:d=6:r=10",
+                    "-vf", "drawbox=x=100:y=80:w=120:h=120:c=white:t=fill:enable='between(t,4,4.5)'",
+                    "-pix_fmt", "yuv420p", str(clip)], check=True)
+    assert 3.9 <= _busiest_stamp(Path(clip), 6.0) <= 4.6
