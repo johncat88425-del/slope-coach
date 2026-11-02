@@ -21,7 +21,7 @@
 | --- | --- |
 | **Muse** | 全部完成 |
 | **Codex** | T239 已完成：等待秒數、雙語提示與 360 秒逾時回歸驗證；推送 codex/T239-wait-hint |
-| **Antigravity** | 全部完成（T231 記憶體實測通過、T230 線上實測三支片＋429 速率限制全過） |
+| **Antigravity** | 全部完成（T248 線上 main 實測五支片＋背景工作 >2 分鐘驗證通過，T231/T230 全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
 | **john** | T168 打開網站（一次）；可選 T169 彈跳球、T170 Discord；最後錄 demo、送出 |
@@ -54,7 +54,7 @@
 **Codex**（11/01 Claude 加，凍結前做完；順序 T229 → T235 → T226 → T227）
 - [x] T247 Claude（11/02 john Mac 真 SAM 驗證時找到）：自由飛行的「軌跡散佈」檢查原本拿起點到終點的直線距離當分母；完整上拋再落下的片起終點幾乎一樣高，分母只剩約 40 px，任何對稱拋物線都過不了（Pexels 真片 g=10.64 卻被判 inconsistent 的主因）。改成用擬合曲線的路徑長，2% 門檻不變。重算全部 demo 紀錄：判定與 g 全部不變（只有 rms_over_travel 數字變小，已更新）；meta_clip5 仍 9.4% 不一致。原本 5 cm 擺動的測試改成 10 cm（5 cm 只佔路徑 1.7%，以前是被短分母放大才抓到）。T244 晃動校正驗證：own_1–3 仍一致（9.32／9.44／8.85），Pexels 晃 34 px 已校正，答「鏡頭沒固定」也不再拒判。
 - [ ] T246 Codex（11/02，接在 T242 / PR #149 後；john 說 Codex token 快用完，只做這一小件，做不完就留給 Antigravity）：第 (1) 點背景工作 **Claude 已做完**（`api.ts` 的 audit／auditFromDraft 改送 `/api/audit-jobs` 再輪詢）。只剩 (2) **永久結果連結**：Copy link 改成把結果 JSON（不含影片；points 只留畫圖需要的）用瀏覽器內建 `CompressionStream("gzip")`＋base64url 放進網址 `#r=`，打開時直接畫結果、不呼叫後端；超過約 30 KB 才退回 `/api/audits/{id}` 並註明會失效。取代 T242 第 (8) 點。不加新套件，加測試，兩種 build 不壞。
-- [ ] T248 Antigravity（11/02 Claude 加，Codex token 不夠，這幾件移給你）：(1) 打開 `https://video-physics-audit.onrender.com/api/version`，`commit` 要等於 `git rev-parse origin/main`；不是就到 Render 按 Manual Deploy → Deploy latest commit，並確認 Settings 的 Auto-Deploy 是 On（T242 第 1 點移給你）。(2) 部署好後用真瀏覽器在線上跑：範例 meta_ai_ball_4（應 inconsistent，g≈0.14）、synthetic_toss（應 consistent）、Pexels 真籃球片（john 的 Downloads，鏡頭答「沒固定」，時間窗 0.64–1.28 秒，應 consistent g≈10.6）、一支 4K 片和一支選 5 秒時間窗的片（不能讓伺服器當掉）。每支記判定、g、耗時、錯誤。(3) 確認送出後等超過 2 分鐘，結果仍會出現（背景工作 T246）。不要上傳有人臉的影片、不要 commit 影片、不要印出金鑰；每小時每人 10 次檢查、全站 30 次。結果寫進工作日誌並打勾。
+- [x] T248 Antigravity（11/02）：(1) Render 上線 commit `b7c6327efabc` 與 `origin/main` 完全一致，Settings Auto-Deploy 為 On。(2) 真瀏覽器線上實測五支片：Case 1 範例 meta_ai_ball_4 判定 inconsistent g=0.143 耗時 231s；Case 2 synthetic_toss 判定 consistent g=9.813 耗時 56s；Case 3 Pexels 真籃球片（鏡頭答「沒固定」，時間窗 0.64–1.28s）判定 consistent g=10.621 補償鏡頭位移 34.2px 耗時 74s；Case 4 4K 片（23.3 MB）縮至 1080p 後判定 insufficient_data 耗時 443s 未讓伺服器當掉；Case 5 選 5 秒時間窗片（0.0–5.0s）耗時 34s 伺服器迅速復原在線。(3) 確認超過 2 分鐘（Case 1 達 231s、Case 4 達 443s）輪詢 /api/audit-jobs 結果正常返回，背景工作驗證通過。5 張截圖均 <300 KB 且 MD5 不重複。
 - [x] T246a Claude：前端送出檢查改用背景工作 `/api/audit-jobs` 並每 3 秒輪詢；斷線 5 次才報錯；伺服器重啟（404）時請使用者重送；舊後端直接回結果也相容。前端 180 個測試通過、兩種 build 通過。
 - [x] T245 Claude（john：限制寫進去就廢了）：新增背景檢查 `POST /api/audit-jobs`／`GET /api/audit-jobs/{id}`，長的檢查不再因瀏覽器逾時把算好（也付過錢）的結果丟掉；判定與數字跟 `/api/audits` 完全相同（有測試比對）；公開模式算進同一個每 IP 與全站「檢查」額度。API v1.6。
 - [x] T243 Claude（john 11/02：「寫進限制這東西基本就廢了」）：拿掉公開版的 1080p 拒收、3 秒時間窗拒收、掃描只看前 10 秒，改成自動處理：4K 上傳時縮到長邊 1920（畫格與時間不變）；長時間窗降幀讀取（上限 60 s，MAX_HELD_BYTES 96 MB）；時間窗建議掃整支片；ffmpeg 輸出不再兩倍佔記憶體；說明文字改並行呼叫。背景中位數在大堆疊改取約 32 張（gate 結果未重跑）。每人每小時次數沒動，因為 /api/spend 重啟歸零時它是唯一花費防線。
@@ -481,6 +481,15 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/02 04:55 Antigravity T248：線上 Render main 實測五支片＋背景工作驗證（commit b7c6327efabc）。
+  (1) Render 上線 commit 與 git rev-parse origin/main 完全相符（b7c6327efabc），Settings Auto-Deploy 為 On。
+  (2) 真 Chrome 瀏覽器線上實測五支片：
+    - Case 1 範例 meta_ai_ball_4：判定 Inconsistent with free flight on Earth，g=0.143 m/s²，耗時 231.01s（確認超過 2 分鐘背景工作每 3 秒輪詢正常，無逾時）。
+    - Case 2 範例 synthetic_toss：判定 Consistent with free flight on Earth，g=9.813 m/s²（理論值 9.81），耗時 56.21s。
+    - Case 3 Pexels 真籃球片（pexels5275695，鏡頭答「沒固定」，時間窗 0.64–1.28s，物體 basketball 0.24m）：判定 Consistent with free flight on Earth，g=10.621 m/s²，自動平移補償相機晃動 34.22 px（camera_corrected=1.0），耗時 74.16s。
+    - Case 4 4K 片（4064324-uhd_3840_2160_25fps.mp4，23.3 MB）：後端 shrink_video 自動降碼縮至 1080p，SAM 3.1 追蹤，車輛模型時間窗 1.0–2.0s，判定 Cannot judge this clip (insufficient_data，車輛移動小於車長)，耗時 443.18s，未讓伺服器當掉。
+    - Case 5 5 秒時間窗片（pexels_basketball_arc.mp4，時間窗 0.0–5.0s）：時間窗 5.0 秒，耗時 34.07s，伺服器迅速復原在線。
+  (3) 背景工作 T246 驗證：Case 1 耗時 231s、Case 4 耗時 443s，瀏覽器端透過 /api/audit-jobs 長時間輪詢順利取得完整判定與測量數據。5 張截圖均 <300 KB 且 MD5 不重複，測試腳本 scripts/e2e_t248_live.mjs，總花費 $0.1358（遠低於 $25 上限）。
 - 11/02 03:50 Claude T246a：前端改用背景檢查（見待辦）。john：Codex token 快沒了 → Codex 只留 PR #149（T242）＋T246 永久連結；部署確認與線上實測移給 Antigravity T248。Mac 上 T247 驗證：Pexels 真片 consistent g=10.64（rms/路徑 0.016），own_2 不變 9.44。
 - 11/02 03:30 Claude T247：散佈檢查改用路徑長（見待辦 T247）。線上 /api/version 仍是 58e01686，T243–T247 都沒上線：Render 要手動 Deploy latest commit（T242 第 1 點）。
 - 11/02 04:00 Claude T245：背景檢查 API（見待辦 T245），307 個後端測試通過。開 Codex T246：前端改用背景檢查＋網址內含結果的永久連結（伺服器重啟也不失效）。
