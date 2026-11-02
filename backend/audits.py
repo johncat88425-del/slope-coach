@@ -19,7 +19,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from physics.errors import PhysicsInputError
 from physics.experiments.pendulum import check_pendulum
 from physics.experiments.vehicle import VEHICLE_CLASS_LENGTH_M, check_drive, fit_drive
-from physics.experiments.freefall import (check_bounces, check_flight, fit_flight, ghost_track, gravity_ruler,
+from physics.experiments.freefall import (MAX_TRACK_JUMP, check_bounces, check_flight, fit_flight, ghost_track, gravity_ruler, track_jump_ratio,
                                          nearest_body, suggest_flight_windows)
 from physics.persistence import persistence_events, size_trend
 from physics.tracking import Detection
@@ -535,6 +535,12 @@ def create_audit(
         return rec
 
     m_per_px = object_size_m / size_px if object_size_m and size_px else None
+    jump = track_jump_ratio(pts)
+    rec["numbers"]["track_jump"] = jump
+    if jump > MAX_TRACK_JUMP:  # T250: a real clip of several balls was judged Inconsistent on a track that hopped
+        rec["reasons"] = ["the track jumps suddenly, so it may have switched to another object"]
+        store.audits[aid] = _finish(rec)
+        return rec
     try:
         fit = fit_flight(pts)
         chk = check_flight(fit, m_per_px=m_per_px, object_size_px=size_px)
