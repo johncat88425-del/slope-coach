@@ -31,6 +31,7 @@ from .video import color_for, probe_fps, read_frames, read_frames_rgb, save_over
 router = APIRouter()
 
 MIN_TRACKED_FRACTION = 0.8  # same value as the frozen gate rule
+PUBLIC_MAX_WINDOW_S = float(os.environ.get("PUBLIC_MAX_WINDOW_S", "3"))
 MAX_WINDOW_S = 30.0  # every frame of the window is held in memory; real motions here last a few seconds
 MAX_SIZE_TREND = 0.3  # object size may change by at most 30% along the track (perspective)
 SIZE_ERROR = 0.3  # assumed worst-case error of the object's pixel size, same as gate question 2
@@ -356,6 +357,10 @@ def create_audit(
         raise HTTPException(422, "need 0 <= t_start < t_end")
     if t_end - t_start > MAX_WINDOW_S:
         raise HTTPException(422, f"time window is longer than {MAX_WINDOW_S:.0f} s; pick the seconds where the motion happens")
+    if os.environ.get("PUBLIC_DEMO") == "1" and t_end - t_start > PUBLIC_MAX_WINDOW_S:
+        # The free public host needs minutes per second of video; refuse before any paid call (T240).
+        raise HTTPException(422, f"On this public demo the time window can be at most {PUBLIC_MAX_WINDOW_S:.0f} s. "
+                                 "Pick only the part where the object is in flight (usually 0.5-2 s).")
     if object_size_m is not None and object_size_m <= 0:
         raise HTTPException(422, "object_size_m must be positive")
     if length_m is not None and length_m <= 0:

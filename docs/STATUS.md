@@ -472,6 +472,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/02 00:25 Claude T240：john 線上選 0–5.36 秒整支片，6 分鐘逾時。公開模式（`PUBLIC_DEMO=1`）時間窗上限 3 秒（`PUBLIC_MAX_WINDOW_S`），超過在任何付費呼叫前回 422 並說明「只選物體在空中的 0.5–2 秒」。本機用 mock 量過：非模型部分 CPU 只 2–3 秒，所以線上慢主要在模型呼叫等待與免費主機。另開 john Mac 上的 Claude 遠端工作階段做真瀏覽器實測（網路找真片＋標示 AI 生成片上傳）。
 - 11/01 23:30 Claude 合併 Codex T237（Render 改部署 main）、T238（502／HTML 錯誤改友善提示）、Antigravity T230（線上三支全對：own_2 一致 9.45／89 秒、clip4 不一致 0.14／243 秒、clip2 拒判 −48%／111 秒；第 11 次 429 正確）、Muse T236（預檢規則：風景、走路、遊戲 false，球車擺照舊 true）。T230 發現前端 120 秒逾時會打斷 clip4，Claude 改成 360 秒；開 Codex T239（等待中顯示秒數與說明）。pytest 295、npm 173、兩種 build 通過。
 
 - 11/01 Codex T237：從清理後的新 checkout 同步 main（ca9d149），獨立開 codex/T237-render-main。Render Settings 的 Branch 已由 codex/T229-live-link 改成 main，保存後觸發 branch-updated 建置，再明確執行一次 Manual Deploy → Deploy latest commit；部署 dep-dbjs02m7bikc738d2nm0 顯示 Deploy succeeded／Live，來源 ca9d149。公開網址 https://video-physics-audit.onrender.com；GET /api/samples 回 200、3 支（meta_ai_ball_4／meta_ai_ball_2／synthetic_toss；generated／generated／synthetic），GET /api/spend 回 limit_usd=25。Chrome 從首頁 Check a video 進入上傳頁，file input enabled、Try a sample clip 可見、沒有 demo-only 提示，實際 click 觸發 filechooser；自動填入本機測試檔被 Chrome extension 的 file URL 權限擋住，未改瀏覽器安全權限，也未宣稱本次已上傳或付費跑完稽核。截圖 frontend/qa/t237-render-main-upload.jpg。npm test 167、普通／demo build、pytest 292 全過。僅更新 STATUS 與驗證截圖；自動部署與跨重啟花費保護的真實限制已列待決定，不冒稱已解決。
