@@ -57,7 +57,7 @@ export function InterviewPanel({api,onResult,disabled=false,onBusyChange,hasResu
     {file&&<p className="selected-file"><Verbatim text={file.name}/></p>}
     <button className="primary" data-testid="interview-prepare" hidden={!file} disabled={!file||busy||disabled} onClick={()=>void prepare()}>Prepare questions</button>
     <SamplePicker api={api} disabled={busy||voiceBusy||disabled} onBusyChange={setSampleBusy} onDraft={acceptSample} onStart={onNewSource}/>
-    {sample&&<p className="selected-file" data-testid="selected-sample"><span>{sample.kind==='synthetic'?'Synthetic test clip':'Generated test clip'}</span> · <Verbatim text={sample.label}/></p>}
+    {sample&&<p className="selected-file" data-testid="selected-sample"><span>{sample.kind==='synthetic'?'Synthetic test clip':sample.kind==='real'?'Real camera clip':'Generated test clip'}</span> · <Verbatim text={sample.label}/></p>}
     <p className="upload-note">Video preview · user-confirmed inputs</p>
    </div>
    {!draft&&<figure className="upload-example">

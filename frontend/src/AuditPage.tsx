@@ -40,13 +40,13 @@ export function EventTimeline({events}:{events:AuditOut['events']}) {
  return <Localize><section data-testid="audit-events" aria-label="Tracking event timeline"><h3>Tracking event timeline</h3><p>Events may reflect tracking or capture problems. Review the original clip; they do not establish a cause.</p>{events.length ? <ol className="event-timeline">{[...events].sort((a,b)=>a.t_s-b.t_s).map((e,i)=><li key={i}><strong>{e.t_s} s · {labels[e.kind]??e.kind}</strong><p>{e.detail}</p><small>{e.kind}</small></li>)}</ol> : <p>No tracking events were reported.</p>}</section></Localize>;
 }
 export function AuditResult({ audit, replay = false, videoUrl, interviewSource, autoFocus=false, sampleKind=null }: {
-    audit: AuditOut; replay?: boolean; videoUrl?:string;interviewSource?:'model'|'mock'|null;autoFocus?:boolean;sampleKind?:'generated'|'synthetic'|null;
+    audit: AuditOut; replay?: boolean; videoUrl?:string;interviewSource?:'model'|'mock'|null;autoFocus?:boolean;sampleKind?:'generated'|'synthetic'|'real'|null;
 }) {
     const result=useRef<HTMLElement>(null),verdictId=useId();
     useEffect(()=>{if(autoFocus)result.current?.focus()},[autoFocus]);
     return <Localize><div className="audit-result-group"><article ref={result} tabIndex={-1} data-testid="audit-result" aria-label="稽核結果" aria-labelledby={verdictId}>
  <div className={'verdict-banner verdict-'+audit.verdict}><h2 id={verdictId} data-testid="audit-verdict">{verdictLabel(audit.verdict,audit.assumed_model)}</h2></div>
- {sampleKind&&<p className="sample-result-source source-label" data-testid="sample-result-source">{sampleKind==='synthetic'?'Synthetic test clip':'Generated test clip'}</p>}
+ {sampleKind&&<p className="sample-result-source source-label" data-testid="sample-result-source">{sampleKind==='synthetic'?'Synthetic test clip':sampleKind==='real'?'Real camera clip':'Generated test clip'}</p>}
  <TrackCheck check={audit.track_check}/>
  <VehicleMeasurements audit={audit}/>
  <ModelHeadline headline={audit.headline}/>
@@ -90,7 +90,7 @@ export function AuditPage({ api, auditId = null }: {
     const [replay, setReplay] = useState(false);
     const [slowMotion,setSlowMotion]=useState('');
     const [objectName,setObjectName]=useState('ball');
-    const [sampleKind,setSampleKind]=useState<'generated'|'synthetic'|null>(null);
+    const [sampleKind,setSampleKind]=useState<'generated'|'synthetic'|'real'|null>(null);
     const [model, setModel] = useState<AuditModel>('free_flight');
     const [vehicleClass,setVehicleClass]=useState<VehicleClass|''>('unknown');
     useEffect(()=>{

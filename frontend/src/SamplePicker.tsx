@@ -17,7 +17,7 @@ export function SamplePicker({api,disabled=false,onDraft,onBusyChange,onStart}:{
   <button data-testid="try-sample" disabled={disabled||phase!==null} aria-expanded={samples!==null} aria-controls={listId} onClick={()=>void load()}>Try a sample clip</button>
   {phase==='list'&&<p role="status">Loading sample clips…</p>}
   {phase==='draft'&&<RequestStatus phase="preparing"/>}
-  {samples!==null&&<div id={listId}><p>Choose a clip. Confirm its conditions before checking.</p>{samples.length?<ul>{samples.map(sample=><li key={sample.name}><span className="source-label">{sample.kind==='synthetic'?'Synthetic test clip':'Generated test clip'}</span><button data-testid="choose-sample" disabled={disabled||phase!==null} onClick={()=>void choose(sample)}><Verbatim text={sample.label}/></button></li>)}</ul>:<p>No sample clips are available.</p>}</div>}
+  {samples!==null&&<div id={listId}><p>Choose a clip. Confirm its conditions before checking.</p>{samples.length?<ul>{samples.map(sample=><li key={sample.name}><span className="source-label">{sample.kind==='synthetic'?'Synthetic test clip':sample.kind==='real'?'Real camera clip':'Generated test clip'}</span><button data-testid="choose-sample" disabled={disabled||phase!==null} onClick={()=>void choose(sample)}><Verbatim text={sample.label}/></button></li>)}</ul>:<p>No sample clips are available.</p>}</div>}
   <ApiErrorNotice error={error} disabled={disabled||phase!==null} onRetry={retry?()=>void(retry==='list'?load():choose(retry)):undefined}/>
  </section></Localize>;
 }

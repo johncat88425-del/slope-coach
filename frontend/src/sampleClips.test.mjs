@@ -32,3 +32,4 @@ test('sample provenance stays inside the focused result card while backend value
  const label=html.indexOf('data-testid="sample-result-source"');assert.ok(label>html.indexOf('<article'));assert.ok(label<html.indexOf('</article>'));assert.ok(label<html.indexOf('data-testid="audit-details"'));
  assert.match(html,/Synthetic test clip/);assert.equal(JSON.stringify(audit),before);
 });
+test('a real camera sample is accepted by the sample list contract',()=>{const rows=parseSampleClips([{name:'real_basketball_handheld',kind:'real',label:'Real clip'}]);assert.equal(rows[0].kind,'real');assert.throws(()=>parseSampleClips([{name:'x',kind:'other',label:'y'}]))});

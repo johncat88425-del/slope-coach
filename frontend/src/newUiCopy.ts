@@ -386,6 +386,7 @@ export const newUiCopy:Record<string,string>={
   "Known limitations:": "已知限制：",
   "Reasons:": "原因：",
   "Uploading the video…": "正在上傳影片…",
+  "Real camera clip": "真實拍攝影片",
   "Large or 4K videos are made smaller first. This can take up to 3 minutes on the free host; please keep this page open.": "大影片或 4K 影片會先縮小，在免費主機上最多可能要 3 分鐘，請不要關閉這個頁面。",
   "30-second tour": "30 秒導覽",
   "Saved results only — no new model call. Private videos are not loaded.": "只重播儲存結果，不重新呼叫模型，也不載入私人原片。",

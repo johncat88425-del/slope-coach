@@ -2,9 +2,9 @@ import {DEMO_ONLY,demoUploadMessage} from './mode.js';
 import type {VehicleClass} from './vehiclePresentation.js';
 import type {AuditModel,AuditOut} from './audit';
 export type FlightWindows={draft_id:string;source:'physics';track_source:'frame_diff'|'color';windows:{t_start:number;t_end:number}[];scanned_until_s:number};
-export type SampleClip={name:string;kind:'generated'|'synthetic';label:string};
+export type SampleClip={name:string;kind:'generated'|'synthetic'|'real';label:string};
 export function parseSampleClips(value:unknown):SampleClip[]{
- if(!Array.isArray(value)||!value.every(row=>row&&typeof row.name==='string'&&row.name.trim()&&typeof row.label==='string'&&row.label.trim()&&['generated','synthetic'].includes(row.kind)))throw new Error('The sample list is invalid. Please try again.');
+ if(!Array.isArray(value)||!value.every(row=>row&&typeof row.name==='string'&&row.name.trim()&&typeof row.label==='string'&&row.label.trim()&&['generated','synthetic','real'].includes(row.kind)))throw new Error('The sample list is invalid. Please try again.');
  return value;
 }
 export type InterviewField='camera_static'|'slow_motion'|'object_size_m'|'time_window'|'assumed_model'|'length_m';
