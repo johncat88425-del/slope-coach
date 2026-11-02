@@ -14,7 +14,7 @@ test('audit form and each outcome avoid provenance claims and render unknown num
 test('audit upload sends explicit window/model/camera and does not invent size',async()=>{
  let body,path;const api=createApi('',async(url,init)=>{path=url;body=init.body;return Response.json(fixture('insufficient_data'))});
  await api.audit(new File(['fixture'],'test.mp4'),0,2,false);
- assert.equal(path,'/api/audits');assert.equal(body.get('assumed_model'),'free_flight');assert.equal(body.get('camera_static'),'false');assert.equal(body.get('t_start'),'0');assert.equal(body.get('t_end'),'2');assert.equal(body.has('object_size_m'),false);
+ assert.equal(path,'/api/audit-jobs');assert.equal(body.get('assumed_model'),'free_flight');assert.equal(body.get('camera_static'),'false');assert.equal(body.get('t_start'),'0');assert.equal(body.get('t_end'),'2');assert.equal(body.has('object_size_m'),false);
 });
 test('window and optional dimension validation rejects missing or non-finite inputs',()=>{assert.deepEqual(validateAuditInput('0','2',''),[]);for(const args of [['','2',''],['1','1',''],['-1','2',''],['0','Infinity',''],['0','2','0'],['0','2','NaN']])assert.ok(validateAuditInput(...args).length)});
 

@@ -25,7 +25,7 @@
   "if_earth_launch_angle_deg": 55.924496179571356,
   "a_px_s2": 1971.0698919119623,
   "tilt_deg": -5.70995607999995,
-  "rms_over_travel": 0.007596914946649396,
+  "rms_over_travel": 0.005502954715681202,
   "g_apparent_m_s2": 9.302396395427204,
   "implied_time_factor": 1.026921112890392,
   "implied_object_size_m": 0.1160023669310045,
