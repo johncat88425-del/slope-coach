@@ -70,7 +70,7 @@ PUBLIC_DEMO = os.environ.get("PUBLIC_DEMO") == "1"
 PUBLIC_MAX_PER_HOUR = int(os.environ.get("PUBLIC_MAX_PER_HOUR", "10"))
 PUBLIC_MAX_GLOBAL_PER_HOUR = int(os.environ.get("PUBLIC_MAX_GLOBAL_PER_HOUR", "30"))  # ~$1.70/h worst case
 PUBLIC_MAX_UPLOAD_BYTES = int(os.environ.get("PUBLIC_MAX_UPLOAD_MB", "80")) * 1024 * 1024
-_PAID_PATHS = ("/api/audit-drafts", "/api/audits")
+_PAID_PATHS = ("/api/audit-drafts", "/api/audits", "/api/audit-jobs")
 _hits: dict[tuple[str, str], list[float]] = {}
 
 
@@ -90,7 +90,7 @@ async def public_demo_guard(request, call_next):
         now = time.time()
         # Separate buckets (T241): preparing a clip and running the check each get PUBLIC_MAX_PER_HOUR, so a
         # visitor can finish that many full checks an hour instead of being stopped after about five.
-        key = (_client_ip(request), "audit" if request.url.path == "/api/audits" else "draft")
+        key = (_client_ip(request), "audit" if request.url.path in ("/api/audits", "/api/audit-jobs") else "draft")
         recent = [t for t in _hits.get(key, []) if now - t < 3600]
         if len(recent) >= PUBLIC_MAX_PER_HOUR:
             wait_min = max(1, int((3600 - (now - min(recent))) // 60) + 1)

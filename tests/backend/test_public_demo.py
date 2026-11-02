@@ -96,3 +96,13 @@ def test_public_guard_has_a_site_wide_hourly_ceiling(monkeypatch, tmp_path):
     c = TestClient(m.app)
     codes = [c.post("/api/audits", headers={"x-forwarded-for": f"1.1.1.{i}"}).status_code for i in range(4)]
     assert 429 not in codes[:3] and codes[3] == 429
+
+
+def test_public_guard_counts_audit_jobs_as_checks(monkeypatch, tmp_path):
+    """T245: the background-job route shares the audit bucket, so it is not a way around the limits."""
+    m = _app(monkeypatch, tmp_path, PUBLIC_DEMO="1", PUBLIC_MAX_PER_HOUR="2")
+    c = TestClient(m.app)
+    h = {"x-forwarded-for": "7.7.7.7"}
+    codes = [c.post("/api/audits", headers=h).status_code, c.post("/api/audit-jobs", headers=h).status_code,
+             c.post("/api/audit-jobs", headers=h).status_code]
+    assert 429 not in codes[:2] and codes[2] == 429

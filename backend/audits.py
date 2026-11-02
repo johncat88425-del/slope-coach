@@ -10,6 +10,7 @@ import os
 
 import shutil
 import subprocess
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -573,3 +574,68 @@ def get_audit(aid: str):
     if aid not in store.audits:
         raise HTTPException(404, f"audit {aid} not found")
     return store.audits[aid]
+
+
+# ---------- background audits (T245) ----------
+# A check on the free public host can take minutes; one long HTTP request then times out in the browser and the
+# result is lost although it was computed and paid for. A job runs the same create_audit() in a thread and the
+# page polls for it. The verdict and numbers are exactly those of POST /api/audits.
+JOBS: dict[str, dict] = {}
+_JOB_POOL = ThreadPoolExecutor(max_workers=int(os.environ.get("AUDIT_JOB_WORKERS", "2")))
+
+
+def _run_job(jid: str, kwargs: dict) -> None:
+    try:
+        rec = create_audit(file=None, **kwargs)
+        JOBS[jid] |= {"status": "done", "audit_id": rec["audit_id"], "finished_at": time.time()}
+    except HTTPException as e:
+        JOBS[jid] |= {"status": "failed", "error": str(e.detail), "status_code": e.status_code, "finished_at": time.time()}
+    except Exception as e:  # never leave a job running forever
+        JOBS[jid] |= {"status": "failed", "error": f"internal error: {type(e).__name__}", "status_code": 500,
+                      "finished_at": time.time()}
+
+
+@router.post("/api/audit-jobs", status_code=202)
+def create_audit_job(
+    file: UploadFile | None = File(None),
+    draft_id: str | None = Form(None),
+    slow_motion: bool | None = Form(None),
+    t_start: float = Form(...),
+    t_end: float = Form(...),
+    camera_static: bool = Form(...),
+    assumed_model: str = Form("free_flight"),
+    object_size_m: float | None = Form(None),
+    object_name: str = Form("ball", max_length=60),
+    length_m: float | None = Form(None),
+    vehicle_class: str | None = Form(None),
+):
+    """Same inputs as POST /api/audits; returns at once with a job id to poll at GET /api/audit-jobs/{id}."""
+    if (file is None) == (draft_id is None):
+        raise HTTPException(422, "send either a file or a draft_id")
+    if file is not None:  # store the upload now: the request's file is closed once this handler returns
+        draft_id = new_id("drf")
+        store.audit_drafts[draft_id] = str(_save_upload(file, UPLOAD_ROOT / "audits" / draft_id))
+    elif draft_id not in store.audit_drafts:
+        raise HTTPException(404, f"draft {draft_id} not found")
+    jid = new_id("job")
+    JOBS[jid] = {"job_id": jid, "status": "running", "started_at": time.time()}
+    _JOB_POOL.submit(_run_job, jid, dict(
+        draft_id=draft_id, slow_motion=slow_motion, t_start=t_start, t_end=t_end, camera_static=camera_static,
+        assumed_model=assumed_model, object_size_m=object_size_m, object_name=object_name, length_m=length_m,
+        vehicle_class=vehicle_class))
+    return {"job_id": jid, "status": "running"}
+
+
+@router.get("/api/audit-jobs/{jid}")
+def get_audit_job(jid: str):
+    """status: running | done | failed. When done, `audit` is the same AuditOut as GET /api/audits/{id}."""
+    job = JOBS.get(jid)
+    if job is None:
+        raise HTTPException(404, f"job {jid} not found (the free server may have restarted)")
+    out = {k: job[k] for k in ("job_id", "status") if k in job}
+    out["elapsed_s"] = round((job.get("finished_at") or time.time()) - job["started_at"], 1)
+    if job["status"] == "done":
+        out["audit"] = get_audit(job["audit_id"])
+    elif job["status"] == "failed":
+        out |= {"error": job["error"], "status_code": job["status_code"]}
+    return out
