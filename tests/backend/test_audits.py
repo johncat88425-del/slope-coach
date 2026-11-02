@@ -367,7 +367,7 @@ def test_audit_refuses_long_windows_and_oversized_uploads(tmp_path, monkeypatch)
     import io
     from backend import store as store_mod
     write_clip(tmp_path / "real.mp4", 9.81)
-    assert post(tmp_path / "real.mp4", t_end="45").status_code == 422
+    assert post(tmp_path / "real.mp4", t_end="90").status_code == 422
     monkeypatch.setattr(store_mod, "MAX_UPLOAD_BYTES", 1000)
     monkeypatch.setattr(store_mod.copy_limited, "__defaults__", (1000,))
     r = client.post("/api/audits", data={"t_start": "0", "t_end": "0.6", "camera_static": "true"},
@@ -481,3 +481,41 @@ def test_headline_never_contradicts_the_verdict(monkeypatch):
     assert far["headline"]["text"] == "Looks like Earth."
     none = audits._finish(base | {"verdict": "insufficient_data", "numbers": {"g_vs_earth": 1.0}})
     assert none["headline"] is None
+
+
+def _poll(jid, tries=600):
+    import time
+    for _ in range(tries):
+        j = client.get(f"/api/audit-jobs/{jid}").json()
+        if j["status"] != "running":
+            return j
+        time.sleep(0.05)
+    raise AssertionError("job never finished")
+
+
+def test_audit_job_gives_the_same_result_as_a_direct_audit(tmp_path):
+    """T245: a background job returns at once and, when polled, the same verdict and numbers as POST /api/audits."""
+    write_clip(tmp_path / "real.mp4", 9.81)
+    direct = post(tmp_path / "real.mp4").json()
+    data = {"t_start": "0", "t_end": "0.6", "camera_static": "true", "object_size_m": "0.06"}
+    with open(tmp_path / "real.mp4", "rb") as f:
+        r = client.post("/api/audit-jobs", data=data, files={"file": ("clip.mp4", f, "video/mp4")})
+    assert r.status_code == 202 and r.json()["status"] == "running"
+    j = _poll(r.json()["job_id"])
+    assert j["status"] == "done", j
+    assert j["audit"]["verdict"] == direct["verdict"] == "consistent"
+    assert j["audit"]["numbers"]["g_apparent_m_s2"] == pytest.approx(direct["numbers"]["g_apparent_m_s2"])
+    assert client.get(f"/api/audits/{j['audit']['audit_id']}").status_code == 200
+
+
+def test_audit_job_reports_failures_and_unknown_ids(tmp_path):
+    form = {"draft_id": "drf_missing", "t_start": "0", "t_end": "0.6", "camera_static": "true"}
+    assert client.post("/api/audit-jobs", data=form).status_code == 404
+    assert client.post("/api/audit-jobs", data={k: v for k, v in form.items() if k != "draft_id"}).status_code == 422
+    assert "restarted" in client.get("/api/audit-jobs/job_nope").json()["detail"]
+    write_clip(tmp_path / "real.mp4", 9.81)
+    with open(tmp_path / "real.mp4", "rb") as f:
+        d = client.post("/api/audit-drafts", files={"file": ("clip.mp4", f, "video/mp4")}).json()
+    bad = client.post("/api/audit-jobs", data=form | {"draft_id": d["draft_id"], "t_start": "0.5", "t_end": "0.1"})
+    j = _poll(bad.json()["job_id"])
+    assert j["status"] == "failed" and j["status_code"] >= 400 and j["error"]

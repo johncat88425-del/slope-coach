@@ -100,3 +100,9 @@
 
 - `GET /api/samples` → `[{name, kind, label}]`，kind 是 `generated`（Meta AI app 做的片）或 `synthetic`（程式畫的測試片）。
 - `POST /api/samples/{name}/draft` → 跟 `POST /api/audit-drafts` 一樣的 `AuditDraftOut`，之後流程完全相同。判定照樣即時計算，不存答案。公開模式下也算進每 IP 次數。
+
+## v1.6（T245，11/02）背景檢查
+
+- `POST /api/audit-jobs`：表單欄位與 `POST /api/audits` 完全相同（`file` 或 `draft_id` 二選一）。立刻回 202 `{job_id, status: "running"}`。
+- `GET /api/audit-jobs/{job_id}` → `{job_id, status, elapsed_s}`；`status` 是 `running`、`done`（多一個 `audit`，就是 `AuditOut`）或 `failed`（多 `error`、`status_code`）。404 代表伺服器重啟、工作已不存在，請重送。
+- 判定與數字跟 `/api/audits` 同一段程式算出。公開模式下送出工作算一次「檢查」額度。
