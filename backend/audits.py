@@ -252,6 +252,9 @@ SAMPLES: dict[str, dict] = {
                        "label": "Ball clip made with the Meta AI app"},
     "meta_ai_ball_2": {"path": "data/gate/clips/meta_clip2.mp4", "kind": "generated",
                        "label": "Another Meta AI app ball clip (camera angle changes)"},
+    "real_basketball_handheld": {"path": "data/samples/real_basketball_handheld.mp4", "kind": "real",
+                                 "label": "Real hand-held phone clip of a basketball bounce (Pexels 5275695, free licence); "
+                                          "the camera moves, answer No to the fixed-camera question"},
     "synthetic_toss": {"path": "data/samples/synthetic_toss_earth_g.mp4", "kind": "synthetic",
                        "label": "Synthetic test clip: a 6 cm square thrown under Earth gravity, drawn by code"},
 }
