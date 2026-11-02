@@ -19,12 +19,20 @@ def probe_fps(path: str) -> float:
     return num / den
 
 
-def read_frames(path: str, start: float, end: float) -> tuple[np.ndarray, float]:
+def _fps_filter(path: str, max_fps: float | None) -> tuple[float, str]:
+    """Source fps, or max_fps when the clip is faster and a cap is asked for (window scans only, T240)."""
     fps = probe_fps(path)
+    if max_fps and fps > max_fps:
+        return float(max_fps), f"fps={max_fps:g},"
+    return fps, ""
+
+
+def read_frames(path: str, start: float, end: float, max_fps: float | None = None) -> tuple[np.ndarray, float]:
+    fps, pre = _fps_filter(path, max_fps)
     # ffmpeg applies the rotation tag, so frames come out the way the clip plays
     raw = subprocess.run(
-        ["ffmpeg", "-v", "error", "-ss", str(start), "-to", str(end), "-i", path,
-         "-vf", f"scale={WIDTH}:-2,format=gray", "-f", "rawvideo", "-"],
+        ["ffmpeg", "-v", "error", "-threads", "2", "-ss", str(start), "-to", str(end), "-i", path,
+         "-vf", f"{pre}scale={WIDTH}:-2,format=gray", "-f", "rawvideo", "-"],
         capture_output=True, check=True).stdout
     probe_h = subprocess.run(
         ["ffmpeg", "-v", "error", "-ss", str(start), "-i", path, "-frames:v", "1",
@@ -35,18 +43,20 @@ def read_frames(path: str, start: float, end: float) -> tuple[np.ndarray, float]
     return frames, fps
 
 
-def read_frames_rgb(path: str, start: float, end: float) -> np.ndarray:
-    """Same frames as read_frames() but in colour, shape (n, h, WIDTH, 3), values 0..255."""
+def read_frames_rgb(path: str, start: float, end: float, max_fps: float | None = None) -> np.ndarray:
+    """Same frames as read_frames() but in colour, shape (n, h, WIDTH, 3), values 0..255 as uint8.
+    uint8, not float32 (T240): a few seconds of 60 fps colour frames as float32 filled the 512 MB host."""
+    pre = _fps_filter(path, max_fps)[1]
     raw = subprocess.run(
-        ["ffmpeg", "-v", "error", "-ss", str(start), "-to", str(end), "-i", path,
-         "-vf", f"scale={WIDTH}:-2", "-pix_fmt", "rgb24", "-f", "rawvideo", "-"],
+        ["ffmpeg", "-v", "error", "-threads", "2", "-ss", str(start), "-to", str(end), "-i", path,
+         "-vf", f"{pre}scale={WIDTH}:-2", "-pix_fmt", "rgb24", "-f", "rawvideo", "-"],
         capture_output=True, check=True).stdout
     probe_h = subprocess.run(
         ["ffmpeg", "-v", "error", "-ss", str(start), "-i", path, "-frames:v", "1",
          "-vf", f"scale={WIDTH}:-2", "-f", "image2pipe", "-vcodec", "ppm", "-"],
         capture_output=True, check=True).stdout
     h = int(probe_h.split(b"\n")[1].split()[1])
-    return np.frombuffer(raw, np.uint8).reshape(-1, h, WIDTH, 3).astype(np.float32)
+    return np.frombuffer(raw, np.uint8).reshape(-1, h, WIDTH, 3)
 
 
 # Hue ranges in degrees for objects named by colour in the human label. Added 2026-10-29 (T87) after the
@@ -93,6 +103,7 @@ def track_color(rgb_frames: np.ndarray, fps: float, start: float, color: str, th
     bg = np.median(rgb_frames, axis=0)
     pts, sizes = [], []
     for i, f in enumerate(rgb_frames):
+        f = f.astype(np.float32)  # frames may arrive as uint8; colour maths must not wrap
         mask = np.abs(f - bg).max(-1) > thresh  # moving pixels first; colour is only tested on those (T145)
         h, s, v = _hsv(f[mask])
         in_hue = (h >= lo) & (h <= hi) if lo <= hi else (h >= lo) | (h <= hi)

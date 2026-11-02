@@ -320,6 +320,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 缺什麼
 
+- [ ] Render 免費版重啟後 `data/cost_log.csv` 會消失，主機 $25 上限從 0 重算（11/02 實測發現）。目前靠「不當機」＋每 IP 每小時 10 次限制；Meta 帳號總額仍由 john 在 Meta 後台看。
+
 - [ ] [T230 Antigravity 線上 Render 實測發現] 前端 `uploadAudit`（`frontend/src/api.ts:40`）寫死 `xhr.timeout = 120000;`（120 秒）。在 Render 免費方案主機（共用/節流 CPU）上，若影片窗口較長（例如 `meta_clip4` 2.5 秒，SAM 追蹤 38 格＋5 個模型 API 循序呼叫），後端計算耗時約 243 秒。前端在 120 秒即拋出「Request timed out」錯誤而中斷等待，需改由輸入既有稽核 ID 載入。建議 Codex 將前端 `xhr.timeout` 提升至 300000（5 分鐘）或改為環境變數配置，避免使用者在線上免費主機遇到假性逾時。
 - [x] T220 Muse 卡住的問題 Claude 已定奪（11/01）：原因是 SAM 時間差一格的 bug，不是 Spark 看錯，已在 `meta_client/sam.py` 修好（見日誌）。請照原 T220 規則重跑一次。
 - [x] Claude 11/01 已處理 Muse 的回報：(1) `SAM_FRAME_OFFSET` 改回 0（Muse 用自拍片直接看圖的證據比我用舊紀錄推的強，我錯了）；(2) T207 改成 Spark 複查說 false 只顯示警告，**不再改判、不清數字**（同一支片兩次跑結果不同，模型的回答不能推翻固定規則）。`docs/API.md` 已更新。
@@ -472,11 +474,11 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/02 00:40 Claude T240 續（john Mac 上真瀏覽器實測發現）：(1)「Suggest time windows」每次讓線上伺服器當掉——原因是掃描前 15 秒影格存成 float32 彩色，本機量 meta_clip4 峰值 819 MB（主機只有 512 MB）。改成 uint8、最多 30 fps、只掃前 10 秒、ffmpeg 限 2 執行緒：同片峰值 346 MB，建議的時間窗結果不變。(2) 4K 上傳讓伺服器當掉：公開模式長邊超過 1920 px 直接回 413 請改 1080p。(3) 當掉重啟會把主機上的花費計數歸零（Render 免費版檔案不保留），所以真正的保護是不要當掉；記在缺什麼。pytest 297。
+- 11/02 00:25 Claude T240：john 線上選 0–5.36 秒整支片，6 分鐘逾時。公開模式（`PUBLIC_DEMO=1`）時間窗上限 3 秒（`PUBLIC_MAX_WINDOW_S`），超過在任何付費呼叫前回 422 並說明「只選物體在空中的 0.5–2 秒」。本機用 mock 量過：非模型部分 CPU 只 2–3 秒，所以線上慢主要在模型呼叫等待與免費主機。另開 john Mac 上的 Claude 遠端工作階段做真瀏覽器實測（網路找真片＋標示 AI 生成片上傳）。
 
 - 11/01 Codex T239：同步 main（d3bc091），獨立開 codex/T239-wait-hint。沿用 RequestStatus 的 performance.now 真實經過秒數與清除 interval 機制，把秒數移到等待區上方；稽核 checking 狀態加入免費主機約 1–4 分鐘、請保留頁面的中英文提示。普通及進階稽核共用同一區塊；上傳百分比仍只反映已傳位元組，不把秒數當完成比例，也不宣稱已執行哪個模型階段。保留欄位、焦點規則及不自動重送；未改後端、API、測量值或 Claude 已調整的逾時設定。
-
 - 11/01 Codex T239 驗證：5 個新測試涵蓋兩條稽核路徑的中英文／順序、其他階段不顯示稽核估時、長請求秒數不截斷、fetch 在 120／359.999 秒不 abort、360 秒才 abort 且只送一次、243 秒後仍接收原樣結果並清除 timeout、XHR 上限同為 360000。178 tests、普通／demo build、pytest 295 全過。無後端或模型請求的 preview-waiting-ui.html 在瀏覽器實際顯示 0 → 27 秒，390px scrollWidth 375 ≤ 390；結束等待後區塊移除，新等待從 0 秒重啟，暫用 viewport 已重設。截圖 frontend/qa/t239-wait-hint-390.jpg。Codex 此輪沒有可執行待辦；公開版需合併並部署 main 後才會套用。
-
 - 11/01 23:30 Claude 合併 Codex T237（Render 改部署 main）、T238（502／HTML 錯誤改友善提示）、Antigravity T230（線上三支全對：own_2 一致 9.45／89 秒、clip4 不一致 0.14／243 秒、clip2 拒判 −48%／111 秒；第 11 次 429 正確）、Muse T236（預檢規則：風景、走路、遊戲 false，球車擺照舊 true）。T230 發現前端 120 秒逾時會打斷 clip4，Claude 改成 360 秒；開 Codex T239（等待中顯示秒數與說明）。pytest 295、npm 173、兩種 build 通過。
 
 - 11/01 Codex T237：從清理後的新 checkout 同步 main（ca9d149），獨立開 codex/T237-render-main。Render Settings 的 Branch 已由 codex/T229-live-link 改成 main，保存後觸發 branch-updated 建置，再明確執行一次 Manual Deploy → Deploy latest commit；部署 dep-dbjs02m7bikc738d2nm0 顯示 Deploy succeeded／Live，來源 ca9d149。公開網址 https://video-physics-audit.onrender.com；GET /api/samples 回 200、3 支（meta_ai_ball_4／meta_ai_ball_2／synthetic_toss；generated／generated／synthetic），GET /api/spend 回 limit_usd=25。Chrome 從首頁 Check a video 進入上傳頁，file input enabled、Try a sample clip 可見、沒有 demo-only 提示，實際 click 觸發 filechooser；自動填入本機測試檔被 Chrome extension 的 file URL 權限擋住，未改瀏覽器安全權限，也未宣稱本次已上傳或付費跑完稽核。截圖 frontend/qa/t237-render-main-upload.jpg。npm test 167、普通／demo build、pytest 292 全過。僅更新 STATUS 與驗證截圖；自動部署與跨重啟花費保護的真實限制已列待決定，不冒稱已解決。

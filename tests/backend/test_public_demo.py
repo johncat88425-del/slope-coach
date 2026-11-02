@@ -36,3 +36,27 @@ def test_public_guard_limits_paid_posts_per_ip(monkeypatch, tmp_path):
     codes = [c.post("/api/audits", headers={"x-forwarded-for": "9.9.9.9"}).status_code for _ in range(3)]
     assert codes[:2] != [429, 429] and codes[2] == 429
     assert c.post("/api/audits", headers={"x-forwarded-for": "8.8.8.8"}).status_code != 429
+
+
+def test_public_demo_refuses_long_windows_before_any_model_call(monkeypatch, tmp_path):
+    m = _app(monkeypatch, tmp_path, PUBLIC_DEMO="1")
+    c = TestClient(m.app)
+    with open("data/samples/synthetic_toss_earth_g.mp4", "rb") as f:
+        r = c.post("/api/audits", data={"t_start": "0", "t_end": "5.36", "camera_static": "true",
+                                        "slow_motion": "false", "assumed_model": "free_flight"},
+                   files={"file": ("v.mp4", f, "video/mp4")})
+    assert r.status_code == 422 and "at most 3 s" in r.json()["detail"]
+
+
+def test_public_demo_refuses_4k_uploads(monkeypatch, tmp_path):
+    import subprocess
+    clip = tmp_path / "big.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=3840x2160:d=0.2",
+                    "-pix_fmt", "yuv420p", str(clip)], check=True)
+    m = _app(monkeypatch, tmp_path, PUBLIC_DEMO="1")
+    c = TestClient(m.app)
+    with clip.open("rb") as f:
+        r = c.post("/api/audit-drafts", files={"file": ("big.mp4", f, "video/mp4")})
+    assert r.status_code == 413 and "1080p" in r.json()["detail"]
+    with open("data/samples/synthetic_toss_earth_g.mp4", "rb") as f:
+        assert c.post("/api/audit-drafts", files={"file": ("ok.mp4", f, "video/mp4")}).status_code == 201
