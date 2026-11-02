@@ -20,7 +20,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | 全部完成 |
-| **Codex** | 本輪完成：T242 PR #149 已合併；T246 永久結果連結 commit 9eec8f0，推送 codex/T246-background-share。部署與線上驗證由 T248 接手。 |
+| **Codex** | 本輪完成：T242 PR #149 已合併；T246 永久結果連結 commit 9eec8f0，推送 codex/T246-background-share。11/02 依 john 直接指示已部署 main 0c2baeb，Git Provider／Auto-Deploy On Commit 已確認；長時間窗擺錘片由 john 重測，尚未宣稱通過。 |
 | **Antigravity** | 全部完成（T231 記憶體實測通過、T230 線上實測三支片＋429 速率限制全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
@@ -62,7 +62,7 @@
 - [x] T246a Claude：前端送出檢查改用背景工作 `/api/audit-jobs` 並每 3 秒輪詢；斷線 5 次才報錯；伺服器重啟（404）時請使用者重送；舊後端直接回結果也相容。前端 180 個測試通過、兩種 build 通過。
 - [x] T245 Claude（john：限制寫進去就廢了）：新增背景檢查 `POST /api/audit-jobs`／`GET /api/audit-jobs/{id}`，長的檢查不再因瀏覽器逾時把算好（也付過錢）的結果丟掉；判定與數字跟 `/api/audits` 完全相同（有測試比對）；公開模式算進同一個每 IP 與全站「檢查」額度。API v1.6。
 - [x] T243 Claude（john 11/02：「寫進限制這東西基本就廢了」）：拿掉公開版的 1080p 拒收、3 秒時間窗拒收、掃描只看前 10 秒，改成自動處理：4K 上傳時縮到長邊 1920（畫格與時間不變）；長時間窗降幀讀取（上限 60 s，MAX_HELD_BYTES 96 MB）；時間窗建議掃整支片；ffmpeg 輸出不再兩倍佔記憶體；說明文字改並行呼叫。背景中位數在大堆疊改取約 32 張（gate 結果未重跑）。每人每小時次數沒動，因為 /api/spend 重啟歸零時它是唯一花費防線。
-- [x] T242 Codex（前端第 2–8 點完成；第 1 點已由 Claude 移交 Antigravity T248，未宣稱 Auto-Deploy 已啟用；commit 96b65c1；11/02 john Mac 真瀏覽器實測的前端問題，凍結前做完，照順序）：(1) **先確認 Render 線上是最新 commit**：開 `/api/version` 對 main 的 commit；Render 的 Auto-Deploy 要開（實測時線上頁面還是 120 秒逾時，代表舊版）；(2) 502 錯誤訊息「Reason:」後面是空的 → 補成友善句；(3) 逾時訊息不要叫人「重新讀取紀錄」（沒有地方讀），改成「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」；(4) 英文介面裡的中文（逾時訊息、Details 的「假設／時間窗」、疊圖 alt）全部依語言切換；(5) 選好影片後標題不要還寫「Choose a video to begin」；(6) 數字措辭：g_vs_earth < 0.01 時寫「less than 1/100 of Earth」不要寫「0.00 times」，`if_earth_*`（例如 vertical extent 67.5 m）一律標成「If this were Earth gravity: …」，不像量測值；(7) 分享卡在 Inconsistent／Cannot judge 時印第一條原因；(8) Copy link 旁註明「免費伺服器重啟後連結會失效，請存 JSON」。加測試，兩種 build 不壞。
+- [x] T242 Codex（前端第 2–8 點 commit 96b65c1；第 1 點 11/02 依 john 直接指示完成：線上版本 0c2baeb、Git Provider 與 Auto-Deploy On Commit 已確認，詳最新日誌；11/02 john Mac 真瀏覽器實測的前端問題，凍結前做完，照順序）：(1) **先確認 Render 線上是最新 commit**：開 `/api/version` 對 main 的 commit；Render 的 Auto-Deploy 要開（實測時線上頁面還是 120 秒逾時，代表舊版）；(2) 502 錯誤訊息「Reason:」後面是空的 → 補成友善句；(3) 逾時訊息不要叫人「重新讀取紀錄」（沒有地方讀），改成「這次檢查太久，請選更短的時間窗（0.5–2 秒）再試」；(4) 英文介面裡的中文（逾時訊息、Details 的「假設／時間窗」、疊圖 alt）全部依語言切換；(5) 選好影片後標題不要還寫「Choose a video to begin」；(6) 數字措辭：g_vs_earth < 0.01 時寫「less than 1/100 of Earth」不要寫「0.00 times」，`if_earth_*`（例如 vertical extent 67.5 m）一律標成「If this were Earth gravity: …」，不像量測值；(7) 分享卡在 Inconsistent／Cannot judge 時印第一條原因；(8) Copy link 旁註明「免費伺服器重啟後連結會失效，請存 JSON」。加測試，兩種 build 不壞。
 - [x] T239 Codex：稽核等待區上方顯示真實經過秒數與「免費主機上一次檢查約需 1–4 分鐘，請不要關閉頁面」雙語說明；沿用 Claude 的 fetch／XHR 360 秒上限，不改流程、不自動重送。 — commit 5b99500（178 tests、普通／demo build、pytest 295 通過）
 - [x] T238 Codex：HTML／502／503／504 改為雙語友善提示與手動重試，429／413 保留後端 detail；共用於範例、準備問題、確認、時間窗建議、語音與既有紀錄錯誤。已查 Render Logs／Events，該段有兩次 main 重新部署，未找到可對應 502 的應用例外或 OOM 事件，不能確證根因，詳見日誌。 — commit 8d80f60（173 tests、普通／demo build、pytest 292 通過）
 - [x] T237 Codex：Render 部署分支已改回 `main`，手動 Deploy latest commit 成功（ca9d149，Live）；`/api/samples` 200、3 支範例；首頁 Check a video → Choose video 可用並觸發選片對話框。自動部署限制見「待 john 決定」，未宣稱 main 更新會自動部署。 — commit a6665f9（npm 167、普通／demo build、pytest 292 全過）
@@ -370,7 +370,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
-- T237 Render 自動部署：Branch 已保存 main；Auto-Deploy 選單雖顯示 On Commit，但 Update Source → Git Provider 仍是 Connect Git provider，服務目前用公開 Git URL。Render 官方說此來源不支援自動部署，需手動 Deploy latest commit；要在 main 更新後自動部署，須另外連接 GitHub Git Provider 並授權 repo。未自行新增 GitHub 存取權，也未把 deploy hook 寫進檔案或對話。來源：https://render.com/docs/deploys#automatic-deploys 。
+- T237 Render 自動部署（11/02 已解除：已連接 slope-coach 的 Git Provider 並核對 On Commit；下文保留原阻擋紀錄）：Branch 已保存 main；Auto-Deploy 選單雖顯示 On Commit，但 Update Source → Git Provider 仍是 Connect Git provider，服務目前用公開 Git URL。Render 官方說此來源不支援自動部署，需手動 Deploy latest commit；要在 main 更新後自動部署，須另外連接 GitHub Git Provider 並授權 repo。未自行新增 GitHub 存取權，也未把 deploy hook 寫進檔案或對話。來源：https://render.com/docs/deploys#automatic-deploys 。
 
 - Render／Claude 花費帳本：`meta_client/cost.py` 目前將帳本記在本機 CSV；Render Free 的檔案系統會在休眠／重啟／重新部署後重置，因此 SPEND_LIMIT_USD=25 是當前帳本的停止門檻，不能保證跨部署的總支出上限。需 Claude 接持久化帳本，或 john 在供應商帳戶設定硬額度；本次沒有改後端。來源：https://render.com/docs/free#local-files-lost-on-redeploy 。
 - T238 Render 502 調查：已核對 11/01 22:40–22:45 UTC（Render 畫面 EST 17:40–17:45）附近的 Logs／Events。確認重部署與新行程啟動，應用日誌搜尋 502／error 無對應記錄，也沒有看到 OOM 事件；缺少該次代理請求 ID，無法確定是部署中斷、平台代理逾時或其他來源，不把推測寫成定論。前端已完成復原提示；若再次發生，需取得當次時間與 Render 請求 ID／HTTP request logs 才能定位。合併 T238 後需部署最新 main，現有公開 Git URL 來源不能假定會自動部署（T237 已登記）。
@@ -485,6 +485,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/02 Codex（john 直接指示部署＋開啟 Auto-Deploy）：Render 原本 Live=b7c6327；已按 Manual Deploy → Deploy latest commit，部署 dep-dbk8f27lk1mc73b5u9vg 顯示 Live、耗時 56 秒，來源為 main 0c2baebe424cd931bbf189b735988d9f4832a71f。公開 GET /api/version 兩次回 200，commit=0c2baebe424c，與本次 origin/main 相符，public_demo=true。
+- 11/02 Codex 自動部署設定：Auto-Deploy 原已顯示 On Commit，但首次 Git Provider 清單沒有 repo。沿用 john 已同意「只限 slope-coach」的授權，安裝頁選 Only select repositories／slope-coach 後 GitHub 回報 App 已安裝；重新載入 Render 後 Git Provider 清單出現 slope-coach。已選該 repo、保留 main 與 Docker、按 Deploy 保存來源，再核對 On Commit。未升級 Free 方案、未讀取或輸出任何金鑰或 deploy hook；未推 main 或新增測試用主線提交，因此沒有冒稱已實測下一次 push 自動觸發。T248 整項保留未勾：本次只完成部署／設定核對，john 接著自行重跑長時間窗擺錘片；沒有重新執行影片／模型、沒有宣稱記憶體問題已通過線上重測。只更新 STATUS，沒有程式碼更動；驗證為 Render Live 與公開版本端點，未重跑單元測試。
 - 11/02 05:10 Claude：AG T248（PR #153 不合併：報告把第 5 支的「伺服器重啟、結果遺失」寫成「迅速復原」，版本比對也沒做）。可信的部分：線上 4/5 正確：meta_ai_ball_4 g=0.143 不一致、synthetic_toss 9.81 一致、Pexels 真片鏡頭沒固定 g=10.62 一致（校正 34 px）、4K 車片 cannot judge 443 秒沒當掉）；第 5 支 5 秒時間窗讓伺服器重啟 → T249 修好。john：不再派工作給 Antigravity。
 
 - 11/01 Codex 本輪 T242／T246 完成：PR #149 合併 main（8734f4b）；永久連結實作 9eec8f0，完成表已打勾並推送 codex/T246-background-share，目標 main。197 前端測試、兩種 build、308 pytest 全過。Codex 沒有本輪待辦；T248 部署／Auto-Deploy 未由本分支冒稱完成。
