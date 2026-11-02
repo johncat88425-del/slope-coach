@@ -30,6 +30,7 @@ from .model_hooks import MOCK_QUESTIONS, TrackingUnavailable, get_hooks
 from .output_check import check_model_text, extract_numbers
 from .store import UPLOAD_ROOT, UploadTooLarge, copy_limited, new_id, now, store
 from physics.camera_motion import compensate, measure_camera_motion
+from physics.depth import rescale_for_depth
 
 from .video import (LONG_SIDE_PX, clip_duration, color_for, held_fps, probe_fps, read_frames, read_frames_rgb,
                     save_overlay, shrink_video, track_color, track_with_sizes)
@@ -476,10 +477,27 @@ def create_audit(
             rec["limits"] = [*rec["limits"], f"The camera moved up to {motion.max_shift_px:.1f} px during the window; "
                              "the track was corrected for that shift (side-to-side / up-down only)."]
 
+    depth_corrected = False
     trend = size_trend([p[0] for p in pts], sizes)
     if trend is not None:
         rec["numbers"]["size_trend"] = trend
-        if abs(trend) > MAX_SIZE_TREND:
+        if abs(trend) > MAX_SIZE_TREND and assumed_model == "free_flight":
+            # T251: towards / away from the camera. Instead of refusing, put each position back to one
+            # reference distance using the object's own apparent size (a rigid object; level camera).
+            try:
+                dr = rescale_for_depth(pts, sizes, frames.shape[2], frames.shape[1])
+            except PhysicsInputError as e:
+                rec["reasons"] = [f"object size changes {trend:+.0%} along the track (it moves towards or away from "
+                                  f"the camera) and {e}"]
+                store.audits[aid] = _finish(rec)
+                return rec
+            pts, size_px, depth_corrected = list(dr.points), dr.ref_size_px, True
+            rec["numbers"] |= {"depth_corrected": 1.0, "depth_size_ratio": dr.size_ratio,
+                               "depth_size_fit_residual": dr.size_fit_residual}
+            rec["limits"] = [*rec["limits"], f"The object moved towards or away from the camera (its size changed "
+                             f"{trend:+.0%}). Each position was rescaled by the object's apparent size, which assumes a "
+                             "level camera, a rigid object of fixed size, and the image centre on the lens axis."]
+        elif abs(trend) > MAX_SIZE_TREND:
             rec["reasons"] = [f"object size changes {trend:+.0%} along the track; it moves towards or away "
                               "from the camera, which this 2D check cannot judge"]
             store.audits[aid] = _finish(rec)
@@ -530,6 +548,8 @@ def create_audit(
         b = check_bounces(pts)
         rec["verdict"], rec["reasons"] = b.verdict, list(b.reasons)
         rec["numbers"] |= {f"rebound_ratio_{i + 1}": e * e for i, e in enumerate(b.restitution)}
+        if len(b.arc_g_px_s2) >= 2:  # T253: one gravity for every hop, no size needed
+            rec["numbers"]["bounce_arc_gravity_ratio"] = min(b.arc_g_px_s2) / max(b.arc_g_px_s2)
         rec["numbers"] = {k: v for k, v in rec["numbers"].items() if v == v and abs(v) != float("inf")}
         store.audits[aid] = _finish(rec)
         return rec
@@ -551,7 +571,8 @@ def create_audit(
     rec["verdict"] = chk.verdict
     rec["reasons"] = list(chk.reasons)
     if m_per_px and chk.g_apparent_m_s2:
-        rec["ghost_points"] = [list(p) for p in ghost_track(fit, [p[0] for p in pts], m_per_px)]
+        if not depth_corrected:  # rescaled points no longer sit on the video, so no ghost path over it
+            rec["ghost_points"] = [list(p) for p in ghost_track(fit, [p[0] for p in pts], m_per_px)]
         rec["nearest_body"], rec["numbers"]["g_vs_earth"] = nearest_body(chk.g_apparent_m_s2)
         # If the measured pixel size of the object is off by 30% (motion blur, mask edges), does the g verdict hold?
         g = chk.g_apparent_m_s2

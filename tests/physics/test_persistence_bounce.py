@@ -55,3 +55,27 @@ def test_persistence_events():
     assert kinds.count("vanished") == 1 and "size_jump" in kinds and "position_jump" in kinds
     # gaps at the ends of the clip are not events
     assert persistence_events(dets(vanish=(0, 1, 2, 3))) == []
+
+
+def test_bounce_arcs_must_share_one_gravity():
+    """T253: height and duration of each hop must imply the same g, with no size and at any playback speed."""
+    real = check_bounces(bouncing(bounces=3, fps=30))
+    assert real.verdict == "consistent" and len(real.arc_g_px_s2) >= 2
+    assert max(real.arc_g_px_s2) / min(real.arc_g_px_s2) < 1.3
+    slow = check_bounces([(4 * t, x, y) for t, x, y in bouncing(bounces=3, fps=120)])  # 4x slow motion
+    assert slow.verdict == "consistent"
+    # heights still decrease, but the third hop is over in half the time its height needs: arcs disagree on g
+    pts, t, h, g = [], 0.0, 300.0, 2000.0
+    for k, (rise, dur) in enumerate([(300.0, None), (200.0, 2 * math.sqrt(2 * 2000 * 200) / 2000),
+                                     (90.0, 2 * math.sqrt(2 * 2000 * 200) / 2000 * 0.5),
+                                     (50.0, 2 * math.sqrt(2 * 2000 * 50) / 2000)]):
+        tseg = math.sqrt(2 * rise / g) if k == 0 else dur
+        n = max(int(tseg * 120), 2)
+        for i in range(n):
+            tau = i / 120
+            frac = tau / tseg
+            y = 400 - rise + 0.5 * g * tau * tau if k == 0 else 400 - 4 * rise * frac * (1 - frac)
+            pts.append((t + tau, 100 + 50 * (t + tau), min(y, 400)))
+        t += tseg
+    fake = check_bounces(pts)
+    assert fake.verdict == "inconsistent" and "different gravities" in fake.reasons[-1], fake
