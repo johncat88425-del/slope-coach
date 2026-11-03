@@ -61,7 +61,7 @@
 - **11/03 john：「出錯率太高、AI 範例太簡單」→ 解凍，改做困難題庫。分析和計畫：https://claude.ai/artifact/Rf9B87qB66zyj2perbHrMS 。所有修改都要用困難題庫的三個數字（真片被誤判率、AI 片漏抓率、拒判率）證明有變好，不准只挑好看的片。**
 - [ ] T266 Claude（john 的 Mac 上跑）：困難題庫。HF `video-reasoning/physical-commonsense` 裡和下落、滾動、碰撞有關的 8 個場景（真片＋Sora/Veo 2/Kling/Runway/Hailuo/Wan 各一支），加上 john 的片和 Pexels 真片。每支先標好答案再跑真 SAM，產出錯誤率表和每支的失敗原因。檔案放 repo 外的 ~/Downloads/bench，不 commit 影片；只 commit 結果表（新的 `data/bench/results.csv`）和評分腳本。
 - [ ] T267 Claude：不需要尺寸的新檢查（等 T266 第一批結果出來再決定先做哪個）：彈跳反彈比例要穩定、空中水平速度要固定、被擋住後再出現要接在同一條拋物線上、物體形狀和大小不能亂跳（不是朝鏡頭移動造成的）。每項都要有 physics 測試，並用題庫證明沒有增加真片誤判。
-- [ ] T268 Muse：讓 SAM 用「點選位置」追蹤，取代文字（meta_client/sam.py 加 `point_px` 參數，後端 `DetectionIn` 不變）。先查 sam-3.1 API 支不支援點或框提示；不支援就寫進「待 john 決定」並停下。花費上限 $0.50。
+- [x] T268 Muse：讓 SAM 用「點選位置」追蹤，取代文字（meta_client/sam.py 加 `point_px` 參數，後端 `DetectionIn` 不變）。先查 sam-3.1 API 支不支援點或框提示；不支援就寫進「待 john 決定」並停下。花費上限 $0.50。（commit b14eb6a，分支 muse/T268-sam-point）
 - [ ] T269 Muse：Muse Spark 看 3 張關鍵畫面，列出肉眼可見的異常（變形、穿透、影子對不上、憑空出現），標成「觀察（由 Muse Spark 產生）」，**不准影響判定**，通過禁用字眼檢查。花費上限 $0.30。
 - [ ] T270 Codex（T268 完成後）：上傳後在第一張畫面上點選要追的物體，送出 `point_px`。token 不夠就停下，在 STATUS 寫明，Claude 接手。
 - [ ] T271 Manus：找 10 支「看起來很真」的公開 AI 生成片（Sora、Veo、Kling、Hailuo 的官方展示頁或論文資料集），條件是固定鏡頭、單一物體在飛、落下或彈跳、沒有人臉。每支附網址、授權、時間窗。交給 john。
@@ -507,6 +507,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/02 Muse 完成 T268（分支 muse/T268-sam-point）：SAM 點選追蹤。文件（dev.meta.ai/docs/sam/segmenting）確認支援點／框提示，格式為 input_text 內 `<Nf>id<|point;x=..;y=..;w=..;h=..|>`（座標無條件捨去、w/h 為媒體像素、一種提示只能選一種、不與文字並用）。`sam.track()` 加可選 `point_px=(x, y, frame_index)`（來源影片像素＝轉碼後像素，只降 fps 不改尺寸；frame_index 數轉碼後窗格），有點送點、無點照舊送文字，後端 DetectionIn 不變；越界點／格在上傳前擋下。5 個 mock 測試，pytest 325 全過。真打比較 track_jump_ratio（MAX 2.5）：own_2（0.2–0.8 秒）文字 0.36、點選 0.35（軌跡 1px 內一致）；Pexels 投籃片（~/Downloads/pexels_basketball_arc.mp4，0–1.5 秒）文字與點選同為 4.07（軌跡一致，跳動是第 8 格真實落地反彈，兩種提示都追對）。兩個誠實的負結果：(1) 誤點（偏球心 63px 打到背景）會追住靜止背景 9/9 格、jump=37.6——點準才有用，但 jump 會爆表，後端可用它退回重選（給 T270）；(2) 所謂「兩顆球」：此片 0／1／2／3.5／4.5／5.5 秒各格都只有一顆球＋一顆圓影，文字從未跳去追影，兩球消歧仍無真片驗證。9 次呼叫 $0.09（上限 $0.50），累計 $5.2749。
 - 11/02 14:00 Claude T251／T252／T253（見待辦）。john 問「隨便丟網路影片能不能分真假」：照實回答做不到，方向改成擴大能判的範圍（鏡頭晃動、朝鏡頭飛、無尺寸的彈跳比例）。
 - 11/02 05:10 Claude：AG T248（PR #153 不合併：報告把第 5 支的「伺服器重啟、結果遺失」寫成「迅速復原」，版本比對也沒做）。可信的部分：線上 4/5 正確：meta_ai_ball_4 g=0.143 不一致、synthetic_toss 9.81 一致、Pexels 真片鏡頭沒固定 g=10.62 一致（校正 34 px）、4K 車片 cannot judge 443 秒沒當掉）；第 5 支 5 秒時間窗讓伺服器重啟 → T249 修好。john：不再派工作給 Antigravity。
 

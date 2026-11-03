@@ -286,3 +286,63 @@ def test_track_empty_response_is_valid_empty_result(tmp_path, monkeypatch):
     assert result.detections == []
     assert result.n_frames == 150
     assert result.billed_frames == 150
+
+
+def test_track_point_prompt_wire_format(tmp_path, monkeypatch):
+    # T268: a point replaces the noun phrase; coords round down, w/h are the
+    # media pixels, frame uses the <Nf> marker.
+    clip = _patch_media(monkeypatch, tmp_path)
+    fake = FakeClient([fake_response(DOC_LINE, usage=None)])
+    monkeypatch.setattr(sam, "get_client", lambda: fake)
+    tracker = CostTracker(tmp_path / "cost.csv", limit_usd=120)
+    result = sam.track(
+        clip, "orange ball", point_px=(211.9, 228.7, 0), tracker=tracker
+    )
+    parts = fake.responses.calls[0]["input"][0]["content"]
+    assert parts[0] == {
+        "type": "input_text",
+        "text": "<0f>1<|point;x=211;y=228;w=320;h=334|>",
+    }
+    assert len(result.detections) == 1  # response parses as usual
+
+
+def test_track_point_skips_text_validation(tmp_path, monkeypatch):
+    # T268: the point path never sends the noun phrase, so a comma/and
+    # phrase that would fail the text path must not raise here.
+    clip = _patch_media(monkeypatch, tmp_path)
+    fake = FakeClient([fake_response("", usage=None)])
+    monkeypatch.setattr(sam, "get_client", lambda: fake)
+    tracker = CostTracker(tmp_path / "cost.csv", limit_usd=120)
+    sam.track(clip, "ball, hoop", point_px=(10, 10, 3), tracker=tracker)
+    parts = fake.responses.calls[0]["input"][0]["content"]
+    assert parts[0]["text"] == "<3f>1<|point;x=10;y=10;w=320;h=334|>"
+
+
+def test_track_point_outside_frame_rejected(tmp_path, monkeypatch):
+    clip = _patch_media(monkeypatch, tmp_path)
+    fake = FakeClient([fake_response("", usage=None)])
+    monkeypatch.setattr(sam, "get_client", lambda: fake)
+    tracker = CostTracker(tmp_path / "cost.csv", limit_usd=120)
+    with pytest.raises(ValueError, match="outside the 320x334 frame"):
+        sam.track(clip, "ball", point_px=(400, 10, 0), tracker=tracker)
+    assert fake.responses.calls == []  # no upload, no API call
+
+
+def test_track_point_frame_out_of_range_rejected(tmp_path, monkeypatch):
+    clip = _patch_media(monkeypatch, tmp_path)
+    fake = FakeClient([fake_response("", usage=None)])
+    monkeypatch.setattr(sam, "get_client", lambda: fake)
+    tracker = CostTracker(tmp_path / "cost.csv", limit_usd=120)
+    with pytest.raises(ValueError, match="frame_index 150 outside"):
+        sam.track(clip, "ball", point_px=(10, 10, 150), tracker=tracker)
+    assert fake.responses.calls == []
+
+
+def test_track_point_bad_shape_rejected(tmp_path, monkeypatch):
+    clip = _patch_media(monkeypatch, tmp_path)
+    fake = FakeClient([fake_response("", usage=None)])
+    monkeypatch.setattr(sam, "get_client", lambda: fake)
+    tracker = CostTracker(tmp_path / "cost.csv", limit_usd=120)
+    with pytest.raises(ValueError, match=r"point_px must be \(x, y, frame_index\)"):
+        sam.track(clip, "ball", point_px=(10, 20), tracker=tracker)
+    assert fake.responses.calls == []
