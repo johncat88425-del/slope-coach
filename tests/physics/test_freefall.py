@@ -174,3 +174,19 @@ def test_ball_that_hardly_rises_or_falls_is_refused_not_accused():
     assert check.verdict == "insufficient_data"
     assert "hardly rises or falls" in check.reasons[0]
     assert check.g_apparent_m_s2 is None
+
+
+def test_ball_rolling_sideways_with_a_tilted_weak_pull_is_refused():
+    # T272: real tennis balls rolling on a table fitted g 0.13 tilted 23 deg; the sideways roll must not count
+    # as rising or falling.
+    fit = fit_flight(throw(g=0.15, vx=2.0, vy=0.0, tilt_deg=23))
+    check = check_flight(fit, m_per_px=M_PER_PX, object_size_px=120)
+    assert check.verdict == "insufficient_data"
+    assert "hardly rises or falls" in check.reasons[0]
+
+
+def test_halves_shorter_than_0_3_s_are_not_compared():
+    # T272: john's real own_3 (0.4 s window at 30 fps) tripped the halves check on mask jitter alone.
+    from physics.experiments.freefall import acceleration_drift
+    assert acceleration_drift(throw(fps=30, n=13)) is None
+    assert acceleration_drift(throw(fps=30, n=20)) is not None
