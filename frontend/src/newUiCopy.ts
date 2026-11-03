@@ -304,6 +304,8 @@ export const newUiCopy:Record<string,string>={
   "How it works": "運作方式",
   "Saved example not found. Open the results wall to choose a record.": "找不到已儲存的範例，請至結果牆選擇紀錄。",
   "Generated test clip": "生成測試影片",
+  "Synthetic test clip, drawn by code": "程式繪製的合成測試影片",
+  "Synthetic test clip — the camera moves over a plain background, so its motion cannot be measured and the check refuses.": "合成測試影片：鏡頭在單色背景前移動，量不到鏡頭怎麼動，所以拒判。",
   "Recorded by john": "由 john 拍攝",
   "Review the saved evidence.": "查看已儲存的證據。",
   "Inspect consistent, inconsistent and insufficient-data results with the evidence and limitations shown together.": "檢視一致、不一致與資料不足的結果，同時核對證據與限制。",

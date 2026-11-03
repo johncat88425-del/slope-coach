@@ -12,7 +12,7 @@
  "track_source": "frame_diff",
  "verdict": "insufficient_data",
  "reasons": [
-  "camera is not static; this check needs a fixed camera"
+  "camera is not static and the background is too plain to measure how the camera moved; this check needs a fixed or only slightly moving camera"
  ],
  "numbers": {},
  "points": [],

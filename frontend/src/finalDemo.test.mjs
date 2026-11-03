@@ -16,7 +16,7 @@ test('final comparison replays all ten SAM records without altering or substitut
  const records=await entries(),before=JSON.stringify(records);
  const html=renderToStaticMarkup(createElement(FinalDemo,{records,synthetic:[]}));
  assert.equal(records.length,10);assert.equal((html.match(/data-demo-key=/g)||[]).length,10);
- assert.deepEqual(records.reduce((totals,{audit})=>({...totals,[audit.verdict]:(totals[audit.verdict]??0)+1}),{}),{inconsistent:4,insufficient_data:3,consistent:3});
+ assert.deepEqual(records.reduce((totals,{audit})=>({...totals,[audit.verdict]:(totals[audit.verdict]??0)+1}),{}),{inconsistent:7,consistent:3});
  for(const {key,audit} of records){
   assert.equal(audit.track_source,'sam',key);assert.equal(audit.explanation.source,'model',key);
   assert.ok(html.includes('data-demo-key="'+key+'"'),key);
@@ -30,7 +30,7 @@ test('final comparison replays all ten SAM records without altering or substitut
 });
 
 test('final example entry points cover all outcomes and use a consistent/inconsistent comparison',async()=>{
- const records=await entries();const find=key=>records.find(r=>r.key===key).audit;
+ const records=[...await entries(),{key:'synthetic_toss_moving_camera',audit:parseSavedAudit(await readFile(new URL('synthetic_toss_moving_camera.json',dir),'utf8'))}];const find=key=>records.find(r=>r.key===key).audit;
  assert.deepEqual(openingExampleKeys.map(key=>find(key).verdict),['consistent','inconsistent','insufficient_data']);
  assert.deepEqual(comparisonKeys.map(key=>find(key).verdict),['consistent','inconsistent']);
  for(const key of openingExampleKeys){const audit=find(key),caption=savedOutcomeCaption(audit);assert.notEqual(translateText(caption,'zh'),caption);assert.doesNotMatch(caption,/reliable tracked positions/);}

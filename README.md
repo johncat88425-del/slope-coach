@@ -36,10 +36,10 @@ Main results use SAM 3.1 tracking (`data/gate/product_results_sam_v4.md`); colou
 | Clips | SAM 3.1 tracking | Colour tracking (comparison) |
 | --- | --- | --- |
 | 3 own clips of a thrown ball (phone, fixed camera) | 3 consistent (g = 9.30, 9.45, 8.68 m/s²) | 2 consistent (9.62, 9.81), 1 inconsistent (8.15) |
-| 6 clips made with the Meta AI app | 3 inconsistent (g = 0.25, 0.14, 1.80 m/s²), 3 insufficient data (object size changes 34–48%)¹ | 2 inconsistent, 4 insufficient data |
+| 6 clips made with the Meta AI app | 6 inconsistent (g = 0.25, 0.14, 1.80 m/s²; and 0.50, 0.22, 0.11 m/s² for the three that fly toward the camera, after the depth correction)¹ | 2 inconsistent, 4 insufficient data |
 | 1 clip made with Manus | 1 inconsistent (g = 2.63 m/s²) | 1 insufficient data (tracked in 55% of frames) |
 
-¹ Saved records from the first version. Since the depth correction (T251, 11/02) these three come out inconsistent as well (g = 0.50, 0.22, 0.11 m/s²); the demo keeps the saved records.
+¹ The three toward-camera clips were refused by the first version (size changes 34–48%) and re-run on 11/03 with the depth correction (T251, T265).
 
 The two trackers do not always agree on which clips can be judged; both are reported. SAM is not fully deterministic: re-running it moved each g by less than 0.2% (first run 9.30, 9.46, 8.68) and changed no verdict. The table and the demo show the re-run, so they match the saved records in `data/demo/`. This is a small feasibility set, not a reliability benchmark. The own clips are not committed (privacy); the generated clips are in `data/gate/clips/`.
 

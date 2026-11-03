@@ -34,7 +34,7 @@ test('saved results and evidence cards retain assumption context without changin
  assert.equal(a.verdict,'inconsistent');assert.equal(JSON.stringify(a),before);
  assert.equal(cardDisplayLine(a,earthRulerTitle,s=>translateText(s,'zh')),'如果這是地球重力、正常速度');
  assert.match(cardDisplayLine(a,'Vertical extent (m): 28.712',s=>translateText(s,'zh')),/垂直距離（m）： 28.712/);
- const unavailable=await read('generated_meta_clip2');
+ const unavailable=await read('synthetic_toss_moving_camera');
  assert.doesNotMatch(render(h(AuditResult,{audit:unavailable,replay:true})),/data-testid="earth-assumption"/);
  assert.ok(!physicsCardLines(unavailable).includes(earthRulerTitle));
 });
