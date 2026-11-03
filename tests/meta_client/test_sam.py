@@ -172,8 +172,9 @@ def test_missing_ffmpeg_raises_media_error(tmp_path, monkeypatch):
 def test_track_window_slices_and_offsets_time(tmp_path, monkeypatch):
     seen = {}
 
-    def fake_transcode(src, t_start=None, t_end=None):
+    def fake_transcode(src, t_start=None, t_end=None, fps=15.0):
         seen["window"] = (t_start, t_end)
+        seen["fps"] = fps
         prepared = tmp_path / "prepared.mp4"
         prepared.write_bytes(b"fake-15fps")
         return prepared
@@ -188,6 +189,8 @@ def test_track_window_slices_and_offsets_time(tmp_path, monkeypatch):
     tracker = CostTracker(tmp_path / "cost.csv", limit_usd=120)
     result = sam.track(clip, "ball", t_start=1.0, t_end=2.0, tracker=tracker)
     assert seen["window"] == (1.0, 2.0)
+    assert seen["fps"] == 30.0  # T267: a window of 1 s or less is sent at 30 fps
+    assert result.fps == 30.0
     assert result.detections[0].t_s == pytest.approx(1.0)
 
 
@@ -286,3 +289,10 @@ def test_track_empty_response_is_valid_empty_result(tmp_path, monkeypatch):
     assert result.detections == []
     assert result.n_frames == 150
     assert result.billed_frames == 150
+
+
+def test_window_fps_doubles_only_for_short_windows():
+    assert sam.window_fps(0.2, 0.8) == 30.0
+    assert sam.window_fps(1.0, 2.0) == 30.0
+    assert sam.window_fps(1.0, 2.5) == 15.0
+    assert sam.window_fps(None, None) == 15.0

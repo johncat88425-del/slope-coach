@@ -100,6 +100,7 @@ def check_flight(
     g_tolerance: float = 0.15,
     max_tilt_deg: float = 15.0,
     max_rms_fraction: float = 0.02,
+    min_drop_sizes: float = 1.0,
 ) -> FlightCheck:
     """m_per_px must come from the user (a ruler or a confirmed object size), never from a model."""
     if m_per_px is not None and m_per_px <= 0:
@@ -110,6 +111,12 @@ def check_flight(
 
     implied = G / fit.a_px_s2
     size = object_size_px * implied if object_size_px else None
+    if object_size_px and _down_extent_px(fit) < min_drop_sizes * object_size_px:
+        # T267: on the hard benchmark every real clip judged inconsistent was a ball resting, rolling or held,
+        # whose track rises or falls less than its own size; a fit to that is noise, not a free flight.
+        return FlightCheck("insufficient_data", ("the object hardly rises or falls (less than its own size), so "
+                                                 "it is resting, rolling or held, not in free flight",),
+                           None, implied, size, None)
     reasons: list[str] = []
     if abs(fit.tilt_deg) > max_tilt_deg:
         reasons.append(f"acceleration points {fit.tilt_deg:.0f} deg away from image-down")
@@ -133,6 +140,17 @@ def check_flight(
                                                  "light object slowed by air), so free flight cannot be judged",),
                            g_app, implied, size, factor)
     return FlightCheck("inconsistent" if reasons else "consistent", tuple(reasons), g_app, implied, size, factor)
+
+
+def _down_extent_px(fit: FlightFit) -> float:
+    """Highest to lowest point of the fitted path along the fitted 'down', in pixels."""
+    ux, uy = fit.ax_px_s2 / fit.a_px_s2, fit.ay_px_s2 / fit.a_px_s2
+    v_down = fit.vx_px_s * ux + fit.vy_px_s * uy
+    T = fit.t_span_s
+    t_top = -v_down / fit.a_px_s2
+    times = [0.0, T] + ([t_top] if 0 < t_top < T else [])
+    d = [v_down * t + 0.5 * fit.a_px_s2 * t * t for t in times]
+    return max(d) - min(d)
 
 
 @dataclass(frozen=True)

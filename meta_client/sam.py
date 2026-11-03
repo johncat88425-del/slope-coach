@@ -32,6 +32,16 @@ from .cost import CostTracker, get_tracker, sam_video_cost_usd
 from .exceptions import MediaError, TrackingError
 
 TARGET_FPS = 15.0
+# T267: a 0.3 s drop gave SAM only 4-5 frames at 15 fps, below the 6 a fit needs (11 of 57 hard-bench clips).
+# Windows up to SHORT_WINDOW_S are sent at 30 fps; that costs no more frames than a 2 s window at 15 fps.
+SHORT_WINDOW_FPS = 30.0
+SHORT_WINDOW_S = 1.0
+
+
+def window_fps(t_start: float | None, t_end: float | None) -> float:
+    if t_start is not None and t_end is not None and t_end - t_start <= SHORT_WINDOW_S:
+        return SHORT_WINDOW_FPS
+    return TARGET_FPS
 MASK_ENCODING = "one_bit"
 _FFMPEG_TIMEOUT_S = 300.0
 # Hard per-request cap (T181): 15 fps x 60 s. Longer clips must be windowed
@@ -130,7 +140,7 @@ def _probe_clip(path: Path) -> dict[str, Any]:
 
 
 def _transcode_to_15fps(
-    src: Path, t_start: float | None = None, t_end: float | None = None
+    src: Path, t_start: float | None = None, t_end: float | None = None, fps: float = TARGET_FPS
 ) -> Path:
     """Transcode to constant 15 fps + faststart; caller deletes the result.
 
@@ -153,7 +163,7 @@ def _transcode_to_15fps(
         # not at t_start + N/15 and every real throw came out tilted about 24 degrees (found 10/29, T114).
         # ultrafast + 1 thread (T249): x264's default look-ahead buffered ~40 frames and peaked ~500 MB on a
         # 5 s 1080p window, which restarted the 512 MB host. Frames and timing are unchanged; crf 18 keeps detail.
-        "-vf", "fps=15", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "18", "-threads", "1",
+        "-vf", f"fps={fps:g}", "-c:v", "libx264", "-preset", "ultrafast", "-crf", "18", "-threads", "1",
         "-pix_fmt", "yuv420p",
         "-movflags", "+faststart", str(dst),
     ]
@@ -331,9 +341,9 @@ def track(
 
     prepared: Path | None = None
     try:
-        prepared = _transcode_to_15fps(src, t_start, t_end)
-        info = _probe_clip(prepared)
-        fps = TARGET_FPS  # constant-frame-rate transcode above
+        fps = window_fps(t_start, t_end)
+        prepared = _transcode_to_15fps(src, t_start, t_end, fps)
+        info = _probe_clip(prepared)  # constant-frame-rate transcode above
         n_frames = info["n_frames"]
         if n_frames > MAX_SAM_FRAMES:
             raise MediaError(
