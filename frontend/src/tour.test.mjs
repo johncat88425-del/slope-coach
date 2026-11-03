@@ -3,7 +3,7 @@ import {recordingSteps,moveTourStep,tourKeyDirection} from '../.test-dist/tourSt
 import {TourSlide} from '../.test-dist/TourSlide.js';import {createElement as h} from 'react';import {renderToStaticMarkup as render} from 'react-dom/server';
 import {translateText,LanguageProvider} from '../.test-dist/i18n.js';
 test('recording sequence follows the six final demo cases without changing saved results',async()=>{
- assert.deepEqual(recordingSteps.map(step=>step.key),['real_own_2','generated_meta_clip4','generated_meta_clip2','synthetic_car_50kmh_braking','synthetic_car_3g_launch','generated_meta_clip4']);
+ assert.deepEqual(recordingSteps.map(step=>step.key),['real_own_2','generated_meta_clip4','synthetic_toss_moving_camera','synthetic_car_50kmh_braking','synthetic_car_3g_launch','generated_meta_clip4']);
  const verdicts=[];for(const step of recordingSteps){const a=JSON.parse(await readFile(new URL('../../data/demo/'+step.key+'.json',import.meta.url),'utf8')),before=JSON.stringify(a);verdicts.push(a.verdict);const html=render(h(TourSlide,{audit:a,view:step.view}));assert.equal(JSON.stringify(a),before);if(a.synthetic)assert.match(html,/Synthetic test clip/);if(step.view==='ghost'){assert.match(html,/data-testid="tour-ghost"/);assert.match(html,/stroke-dasharray="6 4"/);assert.match(html,/Tracked by SAM 3.1/)}if(step.view==='share')assert.match(html,/data-testid="physics-card-download"/);for(const label of [step.title,step.text])assert.notEqual(translateText(label,'zh'),label)}
  assert.deepEqual(verdicts,['consistent','inconsistent','insufficient_data','consistent','inconsistent','inconsistent']);
 });
