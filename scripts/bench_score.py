@@ -10,7 +10,7 @@ CATEGORIES = [  # first match wins; the category describes why the check could n
     ("frames dropped", ("tracked in only", "frames")),
     ("object toward camera", ("towards or away from the camera", "size changes", "size jumps")),
     ("camera", ("camera is not static", "camera moved", "camera rotated", "too plain to measure")),
-    ("no free flight", ("not distinguishable from zero", "clean parabola", "constant-acceleration path", "points", "deg away from image-down")),
+    ("no free flight", ("hardly rises or falls", "not distinguishable from zero", "clean parabola", "constant-acceleration path", "points", "deg away from image-down")),
     ("size", ("implied size", "object size")),
 ]
 
