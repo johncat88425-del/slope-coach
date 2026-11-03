@@ -163,3 +163,14 @@ def test_one_flight_has_one_gravity():
     ratio, sig = acceleration_drift(pts)
     assert ratio < 1 - DRIFT_MIN_RATIO and sig > DRIFT_SIGMA
     assert acceleration_drift(throw(n=9)) is None
+
+
+def test_ball_that_hardly_rises_or_falls_is_refused_not_accused():
+    # T267: a real ball rolling or resting fits a tiny "gravity"; less than its own size of vertical travel
+    # is not a free flight, so refuse instead of calling it inconsistent.
+    fit = fit_flight(throw(g=0.2, vx=0.5, vy=0.0))
+    assert check_flight(fit, m_per_px=M_PER_PX).verdict == "inconsistent"  # without the size: old behaviour
+    check = check_flight(fit, m_per_px=M_PER_PX, object_size_px=120)
+    assert check.verdict == "insufficient_data"
+    assert "hardly rises or falls" in check.reasons[0]
+    assert check.g_apparent_m_s2 is None
