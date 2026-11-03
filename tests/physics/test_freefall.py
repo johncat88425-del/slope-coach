@@ -168,7 +168,7 @@ def test_one_flight_has_one_gravity():
 def test_ball_that_hardly_rises_or_falls_is_refused_not_accused():
     # T267: a real ball rolling or resting fits a tiny "gravity"; less than its own size of vertical travel
     # is not a free flight, so refuse instead of calling it inconsistent.
-    fit = fit_flight(throw(g=0.2, vx=0.5, vy=0.0))
+    fit = fit_flight(throw(g=0.2, vx=0.0, vy=0.0))
     assert check_flight(fit, m_per_px=M_PER_PX).verdict == "inconsistent"  # without the size: old behaviour
     check = check_flight(fit, m_per_px=M_PER_PX, object_size_px=120)
     assert check.verdict == "insufficient_data"
@@ -190,3 +190,15 @@ def test_halves_shorter_than_0_3_s_are_not_compared():
     from physics.experiments.freefall import acceleration_drift
     assert acceleration_drift(throw(fps=30, n=13)) is None
     assert acceleration_drift(throw(fps=30, n=20)) is not None
+
+
+def test_weak_pull_on_a_mostly_sideways_track_is_refused():
+    # T273: real tennis balls rolling across a table (g 0.13, a little up-down from perspective) were accused.
+    fit = fit_flight(throw(g=0.6, vx=2.0, vy=-0.1))
+    check = check_flight(fit, m_per_px=M_PER_PX, object_size_px=20)
+    assert check.verdict == "insufficient_data"
+    assert "mostly sideways" in check.reasons[0]
+    # a weak pull on a track that really falls is still inconsistent
+    assert check_flight(fit_flight(throw(g=G / 4)), m_per_px=M_PER_PX, object_size_px=20).verdict == "inconsistent"
+    # a fast flat throw under Earth gravity is unaffected
+    assert check_flight(fit_flight(throw(vx=6.0, vy=0.0)), m_per_px=M_PER_PX, object_size_px=20).verdict == "consistent"
