@@ -18,6 +18,7 @@ export function WindowSelector({url,start,end,confirmed,onChange,onConfirm,child
  <button disabled={!duration} onClick={()=>change(which,(video.current?.currentTime??0).toFixed(2))}>Use playback position</button>
  </div>})}</div>
  <p aria-live="polite">Selection: {start?Number(start).toFixed(2):'—'}–{end?Number(end).toFixed(2):'—'} s</p>
+ {!valid&&start.trim()!==''&&end.trim()!==''&&duration>0&&<p data-testid="window-invalid" role="status">{Number(end)<=Number(start)?'The end must be later than the start.':'The window must fit inside the video.'}</p>}
  <button data-testid="window-confirm" disabled={!valid||confirmed} onClick={confirm}>{confirmed?'Time window confirmed':'Confirm time window'}</button>
  <p>Changing either boundary requires confirmation again. No time is selected automatically.</p>
  </section></Localize>

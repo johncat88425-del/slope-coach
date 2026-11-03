@@ -157,6 +157,8 @@ def _save_upload(file: UploadFile, d: Path) -> Path:
         copy_limited(file.file, video)
     except UploadTooLarge as e:
         raise HTTPException(413, str(e))
+    if os.environ.get("PUBLIC_DEMO") == "1":
+        _require_moving_video(video)
     if os.environ.get("PUBLIC_DEMO") == "1" and max(_frame_size(video)) > LONG_SIDE_PX:
         small = d / "video_small.mp4"
         try:
@@ -166,6 +168,22 @@ def _save_upload(file: UploadFile, d: Path) -> Path:
         video.unlink(missing_ok=True)
         return small
     return video
+
+
+def _require_moving_video(video: Path) -> None:
+    """A still image (.jpg, .png) also has a 'video' stream with a size, then failed later with a model error the
+    user could not read (T264). Refuse it up front: a clip needs a duration and more than one frame."""
+    out = subprocess.run(["ffprobe", "-v", "error", "-count_packets", "-select_streams", "v:0", "-show_entries",
+                          "stream=nb_read_packets:format=duration", "-of", "default=nw=1", str(video)],
+                         capture_output=True, text=True).stdout
+    vals = dict(line.split("=", 1) for line in out.splitlines() if "=" in line)
+    try:
+        frames, duration = int(vals.get("nb_read_packets", "0")), float(vals.get("duration", "0"))
+    except ValueError:
+        frames, duration = 0, 0.0
+    if frames < 2 or duration <= 0:
+        raise HTTPException(422, "this file is not a video clip (a photo or other file was chosen); "
+                                 "please upload a video such as .mp4 or .mov")
 
 
 def _frame_size(video: Path) -> tuple[int, int]:
