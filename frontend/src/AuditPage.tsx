@@ -1,3 +1,4 @@
+import {useTrackingPoint} from './useTrackingPoint.js';
 import {TrackCheck,WhatWouldFit} from './MuseAuditOutputs.js';
 import {EarthAssumption} from './EarthAssumption.js';
 import {earthConditionPrefix} from './earthRuler.js';
@@ -81,6 +82,7 @@ export function AuditPage({ api, auditId = null }: {
     const [windowConfirmed,setWindowConfirmed]=useState(false);
     const [file, setFile] = useState<File | null>(null), [preview, setPreview] = useState('');
     const [start, setStart] = useState(''), [end, setEnd] = useState(''), [size, setSize] = useState(''), [length,setLength]=useState(''), [fixed, setFixed] = useState(false);
+    const [point,setPoint]=useTrackingPoint(preview,start,end,windowConfirmed);
     const [busy, setBusy] = useState(false), [error, setError] = useState(''), [attempted, setAttempted] = useState(false);
     const [audit, setAudit] = useState<AuditOut | null>(null), [id, setId] = useState('');
     const [interviewSource,setInterviewSource]=useState<'model'|'mock'|null>(null);
@@ -126,11 +128,11 @@ export function AuditPage({ api, auditId = null }: {
         setAudit(null);
         setAttempted(false);
     } }}/></label>
- {preview&&<WindowSelector key={preview} url={preview} start={start} end={end} confirmed={windowConfirmed} onChange={(s,e)=>{setStart(s);setEnd(e);setWindowConfirmed(false)}} onConfirm={()=>setWindowConfirmed(true)}><WindowSuggestions key={preview+objectName} api={api} objectName={objectName} prepare={()=>selectedDraft.current.prepare(async selected=>(await api.auditDraft(selected)).draft_id)} onSelect={(s,e)=>{setStart(s);setEnd(e);setWindowConfirmed(false)}}/></WindowSelector>}
+ {preview&&<WindowSelector key={preview} url={preview} start={start} end={end} confirmed={windowConfirmed} point={point} onPointChange={setPoint} onChange={(s,e)=>{setStart(s);setEnd(e);setWindowConfirmed(false)}} onConfirm={()=>setWindowConfirmed(true)}><WindowSuggestions key={preview+objectName} api={api} objectName={objectName} prepare={()=>selectedDraft.current.prepare(async selected=>(await api.auditDraft(selected)).draft_id)} onSelect={(s,e)=>{setStart(s);setEnd(e);setWindowConfirmed(false)}}/></WindowSelector>}
  {model==='pendulum'&&<label>Pendulum length (metres, optional)<input data-testid="pendulum-length" type="number" min="0" step="any" value={length} onChange={e=>setLength(e.target.value)}/></label>}{model==='vehicle'&&<VehicleClassField value={vehicleClass} onChange={setVehicleClass}/>}<AuditDimensionField model={model} value={size} onChange={setSize}/>
  <label><input type="checkbox" checked={fixed} onChange={e => setFixed(e.target.checked)}/> 我確認鏡頭固定</label><p>未勾選會將 camera_static=false 送至後端，由後端保留無法判斷結果。</p>
  <button data-testid="audit-submit" disabled={!windowConfirmed} onClick={() => { setAttempted(true); if (!file || !windowConfirmed || errors.length)
-        return; const savedDraft=selectedDraft.current.take();void run(() => savedDraft?api.auditFromDraft(savedDraft,{t_start:Number(start),t_end:Number(end),camera_static:fixed,slow_motion:slowMotion?slowMotion==='yes':undefined,assumed_model:model,vehicle_class:model==='vehicle'?(vehicleClass||'unknown'):undefined,object_name:objectName,object_size_m:size.trim()?Number(size):undefined,length_m:model==='pendulum'&&length.trim()?Number(length):undefined}):api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined,objectName,slowMotion?slowMotion==='yes':undefined,model==='vehicle'?(vehicleClass||'unknown'):undefined),true); }}>提交片段檢查</button>
+        return; const savedDraft=selectedDraft.current.take();void run(() => savedDraft?api.auditFromDraft(savedDraft,{point_px:point,t_start:Number(start),t_end:Number(end),camera_static:fixed,slow_motion:slowMotion?slowMotion==='yes':undefined,assumed_model:model,vehicle_class:model==='vehicle'?(vehicleClass||'unknown'):undefined,object_name:objectName,object_size_m:size.trim()?Number(size):undefined,length_m:model==='pendulum'&&length.trim()?Number(length):undefined}):api.audit(file, Number(start), Number(end), fixed, size.trim() ? Number(size) : undefined, model, setUploadPercent, model==='pendulum'&&length.trim()?Number(length):undefined,objectName,slowMotion?slowMotion==='yes':undefined,model==='vehicle'?(vehicleClass||'unknown'):undefined,point),true); }}>提交片段檢查</button>
  {attempted && (!file || errors.length > 0) && <div role="alert">{!file && <p>請先選擇影片。</p>}<ul>{errors.map(e => <li key={e}>{e}</li>)}</ul></div>}
  <label>讀取既有稽核 ID<input data-testid="audit-id" value={id} onChange={e => setId(e.target.value)}/></label><button data-testid="audit-load" disabled={!id.trim()} onClick={() => void run(() => api.getAudit(id.trim()))}>讀取稽核</button>
  </fieldset></details>}<div aria-live="polite">{busy && <AuditProgress percent={uploadPercent} phase={requestPhase}/>}<ApiErrorNotice testId="audit-error" error={error} disabled={busy||interviewBusy} onRetry={retryRequest.current??undefined}/></div>{audit && <AuditResult sampleKind={sampleKind} autoFocus key={audit.audit_id} audit={audit} replay={replay} videoUrl={matchingAuditPreview(audit.audit_id,previewAuditId,preview)} interviewSource={interviewSource}/>}

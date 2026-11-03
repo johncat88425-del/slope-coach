@@ -207,3 +207,10 @@ svg text{fill:var(--color-text)}
 
 .share-link-note{display:block;margin-top:8px;max-width:60ch}.share-reason{overflow-wrap:anywhere}
 .audit-share-link{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-block:16px}.audit-share-link small{flex-basis:100%;margin-top:0}
+.tracking-point-picker{margin-top:24px;border-top:1px solid var(--color-border);padding-top:16px;min-width:0}
+.tracking-point-frame{position:relative;display:block;width:100%;min-height:44px;padding:0;border:0;overflow:hidden;background:#000;touch-action:manipulation;cursor:crosshair}
+.tracking-point-frame video,.audit-flow .tracking-point-frame video{position:absolute;inset:0;display:block;width:100%;height:100%;max-height:none;margin:0;object-fit:contain;pointer-events:none}
+.tracking-point-frame svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.tracking-point-marker{fill:none;stroke:#ffcb6b;stroke-width:3;stroke-dasharray:4 3;filter:drop-shadow(0 0 2px #000)}
+.tracking-point-marker.is-selected{stroke:#ff9d45;stroke-dasharray:none}
+.tracking-point-frame:focus-visible{outline:3px solid var(--color-focus);outline-offset:4px}
