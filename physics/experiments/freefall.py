@@ -111,7 +111,7 @@ def check_flight(
 
     implied = G / fit.a_px_s2
     size = object_size_px * implied if object_size_px else None
-    if object_size_px and _down_extent_px(fit) < min_drop_sizes * object_size_px:
+    if object_size_px and min(_down_extent_px(fit), _image_y_extent_px(fit)) < min_drop_sizes * object_size_px:
         # T267: on the hard benchmark every real clip judged inconsistent was a ball resting, rolling or held,
         # whose track rises or falls less than its own size; a fit to that is noise, not a free flight.
         return FlightCheck("insufficient_data", ("the object hardly rises or falls (less than its own size), so "
@@ -151,6 +151,16 @@ def _down_extent_px(fit: FlightFit) -> float:
     times = [0.0, T] + ([t_top] if 0 < t_top < T else [])
     d = [v_down * t + 0.5 * fit.a_px_s2 * t * t for t in times]
     return max(d) - min(d)
+
+
+def _image_y_extent_px(fit: FlightFit) -> float:
+    """Highest to lowest point of the fitted path along image vertical, in pixels. T272: a ball rolling across
+    a table fits a weak pull tilted off vertical, whose 'down' picks up the sideways roll; image y does not."""
+    T = fit.t_span_s
+    t_top = -fit.vy_px_s / fit.ay_px_s2 if fit.ay_px_s2 else -1.0
+    times = [0.0, T] + ([t_top] if 0 < t_top < T else [])
+    y = [fit.vy_px_s * t + 0.5 * fit.ay_px_s2 * t * t for t in times]
+    return max(y) - min(y)
 
 
 @dataclass(frozen=True)
@@ -335,6 +345,7 @@ def track_jump_ratio(points: list[tuple[float, float, float]]) -> float:
 MIN_POINTS_PER_HALF = 6
 DRIFT_SIGMA = 3.0  # halves must differ by more than this many combined standard errors
 DRIFT_MIN_RATIO = 0.25  # ...and by more than 25%, so tracking noise on a good clip never trips it
+MIN_HALF_SPAN_S = 0.3  # T272: a 0.2 s half-parabola's acceleration is mostly mask jitter (john's own_3 at 30 fps)
 
 
 def acceleration_drift(points: list[tuple[float, float, float]]) -> tuple[float, float] | None:
@@ -347,6 +358,8 @@ def acceleration_drift(points: list[tuple[float, float, float]]) -> tuple[float,
     mid = len(pts) // 2
     halves = (pts[:mid + 1], pts[mid:])
     if min(len(h) for h in halves) < MIN_POINTS_PER_HALF:
+        return None
+    if min(h[-1][0] - h[0][0] for h in halves) < MIN_HALF_SPAN_S:
         return None
     fits = [fit_flight(h) for h in halves]
     a0, a1 = (f.a_px_s2 for f in fits)
