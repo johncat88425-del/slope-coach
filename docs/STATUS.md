@@ -62,7 +62,7 @@
 - [ ] T266 Claude（john 的 Mac 上跑）：困難題庫。HF `video-reasoning/physical-commonsense` 裡和下落、滾動、碰撞有關的 8 個場景（真片＋Sora/Veo 2/Kling/Runway/Hailuo/Wan 各一支），加上 john 的片和 Pexels 真片。每支先標好答案再跑真 SAM，產出錯誤率表和每支的失敗原因。檔案放 repo 外的 ~/Downloads/bench，不 commit 影片；只 commit 結果表（新的 `data/bench/results.csv`）和評分腳本。
 - [ ] T267 Claude：不需要尺寸的新檢查（等 T266 第一批結果出來再決定先做哪個）：彈跳反彈比例要穩定、空中水平速度要固定、被擋住後再出現要接在同一條拋物線上、物體形狀和大小不能亂跳（不是朝鏡頭移動造成的）。每項都要有 physics 測試，並用題庫證明沒有增加真片誤判。
 - [ ] T268 Muse：讓 SAM 用「點選位置」追蹤，取代文字（meta_client/sam.py 加 `point_px` 參數，後端 `DetectionIn` 不變）。先查 sam-3.1 API 支不支援點或框提示；不支援就寫進「待 john 決定」並停下。花費上限 $0.50。
-- [ ] T269 Muse：Muse Spark 看 3 張關鍵畫面，列出肉眼可見的異常（變形、穿透、影子對不上、憑空出現），標成「觀察（由 Muse Spark 產生）」，**不准影響判定**，通過禁用字眼檢查。花費上限 $0.30。
+- [x] T269 Muse：Muse Spark 看 3 張關鍵畫面，列出肉眼可見的異常（變形、穿透、影子對不上、憑空出現），標成「觀察（由 Muse Spark 產生）」，**不准影響判定**，通過禁用字眼檢查。花費上限 $0.30。（commit 見分支 muse/T269-observations）
 - [ ] T270 Codex（T268 完成後）：上傳後在第一張畫面上點選要追的物體，送出 `point_px`。token 不夠就停下，在 STATUS 寫明，Claude 接手。
 - [ ] T271 Manus：找 10 支「看起來很真」的公開 AI 生成片（Sora、Veo、Kling、Hailuo 的官方展示頁或論文資料集），條件是固定鏡頭、單一物體在飛、落下或彈跳、沒有人臉。每支附網址、授權、時間窗。交給 john。
 - [x] T258 Claude（線上複測：擺錘 3 秒、5 秒時間窗仍讓伺服器當掉）：`meta_client/sam.py` 把每一格、每個物體的完整遮罩都存在記憶體（擺錘片 3 個物體約 466 MB），但後面只用到中心和面積。改成解碼後算完就丟。
@@ -507,6 +507,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/02 Muse 完成 T269（分支 muse/T269-observations）：Spark 三格關鍵畫面觀察。新 `meta_client/observations.py`（仿 track_check 寫法）：取首格＝起飛、最高點＝apex、末格＝landing（單調軌跡改均分），全格 480px 紅圈後送 Spark，每格一句英文所見、不准數字；回傳只有 `{"label": "觀察", "observations", "source"}`，無 verdict 欄位、結構上不影響判定；每句過 `check_model_text`＋AUTHENTICITY 兩份禁用表，另擋單字 real／AI（really 不擋）。6 個 mock 測試，pytest 326 全過。真打：meta_clip1（1.5–3.8 秒，生成片）三格皆 nothing unusual visible（它的錯在動態 g，不在靜格——沒幻覺）；own_2（0.2–0.8 秒，真片）起飛 ball appears stretched、落地 ball appears blurred（動態模糊如實描述，無數字、無真假字眼）。2 SAM＋2 Spark＝$0.0366（上限 $0.30），累計 $5.2215。
 - 11/02 14:00 Claude T251／T252／T253（見待辦）。john 問「隨便丟網路影片能不能分真假」：照實回答做不到，方向改成擴大能判的範圍（鏡頭晃動、朝鏡頭飛、無尺寸的彈跳比例）。
 - 11/02 05:10 Claude：AG T248（PR #153 不合併：報告把第 5 支的「伺服器重啟、結果遺失」寫成「迅速復原」，版本比對也沒做）。可信的部分：線上 4/5 正確：meta_ai_ball_4 g=0.143 不一致、synthetic_toss 9.81 一致、Pexels 真片鏡頭沒固定 g=10.62 一致（校正 34 px）、4K 車片 cannot judge 443 秒沒當掉）；第 5 支 5 秒時間窗讓伺服器重啟 → T249 修好。john：不再派工作給 Antigravity。
 
