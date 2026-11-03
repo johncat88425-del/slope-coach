@@ -101,6 +101,7 @@ def check_flight(
     max_tilt_deg: float = 15.0,
     max_rms_fraction: float = 0.02,
     min_drop_sizes: float = 1.0,
+    max_sideways_ratio: float = 3.0,
 ) -> FlightCheck:
     """m_per_px must come from the user (a ruler or a confirmed object size), never from a model."""
     if m_per_px is not None and m_per_px <= 0:
@@ -128,6 +129,12 @@ def check_flight(
         g_app = fit.a_px_s2 * m_per_px
         factor = math.sqrt(G / g_app)
         lo, hi = G * (1 - g_tolerance), G * (1 + g_tolerance)
+        if g_app < 0.5 * G and _image_extent_px(fit, "x") > max_sideways_ratio * _image_extent_px(fit, "y"):
+            # T273: a weak pull on a track that moves mostly sideways is a ball rolling or sliding on a surface
+            # (a real tennis ball on a table read 0.13 m/s^2), not a flight: refuse, do not accuse.
+            return FlightCheck("insufficient_data", ("the object moves mostly sideways with only a weak downward "
+                                                     "pull, as when rolling or sliding on a surface, so free "
+                                                     "flight cannot be judged",), None, implied, size, None)
         if not lo <= g_app <= hi:
             reasons.append(f"apparent g {g_app:.2f} m/s^2 is outside {lo:.2f}-{hi:.2f}")
 
@@ -151,6 +158,15 @@ def _down_extent_px(fit: FlightFit) -> float:
     times = [0.0, T] + ([t_top] if 0 < t_top < T else [])
     d = [v_down * t + 0.5 * fit.a_px_s2 * t * t for t in times]
     return max(d) - min(d)
+
+
+def _image_extent_px(fit: FlightFit, axis: str) -> float:
+    """Highest to lowest value of the fitted path along image x or y, in pixels."""
+    v, a = (fit.vx_px_s, fit.ax_px_s2) if axis == "x" else (fit.vy_px_s, fit.ay_px_s2)
+    T = fit.t_span_s
+    t_turn = -v / a if a else -1.0
+    vals = [v * t + 0.5 * a * t * t for t in [0.0, T] + ([t_turn] if 0 < t_turn < T else [])]
+    return max(vals) - min(vals)
 
 
 def _image_y_extent_px(fit: FlightFit) -> float:
