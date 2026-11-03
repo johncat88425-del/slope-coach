@@ -126,3 +126,16 @@ def test_busiest_stamp_finds_when_something_enters(tmp_path):
                     "-vf", "drawbox=x=100:y=80:w=120:h=120:c=white:t=fill:enable='between(t,4,4.5)'",
                     "-pix_fmt", "yuv420p", str(clip)], check=True)
     assert 3.9 <= _busiest_stamp(Path(clip), 6.0) <= 4.6
+
+
+def test_public_demo_refuses_a_photo_with_a_readable_message(monkeypatch, tmp_path):
+    """T264: a .jpg has a 'video' stream with a size; it must be refused up front, not fail later as a model error."""
+    import subprocess
+    photo = tmp_path / "photo.jpg"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=320x240", "-frames:v", "1",
+                    str(photo)], check=True)
+    m = _app(monkeypatch, tmp_path, PUBLIC_DEMO="1")
+    c = TestClient(m.app)
+    with photo.open("rb") as f:
+        r = c.post("/api/audit-drafts", files={"file": ("photo.jpg", f, "image/jpeg")})
+    assert r.status_code == 422 and "not a video clip" in r.json()["detail"]

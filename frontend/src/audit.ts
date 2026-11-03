@@ -6,8 +6,8 @@ export type AuditModelText={source:'model';text:string};
 export type AuditOut={audit_id:string;created_at:string;track_check?:AuditTrackCheck|null;retake_tips?:string[]|null;what_would_fit?:AuditModelText|null;headline?:{source:'model';text:string}|null;explanation?:{source:'template'|'model';text:string}|null;object_name?:string;vehicle_class?:string|null;slow_motion?:boolean|null;assumed_model:AuditModel;t_start:number;t_end:number;camera_static:boolean;object_size_m:number|null;generated_clip?:boolean;source?:string;real_clip?:boolean;labels_by?:string;synthetic?:boolean;ghost_points?:[number,number,number][];nearest_body?:string|null;length_m?:number|null;video_url:string;overlay_url:string|null;track_source:'frame_diff'|'color'|'sam'|'manual';verdict:AuditVerdict;reasons:string[];numbers:Record<string,number>;points:[number,number,number][];events:{kind:string;t_s:number;detail:string}[];limits:string[]};
 export function verdictText(verdict:AuditVerdict,model:AuditModel='free_flight') {const name=model==='bounce'?'彈跳':model==='pendulum'?'單擺':model==='vehicle'?'車子行駛':'自由落體';return {consistent:`與${name}模型一致`,inconsistent:`與${name}模型不一致`,insufficient_data:`與${name}模型無法判斷`}[verdict]}
 export function validateAuditInput(start:string,end:string,size:string){const errors:string[]=[];
- if(!start.trim()||!end.trim()||!Number.isFinite(Number(start))||!Number.isFinite(Number(end))||Number(start)<0||Number(end)<=Number(start))errors.push('時間窗必須為有限秒數，且 0 ≤ 開始 < 結束。');
- if(size.trim()&&(!Number.isFinite(Number(size))||Number(size)<=0))errors.push('物體尺寸必須大於零，單位為米；未知時請留空。');return errors}
+ if(!start.trim()||!end.trim()||!Number.isFinite(Number(start))||!Number.isFinite(Number(end))||Number(start)<0||Number(end)<=Number(start))errors.push('The time window must be finite seconds with 0 ≤ start < end.');
+ if(size.trim()&&(!Number.isFinite(Number(size))||Number(size)<=0))errors.push('Object size must be greater than zero, in metres; leave it blank if unknown.');return errors}
 
 /** Validate saved API output without inferring or recomputing measurements. */
 export function parseSavedAudit(text:string):AuditOut {
