@@ -63,7 +63,7 @@
 - [ ] T267 Claude：不需要尺寸的新檢查（等 T266 第一批結果出來再決定先做哪個）：彈跳反彈比例要穩定、空中水平速度要固定、被擋住後再出現要接在同一條拋物線上、物體形狀和大小不能亂跳（不是朝鏡頭移動造成的）。每項都要有 physics 測試，並用題庫證明沒有增加真片誤判。
 - [ ] T268 Muse：讓 SAM 用「點選位置」追蹤，取代文字（meta_client/sam.py 加 `point_px` 參數，後端 `DetectionIn` 不變）。先查 sam-3.1 API 支不支援點或框提示；不支援就寫進「待 john 決定」並停下。花費上限 $0.50。
 - [ ] T269 Muse：Muse Spark 看 3 張關鍵畫面，列出肉眼可見的異常（變形、穿透、影子對不上、憑空出現），標成「觀察（由 Muse Spark 產生）」，**不准影響判定**，通過禁用字眼檢查。花費上限 $0.30。
-- [ ] T270 Codex（T268 完成後）：上傳後在第一張畫面上點選要追的物體，送出 `point_px`。token 不夠就停下，在 STATUS 寫明，Claude 接手。
+- [ ] T270 Codex（Codex 進行中，codex/T270-point-select；john 直接指示先做前端，T268 的 muse/T268-sam-point 已完成；main HTTP 接線尚待完成）：上傳後在第一張畫面上點選要追的物體，送出 `point_px`。token 不夠就停下，在 STATUS 寫明，Claude 接手。
 - [ ] T271 Manus：找 10 支「看起來很真」的公開 AI 生成片（Sora、Veo、Kling、Hailuo 的官方展示頁或論文資料集），條件是固定鏡頭、單一物體在飛、落下或彈跳、沒有人臉。每支附網址、授權、時間窗。交給 john。
 - [x] T258 Claude（線上複測：擺錘 3 秒、5 秒時間窗仍讓伺服器當掉）：`meta_client/sam.py` 把每一格、每個物體的完整遮罩都存在記憶體（擺錘片 3 個物體約 466 MB），但後面只用到中心和面積。改成解碼後算完就丟。
 - [x] T256 Claude（john：「鏡頭會動，再繼續改」）：鏡頭除了平移，現在也能修正小幅轉動（roll ≤8°）和變焦（≤15%）。做法：背景左右上下四半部各自量位移，擬合「平移＋旋轉＋縮放」；四個半部都吻合才修正，追蹤點和物體大小一起還原到第一格。只在使用者答「鏡頭有動」時使用，答「固定」的路徑完全不變。合成測試：11% 變焦＋5° 轉動，誤差從 28 px 降到 <4 px。
@@ -392,6 +392,9 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
+- T270／Claude 接線事項（11/02，前端實作不改後端）：main 的 POST /api/audit-jobs 與 /api/audits 尚未接收 point_px，hooks 也尚未把點送入 SAM。前端依 john 指定送 multipart 欄位 point_px，內容為 JSON [x,y,frame_index]；第一格固定 frame_index=0，座標取預覽影片 videoWidth／videoHeight 的原生像素，未點選時完全省略。已核對 muse/T268-sam-point 的 sam.track 文件，格號確實相對於轉碼後的選定時間窗，與前端 0 相符。請 Claude 補 HTTP → hooks → SAM 接線後再驗收實際點選追蹤，前端 Mock 表單測試不等於後端已採用點。
+- T270／4K 座標契約缺口（11/02）：公開後端 _save_upload 會把原片縮到 1920 並刪除原檔；使用者本機預覽仍是原片，因此不能直接把 4K 點當作縮圖後的像素傳給 SAM。需後端保留原始尺寸並映射到儲存影片，或由 Claude 明定與擴充草稿尺寸契約。前端按 john 要求保留原生座標，沒有猜測縮圖尺寸、沒有擅加未約定欄位。範例片的點座標以草稿預覽原生尺寸為準。本分支不改 backend、meta_client 或 docs/API.md。
+
 - T237 Render 自動部署：Branch 已保存 main；Auto-Deploy 選單雖顯示 On Commit，但 Update Source → Git Provider 仍是 Connect Git provider，服務目前用公開 Git URL。Render 官方說此來源不支援自動部署，需手動 Deploy latest commit；要在 main 更新後自動部署，須另外連接 GitHub Git Provider 並授權 repo。未自行新增 GitHub 存取權，也未把 deploy hook 寫進檔案或對話。來源：https://render.com/docs/deploys#automatic-deploys 。
 
 - Render／Claude 花費帳本：`meta_client/cost.py` 目前將帳本記在本機 CSV；Render Free 的檔案系統會在休眠／重啟／重新部署後重置，因此 SPEND_LIMIT_USD=25 是當前帳本的停止門檻，不能保證跨部署的總支出上限。需 Claude 接持久化帳本，或 john 在供應商帳戶設定硬額度；本次沒有改後端。來源：https://render.com/docs/free#local-files-lost-on-redeploy 。
@@ -507,6 +510,10 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+
+- 11/02 Codex T270：先 checkout main／pull origin main（994869c），獨立開 codex/T270-point-select。兩條入口（Muse 偵訊、進階上傳）共用選取控制：確認時間窗後顯示起點的靜止原生影片畫面；點擊／觸控的 click 事件換算成原生像素，SVG 小實線圓圈標記。鍵盤方向鍵移動虛線游標，Shift＋方向鍵微調 1 px，Enter／Space 才選取，Delete／Escape／清除按鈕可撤銷；單純聚焦不會選點。影像與標記同用 contain 比例，排除 letterbox／pillarbox 的空白。沒有新套件、沒有推算物理數字。
+- 11/02 Codex T270 狀態與 API：沒點仍可送出且省略 point_px；有點則在 draft／直接檔案／XHR 上傳三條路以 JSON 陣列傳送，不使用逗號字串。改片、改任一時間邊界或撤銷確認立即失效，回到舊時間窗也不復活舊點。尚未載入、正在定位或讀不到首格時不能誤選其他畫格，仍可走文字流程。兩語提示與鍵盤游標座標可讀；影片預覽不自動播放。SAM 真的採用點仍待 Claude 的 HTTP 接線及 4K 尺寸契約，詳待決定；未宣稱改善困難題庫誤判率。
+- 11/02 Codex T270 驗證：npm test 210 pass、正常 build 與 VITE_DEMO_ONLY build pass、pytest 320 pass。8 個新前端測試涵蓋 1080p／4K 原生座標、直橫影片空白排除、邊界／有限值、鍵盤粗細調整、JSON／省略、draft／file／XHR、兩語與來源／時間窗失效。實際瀏覽器使用現有程式模擬影片（640×480、0.7 秒）及明示 Mock 的前端 API；確認 0.1–0.6 秒時點選畫面 currentTime=0.1，實際送出的 point_px 是 [330,238,0]；無點時完全沒有該欄位。改起點／終點／回復舊時間窗均無舊標記，焦點本身不選點，Enter 確認時間窗、Space 選取、Delete 和清除按鈕皆通過。390px scrollWidth=375≤390，中英文及鍵盤選中測試物體的圈圖存 frontend/qa/t270-point-select-390.jpg。390px 測過點擊路徑，未冒稱用了實體觸控硬體；觸控沿用原生 click。可重跑的隔離 fixture：frontend/ 內 npm run dev -- --config scripts/preview-point-select.config.ts，開 /scripts/preview-point-select.html；支援 Range 的測試影片回應與真後端阻擋均在此專用設定，預設產品 build 不使用它。沒有付費模型呼叫、沒有部署線上。
 - 11/02 14:00 Claude T251／T252／T253（見待辦）。john 問「隨便丟網路影片能不能分真假」：照實回答做不到，方向改成擴大能判的範圍（鏡頭晃動、朝鏡頭飛、無尺寸的彈跳比例）。
 - 11/02 05:10 Claude：AG T248（PR #153 不合併：報告把第 5 支的「伺服器重啟、結果遺失」寫成「迅速復原」，版本比對也沒做）。可信的部分：線上 4/5 正確：meta_ai_ball_4 g=0.143 不一致、synthetic_toss 9.81 一致、Pexels 真片鏡頭沒固定 g=10.62 一致（校正 34 px）、4K 車片 cannot judge 443 秒沒當掉）；第 5 支 5 秒時間窗讓伺服器重啟 → T249 修好。john：不再派工作給 Antigravity。
 

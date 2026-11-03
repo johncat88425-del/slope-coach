@@ -1,0 +1,10 @@
+<!doctype html><!-- Run: npm run dev -- --config scripts/preview-point-select.config.ts --><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>T270 point selection checks</title></head><body><main class="audit-layout"><section><h1>T270 point selection checks</h1><p>Mock API and an existing program-simulated test clip. No new analysis or model call. Submitted fields are displayed below.</p><div id="fixture"></div></section></main><script type="module">
+import '../src/style.css';import '../src/editorial.css';import {createElement as h,useMemo,useState} from 'react';import {createRoot} from 'react-dom/client';import {createApi} from '../src/api.ts';import {InterviewPanel} from '../src/InterviewPanel.tsx';import {LanguageRoot,LanguageSwitch} from '../src/i18n.tsx';const clip='/media/t270-fixture.mp4';import saved from '../../data/demo/synthetic_toss_normal_g.json';
+function Fixture(){const [request,setRequest]=useState(null);const api=useMemo(()=>createApi('',async(path,init)=>{
+ if(path.endsWith('/samples'))return Response.json([{name:'point-a',kind:'synthetic',label:'Mock clip A'},{name:'point-b',kind:'synthetic',label:'Mock clip B'}]);
+ if(path.endsWith('/draft'))return Response.json({draft_id:path.includes('point-a')?'a':'b',video_url:clip,interview:{source:'mock',questions:[{field:'camera_static',text:'Confirm the camera conditions.'}]},suggestion:null});
+ if(path.endsWith('/audit-jobs')){setRequest(Object.fromEntries(init.body));return Response.json(saved)}
+ throw new Error('No analysis is available in this mock fixture.');
+ }),[]);return h(LanguageRoot,null,h(LanguageSwitch),h(InterviewPanel,{api,onResult(){}}),h('h2',null,'Last submitted fields (mock)'),h('pre',{'data-testid':'submitted-point-form'},request?JSON.stringify(request,null,2):'Nothing submitted.'));}
+createRoot(document.getElementById('fixture')).render(h(Fixture));
+</script></body></html>
