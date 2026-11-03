@@ -204,3 +204,15 @@ def test_weak_pull_on_a_mostly_sideways_track_is_refused():
     assert check_flight(fit_flight(throw(g=G / 4)), m_per_px=M_PER_PX, object_size_px=20).verdict == "inconsistent"
     # a fast flat throw under Earth gravity is unaffected
     assert check_flight(fit_flight(throw(vx=6.0, vy=0.0)), m_per_px=M_PER_PX, object_size_px=20).verdict == "consistent"
+
+
+def test_object_sinking_at_steady_speed_is_inconsistent_with_a_free_fall():
+    # T276: a cup in a generated clip sank at constant speed; that is not "no data", it is not a free fall.
+    pts = [(i / 30, 300.0, 100 + 0.5 / M_PER_PX * i / 30) for i in range(30)]  # 0.5 m/s straight down for 1 s
+    fit = fit_flight(pts)
+    check = check_flight(fit, m_per_px=M_PER_PX, object_size_px=40)
+    assert check.verdict == "inconsistent" and "steady speed" in check.reasons[0]
+    # without a scale, or when it barely moves, it stays refused
+    assert check_flight(fit, object_size_px=40).verdict == "insufficient_data"
+    still = fit_flight([(i / 30, 300.0, 100 + 0.01 / M_PER_PX * i / 30) for i in range(30)])
+    assert check_flight(still, m_per_px=M_PER_PX, object_size_px=40).verdict == "insufficient_data"

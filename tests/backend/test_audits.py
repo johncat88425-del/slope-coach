@@ -562,3 +562,24 @@ def test_point_px_reaches_sam_and_is_scaled_to_the_stored_copy(tmp_path):
         set_hooks(old)
     (tmp_path / audits.POINT_SCALE_FILE).write_text("0.5")  # a 4K upload stored at half size
     assert audits.parse_point("[1000, 600, 2]", tmp_path / "video_small.mp4") == (500.0, 300.0, 2)
+
+
+def test_object_sinking_at_steady_speed_is_judged_not_refused(tmp_path):
+    """T276: end to end, a track that drops steadily with zero acceleration gives an answer, not a crash."""
+    from backend import schemas as S
+    from backend.model_hooks import MockHooks, get_hooks, set_hooks
+
+    class SinkSam(MockHooks):
+        def track_object(self, video_path, text_prompt, t_start, t_end, point_px=None):
+            return [S.DetectionIn(t_s=i / 60, centroid_px=(0.5, 0.2 + 0.6 * i / 35), area_px=400 / (640 * 480))
+                    for i in range(36)]
+
+    write_clip(tmp_path / "real.mp4", 9.81)
+    old = get_hooks()
+    set_hooks(SinkSam())
+    try:
+        r = post(tmp_path / "real.mp4", object_name="cup")
+    finally:
+        set_hooks(old)
+    assert r.status_code == 201, r.text
+    assert r.json()["verdict"] == "inconsistent" and "steady speed" in r.json()["reasons"][0], r.json()
