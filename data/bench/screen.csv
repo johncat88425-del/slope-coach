@@ -1,0 +1,65 @@
+clip,source,in_scope,failed_condition,scene_type,frames_note
+0013_hailuo,hailuo,no,d,other,ball enters from the top and drops into the crate; leaves the frame at the top
+0013_kling,kling,no,d,other,ball rests on the crate and sinks into it; no flight
+0013_runway,runway,no,d,other,long floaty arc but the ball leaves the top of the frame
+0013_sora,sora,no,a,other,camera pans during the clip
+0013_wan,wan,no,d,other,ball stays in the crate
+0020_hailuo,hailuo,no,d,rolling down a slope,ball rolls to and over a cardboard ramp
+0020_kling,kling,no,d,rolling down a slope,ball rolls and hops off the ramp; hop too short to be sure
+0020_original,real,no,d,rolling down a slope,ball rolls along the table to the ramp
+0020_sora,sora,no,d,rolling down a slope,ball rolls; ramp collapses
+0020_veo2,veo2,no,d,rolling down a slope,ball launched off the ramp briefly; unsure
+0031_hailuo,hailuo,no,d,two objects colliding,two balls roll on a table
+0031_kling,kling,no,d,two objects colliding,two balls roll on a table
+0031_original,real,no,d,two objects colliding,two balls roll on a table
+0031_sora,sora,no,a,two objects colliding,balls roll; camera moves
+0107_kling,kling,no,c,rolling down a slope,"marble run, several marbles"
+0107_original,real,no,c,rolling down a slope,"marble run, several marbles"
+0107_sora,sora,no,a,rolling down a slope,marble run; camera moves
+0107_veo2,veo2,no,c,rolling down a slope,"marble run, several marbles"
+0107_wan,wan,no,c,rolling down a slope,"marble run, several marbles"
+0125_hailuo,hailuo,no,d,other,mug released and drops to the floor in under 0.5 s
+0125_kling,kling,yes,,other,"mug falls freely onto the block for about 1 s, fully in frame"
+0125_original,real,no,d,object hits a wall or fixed object,mug already broken on the floor
+0125_runway,runway,no,d,other,mug stays on the block; gripper moves
+0125_sora,sora,no,a,other,camera zooms out while the mug floats down
+0181_hailuo,hailuo,no,d,toppling or tipping over,block stack pushed over by a gripper
+0181_kling,kling,no,d,toppling or tipping over,block stack
+0181_original,real,no,d,toppling or tipping over,block stack
+0181_sora,sora,no,d,toppling or tipping over,hand tips the block stack
+0191_hailuo,hailuo,no,d,other,kettlebell lifted and leaves the top of the frame
+0191_kling,kling,no,d,other,"kettlebell moves up and down above the cup, partly out of frame"
+0191_original,real,no,d,other,kettlebell rests on the cup
+0191_runway,runway,no,d,other,kettlebell lifted out of the frame
+0191_sora,sora,no,d,toppling or tipping over,kettlebell tips off the cup
+0191_wan,wan,no,d,sliding,kettlebell pushed off the cup
+0194_hailuo,hailuo,no,d,other,kettlebell rests on the pillow
+0194_kling,kling,no,c,other,paper flutters down; kettlebell still
+0194_original,real,no,d,other,kettlebell rests on the pillow
+0194_runway,runway,no,d,other,hand moves the kettlebell; paper falls
+0194_sora,sora,no,a,other,kettlebell falls but the camera zooms
+0194_veo2,veo2,no,d,other,kettlebell lifted near the top edge; unsure
+0194_wan,wan,no,d,other,kettlebell rests on the pillow
+own_1,own,yes,,other,"ball thrown side-on, fixed phone"
+own_2,own,yes,,other,"ball thrown side-on, fixed phone"
+own_3,own,yes,,other,"ball thrown side-on, fixed phone"
+pexels_5275695,pexels,yes,,other,"hand-held but nearly fixed; basketball bounces, flight about 0.7 s"
+pexels_11485778,pexels,no,d,other,paper ball falls under 0.5 s and passes behind mesh
+pexels_6077078,pexels,no,c,other,several basketballs at once
+physicsiq_0001,physicsiq,no,d,other,ball drops onto a pillow in under 0.5 s
+physicsiq_0002,physicsiq,no,d,other,ball drops onto a pillow in under 0.5 s
+physicsiq_0199,physicsiq,no,d,other,ball drops onto a pillow in under 0.5 s
+physicsiq_0200,physicsiq,no,d,other,ball drops onto a pillow in under 0.5 s
+physicsiq_0022,physicsiq,no,d,rolling on a flat surface,ball rolls off the table; short low drop
+physicsiq_0023,physicsiq,no,d,rolling on a flat surface,ball rolls off the table; short low drop
+physicsiq_0221,physicsiq,no,d,rolling on a flat surface,ball rolls off the table; short low drop
+physicsiq_0058,physicsiq,no,d,other,duck drops into a box in under 0.5 s
+physicsiq_0059,physicsiq,no,d,other,duck drops into a box in under 0.5 s
+physicsiq_0257,physicsiq,no,d,other,duck drops into a box in under 0.5 s
+meta_clip1,meta,yes,,other,"ball thrown side-on in a living room, fixed tripod"
+meta_clip2,meta,no,b,other,basketballs move towards and away from the camera
+meta_clip3,meta,no,b,other,ball moves away from the camera while thrown
+meta_clip4,meta,yes,,other,ball falls and bounces side-on
+meta_clip5,meta,yes,,other,ball rolls off a table and drops side-on
+meta_clip6,meta,no,b,other,ball moves towards the camera
+manus_clip1,manus,no,d,other,ball leaves the top of the frame

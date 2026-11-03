@@ -1,0 +1,9 @@
+clip,source,object,size_m,camera_static,t_start,t_end,window_by,expected
+own_1,own,orange ball,0.11,true,1.9,2.6,john,not inconsistent
+own_2,own,orange ball,0.11,true,0.2,0.8,john,not inconsistent
+own_3,own,orange ball,0.11,true,2.0,2.4,john,not inconsistent
+pexels_5275695,pexels,brown basketball,0.24,false,0.64,1.28,john,not inconsistent
+0125_kling,kling,yellow mug,0.09,true,0.05,1.0,Claude from frames,record actual (inconsistent = caught)
+meta_clip1,meta,orange ball,0.04,true,1.5,3.8,john,record actual (inconsistent = caught)
+meta_clip4,meta,orange basketball,0.24,true,0.0,2.5,john,record actual (inconsistent = caught)
+meta_clip5,meta,orange basketball,0.24,true,2.6,3.9,john,record actual (inconsistent = caught)

@@ -655,11 +655,12 @@ def create_audit(
         rec["numbers"] |= {"g_apparent_low": lo, "g_apparent_high": hi,
                            "g_verdict_robust": float(all(inside) or not any(inside))}
     # Gravity as a ruler (no size needed): metres and speeds *if* this is Earth gravity at normal speed.
-    ruler = gravity_ruler(fit)
-    rec["numbers"] |= {
-        "if_earth_flight_time_s": ruler.flight_time_s, "if_earth_vertical_extent_m": ruler.vertical_extent_m,
-        "if_earth_launch_speed_m_s": ruler.launch_speed_m_s, "if_earth_launch_angle_deg": ruler.launch_angle_deg,
-    }
+    if fit.a_px_s2 > 0:  # T276: a steady sink can fit exactly zero acceleration, which gives no ruler
+        ruler = gravity_ruler(fit)
+        rec["numbers"] |= {
+            "if_earth_flight_time_s": ruler.flight_time_s, "if_earth_vertical_extent_m": ruler.vertical_extent_m,
+            "if_earth_launch_speed_m_s": ruler.launch_speed_m_s, "if_earth_launch_angle_deg": ruler.launch_angle_deg,
+        }
     rec["numbers"] |= {
         "a_px_s2": fit.a_px_s2, "tilt_deg": fit.tilt_deg, "rms_over_travel": fit.rms_residual_px / fit.travel_px,
         "g_apparent_m_s2": chk.g_apparent_m_s2, "implied_time_factor": chk.implied_time_factor,

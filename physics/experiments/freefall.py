@@ -107,6 +107,9 @@ def check_flight(
     if m_per_px is not None and m_per_px <= 0:
         raise PhysicsInputError("m_per_px must be positive")
     if fit.a_px_s2 <= 3 * fit.a_stderr_px_s2 or fit.travel_px <= 0:
+        slow = _steady_fall(fit, m_per_px, object_size_px, min_drop_sizes)
+        if slow is not None:
+            return slow
         return FlightCheck("insufficient_data", ("acceleration is not distinguishable from zero",),
                            None, math.inf, None, None)
 
@@ -147,6 +150,27 @@ def check_flight(
                                                  "light object slowed by air), so free flight cannot be judged",),
                            g_app, implied, size, factor)
     return FlightCheck("inconsistent" if reasons else "consistent", tuple(reasons), g_app, implied, size, factor)
+
+
+def _steady_fall(fit: FlightFit, m_per_px: float | None, object_size_px: float | None,
+                 min_drop_sizes: float) -> FlightCheck | None:
+    """T276: an object that clearly drops (more than its own size, downward in the image) with no measurable
+    acceleration, where even the top of the 3-sigma range is under half of Earth's g, is not falling freely:
+    a free fall that long would speed up visibly. (Found on a Kling clip of a cup sinking at constant speed, which
+    was refused as 'no acceleration'.) Needs a user-confirmed scale; without one it stays refused."""
+    if not m_per_px or not object_size_px:
+        return None
+    drop = fit.vy_px_s * fit.t_span_s + 0.5 * fit.ay_px_s2 * fit.t_span_s ** 2
+    if drop < max(min_drop_sizes, 1.0) * object_size_px or abs(fit.vx_px_s) * fit.t_span_s > drop:
+        return None  # must mostly move down, by more than its own size
+    a_hi = (fit.a_px_s2 + 3 * fit.a_stderr_px_s2) * m_per_px
+    if a_hi >= 0.5 * G:
+        return None
+    g_app = fit.a_px_s2 * m_per_px
+    return FlightCheck("inconsistent", (f"the object moves down at a nearly steady speed: its acceleration is at most "
+                                        f"{a_hi:.2f} m/s^2, far below a free fall's {G:.2f} (unless it is very light, "
+                                        f"like paper or a feather, and held back by air)",),
+                       g_app, G / fit.a_px_s2 if fit.a_px_s2 > 0 else math.inf, None, None)
 
 
 def _down_extent_px(fit: FlightFit) -> float:
