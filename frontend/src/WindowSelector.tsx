@@ -1,8 +1,10 @@
 import {Localize,useTranslation} from './i18n.js';
 import {useId,useRef,useState} from 'react';
 import {windowKeyValue,canConfirmWithKey} from './windowKeyboard.js';
+import {TrackingPointPicker} from './TrackingPointPicker.js';
+import type {TrackingPoint} from './trackingPoint.js';
 export function validWindow(start:string,end:string,duration:number){return start.trim()!==''&&end.trim()!==''&&Number.isFinite(Number(start))&&Number.isFinite(Number(end))&&Number(start)>=0&&Number(end)>Number(start)&&Number.isFinite(duration)&&duration>0&&Number(end)<=duration}
-export function WindowSelector({url,start,end,confirmed,onChange,onConfirm,children}:{url:string;start:string;end:string;confirmed:boolean;onChange:(start:string,end:string)=>void;onConfirm:()=>void;children?:import('react').ReactNode}){
+export function WindowSelector({url,start,end,confirmed,onChange,onConfirm,children,point,onPointChange}:{url:string;start:string;end:string;confirmed:boolean;onChange:(start:string,end:string)=>void;onConfirm:()=>void;children?:import('react').ReactNode;point?:TrackingPoint;onPointChange?:(point:TrackingPoint|undefined)=>void}){
  const t=useTranslation(),helpId=useId();const video=useRef<HTMLVideoElement>(null);
  const [duration,setDuration]=useState(0),[error,setError]=useState('');const valid=validWindow(start,end,duration);
  function change(which:'start'|'end',value:string){onChange(which==='start'?value:start,which==='end'?value:end)}
@@ -21,5 +23,6 @@ export function WindowSelector({url,start,end,confirmed,onChange,onConfirm,child
  {!valid&&start.trim()!==''&&end.trim()!==''&&duration>0&&<p data-testid="window-invalid" role="status">{Number(end)<=Number(start)?'The end must be later than the start.':'The window must fit inside the video.'}</p>}
  <button data-testid="window-confirm" disabled={!valid||confirmed} onClick={confirm}>{confirmed?'Time window confirmed':'Confirm time window'}</button>
  <p>Changing either boundary requires confirmation again. No time is selected automatically.</p>
+ {valid&&confirmed&&onPointChange&&<TrackingPointPicker key={JSON.stringify([url,start,end])} url={url} start={Number(start)} value={point} onChange={onPointChange}/>}
  </section></Localize>
 }

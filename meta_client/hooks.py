@@ -83,10 +83,11 @@ class MetaHooks(ModelHooks):
         return _dense_detections(result, 0.0)
 
     def track_object(
-        self, video_path: Path, text_prompt: str, t_start: float, t_end: float
+        self, video_path: Path, text_prompt: str, t_start: float, t_end: float,
+        point_px: tuple[float, float, int] | None = None,
     ) -> list[DetectionIn]:
         try:
-            result = _sam.track(video_path, text_prompt, t_start=t_start, t_end=t_end)
+            result = _sam.track(video_path, text_prompt, t_start=t_start, t_end=t_end, point_px=point_px)
         except MetaClientError as exc:
             raise TrackingUnavailable(str(exc)) from exc
         return _dense_detections(result, t_start, normalized=True)

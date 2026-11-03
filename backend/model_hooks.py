@@ -20,7 +20,8 @@ class ModelHooks(Protocol):
     def track_slider(self, video_path: Path, text_prompt: str) -> list[DetectionIn]: ...
     def suggest_release_time(self, video_path: Path) -> ReleaseSuggestion: ...
     def interview_audit(self, video_path: Path) -> AuditInterview: ...
-    def track_object(self, video_path: Path, text_prompt: str, t_start: float, t_end: float) -> list[DetectionIn]:
+    def track_object(self, video_path: Path, text_prompt: str, t_start: float, t_end: float,
+                     point_px: tuple[float, float, int] | None = None) -> list[DetectionIn]:
         """SAM 3.1 track of one object between t_start and t_end (seconds of the clip).
         Coordinates are NORMALISED to the frame as it plays (after rotation): centroid x/width and
         y/height in 0..1, area as a fraction of width*height. One detection per frame, centroid None
@@ -52,7 +53,8 @@ class MockHooks:
     def suggest_release_time(self, video_path: Path) -> ReleaseSuggestion:
         return ReleaseSuggestion(source="mock", candidate_t0_s=None, reason="model not connected")
 
-    def track_object(self, video_path: Path, text_prompt: str, t_start: float, t_end: float) -> list[DetectionIn]:
+    def track_object(self, video_path: Path, text_prompt: str, t_start: float, t_end: float,
+                     point_px: tuple[float, float, int] | None = None) -> list[DetectionIn]:
         raise TrackingUnavailable("SAM tracking is not connected yet; using frame differencing")
 
     def interview_audit(self, video_path: Path) -> AuditInterview:
