@@ -316,15 +316,19 @@ def suggest_flight_windows(points: list[tuple[float, float, float]], *, min_poin
     y = np.array([p[2] for p in arr])
     dt = float(np.median(np.diff(t)))
     cut = {0, len(arr)}
+    contact: set[int] = set()
     for k in range(1, len(arr)):
         if dt > 0 and t[k] - t[k - 1] > 2.5 * dt:
             cut.add(k)
     for k in range(1, len(arr) - 1):
         if y[k] > y[k - 1] and y[k] >= y[k + 1]:  # lowest point in the image: a bounce or a catch
-            cut.add(k + 1)
+            cut |= {k, k + 1}
+            contact.add(k)  # T274: the contact frame belongs to no flight; SAM then saw the bounce as a track jump
     bounds = sorted(cut)
     out = []
     for a, b in zip(bounds, bounds[1:]):
+        if b - a == 1 and a in contact:
+            continue
         best: tuple[int, int] | None = None
         for i in range(a, b - min_points + 1):
             if best and (b - i) <= best[1] - best[0]:

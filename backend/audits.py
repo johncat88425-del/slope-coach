@@ -6,8 +6,9 @@ differencing until SAM is wired in; all numbers come from physics/.
 """
 from __future__ import annotations
 
+import json
+import math
 import os
-
 import shutil
 import subprocess
 import time
@@ -165,7 +166,10 @@ def _save_upload(file: UploadFile, d: Path) -> Path:
             shrink_video(str(video), str(small))  # a 4K clip crashed the 512 MB public host (T240, T243)
         except (subprocess.SubprocessError, OSError):
             raise HTTPException(422, "could not read this video; is it a complete video file?")
+        orig_long = max(_frame_size(video))
         video.unlink(missing_ok=True)
+        # T274: a tracking point is picked on the user's own (unshrunk) copy, so keep how much the stored copy shrank
+        (d / POINT_SCALE_FILE).write_text(f"{max(_frame_size(small)) / orig_long:.6f}")
         return small
     return video
 
@@ -196,6 +200,26 @@ def _frame_size(video: Path) -> tuple[int, int]:
     return w, h
 
 
+POINT_SCALE_FILE = "point_scale.txt"
+
+
+def parse_point(raw: str | None, video: Path) -> tuple[float, float, int] | None:
+    """T274: point_px from the form is JSON [x, y, frame_index] in pixels of the video the user picked on, frame 0
+    being the first frame of the time window. Returns it in pixels of the stored video."""
+    if raw is None or not raw.strip():
+        return None
+    try:
+        x, y, f = json.loads(raw)
+        x, y = float(x), float(y)
+    except (ValueError, TypeError):
+        raise HTTPException(422, "point_px must be [x, y, frame_index]")
+    if not (math.isfinite(x) and math.isfinite(y)) or x < 0 or y < 0 or not isinstance(f, int) or f < 0:
+        raise HTTPException(422, "point_px must be [x, y, frame_index] with x, y >= 0 and a whole frame_index >= 0")
+    scale_file = video.parent / POINT_SCALE_FILE
+    scale = float(scale_file.read_text()) if scale_file.exists() else 1.0
+    return x * scale, y * scale, f
+
+
 def checked_interview(iv: S.AuditInterview) -> S.AuditInterview:
     """Model questions may not carry numbers or banned wording, at most one per field and three in all.
     Anything else falls back to the fixed questions (AGENTS.md rule 5)."""
@@ -212,7 +236,7 @@ def checked_interview(iv: S.AuditInterview) -> S.AuditInterview:
 
 
 def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, object_name: str,
-                 widths: list | None = None):
+                 widths: list | None = None, point_px: tuple[float, float, int] | None = None):
     """SAM 3.1 when connected; otherwise colour + motion when the object name gives a colour (T88, same
     tracker as the gate), otherwise frame differencing. SAM output is normalised and converted here to the
     same 480 px frame the rest of the audit uses; frames SAM misses stay gaps.
@@ -225,7 +249,8 @@ def track_points(video: Path, frames, fps: float, t_start: float, t_end: float, 
     frames without a width leave it out."""
     h, w = frames.shape[1], frames.shape[2]
     try:
-        dets = get_hooks().track_object(video, object_name, t_start, t_end)
+        extra = {"point_px": point_px} if point_px else {}  # hooks without point support still work
+        dets = get_hooks().track_object(video, object_name, t_start, t_end, **extra)
     except TrackingUnavailable:
         dets = None
     except Exception:  # a model failure falls back to the model-free tracker, never blocks the audit
@@ -411,6 +436,7 @@ def create_audit(
     object_name: str = Form("ball", max_length=60),  # text prompt for SAM, e.g. "tennis ball"
     length_m: float | None = Form(None),  # pendulum only: user-measured string length to the bob centre
     vehicle_class: str | None = Form(None),  # vehicle only: user-confirmed class; sets the length range
+    point_px: str | None = Form(None, max_length=80),  # T274: optional click on the object, JSON [x, y, frame]
 ):
     if assumed_model not in MODELS:
         raise HTTPException(422, f"assumed_model must be one of {MODELS}")
@@ -458,7 +484,10 @@ def create_audit(
     except Exception:
         raise HTTPException(422, "could not read video frames in that window")
     widths: list[float] = []
-    pts, sizes, source, times = track_points(video, frames, fps, t_start, t_end, object_name, widths)
+    point = parse_point(point_px, video)
+    pts, sizes, source, times = track_points(video, frames, fps, t_start, t_end, object_name, widths, point)
+    if point:
+        rec["numbers"]["point_prompt"] = 1.0
     rec["track_source"] = source
     size_px = sorted(sizes)[len(sizes) // 2] if sizes else None
     save_overlay(frames, pts, t_start, fps, str(d / "overlay.png"))
@@ -680,6 +709,7 @@ def create_audit_job(
     object_name: str = Form("ball", max_length=60),
     length_m: float | None = Form(None),
     vehicle_class: str | None = Form(None),
+    point_px: str | None = Form(None, max_length=80),
 ):
     """Same inputs as POST /api/audits; returns at once with a job id to poll at GET /api/audit-jobs/{id}."""
     if (file is None) == (draft_id is None):
@@ -694,7 +724,7 @@ def create_audit_job(
     _JOB_POOL.submit(_run_job, jid, dict(
         draft_id=draft_id, slow_motion=slow_motion, t_start=t_start, t_end=t_end, camera_static=camera_static,
         assumed_model=assumed_model, object_size_m=object_size_m, object_name=object_name, length_m=length_m,
-        vehicle_class=vehicle_class))
+        vehicle_class=vehicle_class, point_px=point_px))
     return {"job_id": jid, "status": "running"}
 
 

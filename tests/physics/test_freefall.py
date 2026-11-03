@@ -100,6 +100,8 @@ def test_suggest_flight_windows_splits_at_bounce_and_skips_hand_motion():
     assert len(wins) >= 2
     assert abs(wins[0][0] - 10 / 60) < 0.05 and abs(wins[0][1] - (10 + 29) / 60) < 0.05
     assert wins == sorted(wins)
+    contact = pts[39][0]  # T274: the bounce frame itself sits in no window, so SAM never sees the impact
+    assert all(not a <= contact <= b for a, b in wins)
     assert suggest_flight_windows(pts[:5]) == []
 
 

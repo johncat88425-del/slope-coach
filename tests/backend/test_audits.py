@@ -533,3 +533,32 @@ def test_audit_job_reports_failures_and_unknown_ids(tmp_path):
     bad = client.post("/api/audit-jobs", data=form | {"draft_id": d["draft_id"], "t_start": "0.5", "t_end": "0.1"})
     j = _poll(bad.json()["job_id"])
     assert j["status"] == "failed" and j["status_code"] >= 400 and j["error"]
+
+
+def test_point_px_reaches_sam_and_is_scaled_to_the_stored_copy(tmp_path):
+    """T274: a click on the object goes to SAM as a point, in pixels of the stored (possibly shrunk) video."""
+    from backend import audits
+    from backend.model_hooks import MockHooks, get_hooks, set_hooks
+
+    seen = {}
+
+    class PointSam(MockHooks):
+        def track_object(self, video_path, text_prompt, t_start, t_end, point_px=None):
+            seen["point"] = point_px
+            return MockHooks.track_object(self, video_path, text_prompt, t_start, t_end)
+
+    write_clip(tmp_path / "real.mp4", 9.81)
+    old = get_hooks()
+    set_hooks(PointSam())
+    try:
+        r = post(tmp_path / "real.mp4", point_px="[120.5, 80, 0]")
+        assert r.status_code == 201, r.text
+        assert seen["point"] == (120.5, 80.0, 0) and r.json()["numbers"]["point_prompt"] == 1.0
+        seen.clear()
+        assert post(tmp_path / "real.mp4").status_code == 201 and seen["point"] is None
+        assert post(tmp_path / "real.mp4", point_px="[1, 2]").status_code == 422
+        assert post(tmp_path / "real.mp4", point_px="[-1, 2, 0]").status_code == 422
+    finally:
+        set_hooks(old)
+    (tmp_path / audits.POINT_SCALE_FILE).write_text("0.5")  # a 4K upload stored at half size
+    assert audits.parse_point("[1000, 600, 2]", tmp_path / "video_small.mp4") == (500.0, 300.0, 2)

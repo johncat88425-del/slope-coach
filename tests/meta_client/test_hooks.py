@@ -89,7 +89,7 @@ def test_track_object_passes_window_and_offsets_time(tmp_path, monkeypatch):
 
     monkeypatch.setattr(sam, "track", fake_track)
     dets = hooks.MetaHooks().track_object(tmp_path / "c.mp4", "ball", 1.0, 2.0)
-    assert seen == {"t_start": 1.0, "t_end": 2.0}
+    assert seen == {"t_start": 1.0, "t_end": 2.0, "point_px": None}
     assert [d.t_s for d in dets] == pytest.approx([1.0, 1.0 + 1 / 15.0, 1.0 + 2 / 15.0])
     # API v0.5: centroid normalised to 0..1, area as a frame fraction
     assert dets[0].centroid_px == (0.5, 0.5)

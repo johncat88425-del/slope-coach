@@ -67,6 +67,7 @@
 - [x] T268 Muse：讓 SAM 用「點選位置」追蹤，取代文字（meta_client/sam.py 加 `point_px` 參數，後端 `DetectionIn` 不變）。先查 sam-3.1 API 支不支援點或框提示；不支援就寫進「待 john 決定」並停下。花費上限 $0.50。（commit 248e5f4，分支 muse/T268-sam-point）
 - [x] T269 Muse：Muse Spark 看 3 張關鍵畫面，列出肉眼可見的異常（變形、穿透、影子對不上、憑空出現），標成「觀察（由 Muse Spark 產生）」，**不准影響判定**，通過禁用字眼檢查。花費上限 $0.30。（commit 2b76ce7，分支 muse/T269-observations）
 - [x] T270 Codex（前端完成，commit 39f9996，codex/T270-point-select；john 直接指示先做前端，T268 的 muse/T268-sam-point 已完成；main HTTP 接線尚待完成）：上傳後在第一張畫面上點選要追的物體，送出 `point_px`。token 不夠就停下，在 STATUS 寫明，Claude 接手。
+- [x] T274 Claude：合併 T268／T269／T270，接上點選追蹤：`point_px`（JSON [x,y,格]）從 /api/audits、/api/audit-jobs → hooks → SAM；4K 上傳縮小時記下縮放比例（point_scale.txt），點會換算到儲存的影片。自動時間窗不再包含落地／反彈那一格（Muse 發現 Pexels 片的「追蹤跳動」其實是包到反彈）。T269 觀察筆記還沒接到畫面（只有 meta_client）。
 - [ ] T271 Manus：找 10 支「看起來很真」的公開 AI 生成片（Sora、Veo、Kling、Hailuo 的官方展示頁或論文資料集），條件是固定鏡頭、單一物體在飛、落下或彈跳、沒有人臉。每支附網址、授權、時間窗。交給 john。
 - [x] T258 Claude（線上複測：擺錘 3 秒、5 秒時間窗仍讓伺服器當掉）：`meta_client/sam.py` 把每一格、每個物體的完整遮罩都存在記憶體（擺錘片 3 個物體約 466 MB），但後面只用到中心和面積。改成解碼後算完就丟。
 - [x] T256 Claude（john：「鏡頭會動，再繼續改」）：鏡頭除了平移，現在也能修正小幅轉動（roll ≤8°）和變焦（≤15%）。做法：背景左右上下四半部各自量位移，擬合「平移＋旋轉＋縮放」；四個半部都吻合才修正，追蹤點和物體大小一起還原到第一格。只在使用者答「鏡頭有動」時使用，答「固定」的路徑完全不變。合成測試：11% 變焦＋5° 轉動，誤差從 28 px 降到 <4 px。
@@ -395,8 +396,8 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 
 ## 待 john 決定
 
-- T270／Claude 接線事項（11/02，前端實作不改後端）：main 的 POST /api/audit-jobs 與 /api/audits 尚未接收 point_px，hooks 也尚未把點送入 SAM。前端依 john 指定送 multipart 欄位 point_px，內容為 JSON [x,y,frame_index]；第一格固定 frame_index=0，座標取預覽影片 videoWidth／videoHeight 的原生像素，未點選時完全省略。已核對 muse/T268-sam-point 的 sam.track 文件，格號確實相對於轉碼後的選定時間窗，與前端 0 相符。請 Claude 補 HTTP → hooks → SAM 接線後再驗收實際點選追蹤，前端 Mock 表單測試不等於後端已採用點。
-- T270／4K 座標契約缺口（11/02）：公開後端 _save_upload 會把原片縮到 1920 並刪除原檔；使用者本機預覽仍是原片，因此不能直接把 4K 點當作縮圖後的像素傳給 SAM。需後端保留原始尺寸並映射到儲存影片，或由 Claude 明定與擴充草稿尺寸契約。前端按 john 要求保留原生座標，沒有猜測縮圖尺寸、沒有擅加未約定欄位。範例片的點座標以草稿預覽原生尺寸為準。本分支不改 backend、meta_client 或 docs/API.md。
+- （已解決 T274）T270／Claude 接線事項（11/02，前端實作不改後端）：main 的 POST /api/audit-jobs 與 /api/audits 尚未接收 point_px，hooks 也尚未把點送入 SAM。前端依 john 指定送 multipart 欄位 point_px，內容為 JSON [x,y,frame_index]；第一格固定 frame_index=0，座標取預覽影片 videoWidth／videoHeight 的原生像素，未點選時完全省略。已核對 muse/T268-sam-point 的 sam.track 文件，格號確實相對於轉碼後的選定時間窗，與前端 0 相符。請 Claude 補 HTTP → hooks → SAM 接線後再驗收實際點選追蹤，前端 Mock 表單測試不等於後端已採用點。
+- （已解決 T274）T270／4K 座標契約缺口（11/02）：公開後端 _save_upload 會把原片縮到 1920 並刪除原檔；使用者本機預覽仍是原片，因此不能直接把 4K 點當作縮圖後的像素傳給 SAM。需後端保留原始尺寸並映射到儲存影片，或由 Claude 明定與擴充草稿尺寸契約。前端按 john 要求保留原生座標，沒有猜測縮圖尺寸、沒有擅加未約定欄位。範例片的點座標以草稿預覽原生尺寸為準。本分支不改 backend、meta_client 或 docs/API.md。
 
 - T237 Render 自動部署：Branch 已保存 main；Auto-Deploy 選單雖顯示 On Commit，但 Update Source → Git Provider 仍是 Connect Git provider，服務目前用公開 Git URL。Render 官方說此來源不支援自動部署，需手動 Deploy latest commit；要在 main 更新後自動部署，須另外連接 GitHub Git Provider 並授權 repo。未自行新增 GitHub 存取權，也未把 deploy hook 寫進檔案或對話。來源：https://render.com/docs/deploys#automatic-deploys 。
 
