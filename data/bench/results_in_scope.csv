@@ -1,0 +1,9 @@
+clip,source,scene,assumed_model,object,size_m,camera_static,t_start,t_end,window_note,expected,verdict,g,reasons,track_jump,size_trend,depth_corrected,camera_corrected,accel_halves_ratio,tracked_fraction,seconds
+own_1,own,in scope,free_flight,orange ball,0.11,true,1.9,2.6,,,consistent,9.282385581085553,,0.40361447010374335,0.04456111745542257,,1.0,0.8337645679900234,1.0,55
+own_2,own,in scope,free_flight,orange ball,0.11,true,0.2,0.8,,,consistent,9.54725060033514,,0.4569242902709534,0.06988627772278666,,,,1.0,44
+own_3,own,in scope,free_flight,orange ball,0.11,true,2.0,2.4,,,consistent,8.795016633487172,,0.18739535399296794,-0.028504204267778777,,1.0,,1.0,47
+pexels_5275695,pexels,in scope,free_flight,brown basketball,0.24,false,0.64,1.28,,,consistent,10.146023677874723,,2.26449146240852,-0.03550829550042034,,1.0,,1.0,66
+0125_kling,kling,in scope,free_flight,yellow mug,0.09,true,0.05,1.0,,,insufficient_data,,acceleration is not distinguishable from zero,1.3785705597820819,-0.007176028895878983,,,,0.9285714285714286,56
+meta_clip1,meta,in scope,free_flight,orange ball,0.04,true,1.5,3.8,,,inconsistent,0.24929244238973336,apparent g 0.25 m/s^2 is outside 8.34-11.28,1.2726939248986415,-0.1707062160482674,,,0.7503353918970698,1.0,53
+meta_clip4,meta,in scope,free_flight,orange basketball,0.24,true,0.0,2.5,,,inconsistent,0.14308520698315072,"apparent g 0.14 m/s^2 is outside 8.34-11.28 | the first and second half of the flight fall with different accelerations (0.57x apart), so the pull is not constant",1.21492907726535,0.1263141898889084,,,0.5678021250895158,1.0,54
+meta_clip5,meta,in scope,free_flight,orange basketball,0.24,true,2.6,3.9,,,inconsistent,1.8040675798739725,acceleration points -171 deg away from image-down | track does not follow a constant-acceleration path | apparent g 1.80 m/s^2 is outside 8.34-11.28,2.2830661961724403,-0.18923723727550124,,,0.9355627180814577,1.0,45
