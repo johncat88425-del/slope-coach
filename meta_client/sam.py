@@ -18,6 +18,7 @@ clearly so it can be re-checked against real footage (T04).
 from __future__ import annotations
 
 import json
+import math
 import re
 import subprocess
 import tempfile
@@ -309,12 +310,28 @@ def _billed_frames(usage: Any, n_frames: int) -> int:
     return n_frames  # min-50 rule is applied by sam_video_cost_usd
 
 
+def _point_prompt(x: float, y: float, frame_index: int, w: int, h: int) -> str:
+    """Build the SAM point prompt for one object on one frame.
+
+    Wire format (T268, https://dev.meta.ai/docs/sam/segmenting): the prompt
+    goes in input_text as ``<Nf>id<|point;x=..;y=..;w=..;h=..|>`` where w/h
+    are the media pixels and (x, y) rounds down to whole pixels. The object
+    id is always "1": a point means one object, and select_main_track still
+    picks the longest-lived track if extra objects appear.
+    """
+    return (
+        f"<{frame_index}f>1"
+        f"<|point;x={math.floor(x)};y={math.floor(y)};w={w};h={h}|>"
+    )
+
+
 def track(
     video_path: Path | str,
     text_prompt: str,
     *,
     t_start: float | None = None,
     t_end: float | None = None,
+    point_px: tuple[float, float, int] | None = None,
     timeout: float = _client.SAM_TIMEOUT_S,
     tracker: CostTracker | None = None,
 ) -> TrackResult:
@@ -324,10 +341,18 @@ def track(
     t_start + N / 15. Frames where the object is absent simply have no entry;
     callers that need a dense timeline (backend DetectionIn) must emit
     explicit missing markers instead of interpolating (see hooks).
+
+    With point_px=(x, y, frame_index), the request sends a point prompt
+    instead of the noun phrase (SAM takes one kind only, never both), which
+    disambiguates two balls, a held ball, or a small ball (T268). The point
+    is in source-video pixels — the transcode below only changes frame rate,
+    so source pixels and media pixels are the same — and frame_index counts
+    frames of the transcoded (windowed) clip. text_prompt is still required
+    but is ignored when a point is given.
     """
     if not text_prompt or not text_prompt.strip():
         raise ValueError("text_prompt must be a non-empty noun phrase")
-    if "," in text_prompt or " and " in text_prompt.lower():
+    if point_px is None and ("," in text_prompt or " and " in text_prompt.lower()):
         raise ValueError("one concept per request; comma/and lists match nothing")
     if (t_start is None) != (t_end is None):
         raise ValueError("t_start and t_end must be given together")
@@ -352,6 +377,29 @@ def track(
         # Pre-book the estimate so one long-enough call can't jump the
         # ceiling between tracker.check() at entry and record() at exit.
         tracker.check(sam_video_cost_usd(n_frames))
+        input_text = text_prompt.strip()
+        if point_px is not None:
+            try:
+                px, py, pframe = point_px
+            except (TypeError, ValueError):
+                raise ValueError(
+                    "point_px must be (x, y, frame_index)"
+                ) from None
+            if not isinstance(pframe, int) or isinstance(pframe, bool):
+                raise ValueError("point frame_index must be an int")
+            if not 0 <= pframe < n_frames:
+                raise ValueError(
+                    f"point frame_index {pframe} outside the transcoded clip "
+                    f"(0 to {n_frames - 1})"
+                )
+            w, h = info["width"], info["height"]
+            if not (math.isfinite(px) and math.isfinite(py)):
+                raise ValueError("point x/y must be finite numbers")
+            if not (0 <= px < w and 0 <= py < h):
+                raise ValueError(
+                    f"point ({px}, {py}) outside the {w}x{h} frame"
+                )
+            input_text = _point_prompt(px, py, pframe, w, h)
         file_id = _client.upload_file(prepared)
         sdk = get_client()
         response = call_with_retry(
@@ -362,7 +410,7 @@ def track(
                         "type": "message",
                         "role": "user",
                         "content": [
-                            {"type": "input_text", "text": text_prompt.strip()},
+                            {"type": "input_text", "text": input_text},
                             {"type": "input_video", "file_id": file_id},
                         ],
                     }
