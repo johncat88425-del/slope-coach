@@ -61,7 +61,7 @@
 - **11/03 john：「出錯率太高、AI 範例太簡單」→ 解凍，改做困難題庫。分析和計畫：https://claude.ai/artifact/Rf9B87qB66zyj2perbHrMS 。所有修改都要用困難題庫的三個數字（真片被誤判率、AI 片漏抓率、拒判率）證明有變好，不准只挑好看的片。**
 - [ ] T266 Claude（john 的 Mac 上跑）：困難題庫。HF `video-reasoning/physical-commonsense` 裡和下落、滾動、碰撞有關的 8 個場景（真片＋Sora/Veo 2/Kling/Runway/Hailuo/Wan 各一支），加上 john 的片和 Pexels 真片。每支先標好答案再跑真 SAM，產出錯誤率表和每支的失敗原因。檔案放 repo 外的 ~/Downloads/bench，不 commit 影片；只 commit 結果表（新的 `data/bench/results.csv`）和評分腳本。
 - [ ] T267 Claude：不需要尺寸的新檢查（等 T266 第一批結果出來再決定先做哪個）：彈跳反彈比例要穩定、空中水平速度要固定、被擋住後再出現要接在同一條拋物線上、物體形狀和大小不能亂跳（不是朝鏡頭移動造成的）。每項都要有 physics 測試，並用題庫證明沒有增加真片誤判。
-- [x] T268 Muse：讓 SAM 用「點選位置」追蹤，取代文字（meta_client/sam.py 加 `point_px` 參數，後端 `DetectionIn` 不變）。先查 sam-3.1 API 支不支援點或框提示；不支援就寫進「待 john 決定」並停下。花費上限 $0.50。（commit b14eb6a，分支 muse/T268-sam-point）
+- [x] T268 Muse：讓 SAM 用「點選位置」追蹤，取代文字（meta_client/sam.py 加 `point_px` 參數，後端 `DetectionIn` 不變）。先查 sam-3.1 API 支不支援點或框提示；不支援就寫進「待 john 決定」並停下。花費上限 $0.50。（commit 248e5f4，分支 muse/T268-sam-point）
 - [ ] T269 Muse：Muse Spark 看 3 張關鍵畫面，列出肉眼可見的異常（變形、穿透、影子對不上、憑空出現），標成「觀察（由 Muse Spark 產生）」，**不准影響判定**，通過禁用字眼檢查。花費上限 $0.30。
 - [ ] T270 Codex（T268 完成後）：上傳後在第一張畫面上點選要追的物體，送出 `point_px`。token 不夠就停下，在 STATUS 寫明，Claude 接手。
 - [ ] T271 Manus：找 10 支「看起來很真」的公開 AI 生成片（Sora、Veo、Kling、Hailuo 的官方展示頁或論文資料集），條件是固定鏡頭、單一物體在飛、落下或彈跳、沒有人臉。每支附網址、授權、時間窗。交給 john。
