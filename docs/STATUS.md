@@ -20,7 +20,7 @@
 | 誰 | 照這個順序做 |
 | --- | --- |
 | **Muse** | 全部完成 |
-| **Codex** | 本輪完成：T242 PR #149 已合併；T246 永久結果連結 commit 9eec8f0，推送 codex/T246-background-share。部署與線上驗證由 T248 接手。 |
+| **Codex** | T270 前端完成，commit 39f9996；分支 codex/T270-point-select。HTTP point_px 與 4K 原始尺寸映射需 Claude 接線，缺口詳待 john 決定；本分支只改 frontend 與 STATUS。 |
 | **Antigravity** | 全部完成（T231 記憶體實測通過、T230 線上實測三支片＋429 速率限制全過） |
 | **Manus** | 沒有待辦（T199–T201 已交，Claude 改寫成最終版） |
 | **Claude** | 審查合併 → T217 凍結前提交檢查 |
@@ -63,7 +63,7 @@
 - [ ] T267 Claude：不需要尺寸的新檢查（等 T266 第一批結果出來再決定先做哪個）：彈跳反彈比例要穩定、空中水平速度要固定、被擋住後再出現要接在同一條拋物線上、物體形狀和大小不能亂跳（不是朝鏡頭移動造成的）。每項都要有 physics 測試，並用題庫證明沒有增加真片誤判。
 - [ ] T268 Muse：讓 SAM 用「點選位置」追蹤，取代文字（meta_client/sam.py 加 `point_px` 參數，後端 `DetectionIn` 不變）。先查 sam-3.1 API 支不支援點或框提示；不支援就寫進「待 john 決定」並停下。花費上限 $0.50。
 - [ ] T269 Muse：Muse Spark 看 3 張關鍵畫面，列出肉眼可見的異常（變形、穿透、影子對不上、憑空出現），標成「觀察（由 Muse Spark 產生）」，**不准影響判定**，通過禁用字眼檢查。花費上限 $0.30。
-- [ ] T270 Codex（Codex 進行中，codex/T270-point-select；john 直接指示先做前端，T268 的 muse/T268-sam-point 已完成；main HTTP 接線尚待完成）：上傳後在第一張畫面上點選要追的物體，送出 `point_px`。token 不夠就停下，在 STATUS 寫明，Claude 接手。
+- [x] T270 Codex（前端完成，commit 39f9996，codex/T270-point-select；john 直接指示先做前端，T268 的 muse/T268-sam-point 已完成；main HTTP 接線尚待完成）：上傳後在第一張畫面上點選要追的物體，送出 `point_px`。token 不夠就停下，在 STATUS 寫明，Claude 接手。
 - [ ] T271 Manus：找 10 支「看起來很真」的公開 AI 生成片（Sora、Veo、Kling、Hailuo 的官方展示頁或論文資料集），條件是固定鏡頭、單一物體在飛、落下或彈跳、沒有人臉。每支附網址、授權、時間窗。交給 john。
 - [x] T258 Claude（線上複測：擺錘 3 秒、5 秒時間窗仍讓伺服器當掉）：`meta_client/sam.py` 把每一格、每個物體的完整遮罩都存在記憶體（擺錘片 3 個物體約 466 MB），但後面只用到中心和面積。改成解碼後算完就丟。
 - [x] T256 Claude（john：「鏡頭會動，再繼續改」）：鏡頭除了平移，現在也能修正小幅轉動（roll ≤8°）和變焦（≤15%）。做法：背景左右上下四半部各自量位移，擬合「平移＋旋轉＋縮放」；四個半部都吻合才修正，追蹤點和物體大小一起還原到第一格。只在使用者答「鏡頭有動」時使用，答「固定」的路徑完全不變。合成測試：11% 變焦＋5° 轉動，誤差從 28 px 降到 <4 px。
@@ -510,6 +510,7 @@ v1 全拒判 → v2 有 4 支判出不一致（clip1 g=0.24 冥王星、clip4 g=
 | 10/31 | T184：SAM 跑 4 支側面車子片 6 個窗（每窗 $0.018–0.024） | 0.125 | 2.112 |
 
 ## 工作日誌（最新在上）
+- 11/02 Codex T270 前端完成並交付：實作 commit 39f9996，完成表已勾，推送 codex/T270-point-select（目標 main）。210 前端測試、普通／demo build、320 pytest 全過；HTTP 接線及 4K 縮圖座標映射仍明確交給 Claude，未冒稱線上點選追蹤已接通。
 
 - 11/02 Codex T270：先 checkout main／pull origin main（994869c），獨立開 codex/T270-point-select。兩條入口（Muse 偵訊、進階上傳）共用選取控制：確認時間窗後顯示起點的靜止原生影片畫面；點擊／觸控的 click 事件換算成原生像素，SVG 小實線圓圈標記。鍵盤方向鍵移動虛線游標，Shift＋方向鍵微調 1 px，Enter／Space 才選取，Delete／Escape／清除按鈕可撤銷；單純聚焦不會選點。影像與標記同用 contain 比例，排除 letterbox／pillarbox 的空白。沒有新套件、沒有推算物理數字。
 - 11/02 Codex T270 狀態與 API：沒點仍可送出且省略 point_px；有點則在 draft／直接檔案／XHR 上傳三條路以 JSON 陣列傳送，不使用逗號字串。改片、改任一時間邊界或撤銷確認立即失效，回到舊時間窗也不復活舊點。尚未載入、正在定位或讀不到首格時不能誤選其他畫格，仍可走文字流程。兩語提示與鍵盤游標座標可讀；影片預覽不自動播放。SAM 真的採用點仍待 Claude 的 HTTP 接線及 4K 尺寸契約，詳待決定；未宣稱改善困難題庫誤判率。
