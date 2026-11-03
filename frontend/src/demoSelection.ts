@@ -2,7 +2,7 @@ import type {AuditOut} from './audit.js';
 
 // Main's final SAM records: retain the wall's entire catalog, with these three
 // examples providing an entry point into each outcome.
-export const openingExampleKeys=['real_own_2','generated_meta_clip4','generated_meta_clip2'] as const;
+export const openingExampleKeys=['real_own_2','generated_meta_clip4','synthetic_toss_moving_camera'] as const;
 export const comparisonKeys=[openingExampleKeys[0],openingExampleKeys[1]] as const;
 
 export function savedOutcomeCaption(audit:Pick<AuditOut,'verdict'>){
