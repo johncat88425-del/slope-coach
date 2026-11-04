@@ -1,4 +1,25 @@
-# Slope Coach: Video Physics Audit & Inquiry Coach
+# Video Physics Audit
+
+Checks whether the motion in a video is consistent with real-world physics: Muse Spark asks, SAM 3.1 tracks, and code does the math.
+
+## Try it
+
+- **Live app (upload your own clip):** https://video-physics-audit.onrender.com. The free host sleeps; the first visit can take about a minute, and each check takes 1–4 minutes.
+- No clip? Press **Try a sample clip**.
+- Own clip: fixed camera, side-on view, one object thrown, dropped or bouncing, 2–5 s, under 50 MB. Optionally tap the object on the first frame so SAM tracks the right thing.
+- The answer is always one of three: **consistent**, **inconsistent**, or **cannot judge** (with the reason).
+
+## Tested before submission
+
+All rules, windows and clip lists were fixed before running (`data/bench/`), with real SAM 3.1 tracking and no per-clip tuning.
+
+| Set | Real clips | AI-generated clips |
+| --- | --- | --- |
+| Clips that fit the filming rules (`data/bench/screen_rule.md`, chosen from frames only): 8 of 64 | 4/4 consistent | 4/4 inconsistent (Meta AI ×3, Kling) |
+| Hard set: 57 clips (Physics-IQ real videos; the Hugging Face `video-reasoning/physical-commonsense` set with Sora, Veo 2, Kling, Runway, Hailuo and Wan; Pexels; our own) | wrongly flagged: 3 → 1 of 23 after fixes | judged consistent: 0 of 34 |
+
+On the hard set most clips are answered **cannot judge**: many show rolling, collisions or a moving camera rather than one object in free flight, which this version does not check. It says so instead of guessing.
+
 
 Home and saved results: own_2 fits the assumed model; meta_clip4 differs, with the stored Earth-model ghost trajectory shown.
 
@@ -12,7 +33,7 @@ A neuro-symbolic physical inquiry and audit system developed for the **Meta Glob
 
 **Static demo:** https://johncat88425-del.github.io/slope-coach/ replays the saved results in `data/demo/` in the browser. It has no upload and makes no backend or model calls. To check your own clips, run the full app locally (see below).
 
-Slope Coach audits moving objects in real-world or simulated videos against assumed physical motion models (such as free flight under constant gravity, bouncing balls, and single pendulums), and guides tabletop slope-and-slider mechanics experiments through an empirical "predict before you act" workflow.
+Video Physics Audit (repository name `slope-coach`) audits moving objects in real-world or simulated videos against assumed physical motion models (such as free flight under constant gravity, bouncing balls, and single pendulums), and guides tabletop slope-and-slider mechanics experiments through an empirical "predict before you act" workflow.
 
 All model calls in production are strictly restricted to Meta AI models (Meta SAM 3.1 and Meta Muse Spark). Every physical measurement and fit is computed deterministically by Python numerical routines—no language model ever invents or estimates raw measurement numbers.
 
